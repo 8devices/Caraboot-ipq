@@ -1104,6 +1104,7 @@ extern unsigned int __machine_arch_type;
 #define MACH_TYPE_THALES_ADC           3492
 #define MACH_TYPE_UBISYS_P9D_EVP       3493
 #define MACH_TYPE_ATDGP318             3494
+#define MACH_TYPE_IPQ806X_CDP          3679
 #define MACH_TYPE_OMAP5_SEVM           3777
 
 #ifdef CONFIG_ARCH_EBSA110
