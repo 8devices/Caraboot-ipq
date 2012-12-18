@@ -1,6 +1,7 @@
 
 /* * Copyright (c) 2012 Qualcomm Atheros, Inc. * */
 
+#include <common.h>
 #include <asm/arch-ipq806x/clock.h>
 #include <asm/arch-ipq806x/iomap.h>
 #include <asm/io.h>
@@ -38,11 +39,10 @@ void uart_set_rate_mnd()
         ns_reg_val |= BIT(7);
         writel(ns_reg_val, GSBIn_UART_APPS_NS_REG(GSBI_PORT));
         /* Program M and D values. */
-        writel(MD16(M_VALUE, N_VALUE), GSBIn_UART_APPS_MD_REG(GSBI_PORT));
+        writel(MD16(M_VALUE, D_VALUE), GSBIn_UART_APPS_MD_REG(GSBI_PORT));
         /* Deassert MND reset. */
         ns_reg_val &= ~BIT(7);
         writel(ns_reg_val, GSBIn_UART_APPS_NS_REG(GSBI_PORT));
-
 }
 
 /*******************************************************

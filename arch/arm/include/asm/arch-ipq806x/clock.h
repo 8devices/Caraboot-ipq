@@ -34,10 +34,8 @@
 #ifndef __PLATFORM_IPQ860X_CLOCK_H_
 #define __PLATFORM_IPQ860X_CLOCK_H_
 
-#include <asm/arch-ipq806x/iomap.h>
-#include <asm/io.h>
-
-#define UART_DM_CLK_RX_TX_BIT_RATE 0xFF
+/* UART clock @ 7.3728 MHz */
+#define UART_DM_CLK_RX_TX_BIT_RATE 0xCC
 
 /* UART specific definitions */
 
@@ -113,13 +111,19 @@ static inline void check_pll_status(unsigned int pll_status_reg,unsigned int bit
 #define NS_SRC_SEL(s_msb, s_lsb, s) \
     BVAL(s_msb, s_lsb, s)
 
-
+/*
+ * Clock settings made compatible with kernel. Generate 7.3728 MHz.
+ */
 #ifdef CONFIG_RUMI
-#define M_VALUE   12
+/* From 19.2 MHz in RUMI. */
+#define M_VALUE   48
 #define N_VALUE   125
+#define D_VALUE   63
 #else
-#define M_VALUE   3
+/* From 384 MHz in CDP. */
+#define M_VALUE   12
 #define N_VALUE   625
+#define D_VALUE   313
 #endif
 
 /* Uart specific clock settings */
