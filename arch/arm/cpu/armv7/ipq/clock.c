@@ -1,18 +1,15 @@
-
-/* * Copyright (c) 2012 Qualcomm Atheros, Inc. * */
+/*
+ * Copyright (c) 2012 Qualcomm Atheros, Inc.
+ */
 
 #include <common.h>
 #include <asm/arch-ipq806x/clock.h>
 #include <asm/arch-ipq806x/iomap.h>
 #include <asm/io.h>
 
-/*******************************************************
-Function description: Enable PLL.
-Arguments : None
-Return : None
-
-********************************************************/
-
+/**
+ * uart_pll_vote_clk_enable - enables PLL8
+ */
 void uart_pll_vote_clk_enable()
 {
         unsigned int  ena;
@@ -23,13 +20,12 @@ void uart_pll_vote_clk_enable()
         check_pll_status(BB_PLL8_STATUS_REG,PLL8_STATUS_BIT);
 }
 
-/*******************************************************
-Function description: Set M & D values for UART GSBI port
-Arguments : None
-Return : None
-
-********************************************************/
-
+/**
+ * uart_set_rate_mnd - configures divider M and D values
+ *
+ * Sets the M, D parameters of the divider to generate the GSBI UART
+ * apps clock.
+ */
 void uart_set_rate_mnd()
 {
         unsigned int ns_reg_val;
@@ -45,15 +41,12 @@ void uart_set_rate_mnd()
         writel(ns_reg_val, GSBIn_UART_APPS_NS_REG(GSBI_PORT));
 }
 
-/*******************************************************
-Function description: Set N value and enable root clocks
-for UART GSBI port
-Arguments : None
-Return : None
-
-********************************************************/
-
-
+/**
+ * uart_local_clock_enable - configures N value and enables root clocks
+ *
+ * Sets the N parameter of the divider and enables root clock and
+ * branch clocks for GSBI UART port.
+ */
 void uart_local_clock_enable()
 {
         unsigned int reg_val;
@@ -81,13 +74,11 @@ void uart_local_clock_enable()
         uart_branch_clk_enable_reg();
 }
 
-/***********************************************************
-Function description: Enable branch clock for UART GSBI port
-Arguments : None
-Return : None
-
-***********************************************************/
-
+/**
+ * uart_branch_clk_enable_reg - enables branch clock
+ *
+ * Enables branch clock for GSBI UART port.
+ */
 void uart_branch_clk_enable_reg()
 {
         unsigned int reg_val;
@@ -97,14 +88,11 @@ void uart_branch_clk_enable_reg()
         writel(reg_val, (void *)GSBIn_UART_APPS_NS_REG(GSBI_PORT));
 }
 
-/*******************************************************
-Function description: configure  UART GSBI port clocks
-Arguments : None
-Return : None
-
-********************************************************/
-
-
+/**
+ * uart_clock_config - configures UART clocks
+ *
+ * Configures GSBI UART dividers, enable root and branch clocks.
+ */
 void uart_clock_config()
 {
         uart_set_rate_mnd();
@@ -114,14 +102,9 @@ void uart_clock_config()
         uart_set_gsbi_clk();
 }
 
-/*******************************************************
-Function description: Enable HCLK for UART GSBI port
-Arguments : None
-Return : None
-
-********************************************************/
-
-
+/**
+ * uart_set_gsbi_clk - enables HCLK for UART GSBI port
+ */
 void uart_set_gsbi_clk()
 {
         unsigned int reg_val;
