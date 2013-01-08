@@ -31,13 +31,11 @@
  * SUCH DAMAGE.
  */
 
-
 #include <asm/arch-ipq806x/iomap.h>
 #include <asm/io.h>
 #include <common.h>
 #include <asm/types.h>
 #include <asm/arch-ipq806x/timer.h>
-
 
 static ulong timestamp;
 static ulong lastinc;
