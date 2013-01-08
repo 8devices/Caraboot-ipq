@@ -69,11 +69,8 @@ ulong get_timer(ulong base)
 void __udelay(unsigned long usec)
 {
         unsigned int val;
-        volatile unsigned int Msecvalue=0;
 
         usec = (usec * 32 + 1000 - 32) / 1000;
-
-        Msecvalue = usec;
 
         writel(0, GPT_CLEAR);
         writel(0, GPT_ENABLE);
