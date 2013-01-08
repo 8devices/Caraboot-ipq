@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2012 Qualcomm Atheros, Inc. *
-   Source : APQ8064 LK boot
-
+ * Copyright (c) 2012 Qualcomm Atheros, Inc.
+ * Source : APQ8064 LK boot
+ *
  * Copyright (c) 2011-2012, Code Aurora Forum. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,38 +42,32 @@
 static ulong timestamp;
 static ulong lastinc;
 
-/*******************************************************
-Function description: timer_init.
-Arguments : None
-Return : None
-
-********************************************************/
+/**
+ * timer_init - initialize timer
+ */
 int timer_init(void)
 {
         return 0;
 }
 
-/*******************************************************
-Function description: returns time lapsed from the passed
-base value
-Arguments: Base/start time
-Return : time lapsed.
-
-********************************************************/
-
+/**
+ * get_timer - returns time lapsed
+ * @base: base/start time
+ *
+ * Returns time lapsed, since the specified base time value.
+ */
 ulong get_timer(ulong base)
 {
         return get_timer_masked() - base;
 }
 
-/*******************************************************
-Function description: Micro second delay. 33KHz clock,
-minimum possible delay is 30 Micro seconds and its  multiples
-Arguments : Delay in Micro seconds
-Return : None
-In Rumi GPT clock is 32 KHz
-********************************************************/
-
+/**
+ * __udelay -  generates micro second delay.
+ * @usec: delay duration in microseconds
+ *
+ * With 33KHz clock, minimum possible delay is 30 Micro seconds and
+ * its multiples. In Rumi GPT clock is 32 KHz
+ */
 void __udelay(unsigned long usec)
 {
         unsigned int val;
@@ -100,14 +94,11 @@ void __udelay(unsigned long usec)
         writel(0, GPT_CLEAR);
 }
 
-/*******************************************************
-Function description: returns the time lapsed from last
-                      read value
-Arguments : None
-Return : None
-
-********************************************************/
-
+/**
+ * get_timer_masked - returns current ticks
+ *
+ * Returns the current timer ticks, since boot.
+ */
 ulong get_timer_masked(void)
 {
         ulong now = READ_TIMER;	/* current tick value */
