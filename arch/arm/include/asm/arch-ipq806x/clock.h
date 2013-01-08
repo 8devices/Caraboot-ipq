@@ -129,11 +129,7 @@ static inline void check_pll_status(unsigned int pll_status_reg,unsigned int bit
 /* Uart specific clock settings */
 
 void uart_pll_vote_clk_enable(void);
-void uart_set_rate_mnd(void);
-void uart_local_clock_enable(void);
-void uart_branch_clk_enable_reg(void);
 void uart_clock_config(void);
-void uart_set_gsbi_clk(void);
 static inline void check_pll_status(unsigned int pll_status_reg,unsigned int bit_pos);
 
 #endif  /*  __PLATFORM_IPQ860X_CLOCK_H_ */

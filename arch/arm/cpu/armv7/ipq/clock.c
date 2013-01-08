@@ -10,7 +10,7 @@
 /**
  * uart_pll_vote_clk_enable - enables PLL8
  */
-void uart_pll_vote_clk_enable()
+void uart_pll_vote_clk_enable(void)
 {
         unsigned int  ena;
 
@@ -26,7 +26,7 @@ void uart_pll_vote_clk_enable()
  * Sets the M, D parameters of the divider to generate the GSBI UART
  * apps clock.
  */
-void uart_set_rate_mnd()
+static void uart_set_rate_mnd(void)
 {
         unsigned int ns_reg_val;
 
@@ -42,12 +42,26 @@ void uart_set_rate_mnd()
 }
 
 /**
+ * uart_branch_clk_enable_reg - enables branch clock
+ *
+ * Enables branch clock for GSBI UART port.
+ */
+static void uart_branch_clk_enable_reg(void)
+{
+        unsigned int reg_val;
+
+        reg_val = readl((void *)GSBIn_UART_APPS_NS_REG(GSBI_PORT));
+        reg_val |= BIT(9);
+        writel(reg_val, (void *)GSBIn_UART_APPS_NS_REG(GSBI_PORT));
+}
+
+/**
  * uart_local_clock_enable - configures N value and enables root clocks
  *
  * Sets the N parameter of the divider and enables root clock and
  * branch clocks for GSBI UART port.
  */
-void uart_local_clock_enable()
+static void uart_local_clock_enable(void)
 {
         unsigned int reg_val;
         void *const reg = (void *)GSBIn_UART_APPS_NS_REG(GSBI_PORT);
@@ -75,37 +89,9 @@ void uart_local_clock_enable()
 }
 
 /**
- * uart_branch_clk_enable_reg - enables branch clock
- *
- * Enables branch clock for GSBI UART port.
- */
-void uart_branch_clk_enable_reg()
-{
-        unsigned int reg_val;
-
-        reg_val = readl((void *)GSBIn_UART_APPS_NS_REG(GSBI_PORT));
-        reg_val |= BIT(9);
-        writel(reg_val, (void *)GSBIn_UART_APPS_NS_REG(GSBI_PORT));
-}
-
-/**
- * uart_clock_config - configures UART clocks
- *
- * Configures GSBI UART dividers, enable root and branch clocks.
- */
-void uart_clock_config()
-{
-        uart_set_rate_mnd();
-
-        UART_ENABLE_PLL_CLOCK
-        uart_local_clock_enable();
-        uart_set_gsbi_clk();
-}
-
-/**
  * uart_set_gsbi_clk - enables HCLK for UART GSBI port
  */
-void uart_set_gsbi_clk()
+static void uart_set_gsbi_clk(void)
 {
         unsigned int reg_val;
 
@@ -114,3 +100,16 @@ void uart_set_gsbi_clk()
         writel(reg_val, ((void *)GSBIn_HCLK_CTL_REG(GSBI_PORT)));
 }
 
+/**
+ * uart_clock_config - configures UART clocks
+ *
+ * Configures GSBI UART dividers, enable root and branch clocks.
+ */
+void uart_clock_config(void)
+{
+        uart_set_rate_mnd();
+
+        UART_ENABLE_PLL_CLOCK
+        uart_local_clock_enable();
+        uart_set_gsbi_clk();
+}
