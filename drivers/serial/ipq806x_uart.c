@@ -71,22 +71,19 @@ msm_boot_uart_dm_read(unsigned int *data, int wait)
         static int rx_chars_read_since_last_xfer = 0;
         unsigned int  base = UART_DM_BASE;
 
-        if (data == NULL) {
+        if (data == NULL)
                 return MSM_BOOT_UART_DM_E_INVAL;
-        }
 
         /* We will be polling RXRDY status bit */
         while (!(readl(MSM_BOOT_UART_DM_SR(base)) & MSM_BOOT_UART_DM_SR_RXRDY)) {
                 /* if this is not a blocking call, we'll just return */
-                if (!wait) {
+                if (!wait)
                         return MSM_BOOT_UART_DM_E_RX_NOT_READY;
-                }
         }
 
         /* Check for Overrun error. We'll just reset Error Status */
-        if (readl(MSM_BOOT_UART_DM_SR(base)) & MSM_BOOT_UART_DM_SR_UART_OVERRUN) {
+        if (readl(MSM_BOOT_UART_DM_SR(base)) & MSM_BOOT_UART_DM_SR_UART_OVERRUN)
                 writel(MSM_BOOT_UART_DM_CMD_RESET_ERR_STAT, MSM_BOOT_UART_DM_CR(base));
-        }
 
         /* RX FIFO is ready; read a word. */
         *data = readl(MSM_BOOT_UART_DM_RF(base, 0));
@@ -128,9 +125,8 @@ msm_boot_uart_dm_read(unsigned int *data, int wait)
 
         /* If there are still data left in FIFO we'll read them before
         * initializing RX Transfer again */
-        if ((rx_last_snap_count - rx_chars_read_since_last_xfer) >= 0) {
+        if ((rx_last_snap_count - rx_chars_read_since_last_xfer) >= 0)
                 return MSM_BOOT_UART_DM_E_SUCCESS;
-        }
 
 //	msm_boot_uart_dm_init(base);
         msm_boot_uart_dm_init_rx_transfer(base);
@@ -159,9 +155,8 @@ msm_boot_uart_dm_write(char *data, unsigned int num_of_chars)
         char new_data[1024];
         unsigned int  base = UART_DM_BASE;
 
-        if ((data == NULL) || (num_of_chars <= 0)) {
+        if ((data == NULL) || (num_of_chars <= 0))
                 return MSM_BOOT_UART_DM_E_INVAL;
-        }
 
         /* Replace line-feed (/n) with carriage-return + line-feed (/r/n) */
         msm_boot_uart_replace_lr_with_cr(data, num_of_chars, new_data, &i);
@@ -177,9 +172,8 @@ msm_boot_uart_dm_write(char *data, unsigned int num_of_chars)
         * If not we'll wait for TX_READY interrupt. */
 
         if (!(readl(MSM_BOOT_UART_DM_SR(base)) & MSM_BOOT_UART_DM_SR_TXEMT)) {
-                while (!(readl(MSM_BOOT_UART_DM_ISR(base)) & MSM_BOOT_UART_DM_TX_READY)) {
+                while (!(readl(MSM_BOOT_UART_DM_ISR(base)) & MSM_BOOT_UART_DM_TX_READY))
                         __udelay(1);
-                }
         }
 
         /* We are here. FIFO is ready to be written. */
@@ -200,9 +194,8 @@ msm_boot_uart_dm_write(char *data, unsigned int num_of_chars)
                 PACK_CHARS_INTO_WORDS(tx_data, tx_char, tx_word);
 
                 /* Wait till TX FIFO has space */
-                while (!(readl(MSM_BOOT_UART_DM_SR(base)) & MSM_BOOT_UART_DM_SR_TXRDY)) {
+                while (!(readl(MSM_BOOT_UART_DM_SR(base)) & MSM_BOOT_UART_DM_SR_TXRDY))
                         __udelay(1);
-                }
 
                 /* TX FIFO has space. Write the chars */
                 writel(tx_word, MSM_BOOT_UART_DM_TF(base, 0));
@@ -234,9 +227,8 @@ msm_boot_uart_replace_lr_with_cr(char *data_in,
         }
 
         for (i = 0, j = 0; i < num_of_chars; i++, j++) {
-                if (data_in[i] == '\n') {
+                if (data_in[i] == '\n')
                         data_out[j++] = '\r';
-                }
 
                 data_out[j] = data_in[i];
         }
@@ -378,9 +370,8 @@ int serial_getc(void)
         if (!word) {
                 /* Read from FIFO only if it's a first read or all the four
                  * characters out of a word have been read */
-                if (msm_boot_uart_dm_read(&word, 1) != MSM_BOOT_UART_DM_E_SUCCESS) {
+                if (msm_boot_uart_dm_read(&word, 1) != MSM_BOOT_UART_DM_E_SUCCESS)
                         return -1;
-                }
         }
 
         byte = (int)word & 0xff;
