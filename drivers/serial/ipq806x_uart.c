@@ -44,7 +44,6 @@
  */
 void uart_dm_init()
 {
-        char *data = "Akronite Uboot  Bootloader - UART_DM Initialization !!!\n";
         /* Configure the uart clock */
         uart_clock_config();
         writel(GSBI_PROTOCOL_CODE_I2C_UART <<
@@ -53,7 +52,6 @@ void uart_dm_init()
         writel(UART_DM_CLK_RX_TX_BIT_RATE, MSM_BOOT_UART_DM_CSR(UART_DM_BASE));
         /* Intialize UART_DM */
         msm_boot_uart_dm_init((unsigned int)UART_DM_BASE);
-        msm_boot_uart_dm_write(data, 53);
 }
 
 /**
@@ -222,9 +220,8 @@ msm_boot_uart_replace_lr_with_cr(char *data_in,
 {
         int i = 0, j = 0;
 
-        if ((data_in == NULL) || (data_out == NULL) || (num_of_chars < 0)) {
+        if ((data_in == NULL) || (data_out == NULL) || (num_of_chars < 0))
                 return MSM_BOOT_UART_DM_E_INVAL;
-        }
 
         for (i = 0, j = 0; i < num_of_chars; i++, j++) {
                 if (data_in[i] == '\n')
