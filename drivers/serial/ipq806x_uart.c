@@ -53,7 +53,7 @@ void uart_dm_init()
         writel(UART_DM_CLK_RX_TX_BIT_RATE, MSM_BOOT_UART_DM_CSR(UART_DM_BASE));
         /* Intialize UART_DM */
         msm_boot_uart_dm_init((unsigned int)UART_DM_BASE);
-        msm_boot_uart_dm_write( data, 53);
+        msm_boot_uart_dm_write(data, 53);
 }
 
 /**
@@ -65,7 +65,7 @@ void uart_dm_init()
  * @wait is true, else returns %MSM_BOOT_UART_DM_E_RX_NOT_READY.
  */
 static unsigned int
-msm_boot_uart_dm_read( unsigned int *data, int wait)
+msm_boot_uart_dm_read(unsigned int *data, int wait)
 {
         static int rx_last_snap_count = 0;
         static int rx_chars_read_since_last_xfer = 0;
@@ -304,7 +304,7 @@ static unsigned int msm_boot_uart_dm_init(unsigned int  uart_dm_base)
         /* Initialize Receive Path */
         msm_boot_uart_dm_init_rx_transfer(uart_dm_base);
 
-        return 0 ;
+        return 0;
 }
 
 /**
@@ -340,7 +340,7 @@ static unsigned int msm_boot_uart_dm_init_rx_transfer(unsigned int uart_dm_base)
  * serial_putc - transmits a character
  * @c: character to transmit
  */
-void serial_putc (char c)
+void serial_putc(char c)
 {
         msm_boot_uart_dm_write(&c, 1);
 }
@@ -349,10 +349,10 @@ void serial_putc (char c)
  * serial_puts - transmits a string of data
  * @s: string to transmit
  */
-void serial_puts (const char *s)
+void serial_puts(const char *s)
 {
         while (*s != '\0')
-                serial_putc (*s++);
+                serial_putc(*s++);
 }
 
 /**
@@ -360,7 +360,7 @@ void serial_puts (const char *s)
  *
  * Returns 1 if data available, 0 otherwise
  */
-int serial_tstc (void)
+int serial_tstc(void)
 {
         return (readl(MSM_BOOT_UART_DM_SR(UART_DM_BASE)) & MSM_BOOT_UART_DM_SR_RXRDY);
 }
@@ -370,7 +370,7 @@ int serial_tstc (void)
  *
  * Returns the character read from serial port.
  */
-int serial_getc (void)
+int serial_getc(void)
 {
         int byte;
         static unsigned int word = 0;
@@ -378,7 +378,7 @@ int serial_getc (void)
         if (!word) {
                 /* Read from FIFO only if it's a first read or all the four
                  * characters out of a word have been read */
-                if (msm_boot_uart_dm_read( &word,1) != MSM_BOOT_UART_DM_E_SUCCESS) {
+                if (msm_boot_uart_dm_read(&word, 1) != MSM_BOOT_UART_DM_E_SUCCESS) {
                         return -1;
                 }
         }
@@ -392,9 +392,9 @@ int serial_getc (void)
 /**
  * serial_setbrg - sets serial baudarate
  */
-void  serial_setbrg(void)
+void serial_setbrg(void)
 {
-        return ;
+        return;
 }
 
 /**
