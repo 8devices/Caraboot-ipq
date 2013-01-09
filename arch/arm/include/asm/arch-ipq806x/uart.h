@@ -278,20 +278,5 @@ enum MSM_BOOT_UART_DM_BITS_PER_CHAR {
 #define MSM_BOOT_UART_DM_E_MALLOC_FAIL       4
 #define MSM_BOOT_UART_DM_E_RX_NOT_READY      5
 
-void uart_dm_init(void);
-static unsigned int msm_boot_uart_dm_init(unsigned int  uart_dm_base);
-static unsigned int msm_boot_uart_dm_reset(unsigned int  base);
-static unsigned int msm_boot_uart_dm_init_rx_transfer(unsigned int uart_dm_base);
-static unsigned int
-msm_boot_uart_replace_lr_with_cr(char *data_in,
-                                 int num_of_chars,
-                                 char *data_out, int *num_of_chars_out);
-
-static unsigned int
-msm_boot_uart_dm_write( char *data, unsigned int num_of_chars);
-
-static unsigned int
-msm_boot_uart_dm_read( unsigned int *data, int wait);
-
 #endif				/* __UART_DM_H__ */
 

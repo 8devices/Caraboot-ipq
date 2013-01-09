@@ -38,20 +38,17 @@
 #include <asm/arch-ipq806x/iomap.h>
 
 /**
- * uart_dm_init - initializes UART
- *
- * Initializes clocks, GPIO and UART controller.
+ * msm_boot_uart_dm_init_rx_transfer - Init Rx transfer
+ * @uart_dm_base: UART controller base address
  */
-void uart_dm_init()
+static unsigned int msm_boot_uart_dm_init_rx_transfer(unsigned int uart_dm_base)
 {
-        /* Configure the uart clock */
-        uart_clock_config();
-        writel(GSBI_PROTOCOL_CODE_I2C_UART <<
-               GSBI_CTRL_REG_PROTOCOL_CODE_S,
-               GSBI_CTRL_REG(UART_GSBI_BASE));
-        writel(UART_DM_CLK_RX_TX_BIT_RATE, MSM_BOOT_UART_DM_CSR(UART_DM_BASE));
-        /* Intialize UART_DM */
-        msm_boot_uart_dm_init((unsigned int)UART_DM_BASE);
+        writel(MSM_BOOT_UART_DM_GCMD_DIS_STALE_EVT, MSM_BOOT_UART_DM_CR(uart_dm_base));
+        writel(MSM_BOOT_UART_DM_CMD_RES_STALE_INT, MSM_BOOT_UART_DM_CR(uart_dm_base));
+        writel(MSM_BOOT_UART_DM_DMRX_DEF_VALUE, MSM_BOOT_UART_DM_DMRX(uart_dm_base));
+        writel(MSM_BOOT_UART_DM_GCMD_ENA_STALE_EVT, MSM_BOOT_UART_DM_CR(uart_dm_base));
+
+        return MSM_BOOT_UART_DM_E_SUCCESS;
 }
 
 /**
@@ -135,6 +132,37 @@ msm_boot_uart_dm_read(unsigned int *data, int wait)
 }
 
 /**
+ * msm_boot_uart_replace_lr_with_cr - replaces "\n" with "\r\n"
+ * @data_in:      characters to be converted
+ * @num_of_chars: no. of characters
+ * @data_out:     location where converted chars are stored
+ *
+ * Replace linefeed char "\n" with carriage return + linefeed
+ * "\r\n". Currently keeping it simple than efficient.
+ */
+static unsigned int
+msm_boot_uart_replace_lr_with_cr(char *data_in,
+                                 int num_of_chars,
+                                 char *data_out, int *num_of_chars_out)
+{
+        int i = 0, j = 0;
+
+        if ((data_in == NULL) || (data_out == NULL) || (num_of_chars < 0))
+                return MSM_BOOT_UART_DM_E_INVAL;
+
+        for (i = 0, j = 0; i < num_of_chars; i++, j++) {
+                if (data_in[i] == '\n')
+                        data_out[j++] = '\r';
+
+                data_out[j] = data_in[i];
+        }
+
+        *num_of_chars_out = j;
+
+        return MSM_BOOT_UART_DM_E_SUCCESS;
+}
+
+/**
  * msm_boot_uart_dm_write - transmit data
  * @data:          data to transmit
  * @num_of_chars:  no. of bytes to transmit
@@ -205,32 +233,16 @@ msm_boot_uart_dm_write(char *data, unsigned int num_of_chars)
 }
 
 /**
- * msm_boot_uart_replace_lr_with_cr - replaces "\n" with "\r\n"
- * @data_in:      characters to be converted
- * @num_of_chars: no. of characters
- * @data_out:     location where converted chars are stored
- *
- * Replace linefeed char "\n" with carriage return + linefeed
- * "\r\n". Currently keeping it simple than efficient.
+ * msm_boot_uart_dm_reset - resets UART controller
+ * @base: UART controller base address
  */
-static unsigned int
-msm_boot_uart_replace_lr_with_cr(char *data_in,
-                                 int num_of_chars,
-                                 char *data_out, int *num_of_chars_out)
+static unsigned int msm_boot_uart_dm_reset(unsigned int base)
 {
-        int i = 0, j = 0;
-
-        if ((data_in == NULL) || (data_out == NULL) || (num_of_chars < 0))
-                return MSM_BOOT_UART_DM_E_INVAL;
-
-        for (i = 0, j = 0; i < num_of_chars; i++, j++) {
-                if (data_in[i] == '\n')
-                        data_out[j++] = '\r';
-
-                data_out[j] = data_in[i];
-        }
-
-        *num_of_chars_out = j;
+        writel(MSM_BOOT_UART_DM_CMD_RESET_RX, MSM_BOOT_UART_DM_CR(base));
+        writel(MSM_BOOT_UART_DM_CMD_RESET_TX, MSM_BOOT_UART_DM_CR(base));
+        writel(MSM_BOOT_UART_DM_CMD_RESET_ERR_STAT, MSM_BOOT_UART_DM_CR(base));
+        writel(MSM_BOOT_UART_DM_CMD_RES_TX_ERR, MSM_BOOT_UART_DM_CR(base));
+        writel(MSM_BOOT_UART_DM_CMD_RES_STALE_INT, MSM_BOOT_UART_DM_CR(base));
 
         return MSM_BOOT_UART_DM_E_SUCCESS;
 }
@@ -297,32 +309,20 @@ static unsigned int msm_boot_uart_dm_init(unsigned int  uart_dm_base)
 }
 
 /**
- * msm_boot_uart_dm_reset - resets UART controller
- * @base: UART controller base address
+ * uart_dm_init - initializes UART
+ *
+ * Initializes clocks, GPIO and UART controller.
  */
-static unsigned int msm_boot_uart_dm_reset(unsigned int base)
+void uart_dm_init(void)
 {
-        writel(MSM_BOOT_UART_DM_CMD_RESET_RX, MSM_BOOT_UART_DM_CR(base));
-        writel(MSM_BOOT_UART_DM_CMD_RESET_TX, MSM_BOOT_UART_DM_CR(base));
-        writel(MSM_BOOT_UART_DM_CMD_RESET_ERR_STAT, MSM_BOOT_UART_DM_CR(base));
-        writel(MSM_BOOT_UART_DM_CMD_RES_TX_ERR, MSM_BOOT_UART_DM_CR(base));
-        writel(MSM_BOOT_UART_DM_CMD_RES_STALE_INT, MSM_BOOT_UART_DM_CR(base));
-
-        return MSM_BOOT_UART_DM_E_SUCCESS;
-}
-
-/**
- * msm_boot_uart_dm_init_rx_transfer - Init Rx transfer
- * @uart_dm_base: UART controller base address
- */
-static unsigned int msm_boot_uart_dm_init_rx_transfer(unsigned int uart_dm_base)
-{
-        writel(MSM_BOOT_UART_DM_GCMD_DIS_STALE_EVT, MSM_BOOT_UART_DM_CR(uart_dm_base));
-        writel(MSM_BOOT_UART_DM_CMD_RES_STALE_INT, MSM_BOOT_UART_DM_CR(uart_dm_base));
-        writel(MSM_BOOT_UART_DM_DMRX_DEF_VALUE, MSM_BOOT_UART_DM_DMRX(uart_dm_base));
-        writel(MSM_BOOT_UART_DM_GCMD_ENA_STALE_EVT, MSM_BOOT_UART_DM_CR(uart_dm_base));
-
-        return MSM_BOOT_UART_DM_E_SUCCESS;
+        /* Configure the uart clock */
+        uart_clock_config();
+        writel(GSBI_PROTOCOL_CODE_I2C_UART <<
+               GSBI_CTRL_REG_PROTOCOL_CODE_S,
+               GSBI_CTRL_REG(UART_GSBI_BASE));
+        writel(UART_DM_CLK_RX_TX_BIT_RATE, MSM_BOOT_UART_DM_CSR(UART_DM_BASE));
+        /* Intialize UART_DM */
+        msm_boot_uart_dm_init((unsigned int)UART_DM_BASE);
 }
 
 /**
