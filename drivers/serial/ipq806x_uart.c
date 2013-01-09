@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2012 Qualcomm Atheros, Inc. *
-   Source : APQ8064 LK boot
-
+ * Copyright (c) 2012 Qualcomm Atheros, Inc.
+ * Source : APQ8064 LK boot
+ *
  * Copyright (c) 2011-2012, Code Aurora Forum. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,14 +37,11 @@
 #include <asm/arch-ipq806x/gpio.h>
 #include <asm/arch-ipq806x/iomap.h>
 
-/*******************************************************
-Function description: Initialize uart - clocks,gpio,uart
-controller.
-Arguments : None
-Return : None
-
-********************************************************/
-
+/**
+ * uart_dm_init - initializes UART
+ *
+ * Initializes clocks, GPIO and UART controller.
+ */
 void uart_dm_init()
 {
         char *data = "Akronite Uboot  Bootloader - UART_DM Initialization !!!\n";
@@ -60,14 +57,14 @@ void uart_dm_init()
 
 }
 
-/*******************************************************
-Function description: UART Receive operation  Reads a
-                      word from the RX FIFO
-Arguments : None
-Return : None
-
-********************************************************/
-
+/**
+ * msm_boot_uart_dm_read - reads a word from the RX FIFO.
+ * @data: location where the read data is stored
+ * @wait: indicates blocking call or not blocking call
+ *
+ * Reads a word from the RX FIFO. If no data is available blocks if
+ * @wait is true, else returns %MSM_BOOT_UART_DM_E_RX_NOT_READY.
+ */
 static unsigned int
 msm_boot_uart_dm_read( unsigned int *data, int wait)
 {
@@ -145,14 +142,14 @@ msm_boot_uart_dm_read( unsigned int *data, int wait)
         return MSM_BOOT_UART_DM_E_SUCCESS;
 }
 
-/*******************************************************
-Function description: UART transmit operation.
-Arguments :char *data- data to transmit
-unsigned int num_of_chars - Number of bytes to transmit
-Return : None
-
-********************************************************/
-
+/**
+ * msm_boot_uart_dm_write - transmit data
+ * @data:          data to transmit
+ * @num_of_chars:  no. of bytes to transmit
+ *
+ * Writes the data to the TX FIFO. If no space is available blocks
+ * till space becomes available.
+ */
 static unsigned int
 msm_boot_uart_dm_write(char *data, unsigned int num_of_chars)
 {
@@ -219,20 +216,15 @@ msm_boot_uart_dm_write(char *data, unsigned int num_of_chars)
         return MSM_BOOT_UART_DM_E_SUCCESS;
 }
 
-/*******************************************************
-Function description: Helper function to replace Line
-Feed char "\n" with  Carriage Return "\r\n". Currently
-keeping it simple than efficient
-
-Arguments :char *data_in - data in
-     int num_of_chars - Number of bytes
-     char *data_out- Data out
-     int *num_of_chars_out - Number of bytes out
-
-Return : Success or Fail
-
-********************************************************/
-
+/**
+ * msm_boot_uart_replace_lr_with_cr - replaces "\n" with "\r\n"
+ * @data_in:      characters to be converted
+ * @num_of_chars: no. of characters
+ * @data_out:     location where converted chars are stored
+ *
+ * Replace linefeed char "\n" with carriage return + linefeed
+ * "\r\n". Currently keeping it simple than efficient.
+ */
 static unsigned int
 msm_boot_uart_replace_lr_with_cr(char *data_in,
                                  int num_of_chars,
@@ -257,13 +249,10 @@ msm_boot_uart_replace_lr_with_cr(char *data_in,
         return MSM_BOOT_UART_DM_E_SUCCESS;
 }
 
-/*******************************************************
-Function description: Initilaize uart controller.
-Arguments : Uart controller base address
-Return : 0 for Success
-
-********************************************************/
-
+/**
+ * msm_boot_uart_dm_init - initilaizes UART controller
+ * @uart_dm_base: UART controller base address
+ */
 static unsigned int msm_boot_uart_dm_init(unsigned int  uart_dm_base)
 {
         /* Configure UART mode registers MR1 and MR2 */
@@ -321,13 +310,10 @@ static unsigned int msm_boot_uart_dm_init(unsigned int  uart_dm_base)
         return 0 ;
 }
 
-/*******************************************************
-Function description: Reset Uart controller
-Arguments : Uart controller base address
-Return : 0 for Success
-
-********************************************************/
-
+/**
+ * msm_boot_uart_dm_reset - resets UART controller
+ * @base: UART controller base address
+ */
 static unsigned int msm_boot_uart_dm_reset(unsigned int base)
 {
         writel(MSM_BOOT_UART_DM_CMD_RESET_RX, MSM_BOOT_UART_DM_CR(base));
@@ -340,13 +326,10 @@ static unsigned int msm_boot_uart_dm_reset(unsigned int base)
 }
 
 
-/*******************************************************
-Function description: Init Rx transfer
-Arguments : Uart controller base address
-Return : 0 for success
-
-********************************************************/
-
+/**
+ * msm_boot_uart_dm_init_rx_transfer - Init Rx transfer
+ * @uart_dm_base: UART controller base address
+ */
 static unsigned int msm_boot_uart_dm_init_rx_transfer(unsigned int uart_dm_base)
 {
         writel(MSM_BOOT_UART_DM_GCMD_DIS_STALE_EVT, MSM_BOOT_UART_DM_CR(uart_dm_base));
@@ -357,14 +340,10 @@ static unsigned int msm_boot_uart_dm_init_rx_transfer(unsigned int uart_dm_base)
         return MSM_BOOT_UART_DM_E_SUCCESS;
 }
 
-/*******************************************************
-Function description: Uboot specific transmit a character
-Arguments : None
-Return : None
-
-********************************************************/
-
-
+/**
+ * serial_putc - transmits a character
+ * @c: character to transmit
+ */
 void serial_putc (char c)
 {
 
@@ -372,29 +351,21 @@ void serial_putc (char c)
 
 }
 
-/*******************************************************
-Function description: transmit a string of data
-Arguments : const char *s - data pointer
-Return : None
-
-********************************************************/
-
-
+/**
+ * serial_puts - transmits a string of data
+ * @s: string to transmit
+ */
 void serial_puts (const char *s)
 {
         while (*s != '\0')
                 serial_putc (*s++);
 }
 
-/*******************************************************
-Function description: uboot check whether data available
-in RX FIFO
-Arguments : None
-Return : Return 1 or 0
-
-********************************************************/
-
-
+/**
+ * serial_tstc - checks if data available for reading
+ *
+ * Returns 1 if data available, 0 otherwise
+ */
 int serial_tstc (void)
 {
 
@@ -403,13 +374,11 @@ int serial_tstc (void)
 }
 
 
-/*******************************************************
-Function description: uboot serial get character
-Arguments : None
-Return : number of bytes
-
-********************************************************/
-
+/**
+ * serial_getc - reads a character
+ *
+ * Returns the character read from serial port.
+ */
 int serial_getc (void)
 {
         int byte;
@@ -430,27 +399,18 @@ int serial_getc (void)
         return byte;
 }
 
-/*******************************************************
-Function description: uboot serial set baudarate
-Arguments : None
-Return : None
-
-********************************************************/
-
-
+/**
+ * serial_setbrg - sets serial baudarate
+ */
 void  serial_setbrg(void)
 {
 
         return ;
 }
 
-/*******************************************************
-Function description: Uboot serial init call
-Arguments : None
-Return : None
-
-********************************************************/
-
+/**
+ * serial_init - initializes serial controller
+ */
 int  serial_init(void)
 {
         uart_dm_init();
