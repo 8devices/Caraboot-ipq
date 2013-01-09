@@ -54,7 +54,6 @@ void uart_dm_init()
         /* Intialize UART_DM */
         msm_boot_uart_dm_init((unsigned int)UART_DM_BASE);
         msm_boot_uart_dm_write( data, 53);
-
 }
 
 /**
@@ -125,7 +124,6 @@ msm_boot_uart_dm_read( unsigned int *data, int wait)
                 * we've read so far since last transfer
                 */
                 rx_last_snap_count = readl(MSM_BOOT_UART_DM_RX_TOTAL_SNAP(base));
-
         }
 
         /* If there are still data left in FIFO we'll read them before
@@ -166,7 +164,6 @@ msm_boot_uart_dm_write(char *data, unsigned int num_of_chars)
         }
 
         /* Replace line-feed (/n) with carriage-return + line-feed (/r/n) */
-
         msm_boot_uart_replace_lr_with_cr(data, num_of_chars, new_data, &i);
 
         tx_data = new_data;
@@ -325,7 +322,6 @@ static unsigned int msm_boot_uart_dm_reset(unsigned int base)
         return MSM_BOOT_UART_DM_E_SUCCESS;
 }
 
-
 /**
  * msm_boot_uart_dm_init_rx_transfer - Init Rx transfer
  * @uart_dm_base: UART controller base address
@@ -346,9 +342,7 @@ static unsigned int msm_boot_uart_dm_init_rx_transfer(unsigned int uart_dm_base)
  */
 void serial_putc (char c)
 {
-
         msm_boot_uart_dm_write(&c, 1);
-
 }
 
 /**
@@ -368,11 +362,8 @@ void serial_puts (const char *s)
  */
 int serial_tstc (void)
 {
-
         return (readl(MSM_BOOT_UART_DM_SR(UART_DM_BASE)) & MSM_BOOT_UART_DM_SR_RXRDY);
-
 }
-
 
 /**
  * serial_getc - reads a character
@@ -390,7 +381,6 @@ int serial_getc (void)
                 if (msm_boot_uart_dm_read( &word,1) != MSM_BOOT_UART_DM_E_SUCCESS) {
                         return -1;
                 }
-
         }
 
         byte = (int)word & 0xff;
@@ -404,7 +394,6 @@ int serial_getc (void)
  */
 void  serial_setbrg(void)
 {
-
         return ;
 }
 
@@ -415,6 +404,4 @@ int  serial_init(void)
 {
         uart_dm_init();
         return 0;
-
 }
-
