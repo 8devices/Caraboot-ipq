@@ -6,7 +6,6 @@
 #include <asm/global_data.h>
 #include <asm/io.h>
 #include "ipq806x_cdp.h"
-#include <nand.h>
 #include <linux/mtd/ipq_nand.h>
 #include <asm/arch-ipq806x/clock.h>
 #include <asm/arch-ipq806x/ebi2.h>
@@ -125,12 +124,9 @@ static void configure_nand_gpio(void)
 	gpio_tlmm_config(47, 1, 0, GPIO_KEEPER, GPIO_10MA, GPIO_DISABLE);
 }
 
-static struct nand_chip nand_chip[CONFIG_SYS_MAX_NAND_DEVICE];
-
 void board_nand_init(void)
 {
 	struct ebi2cr_regs *ebi2_regs;
-	struct mtd_info *mtd = &nand_info[0];
 
 	ebi2_regs = (struct ebi2cr_regs *) EBI2CR_BASE;
 
@@ -141,20 +137,5 @@ void board_nand_init(void)
 	clrsetbits_le32(&ebi2_regs->chip_select_cfg0, CS0_CFG_MASK,
 			CS0_CFG_SERIAL_FLASH_DEVICE);
 
-	mtd->priv = &nand_chip[0];
-
-	/* Initialize the NAND controller. */
-	if (ipq_nand_init(mtd))
-		return;
-
-	/* Identify the NAND device. */
-	if (ipq_nand_scan(mtd))
-		return;
-
-	if (ipq_nand_post_scan_init(mtd))
-		return;
-
-	/* Register with MTD subsystem. */
-	if (nand_register(0))
-		return;
+	ipq_nand_init(IPQ_NAND_LAYOUT_LINUX);
 }

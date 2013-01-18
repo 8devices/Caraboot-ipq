@@ -6,6 +6,7 @@
 #include <nand.h>
 #include <malloc.h>
 #include <linux/mtd/nand.h>
+#include <linux/mtd/ipq_nand.h>
 
 #include <asm/io.h>
 #include <asm/errno.h>
@@ -90,6 +91,7 @@ struct ipq_config {
  * @dev_ecc_cfg:        the value for DEVn_ECC_CFG register
  * @dev_cfg0_raw:       the value for DEVn_CFG0 register, in raw mode
  * @dev_cfg1_raw:       the value for DEVn_CFG1 register, in raw mode
+ * @buffers:            pointer to dynamically allocated buffers
  * @pad_dat:            the pad buffer for in-band data
  * @pad_oob:            the pad buffer for out-of-band data
  * @zero_page:          the zero page written for marking bad blocks
@@ -116,6 +118,7 @@ struct ipq_nand_dev {
 	uint32_t dev_cfg0_raw;
 	uint32_t dev_cfg1_raw;
 
+	u_char *buffers;
 	u_char *pad_dat;
 	u_char *pad_oob;
 	u_char *zero_page;
@@ -308,23 +311,23 @@ static struct ipq_config ipq_linux_config_8ecc_4k = {
 	.raw_page_layout = ipq_raw_page_layout_8ecc_4k
 };
 
+#define IPQ_CONFIGS_MAX 3
+
 /*
  * List of supported configs. The code expects this list to be sorted
  * on ECC requirement size. So 4-bit first, 8-bit next and so on.
  */
-static struct ipq_config *ipq_configs[] = {
-#if defined(CONFIG_IPQ_NAND_SBL_LAYOUT)
-	&ipq_sbl_config_4ecc_2k,
-	&ipq_sbl_config_4ecc_4k,
-	&ipq_sbl_config_8ecc_4k,
-#elif defined(CONFIG_IPQ_NAND_LINUX_LAYOUT)
-	&ipq_linux_config_4ecc_2k,
-	&ipq_linux_config_4ecc_4k,
-	&ipq_linux_config_8ecc_4k,
-#else
-#error "Need to select CONFIG_IPQ_NAND_SBL_LAYOUT or CONFIG_IPQ_NAND_LINUX_LAYOUT"
-#endif
-	NULL
+static struct ipq_config *ipq_configs[IPQ_NAND_LAYOUT_MAX][IPQ_CONFIGS_MAX] = {
+	{
+		&ipq_sbl_config_4ecc_2k,
+		&ipq_sbl_config_4ecc_4k,
+		&ipq_sbl_config_8ecc_4k,
+	},
+	{
+		&ipq_linux_config_4ecc_2k,
+		&ipq_linux_config_4ecc_4k,
+		&ipq_linux_config_8ecc_4k,
+	}
 };
 
 struct nand_ecclayout fake_ecc_layout;
@@ -1577,11 +1580,11 @@ static void ipq_nand_hw_config(struct mtd_info *mtd, struct ipq_config *cfg)
  * Setup the hardware and the driver state. Called after the scan and
  * is passed in the results of the scan.
  */
-int ipq_nand_post_scan_init(struct mtd_info *mtd)
+int ipq_nand_post_scan_init(struct mtd_info *mtd, enum ipq_nand_layout layout)
 {
 	u_int i;
-	u_char *mem;
 	size_t alloc_size;
+	struct ipq_config **configs;
 	struct ipq_nand_dev *dev = MTD_IPQ_NAND_DEV(mtd);
 	struct nand_chip *chip = MTD_NAND_CHIP(mtd);
 	struct nand_onfi_params *nand_onfi = MTD_ONFI_PARAMS(mtd);
@@ -1592,33 +1595,37 @@ int ipq_nand_post_scan_init(struct mtd_info *mtd)
 		      + mtd->writesize /* For dev->zero_page */
 		      + mtd->oobsize); /* For dev->zero_oob */
 
-	mem = malloc(alloc_size);
-	if (mem == NULL)
+	dev->buffers = malloc(alloc_size);
+	if (dev->buffers == NULL) {
+		printf("ipq_nand: failed to allocate memory\n");
 		return -ENOMEM;
+	}
 
-	dev->pad_dat = mem;
-	dev->pad_oob = mem + mtd->writesize;
-	dev->zero_page = mem + mtd->oobsize;
-	dev->zero_oob = mem + mtd->writesize;
+	dev->pad_dat = dev->buffers;
+	dev->pad_oob = dev->buffers + mtd->writesize;
+	dev->zero_page = dev->buffers + mtd->oobsize;
+	dev->zero_oob = dev->buffers + mtd->writesize;
 
 	memset(dev->zero_page, 0x0, mtd->writesize);
 	memset(dev->zero_oob, 0x0, mtd->oobsize);
 
-	for (i = 0; ipq_configs[i] != NULL; i++) {
-		if ((ipq_configs[i]->page_size == mtd->writesize)
-		    && (nand_onfi->ecc_bits <= ipq_configs[i]->ecc_mode))
+	configs = ipq_configs[layout];
+
+	for (i = 0; i < IPQ_CONFIGS_MAX; i++) {
+		if ((configs[i]->page_size == mtd->writesize)
+		    && (nand_onfi->ecc_bits <= configs[i]->ecc_mode))
 			break;
 	}
 
 	debug("ECC bits = %d\n", nand_onfi->ecc_bits);
 
-	if (ipq_configs[i] == NULL) {
+	if (i == IPQ_CONFIGS_MAX) {
 		printf("ipq_nand: unsupported dev. configuration\n");
 		ret = -ENOENT;
 		goto err_exit;
 	}
 
-	ipq_nand_hw_config(mtd, ipq_configs[i]);
+	ipq_nand_hw_config(mtd, configs[i]);
 
 	/*
 	 * Safe to use a single instance global variable,
@@ -1640,21 +1647,26 @@ int ipq_nand_post_scan_init(struct mtd_info *mtd)
 	goto exit;
 
 err_exit:
-	free(mem);
+	free(dev->buffers);
 
 exit:
 	return ret;
 }
 
+static struct nand_chip nand_chip[CONFIG_SYS_MAX_NAND_DEVICE];
+
 /*
- * Prepares the hardware to perform a scan. First function to be
- * called, before a scan in performed.
+ * Initialize controller and register as an MTD device.
  */
-int ipq_nand_init(struct mtd_info *mtd)
+int ipq_nand_init(enum ipq_nand_layout layout)
 {
 	uint32_t status;
 	struct nand_chip *chip;
 	int ret;
+	struct mtd_info *mtd;
+
+	mtd = &nand_info[0];
+	mtd->priv = &nand_chip[0];
 
 	ipq_nand_dev.regs = (struct ebi2nd_regs *) EBI2ND_BASE;
 
@@ -1669,7 +1681,7 @@ int ipq_nand_init(struct mtd_info *mtd)
 	}
 
 	/* Set some sane HW configuration, for ID read. */
-	ipq_nand_hw_config(mtd, ipq_configs[0]);
+	ipq_nand_hw_config(mtd, ipq_configs[layout][0]);
 
 	/* Reset Flash Memory */
 	ret = ipq_exec_cmd(mtd, IPQ_CMD_RESET_DEVICE, &status);
@@ -1678,5 +1690,75 @@ int ipq_nand_init(struct mtd_info *mtd)
 		return ret;
 	}
 
+	/* Identify the NAND device. */
+	ret = ipq_nand_scan(mtd);
+	if (ret < 0) {
+		printf("ipq_nand: failed to identify device\n");
+		return ret;
+	}
+
+	ret = ipq_nand_post_scan_init(mtd, layout);
+	if (ret < 0)
+		return ret;
+
+	/* Register with MTD subsystem. */
+	ret = nand_register(0);
+	if (ret < 0) {
+		printf("ipq_nand: failed to register with MTD subsystem\n");
+		return ret;
+	}
+
 	return 0;
 }
+
+static int ipq_nand_deinit(void)
+{
+	int ret = 0;
+	struct mtd_info *mtd = &nand_info[0];
+	struct ipq_nand_dev *dev = MTD_IPQ_NAND_DEV(mtd);
+
+#ifdef CONFIG_MTD_DEVICE
+	ret = del_mtd_device(mtd);
+	if (ret < 0)
+		return ret;
+#endif
+
+	free(dev->buffers);
+
+	return ret;
+}
+
+static int do_ipq_nand_cmd(cmd_tbl_t *cmdtp, int flag,
+			   int argc, char * const argv[])
+{
+	int ret;
+	enum ipq_nand_layout layout;
+
+	if (argc != 2)
+		return CMD_RET_USAGE;
+
+	if (strcmp(argv[1], "sbl") == 0)
+		layout = IPQ_NAND_LAYOUT_SBL;
+
+	else if (strcmp(argv[1], "linux") == 0)
+		layout = IPQ_NAND_LAYOUT_LINUX;
+
+	else
+		return CMD_RET_USAGE;
+
+	ret = ipq_nand_deinit();
+	if (ret < 0)
+		return CMD_RET_FAILURE;
+
+	nand_curr_device = -1;
+
+	ret = ipq_nand_init(layout);
+	if (ret < 0)
+		return CMD_RET_FAILURE;
+
+	return CMD_RET_SUCCESS;
+}
+
+U_BOOT_CMD(ipq_nand, 2, 1, do_ipq_nand_cmd,
+	   "Switch between SBL and Linux kernel page layout.",
+	   "ipq_nand (sbl | linux)");

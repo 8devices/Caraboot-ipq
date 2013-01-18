@@ -88,7 +88,6 @@
 
 
 #define CONFIG_IPQ_NAND
-#define CONFIG_IPQ_NAND_LINUX_LAYOUT
 #define CONFIG_CMD_NAND
 #define CONFIG_CMD_MEMORY
 #define CONFIG_SYS_NAND_SELF_INIT
@@ -96,4 +95,3 @@
 /* FIXME */
 #define CONFIG_SYS_HZ               	1000
 #define CONFIG_SYS_NAND_ONFI_DETECTION
-
