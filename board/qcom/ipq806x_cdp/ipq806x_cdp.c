@@ -21,7 +21,7 @@ O/P : integer, 0 - no error.
 
 int board_init()
 {
-        gd->bd->bi_boot_params = 0x80200100;
+        gd->bd->bi_boot_params = IPQ_BOOT_PARAMS_ADDR;
         configure_uart_gpio();
         return 0;
 }
@@ -61,8 +61,8 @@ void dram_init_banksize(void)
         /* TODO: Memory layout will change for booting kernel
         +	 * This is intial bring up setup
         +	 */
-        gd->bd->bi_dram[0].start = 0x80200000;//CONFIG_SYS_SDRAM_BASE;
-        gd->bd->bi_dram[0].size = CONFIG_SYS_SDRAM_SIZE;
+        gd->bd->bi_dram[0].start = IPQ_KERNEL_START_ADDR;
+        gd->bd->bi_dram[0].size = IPQ_DRAM_KERNEL_SIZE;
 
 }
 

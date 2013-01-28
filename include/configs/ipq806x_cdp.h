@@ -36,7 +36,6 @@
 #define CONFIG_SYS_BAUDRATE_TABLE       {4800, 9600, 19200, 38400, 57600,\
 								115200}
 
-
 #define V_PROMPT                        "(IPQ) # "
 #define CONFIG_SYS_PROMPT               V_PROMPT
 #define CONFIG_SYS_CBSIZE               (256 * 2) /* Console I/O Buffer Size */
@@ -47,15 +46,19 @@
 #define CONFIG_SYS_PBSIZE               (CONFIG_SYS_CBSIZE + \
 						sizeof(CONFIG_SYS_PROMPT) + 16)
 
-#define CONFIG_SYS_TEXT_BASE            0x80000000 /*0x8FFDD000*/ /*0x8FFDC000*/ //0x80000000  /* Uboot base start */
-#define CONFIG_SYS_SDRAM_BASE           0x80000000 /* SDRAM Base */
+#define CONFIG_SYS_TEXT_BASE            0x40000000
+#define CONFIG_SYS_SDRAM_BASE           0x40000000
 #define CONFIG_SYS_SDRAM_SIZE           0x10000000
 #define CONFIG_MAX_RAM_BANK_SIZE        CONFIG_SYS_SDRAM_SIZE
 
+#define IPQ_NSS_RESERVE                 (4 * 1024 * 1024)
+#define IPQ_KERNEL_START_ADDR           (CONFIG_SYS_SDRAM_BASE + IPQ_NSS_RESERVE)
+#define IPQ_BOOT_PARAMS_ADDR            (IPQ_KERNEL_START_ADDR + 0x100)
+#define IPQ_DRAM_KERNEL_SIZE            (CONFIG_SYS_SDRAM_SIZE - IPQ_NSS_RESERVE)
 
 #define CONFIG_CMD_MEMORY
-#define CONFIG_SYS_MEMTEST_START        0x80500000
-#define CONFIG_SYS_MEMTEST_END          0x80000100
+#define CONFIG_SYS_MEMTEST_START        CONFIG_SYS_SDRAM_BASE + 0x1300000
+#define CONFIG_SYS_MEMTEST_END          CONFIG_SYS_MEMTEST_START + 0x100
 
 #if 0
 #define CONFIG_IPQ806x_SPI
@@ -77,15 +80,13 @@
 #define CONFIG_ENV_SPI_BUS      5
 #endif
 
-#define CONFIG_CMDLINE_TAG	 1	/* enable passing of ATAGs	*/
-#define CONFIG_SETUP_MEMORY_TAGS 1
+#define CONFIG_CMDLINE_TAG	         1	/* enable passing of ATAGs */
+#define CONFIG_SETUP_MEMORY_TAGS         1
 
-#define CONFIG_MACH_TYPE         MACH_TYPE_IPQ806X_CDP
+#define CONFIG_MACH_TYPE                 MACH_TYPE_IPQ806X_CDP
 #define CONFIG_CMD_IMI
-#define CONFIG_CMD_SOURCE   1
-#define CONFIG_INITRD_TAG   1
-#define CONFIG_LZMA
-
+#define CONFIG_CMD_SOURCE                1
+#define CONFIG_INITRD_TAG                1
 
 #define CONFIG_IPQ_NAND
 #define CONFIG_CMD_NAND
