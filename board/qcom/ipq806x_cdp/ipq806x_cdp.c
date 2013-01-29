@@ -6,6 +6,10 @@
 #include <asm/global_data.h>
 #include <asm/io.h>
 #include "ipq806x_cdp.h"
+#include <nand.h>
+#include <linux/mtd/ipq_nand.h>
+#include <asm/arch-ipq806x/clock.h>
+#include <asm/arch-ipq806x/ebi2.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -96,4 +100,61 @@ int checkboard(void)
 void reset_cpu(ulong addr)
 {
         for(;;);
+}
+
+static void configure_nand_gpio(void)
+{
+	/* EBI2 CS, CLE, ALE, WE, OE */
+	gpio_tlmm_config(34, 1, 0, GPIO_NO_PULL, GPIO_10MA, GPIO_DISABLE);
+	gpio_tlmm_config(35, 1, 0, GPIO_NO_PULL, GPIO_10MA, GPIO_DISABLE);
+	gpio_tlmm_config(36, 1, 0, GPIO_NO_PULL, GPIO_10MA, GPIO_DISABLE);
+	gpio_tlmm_config(37, 1, 0, GPIO_NO_PULL, GPIO_10MA, GPIO_DISABLE);
+	gpio_tlmm_config(38, 1, 0, GPIO_NO_PULL, GPIO_10MA, GPIO_DISABLE);
+
+	/* EBI2 BUSY */
+	gpio_tlmm_config(39, 1, 0, GPIO_PULL_UP, GPIO_10MA, GPIO_DISABLE);
+
+	/* EBI2 D7 - D0 */
+	gpio_tlmm_config(40, 1, 0, GPIO_KEEPER, GPIO_10MA, GPIO_DISABLE);
+	gpio_tlmm_config(41, 1, 0, GPIO_KEEPER, GPIO_10MA, GPIO_DISABLE);
+	gpio_tlmm_config(42, 1, 0, GPIO_KEEPER, GPIO_10MA, GPIO_DISABLE);
+	gpio_tlmm_config(43, 1, 0, GPIO_KEEPER, GPIO_10MA, GPIO_DISABLE);
+	gpio_tlmm_config(44, 1, 0, GPIO_KEEPER, GPIO_10MA, GPIO_DISABLE);
+	gpio_tlmm_config(45, 1, 0, GPIO_KEEPER, GPIO_10MA, GPIO_DISABLE);
+	gpio_tlmm_config(46, 1, 0, GPIO_KEEPER, GPIO_10MA, GPIO_DISABLE);
+	gpio_tlmm_config(47, 1, 0, GPIO_KEEPER, GPIO_10MA, GPIO_DISABLE);
+}
+
+static struct nand_chip nand_chip[CONFIG_SYS_MAX_NAND_DEVICE];
+
+void board_nand_init(void)
+{
+	struct ebi2cr_regs *ebi2_regs;
+	struct mtd_info *mtd = &nand_info[0];
+
+	ebi2_regs = (struct ebi2cr_regs *) EBI2CR_BASE;
+
+	nand_clock_config();
+	configure_nand_gpio();
+
+	/* NAND Flash is connected to CS0 */
+	clrsetbits_le32(&ebi2_regs->chip_select_cfg0, CS0_CFG_MASK,
+			CS0_CFG_SERIAL_FLASH_DEVICE);
+
+	mtd->priv = &nand_chip[0];
+
+	/* Initialize the NAND controller. */
+	if (ipq_nand_init(mtd))
+		return;
+
+	/* Identify the NAND device. */
+	if (ipq_nand_scan(mtd))
+		return;
+
+	if (ipq_nand_post_scan_init(mtd))
+		return;
+
+	/* Register with MTD subsystem. */
+	if (nand_register(0))
+		return;
 }

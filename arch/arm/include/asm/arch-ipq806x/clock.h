@@ -54,6 +54,26 @@
 #define REG(off)        (MSM_CLK_CTL_BASE + (off))
 #define PLL8_STATUS_BIT                     16
 
+#define SFAB_AHB_S3_FCLK_CTL_REG            REG(0x0216C)
+#define CFPB_CLK_NS_REG                     REG(0x0264C)
+#define CFPB0_HCLK_CTL_REG                  REG(0x02650)
+#define SFAB_CFPB_S_HCLK_CTL_REG            REG(0x026C0)
+#define CFPB_SPLITTER_HCLK_CTL_REG          REG(0x026E0)
+#define EBI2_CLK_CTL_REG                    REG(0x03B00)
+
+#define CLK_BRANCH_ENA_MASK                 0x00000010
+#define CLK_BRANCH_ENA_ENABLE               0x00000010
+#define CLK_BRANCH_ENA_DISABLE              0x00000000
+#define CLK_BRANCH_ENA(i)                   ((i) << 4)
+
+/* Register: CFPB_CLK_NS */
+#define CLK_DIV_MASK                        0x00000003
+#define CLK_DIV_DIV_1                       0x00000000
+#define CLK_DIV_DIV_2                       0x00000001
+#define CLK_DIV_DIV_3                       0x00000002
+#define CLK_DIV_DIV_4                       0x00000003
+#define CLK_DIV(i)                          ((i) << 0)
+
 #ifndef CONFIG_RUMI
 /* Wait until PLL is enabled */
 static inline void check_pll_status(unsigned int pll_status_reg,unsigned int bit_pos)
@@ -131,5 +151,6 @@ static inline void check_pll_status(unsigned int pll_status_reg,unsigned int bit
 void uart_pll_vote_clk_enable(void);
 void uart_clock_config(void);
 static inline void check_pll_status(unsigned int pll_status_reg,unsigned int bit_pos);
+void nand_clock_config(void);
 
 #endif  /*  __PLATFORM_IPQ860X_CLOCK_H_ */

@@ -113,3 +113,33 @@ void uart_clock_config(void)
         uart_local_clock_enable();
         uart_set_gsbi_clk();
 }
+
+/**
+ * cfpb_clock_config - configure CFPB clocks
+ *
+ * Enable clocks to CFPB. Required for NANDC and GSBI controllers on
+ * the FPB.
+ */
+static void cfpb_clock_config(void)
+{
+	writel(CLK_BRANCH_ENA_ENABLE, SFAB_AHB_S3_FCLK_CTL_REG);
+	writel(CLK_DIV_DIV_2, CFPB_CLK_NS_REG);
+	writel(CLK_BRANCH_ENA_ENABLE, SFAB_CFPB_S_HCLK_CTL_REG);
+	writel(CLK_BRANCH_ENA_ENABLE, CFPB_SPLITTER_HCLK_CTL_REG);
+}
+
+/**
+ * nand_clock_config - configure NAND controller clocks
+ *
+ * Enable clocks to EBI2. Must be invoked before touching EBI2
+ * registers.
+ */
+void nand_clock_config(void)
+{
+	cfpb_clock_config();
+	writel(CLK_BRANCH_ENA_ENABLE, CFPB0_HCLK_CTL_REG);
+	writel(CLK_BRANCH_ENA_ENABLE, EBI2_CLK_CTL_REG);
+
+	/* Wait for clock to stabilize. */
+	udelay(10);
+}
