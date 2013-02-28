@@ -22,12 +22,12 @@
 #define CONFIG_SYS_MALLOC_LEN           (CONFIG_ENV_SIZE + (256 << 10))
 
 /*
-+ * Size of malloc() pool
-+ */
+ * Size of malloc() pool
+ */
 
 /*
-+ * select serial console configuration
-+ */
+ * select serial console configuration
+ */
 #define CONFIG_CONS_INDEX               1
 
 /* allow to overwrite serial and ethaddr */
@@ -60,39 +60,47 @@
 #define CONFIG_SYS_MEMTEST_START        CONFIG_SYS_SDRAM_BASE + 0x1300000
 #define CONFIG_SYS_MEMTEST_END          CONFIG_SYS_MEMTEST_START + 0x100
 
-#if 0
-#define CONFIG_IPQ806x_SPI
-#define CONFIG_SPI_FLASH
-#define CONFIG_CMD_SF
-#define CONFIG_SPI_FLASH_STMICRO
-#define CONFIG_SF_DEFAULT_MODE SPI_MODE_0
-#define CONFIG_SYS_HZ               1000
-#endif
-
-#define CONFIG_ENV_IS_NOWHERE
-#if 0
-#define CONFIG_ENV_IS_IN_SPI_FLASH       1
-#define CONFIG_ENV_SPI_CS                0
-#define CONFIG_ENV_SPI_MODE     SPI_MODE_0
-#define CONFIG_ENV_OFFSET                0x10000
-#define CONFIG_ENV_SECT_SIZE     0x10000
-#define CONFIG_CMD_SAVEENV
-#define CONFIG_ENV_SPI_BUS      5
-#endif
-
-#define CONFIG_CMDLINE_TAG	         1	/* enable passing of ATAGs */
-#define CONFIG_SETUP_MEMORY_TAGS         1
+#define CONFIG_CMDLINE_TAG	 1	/* enable passing of ATAGs */
+#define CONFIG_SETUP_MEMORY_TAGS 1
 
 #define CONFIG_MACH_TYPE                 MACH_TYPE_IPQ806X_CDP
 #define CONFIG_CMD_IMI
-#define CONFIG_CMD_SOURCE                1
-#define CONFIG_INITRD_TAG                1
+
+#define CONFIG_CMD_SOURCE   1
+#define CONFIG_INITRD_TAG   1
+
+/*
+ * SPI Flash Configs
+ */
+
+#define CONFIG_IPQ_SPI
+#define CONFIG_SPI_FLASH
+#define CONFIG_CMD_SF
+#define CONFIG_SPI_FLASH_STMICRO
+#define CONFIG_SF_DEFAULT_BUS           5
+#define CONFIG_SF_DEFAULT_CS            0
+#define CONFIG_SF_DEFAULT_MODE          SPI_MODE_0
+#define CONFIG_SYS_HZ                   1000
+
+/*
+ * NAND Flash Configs
+ */
 
 #define CONFIG_IPQ_NAND
 #define CONFIG_CMD_NAND
 #define CONFIG_CMD_MEMORY
 #define CONFIG_SYS_NAND_SELF_INIT
 #define CONFIG_SYS_MAX_NAND_DEVICE	1
-/* FIXME */
-#define CONFIG_SYS_HZ               	1000
 #define CONFIG_SYS_NAND_ONFI_DETECTION
+
+/*
+ * U-Boot Env Configs
+ */
+
+#define CONFIG_ENV_IS_IN_SPI_FLASH      1
+#define CONFIG_ENV_SPI_CS               0
+#define CONFIG_ENV_SPI_MODE             SPI_MODE_0
+#define CONFIG_ENV_OFFSET               0x80000
+#define CONFIG_ENV_SECT_SIZE            0x10000
+#define CONFIG_CMD_SAVEENV
+#define CONFIG_ENV_SPI_BUS              5
