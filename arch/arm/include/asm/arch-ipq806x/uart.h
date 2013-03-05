@@ -170,7 +170,6 @@ enum MSM_BOOT_UART_DM_BITS_PER_CHAR {
 
 #define MSM_BOOT_UART_DM_IMR_ENABLED         (MSM_BOOT_UART_DM_TX_READY | \
                                               MSM_BOOT_UART_DM_TXLEV    | \
-                                              MSM_BOOT_UART_DM_RXLEV    | \
                                               MSM_BOOT_UART_DM_RXSTALE)
 
 /* UART Interrupt Programming Register */
