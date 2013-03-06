@@ -7,6 +7,7 @@ LIB	=  $(obj)lib$(SOC).o
 SOBJS-y = timer.o
 COBJS-y += clock.o
 COBJS-y += gpio.o
+COBJS-y += smem.o
 
 SRCS	:= $(SOBJS:.o=.S) $(COBJS:.o=.c)
 OBJS	:= $(addprefix $(obj),$(COBJS-y) $(SOBJS-y))
