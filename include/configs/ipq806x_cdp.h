@@ -30,10 +30,12 @@
 #undef CONFIG_CMD_IMI
 #undef CONFIG_CMD_IMLS
 #undef CONFIG_CMD_NFS		        /* NFS support */
-#undef CONFIG_CMD_NET		        /* network support */
+#define CONFIG_CMD_NET		        /* network support */
+#define CONFIG_CMD_DHCP
 #undef CONFIG_SYS_MAX_FLASH_SECT
 #define CONFIG_NR_DRAM_BANKS            1
 #define CONFIG_SKIP_LOWLEVEL_INIT
+#define CONFIG_CMD_PING
 
 #define CONFIG_BOARD_EARLY_INIT_F
 
@@ -207,5 +209,8 @@ typedef struct {
 
 #define CONFIG_CMD_ECHO
 #define CONFIG_BOOTDELAY	2
+/* NSS GEMAC */
+#define CONFIG_SYNOPSYS_GEMAC
 
 #endif /* _IPQCDP_H */
+

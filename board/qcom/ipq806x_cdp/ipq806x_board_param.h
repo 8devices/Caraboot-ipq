@@ -6,6 +6,7 @@
 #include <asm/arch-ipq806x/iomap.h>
 #include "ipq806x_cdp.h"
 #include <asm/arch-ipq806x/gpio.h>
+#include <asm/arch-ipq806x/nss/msm_ipq806x_gmac.h>
 
 /* Board specific parameter Array */
 board_ipq806x_params_t board_params[] = {
@@ -119,7 +120,6 @@ board_ipq806x_params_t board_params[] = {
 				.enable = GPIO_DISABLE
 			},
 		}
-
 	},
 	{
 		.boardid = 0,

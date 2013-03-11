@@ -32,6 +32,7 @@ loff_t board_env_offset;
 loff_t board_env_range;
 
 board_ipq806x_params_t *gboard_param;
+extern int ipq_gmac_eth_initialize(void);
 
 /*******************************************************
 Function description: Board specific initialization.
@@ -277,5 +278,10 @@ int board_early_init_f(void)
 	gboard_param = get_board_param(smem_get_board_machtype());
 
 	return 0;
+}
+
+int board_eth_init(bd_t *bis)
+{
+	return ipq_gmac_eth_initialize();
 }
 
