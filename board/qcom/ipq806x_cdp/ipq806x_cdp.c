@@ -17,9 +17,10 @@
 DECLARE_GLOBAL_DATA_PTR;
 
 static uint32_t flash_type;
-static uint32_t flash_index;
-static uint32_t flash_chip_select;
-static uint32_t flash_block_size;
+uint32_t flash_index;
+uint32_t flash_chip_select;
+uint32_t flash_block_size;
+loff_t board_env_offset;
 
 /*******************************************************
 Function description: Board specific initialization.
@@ -31,6 +32,9 @@ O/P : integer, 0 - no error.
 int board_init()
 {
 	int ret;
+	uint32_t start_blocks;
+	uint32_t size_blocks;
+	loff_t board_env_size;
 
         gd->bd->bi_boot_params = IPQ_BOOT_PARAMS_ADDR;
         configure_uart_gpio();
@@ -53,6 +57,16 @@ int board_init()
 		printf("cdp: get boot flash failed\n");
 		return ret;
 	}
+
+	ret = smem_getpart("0:APPSBLENV", &start_blocks, &size_blocks);
+	if (ret < 0) {
+		printf("cdp: get environment part failed\n");
+		return 0;
+	}
+
+	board_env_offset = ((loff_t) flash_block_size) * start_blocks;
+	board_env_size = ((loff_t) flash_block_size) * size_blocks;
+	BUG_ON(board_env_size < CONFIG_ENV_SIZE);
 
         return 0;
 }

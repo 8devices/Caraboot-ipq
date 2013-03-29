@@ -18,7 +18,7 @@
 #define CONFIG_MSM_PCOMM
 #define CONFIG_ARCH_CPU_INIT
 
-#define CONFIG_ENV_SIZE                 (128 << 10) /* 128 KB */
+#define CONFIG_ENV_SIZE                 (256 << 10) /* 256 KB */
 #define CONFIG_SYS_MALLOC_LEN           (CONFIG_ENV_SIZE + (256 << 10))
 
 /*
@@ -99,12 +99,41 @@
  * U-Boot Env Configs
  */
 
-#define CONFIG_ENV_IS_IN_SPI_FLASH      1
-#define CONFIG_ENV_SPI_CS               0
-#define CONFIG_ENV_SPI_MODE             SPI_MODE_0
-#define CONFIG_ENV_OFFSET               0x80000
-#define CONFIG_ENV_SECT_SIZE            0x10000
+/*
+ * FIXME: This should be selectable from the make command.
+ * Define one of the following macros for environment in SPI Flash or
+ * NAND Flash.
+ *
+ *   - CONFIG_ENV_IS_IN_SPI_FLASH
+ *   - CONFIG_ENV_IS_IN_NAND
+ */
+#define CONFIG_ENV_IS_IN_NAND
 #define CONFIG_CMD_SAVEENV
-#define CONFIG_ENV_SPI_BUS              5
-
 #define CONFIG_BOARD_LATE_INIT
+
+#ifndef __ASSEMBLY__
+#include <compiler.h>
+extern loff_t board_env_offset;
+extern uint32_t flash_index;
+extern uint32_t flash_chip_select;
+extern uint32_t flash_block_size;
+#endif
+
+#if defined(CONFIG_ENV_IS_IN_SPI_FLASH)
+
+#define CONFIG_ENV_SPI_CS               flash_chip_select
+#define CONFIG_ENV_SPI_MODE             SPI_MODE_0
+#define CONFIG_ENV_OFFSET               board_env_offset
+#define CONFIG_ENV_SECT_SIZE            flash_block_size
+#define CONFIG_ENV_SPI_BUS              flash_index
+
+#elif defined(CONFIG_ENV_IS_IN_NAND)
+
+#define CONFIG_ENV_OFFSET		board_env_offset
+
+#else
+
+#error "Unsupported env. type, should be NAND or SPI_FLASH."
+
+#endif
+
