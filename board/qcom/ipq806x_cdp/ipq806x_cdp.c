@@ -61,12 +61,12 @@ int board_init()
 	ret = smem_getpart("0:APPSBLENV", &start_blocks, &size_blocks);
 	if (ret < 0) {
 		printf("cdp: get environment part failed\n");
-		return 0;
+		return ret;
+	} else {
+		board_env_offset = ((loff_t) flash_block_size) * start_blocks;
+		board_env_size = ((loff_t) flash_block_size) * size_blocks;
+		BUG_ON(board_env_size < CONFIG_ENV_SIZE);
 	}
-
-	board_env_offset = ((loff_t) flash_block_size) * start_blocks;
-	board_env_size = ((loff_t) flash_block_size) * size_blocks;
-	BUG_ON(board_env_size < CONFIG_ENV_SIZE);
 
         return 0;
 }
@@ -240,6 +240,7 @@ int board_late_init(void)
 	int ret;
 	uint32_t start_blocks;
 	uint32_t size_blocks;
+	unsigned int machid;
 
 	ret = smem_getpart("0:HLOS", &start_blocks, &size_blocks);
 	if (ret < 0) {
@@ -248,6 +249,14 @@ int board_late_init(void)
 	}
 
 	setenv_kernel(start_blocks, size_blocks);
+
+        /* get machine type from SMEM and set in env */
+	machid = smem_get_board_machtype();
+	if (machid != 0) {
+		char buf[32];
+		sprintf(buf, "0x%x", machid);
+		setenv("machid", buf);
+	}
 
 	return 0;
 }
