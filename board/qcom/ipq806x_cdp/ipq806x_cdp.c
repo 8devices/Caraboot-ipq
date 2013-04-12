@@ -1,5 +1,5 @@
 
-/* * Copyright (c) 2012 Qualcomm Atheros, Inc. * */
+/* * Copyright (c) 2012-2013 Qualcomm Atheros, Inc. * */
 
 #include <common.h>
 #include <linux/mtd/ipq_nand.h>
@@ -33,8 +33,8 @@ int board_init()
 	loff_t board_env_size;
 	ipq_smem_flash_info_t *sfi = &ipq_smem_flash_info;
 
-        gd->bd->bi_boot_params = IPQ_BOOT_PARAMS_ADDR;
-        configure_uart_gpio();
+	gd->bd->bi_boot_params = IPQ_BOOT_PARAMS_ADDR;
+	configure_uart_gpio();
 
 	/*
 	 * Should be inited, before env_relocate() is called,
@@ -65,13 +65,13 @@ int board_init()
 		BUG_ON(board_env_size < CONFIG_ENV_SIZE);
 	}
 
-        return 0;
+	return 0;
 }
 
 void enable_caches(void)
 {
-        icache_enable();
-        dcache_enable();
+	icache_enable();
+	dcache_enable();
 
 }
 
@@ -85,9 +85,9 @@ O/P : integer, 0 - no error.
 
 int dram_init(void)
 {
-        /*TODO: Memory size will change for booting kernel*/
-        gd->ram_size = CONFIG_SYS_SDRAM_SIZE;
-        return 0;
+	/*TODO: Memory size will change for booting kernel*/
+	gd->ram_size = CONFIG_SYS_SDRAM_SIZE;
+	return 0;
 }
 
 /*******************************************************
@@ -100,11 +100,11 @@ O/P : integer, 0 - no error.
 
 void dram_init_banksize(void)
 {
-        /* TODO: Memory layout will change for booting kernel
-        +	 * This is intial bring up setup
-        +	 */
-        gd->bd->bi_dram[0].start = IPQ_KERNEL_START_ADDR;
-        gd->bd->bi_dram[0].size = IPQ_DRAM_KERNEL_SIZE;
+	/* TODO: Memory layout will change for booting kernel
+	+	 * This is intial bring up setup
+	+	 */
+	gd->bd->bi_dram[0].start = IPQ_KERNEL_START_ADDR;
+	gd->bd->bi_dram[0].size = IPQ_DRAM_KERNEL_SIZE;
 
 }
 
@@ -112,13 +112,13 @@ void configure_uart_gpio(void)
 {
 
 #ifdef CONFIG_RUMI
-        gpio_tlmm_config(51, 1, GPIO_OUTPUT, GPIO_NO_PULL,GPIO_12MA, GPIO_DISABLE);
-        gpio_tlmm_config(52, 1, GPIO_INPUT, GPIO_NO_PULL,GPIO_12MA, GPIO_DISABLE);
-        gpio_tlmm_config(53, 1, GPIO_INPUT, GPIO_NO_PULL,GPIO_12MA, GPIO_DISABLE);
-        gpio_tlmm_config(54, 1, GPIO_OUTPUT, GPIO_NO_PULL,GPIO_12MA, GPIO_DISABLE);
+	gpio_tlmm_config(51, 1, GPIO_OUTPUT, GPIO_NO_PULL,GPIO_12MA, GPIO_DISABLE);
+	gpio_tlmm_config(52, 1, GPIO_INPUT, GPIO_NO_PULL,GPIO_12MA, GPIO_DISABLE);
+	gpio_tlmm_config(53, 1, GPIO_INPUT, GPIO_NO_PULL,GPIO_12MA, GPIO_DISABLE);
+	gpio_tlmm_config(54, 1, GPIO_OUTPUT, GPIO_NO_PULL,GPIO_12MA, GPIO_DISABLE);
 #else
-        gpio_tlmm_config(83, 1, GPIO_INPUT, GPIO_NO_PULL,GPIO_8MA, GPIO_DISABLE);
-        gpio_tlmm_config(82, 2, GPIO_OUTPUT, GPIO_NO_PULL,GPIO_8MA, GPIO_DISABLE);
+	gpio_tlmm_config(83, 1, GPIO_INPUT, GPIO_NO_PULL,GPIO_8MA, GPIO_DISABLE);
+	gpio_tlmm_config(82, 2, GPIO_OUTPUT, GPIO_NO_PULL,GPIO_8MA, GPIO_DISABLE);
 #endif
 
 }
@@ -133,14 +133,17 @@ O/P : integer, 0 - no error.
 #ifdef CONFIG_DISPLAY_BOARDINFO
 int checkboard(void)
 {
-        printf("Board: %s\n", sysinfo.board_string);
-        return 0;
+	printf("Board: %s\n", sysinfo.board_string);
+	return 0;
 }
 #endif /* CONFIG_DISPLAY_BOARDINFO */
 
 void reset_cpu(ulong addr)
 {
-        for(;;);
+	/*
+	* TODO: Need to implement reset_cpu().
+	*/
+	for(;;);
 }
 
 static void configure_nand_gpio(void)

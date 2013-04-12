@@ -762,11 +762,13 @@ static image_header_t *image_get_kernel(ulong img_addr, int verify)
 	}
 	bootstage_mark(BOOTSTAGE_ID_CHECK_ARCH);
 
+#ifndef CONFIG_IPQ_FIRMWARE
 	if (!image_check_target_arch(hdr)) {
 		printf("Unsupported Architecture 0x%x\n", image_get_arch(hdr));
 		bootstage_error(BOOTSTAGE_ID_CHECK_ARCH);
 		return NULL;
 	}
+#endif
 	return hdr;
 }
 
@@ -875,8 +877,10 @@ static void *boot_get_kernel(cmd_tbl_t *cmdtp, int flag, int argc,
 	*os_data = *os_len = 0;
 	switch (genimg_get_format((void *)img_addr)) {
 	case IMAGE_FORMAT_LEGACY:
+#ifndef CONFIG_IPQ_FIRMWARE
 		printf("## Booting kernel from Legacy Image at %08lx ...\n",
 				img_addr);
+#endif
 		hdr = image_get_kernel(img_addr, images->verify);
 		if (!hdr)
 			return NULL;
@@ -886,6 +890,9 @@ static void *boot_get_kernel(cmd_tbl_t *cmdtp, int flag, int argc,
 		switch (image_get_type(hdr)) {
 		case IH_TYPE_KERNEL:
 		case IH_TYPE_KERNEL_NOLOAD:
+#ifdef CONFIG_IPQ_FIRMWARE
+                case IH_TYPE_FIRMWARE:
+#endif
 			*os_data = image_get_data(hdr);
 			*os_len = image_get_data_size(hdr);
 			break;

@@ -8,6 +8,7 @@ SOBJS-y = timer.o
 COBJS-y += clock.o
 COBJS-y += gpio.o
 COBJS-y += smem.o
+COBJS-y += cmd_bootipq.o
 
 SRCS	:= $(SOBJS:.o=.S) $(COBJS:.o=.c)
 OBJS	:= $(addprefix $(obj),$(COBJS-y) $(SOBJS-y))

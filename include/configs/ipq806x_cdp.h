@@ -123,6 +123,10 @@ typedef struct {
 #define CONFIG_SPI_FLASH_SPANSION
 #define CONFIG_SYS_HZ                   1000
 
+#define CONFIG_SF_DEFAULT_BUS 0
+#define CONFIG_SF_DEFAULT_CS 0
+#define CONFIG_SF_DEFAULT_MODE SPI_MODE_0
+
 /*
  * NAND Flash Configs
  */
@@ -167,5 +171,14 @@ typedef struct {
 #error "Unsupported env. type, should be NAND or SPI_FLASH."
 
 #endif
+
+/* NSS firmware loaded using bootm */
+#define CONFIG_IPQ_FIRMWARE
+#define CONFIG_BOOTCOMMAND  "bootipq"
+#define CONFIG_BOOTARGS \
+	"root=mtd:0:EFS2APPS rootfstype=jffs2 ro init=/init console=ttyHSL1,115200n8"
+
+#define CONFIG_CMD_ECHO
+#define CONFIG_BOOTDELAY	2
 
 #endif /* _IPQCDP_H */
