@@ -233,9 +233,9 @@
 #define GSBI_SPI_MODE_1				1
 #define GSBI_SPI_MODE_2				2
 #define GSBI_SPI_MODE_3				3
-#define GSBI5_SPI				5
-#define GSBI6_SPI				6
-#define GSBI7_SPI				7
+#define GSBI5_SPI				0
+#define GSBI6_SPI				1
+#define GSBI7_SPI				2
 
 struct gsbi_spi {
 	unsigned int     spi_config;

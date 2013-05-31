@@ -121,9 +121,6 @@ typedef struct {
 #define CONFIG_CMD_SF
 #define CONFIG_SPI_FLASH_STMICRO
 #define CONFIG_SPI_FLASH_SPANSION
-#define CONFIG_SF_DEFAULT_BUS           5
-#define CONFIG_SF_DEFAULT_CS            0
-#define CONFIG_SF_DEFAULT_MODE          SPI_MODE_0
 #define CONFIG_SYS_HZ                   1000
 
 /*

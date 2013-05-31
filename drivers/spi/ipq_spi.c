@@ -28,11 +28,9 @@
 #define DRV_STR_IDX		4
 #define GPIO_EN_IDX		5
 
-#define GSBI_BUS_TO_IDX(bus_num)		(bus_num - 5)
-
 /*
  * TLMM Configuration for SPI NOR
- * gsbi_pin_conf[GSBI_BUS_TO_IDX(bus_num)][GPIO_NUM, FUNC_SEL, I/O,
+ * gsbi_pin_conf[bus_num][GPIO_NUM, FUNC_SEL, I/O,
  *			       PULL UP/DOWN, DRV_STR, GPIO_FUNC]
  * gsbi_pin_conf[0][x][y] -- GSBI5
  * gsbi_pin_conf[1][x][y] -- GSBI6
@@ -93,7 +91,7 @@ static unsigned int gsbi_pin_conf[NUM_PORTS][NUM_GSBI_PINS][TLMM_ARGS] = {
 };
 
 /*
- * CS GPIO number array cs_gpio_array[GSBI_BUS_TO_IDX][cs_num]
+ * CS GPIO number array cs_gpio_array[port_num][cs_num]
  * cs_gpio_array[0][x] -- GSBI5
  * cs_gpio_array[1][x] -- GSBI6
  * cs_gpio_array[2][x] -- GSBI7
@@ -112,7 +110,6 @@ static unsigned int cs_gpio_array[NUM_PORTS][NUM_CS] = {
 
 /*
  * GSBI HCLK state register bit
- * hclk_state[GSBI_BUS_TO_IDX]
  * hclk_state[0] -- GSBI5
  * hclk_state[1] -- GSBI6
  * hclk_state[2] -- GSBI7
@@ -125,7 +122,6 @@ static unsigned int hclk_state[NUM_PORTS] = {
 
 /*
  * GSBI QUP_APPS_CLK state register bit
- * qup_apps_clk_state[GSBI_BUS_TO_IDX]
  * qup_apps_clk_state[0] -- GSBI5
  * qup_apps_clk_state[1] -- GSBI6
  * qup_apps_clk_state[2] -- GSBI7
@@ -257,7 +253,7 @@ static int check_hclk_state(unsigned int core_num, int enable)
 {
 #ifndef CONFIG_RUMI
 	return check_bit_state(CLK_HALT_CFPB_STATEB_REG,
-			hclk_state[GSBI_BUS_TO_IDX(core_num)], enable, 5);
+			hclk_state[core_num], enable, 5);
 #else
 	return 0;
 #endif
@@ -270,7 +266,7 @@ static int check_qup_clk_state(unsigned int core_num, int enable)
 {
 #ifndef CONFIG_RUMI
 	return check_bit_state(CLK_HALT_CFPB_STATEB_REG,
-		qup_apps_clk_state[GSBI_BUS_TO_IDX(core_num)], enable, 5);
+		qup_apps_clk_state[core_num], enable, 5);
 #else
 	return 0;
 #endif
@@ -281,7 +277,7 @@ static int check_qup_clk_state(unsigned int core_num, int enable)
  */
 static void CS_change(int port_num, int cs_num, int enable)
 {
-	unsigned int cs_gpio = cs_gpio_array[GSBI_BUS_TO_IDX(port_num)][cs_num];
+	unsigned int cs_gpio = cs_gpio_array[port_num][cs_num];
 	uint32_t addr = GPIO_IN_OUT_ADDR(cs_gpio);
 	uint32_t val = readl(addr);
 
@@ -313,7 +309,7 @@ static void gsbi_pin_config(unsigned int port_num, int cs_num)
 		unsigned int gpio_en;
 		unsigned int *ptr;
 
-		ptr = gsbi_pin_conf[GSBI_BUS_TO_IDX(port_num)][i];
+		ptr = gsbi_pin_conf[port_num][i];
 		gpio		= *(ptr + GSBI_PIN_IDX);
 		func_sel	= *(ptr + FUNC_SEL_IDX);
 		io_config	= *(ptr + GPIO_DIR_IDX);
@@ -325,7 +321,7 @@ static void gsbi_pin_config(unsigned int port_num, int cs_num)
 				 pull_config, drv_strength, gpio_en);
 	}
 
-	gpio = cs_gpio_array[GSBI_BUS_TO_IDX(port_num)][cs_num];
+	gpio = cs_gpio_array[port_num][cs_num];
 	/* configure CS */
 	gpio_tlmm_config(gpio, FUNC_SEL_GPIO, GPIO_OUTPUT, GPIO_PULL_UP,
 				GPIO_DRV_STR_10MA, GPIO_FUNC_ENABLE);
@@ -482,18 +478,18 @@ struct spi_slave *spi_setup_slave(unsigned int bus, unsigned int cs,
 	 * on different GSBI5, GSBI6 and GSBI7
 	 * with different number of chip selects (CS, channels):
 	*/
-	if ((bus < 5) || (bus > 7)
+	if ((bus < GSBI5_SPI) || (bus > GSBI7_SPI)
 		|| ((bus == GSBI5_SPI) && (cs > 3))
 		|| ((bus == GSBI6_SPI) && (cs > 0))
 		|| ((bus == GSBI7_SPI) && (cs > 0))) {
 		printf("SPI error: unsupported bus %d "
-			"(Supported busses 5,6 and 7) or chipselect\n", bus);
+			"(Supported busses 0,1 and 2) or chipselect\n", bus);
 		goto err;
 	}
 	ds->slave.bus	= bus;
 	ds->slave.cs	= cs;
 
-	ds->regs	= &spi_reg[GSBI_BUS_TO_IDX(bus)];
+	ds->regs	= &spi_reg[bus];
 
 	/* TODO For different clock frequency */
 	if (max_hz > MSM_GSBI_MAX_FREQ) {
