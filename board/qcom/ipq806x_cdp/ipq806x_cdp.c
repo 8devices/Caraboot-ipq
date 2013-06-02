@@ -16,7 +16,19 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+/*
+ * If SMEM is not found, we provide a value, that will prevent the
+ * environment from being written to random location in the flash.
+ *
+ * NAND: In the case of NAND, we do this by setting ENV_RANGE to
+ * zero. If ENV_RANGE < ENV_SIZE, then environment is not written.
+ *
+ * SPI Flash: In the case of SPI Flash, we do this by setting the
+ * flash_index to -1.
+ */
+
 loff_t board_env_offset;
+loff_t board_env_range;
 
 int board_early_init_f(void)
 {
@@ -64,13 +76,14 @@ int board_init()
 	if (ret < 0) {
 		printf("cdp: get environment part failed\n");
 		return ret;
-	} else {
-		board_env_offset = ((loff_t) sfi->flash_block_size) * start_blocks;
-		board_env_size = ((loff_t) sfi->flash_block_size) * size_blocks;
-		BUG_ON(board_env_size < CONFIG_ENV_SIZE);
 	}
 
-	return 0;
+	board_env_offset = ((loff_t) sfi->flash_block_size) * start_blocks;
+	board_env_size = ((loff_t) sfi->flash_block_size) * size_blocks;
+	board_env_range = CONFIG_ENV_SIZE;
+	BUG_ON(board_env_size < CONFIG_ENV_SIZE);
+
+        return 0;
 }
 
 void enable_caches(void)

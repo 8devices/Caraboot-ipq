@@ -62,6 +62,7 @@
 #ifndef __ASSEMBLY__
 #include <compiler.h>
 extern loff_t board_env_offset;
+extern loff_t board_env_range;
 extern uint32_t flash_index;
 extern uint32_t flash_chip_select;
 extern uint32_t flash_block_size;
@@ -175,6 +176,7 @@ typedef struct {
 #elif defined(CONFIG_ENV_IS_IN_NAND)
 
 #define CONFIG_ENV_OFFSET		board_env_offset
+#define CONFIG_ENV_RANGE		board_env_range
 
 #else
 
