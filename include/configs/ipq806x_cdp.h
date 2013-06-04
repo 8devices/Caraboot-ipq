@@ -1,6 +1,9 @@
 
 /* * Copyright (c) 2012 Qualcomm Atheros, Inc. * */
 
+#ifndef _IPQCDP_H
+#define _IPQCDP_H
+
 #define CONFIG_RUMI
 #define CONFIG_SYS_NO_FLASH
 #define CONFIG_IPQ806X_UART
@@ -51,12 +54,50 @@
 #define CONFIG_SYS_SDRAM_SIZE           0x10000000
 #define CONFIG_MAX_RAM_BANK_SIZE        CONFIG_SYS_SDRAM_SIZE
 
-#define IPQ_NSS_RESERVE                 (4 * 1024 * 1024)
-#define IPQ_SMEM_RESERVE                (2 * 1024 * 1024)
-#define CONFIG_IPQ_SMEM_BASE            (CONFIG_SYS_SDRAM_BASE + IPQ_NSS_RESERVE)
-#define IPQ_KERNEL_START_ADDR           (CONFIG_SYS_SDRAM_BASE + IPQ_NSS_RESERVE + IPQ_SMEM_RESERVE)
-#define IPQ_DRAM_KERNEL_SIZE            (CONFIG_SYS_SDRAM_SIZE - IPQ_NSS_RESERVE - IPQ_SMEM_RESERVE)
-#define IPQ_BOOT_PARAMS_ADDR            (IPQ_KERNEL_START_ADDR + 0x100)
+#ifndef __ASSEMBLY__
+#include <compiler.h>
+extern loff_t board_env_offset;
+extern uint32_t flash_index;
+extern uint32_t flash_chip_select;
+extern uint32_t flash_block_size;
+
+/*
+ * XXX XXX Please do not instantiate this structure. XXX XXX
+ * This is just a convenience to avoid
+ *      - adding #defines for every new reservation
+ *      - updating the multiple associated defines like smem base,
+ *        kernel start etc...
+ *      - re-calculation of the defines if the order changes or
+ *        some reservations are deleted
+ * For new reservations just adding a member to the structure should
+ * suffice.
+ * Ensure that the size of this structure matches with the definition
+ * of the following IPQ806x compile time definitions
+ *      PHYS_OFFSET     (linux-sources/arch/arm/mach-msm/Kconfig)
+ *      zreladdr        (linux-sources/arch/arm/mach-msm/Makefile.boot)
+ */
+typedef struct {
+	uint8_t	nss[4 * 1024 * 1024];
+	uint8_t	smem[2 * 1024 * 1024];
+	uint8_t	pad[2 * 1024 * 1024];
+} __attribute__ ((__packed__)) ipq_mem_reserve_t;
+
+/* Convenience macros for the above convenience structure :-) */
+#define IPQ_MEM_RESERVE_SIZE(x)		sizeof(((ipq_mem_reserve_t *)0)->x)
+#define IPQ_MEM_RESERVE_BASE(x)		\
+	(CONFIG_SYS_SDRAM_BASE + \
+	 ((uint32_t)&(((ipq_mem_reserve_t *)0)->x)))
+#define IPQ_RESERVE_SIZE		sizeof(ipq_mem_reserve_t)
+
+#define CONFIG_IPQ_SMEM_BASE		IPQ_MEM_RESERVE_BASE(smem)
+#define IPQ_KERNEL_START_ADDR	\
+	(CONFIG_SYS_SDRAM_BASE + IPQ_RESERVE_SIZE)
+
+#define IPQ_DRAM_KERNEL_SIZE	\
+	(CONFIG_SYS_SDRAM_SIZE - IPQ_RESERVE_SIZE)
+
+#define IPQ_BOOT_PARAMS_ADDR		(IPQ_KERNEL_START_ADDR + 0x100)
+#endif /* __ASSEMBLY__ */
 
 #define CONFIG_CMD_MEMORY
 #define CONFIG_SYS_MEMTEST_START        CONFIG_SYS_SDRAM_BASE + 0x1300000
@@ -111,14 +152,6 @@
 #define CONFIG_CMD_SAVEENV
 #define CONFIG_BOARD_LATE_INIT
 
-#ifndef __ASSEMBLY__
-#include <compiler.h>
-extern loff_t board_env_offset;
-extern uint32_t flash_index;
-extern uint32_t flash_chip_select;
-extern uint32_t flash_block_size;
-#endif
-
 #if defined(CONFIG_ENV_IS_IN_SPI_FLASH)
 
 #define CONFIG_ENV_SPI_CS               flash_chip_select
@@ -137,3 +170,4 @@ extern uint32_t flash_block_size;
 
 #endif
 
+#endif /* _IPQCDP_H */

@@ -47,9 +47,10 @@ typedef enum {
 	SMEM_BOOT_FLASH_INDEX = 422,
 	SMEM_BOOT_FLASH_CHIP_SELECT = 423,
 	SMEM_BOOT_FLASH_BLOCK_SIZE = 424,
+	SMEM_MACHID_INFO_LOCATION = 425,
 	SMEM_FIRST_VALID_TYPE = SMEM_SPINLOCK_ARRAY,
-	SMEM_LAST_VALID_TYPE = SMEM_BOOT_FLASH_BLOCK_SIZE,
-	SMEM_MAX_SIZE = SMEM_BOOT_FLASH_BLOCK_SIZE + 1,
+	SMEM_LAST_VALID_TYPE = SMEM_MACHID_INFO_LOCATION,
+	SMEM_MAX_SIZE = SMEM_MACHID_INFO_LOCATION + 1,
 } smem_mem_type_t;
 
 struct smem_proc_comm {
@@ -71,6 +72,11 @@ struct smem_alloc_info {
 	unsigned offset;
 	unsigned size;
 	unsigned reserved;
+};
+
+struct smem_machid_info {
+	unsigned format;
+	unsigned machid;
 };
 
 struct smem {
@@ -258,3 +264,29 @@ int smem_get_boot_flash(uint32_t *flash_type,
 
 	return 0;
 }
+
+/**
+ * smem_get_board_machtype - retreive the machtype info from SMEM
+ *
+ * Retrive the machtype info from SMEM and set as machid env. If
+ * there is a problem then default machid is used.
+ */
+unsigned int smem_get_board_machtype(void)
+{
+	struct smem_machid_info machid_info;
+	unsigned smem_status;
+	unsigned int machid = 0;
+
+	smem_status = smem_read_alloc_entry(SMEM_MACHID_INFO_LOCATION,
+					&machid_info, sizeof(machid_info));
+	if (!smem_status) {
+		machid = machid_info.machid;
+		debug("setting 0x%x as machine type from smem\n", machid);
+	} else {
+		printf("smem: get machine type from smem failed\n");
+	}
+
+	return machid;
+}
+
+
