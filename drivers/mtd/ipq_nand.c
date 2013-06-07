@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Qualcomm Atheros, Inc.
+ * Copyright (c) 2012 - 2013 Qualcomm Atheros, Inc.
  */
 
 #include <common.h>
@@ -1718,7 +1718,7 @@ int ipq_nand_init(enum ipq_nand_layout layout)
 	int ret;
 	struct mtd_info *mtd;
 
-	mtd = &nand_info[0];
+	mtd = &nand_info[CONFIG_IPQ_NAND_NAND_INFO_IDX];
 	mtd->priv = &nand_chip[0];
 
 	ipq_nand_dev.regs = (struct ebi2nd_regs *) EBI2ND_BASE;
@@ -1755,7 +1755,7 @@ int ipq_nand_init(enum ipq_nand_layout layout)
 		return ret;
 
 	/* Register with MTD subsystem. */
-	ret = nand_register(0);
+	ret = nand_register(CONFIG_IPQ_NAND_NAND_INFO_IDX);
 	if (ret < 0) {
 		printf("ipq_nand: failed to register with MTD subsystem\n");
 		return ret;
@@ -1767,7 +1767,7 @@ int ipq_nand_init(enum ipq_nand_layout layout)
 static int ipq_nand_deinit(void)
 {
 	int ret = 0;
-	struct mtd_info *mtd = &nand_info[0];
+	struct mtd_info *mtd = &nand_info[CONFIG_IPQ_NAND_NAND_INFO_IDX];
 	struct ipq_nand_dev *dev = MTD_IPQ_NAND_DEV(mtd);
 
 #ifdef CONFIG_MTD_DEVICE

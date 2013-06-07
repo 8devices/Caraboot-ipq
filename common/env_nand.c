@@ -147,15 +147,15 @@ int writeenv(size_t offset, u_char *buf)
 	size_t blocksize, len;
 	u_char *char_ptr;
 
-	blocksize = nand_info[0].erasesize;
+	blocksize = nand_info[nand_curr_device].erasesize;
 	len = min(blocksize, CONFIG_ENV_SIZE);
 
 	while (amount_saved < CONFIG_ENV_SIZE && offset < end) {
-		if (nand_block_isbad(&nand_info[0], offset)) {
+		if (nand_block_isbad(&nand_info[nand_curr_device], offset)) {
 			offset += blocksize;
 		} else {
 			char_ptr = &buf[amount_saved];
-			if (nand_write(&nand_info[0], offset, &len, char_ptr))
+			if (nand_write(&nand_info[nand_curr_device], offset, &len, char_ptr))
 				return 1;
 
 			offset += blocksize;
@@ -197,7 +197,7 @@ int saveenv(void)
 	if (gd->env_valid == 1) {
 		puts("Erasing redundant NAND...\n");
 		nand_erase_options.offset = CONFIG_ENV_OFFSET_REDUND;
-		if (nand_erase_opts(&nand_info[0], &nand_erase_options))
+		if (nand_erase_opts(&nand_info[nand_curr_device], &nand_erase_options))
 			return 1;
 
 		puts("Writing to redundant NAND... ");
@@ -205,7 +205,7 @@ int saveenv(void)
 	} else {
 		puts("Erasing NAND...\n");
 		nand_erase_options.offset = CONFIG_ENV_OFFSET;
-		if (nand_erase_opts(&nand_info[0], &nand_erase_options))
+		if (nand_erase_opts(&nand_info[nand_curr_device], &nand_erase_options))
 			return 1;
 
 		puts("Writing to NAND... ");
@@ -247,7 +247,7 @@ int saveenv(void)
 	env_new.crc = crc32(0, env_new.data, ENV_SIZE);
 
 	puts("Erasing Nand...\n");
-	if (nand_erase_opts(&nand_info[0], &nand_erase_options))
+	if (nand_erase_opts(&nand_info[nand_curr_device], &nand_erase_options))
 		return 1;
 
 	puts("Writing to Nand... ");
@@ -269,18 +269,18 @@ int readenv(size_t offset, u_char *buf)
 	size_t blocksize, len;
 	u_char *char_ptr;
 
-	blocksize = nand_info[0].erasesize;
+	blocksize = nand_info[nand_curr_device].erasesize;
 	if (!blocksize)
 		return 1;
 
 	len = min(blocksize, CONFIG_ENV_SIZE);
 
 	while (amount_loaded < CONFIG_ENV_SIZE && offset < end) {
-		if (nand_block_isbad(&nand_info[0], offset)) {
+		if (nand_block_isbad(&nand_info[nand_curr_device], offset)) {
 			offset += blocksize;
 		} else {
 			char_ptr = &buf[amount_loaded];
-			if (nand_read_skip_bad(&nand_info[0], offset,
+			if (nand_read_skip_bad(&nand_info[nand_curr_device], offset,
 					       &len, char_ptr))
 				return 1;
 
@@ -401,7 +401,7 @@ void env_relocate_spec(void)
 	char buf[CONFIG_ENV_SIZE];
 
 #if defined(CONFIG_ENV_OFFSET_OOB)
-	ret = get_nand_env_oob(&nand_info[0], &nand_env_oob_offset);
+	ret = get_nand_env_oob(&nand_info[nand_curr_device], &nand_env_oob_offset);
 	/*
 	 * If unable to read environment offset from NAND OOB then fall through
 	 * to the normal environment reading code below

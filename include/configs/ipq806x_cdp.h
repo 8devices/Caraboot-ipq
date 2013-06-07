@@ -1,5 +1,5 @@
 
-/* * Copyright (c) 2012 Qualcomm Atheros, Inc. * */
+/* * Copyright (c) 2012 - 2013 Qualcomm Atheros, Inc. * */
 
 #ifndef _IPQCDP_H
 #define _IPQCDP_H
@@ -146,41 +146,41 @@ typedef struct {
 #define CONFIG_CMD_NAND
 #define CONFIG_CMD_MEMORY
 #define CONFIG_SYS_NAND_SELF_INIT
-#define CONFIG_SYS_MAX_NAND_DEVICE	1
 #define CONFIG_SYS_NAND_ONFI_DETECTION
+
+#define CONFIG_IPQ_MAX_SPI_DEVICE	1
+#define CONFIG_IPQ_MAX_NAND_DEVICE	1
+
+#define CONFIG_IPQ_NAND_NAND_INFO_IDX	0
+#define CONFIG_IPQ_SPI_NAND_INFO_IDX	1
+
+/*
+ * Expose SPI driver as a pseudo NAND driver to make use
+ * of U-Boot's MTD framework.
+ */
+#define CONFIG_SYS_MAX_NAND_DEVICE	(CONFIG_IPQ_MAX_NAND_DEVICE + \
+					 CONFIG_IPQ_MAX_SPI_DEVICE)
 
 /*
  * U-Boot Env Configs
  */
 
-/*
- * FIXME: This should be selectable from the make command.
- * Define one of the following macros for environment in SPI Flash or
- * NAND Flash.
- *
- *   - CONFIG_ENV_IS_IN_SPI_FLASH
- *   - CONFIG_ENV_IS_IN_NAND
- */
 #define CONFIG_ENV_IS_IN_NAND
 #define CONFIG_CMD_SAVEENV
 #define CONFIG_BOARD_LATE_INIT
 
-#if defined(CONFIG_ENV_IS_IN_SPI_FLASH)
+#if defined(CONFIG_ENV_IS_IN_NAND)
 
 #define CONFIG_ENV_SPI_CS               flash_chip_select
 #define CONFIG_ENV_SPI_MODE             SPI_MODE_0
 #define CONFIG_ENV_OFFSET               board_env_offset
 #define CONFIG_ENV_SECT_SIZE            flash_block_size
 #define CONFIG_ENV_SPI_BUS              flash_index
-
-#elif defined(CONFIG_ENV_IS_IN_NAND)
-
-#define CONFIG_ENV_OFFSET		board_env_offset
 #define CONFIG_ENV_RANGE		board_env_range
 
 #else
 
-#error "Unsupported env. type, should be NAND or SPI_FLASH."
+#error "Unsupported env. type, should be NAND (even for SPI Flash)."
 
 #endif
 

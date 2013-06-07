@@ -1,5 +1,5 @@
 
-/* * Copyright (c) 2012-2013 Qualcomm Atheros, Inc. * */
+/* * Copyright (c) 2012 - 2013 Qualcomm Atheros, Inc. * */
 
 #include <common.h>
 #include <linux/mtd/ipq_nand.h>
@@ -192,6 +192,7 @@ static void configure_nand_gpio(void)
 void board_nand_init(void)
 {
 	struct ebi2cr_regs *ebi2_regs;
+	extern int ipq_spi_init(void);
 
 	ebi2_regs = (struct ebi2cr_regs *) EBI2CR_BASE;
 
@@ -203,6 +204,8 @@ void board_nand_init(void)
 			CS0_CFG_SERIAL_FLASH_DEVICE);
 
 	ipq_nand_init(IPQ_NAND_LAYOUT_LINUX);
+
+	ipq_spi_init();
 }
 
 void ipq_get_part_details(void)
