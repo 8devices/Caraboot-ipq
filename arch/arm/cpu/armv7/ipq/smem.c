@@ -33,6 +33,7 @@
 #include <common.h>
 #include <asm/io.h>
 #include <asm/errno.h>
+#include <asm/arch-ipq806x/smem.h>
 
 typedef enum {
 	SMEM_SPINLOCK_ARRAY = 7,
@@ -109,6 +110,8 @@ struct smem_ptable {
 static struct smem_ptable smem_ptable;
 
 static struct smem *smem = (void *)(CONFIG_IPQ_SMEM_BASE);
+
+ipq_smem_flash_info_t ipq_smem_flash_info;
 
 /**
  * smem_read_alloc_entry - reads an entry from SMEM
@@ -289,4 +292,34 @@ unsigned int smem_get_board_machtype(void)
 	return machid;
 }
 
+void ipq_set_part_entry(ipq_smem_flash_info_t *smem, ipq_part_entry_t *part,
+			uint32_t start, uint32_t size)
+{
+	part->offset = ((loff_t) start) * smem->flash_block_size;
+	part->size = ((loff_t) size) * smem->flash_block_size;
+}
 
+int do_smeminfo ( cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	ipq_smem_flash_info_t *sfi = &ipq_smem_flash_info;
+
+	printf(	"flash_type:		0x%x\n"
+		"flash_index:		0x%x\n"
+		"flash_chip_select:	0x%x\n"
+		"flash_block_size:	0x%x\n"
+		"hlos.offset:		0x%llx	hlos.size:	0x%llx\n"
+		"nss[0].offset:		0x%llx	nss[0].size:	0x%llx\n"
+		"nss[1].offset:		0x%llx	nss[1].size:	0x%llx\n",
+			sfi->flash_type, sfi->flash_index,
+			sfi->flash_chip_select, sfi->flash_block_size,
+			sfi->hlos.offset, sfi->hlos.size,
+			sfi->nss[0].offset, sfi->nss[0].size,
+			sfi->nss[1].offset, sfi->nss[1].size);
+	return 0;
+}
+
+U_BOOT_CMD(
+	smeminfo,    1,    1,    do_smeminfo,
+	"print SMEM FLASH information",
+	"\n    - print flash details gathered from SMEM\n"
+);
