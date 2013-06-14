@@ -112,6 +112,11 @@ typedef struct {
 #define CONFIG_CMD_SOURCE   1
 #define CONFIG_INITRD_TAG   1
 
+#define CONFIG_FIT
+#define CONFIG_SYS_HUSH_PARSER
+#define CONFIG_SYS_NULLDEV
+#define CONFIG_CMD_XIMG
+
 /*
  * SPI Flash Configs
  */
