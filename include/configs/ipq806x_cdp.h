@@ -4,7 +4,10 @@
 #ifndef _IPQCDP_H
 #define _IPQCDP_H
 
-#define CONFIG_RUMI
+/*
+ * Disabled for actual chip.
+ * #define CONFIG_RUMI
+ */
 #define CONFIG_SYS_NO_FLASH
 #define CONFIG_IPQ806X_UART
 #undef CONFIG_CMD_FLASH

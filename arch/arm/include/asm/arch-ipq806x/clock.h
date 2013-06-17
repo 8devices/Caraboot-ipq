@@ -54,6 +54,7 @@
 #define REG(off)        (MSM_CLK_CTL_BASE + (off))
 #define PLL8_STATUS_BIT                     16
 
+#define PLL_LOCK_DET_STATUS_REG             REG(0x03420)
 #define SFAB_AHB_S3_FCLK_CTL_REG            REG(0x0216C)
 #define CFPB_CLK_NS_REG                     REG(0x0264C)
 #define CFPB0_HCLK_CTL_REG                  REG(0x02650)
@@ -75,6 +76,8 @@
 #define CLK_DIV(i)                          ((i) << 0)
 
 #ifndef CONFIG_RUMI
+#include <asm/io.h>
+
 /* Wait until PLL is enabled */
 static inline void check_pll_status(unsigned int pll_status_reg,unsigned int bit_pos)
 {

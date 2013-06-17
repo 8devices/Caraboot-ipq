@@ -17,7 +17,8 @@ void uart_pll_vote_clk_enable(void)
         ena = readl(BB_PLL_ENA_SC0_REG);
         ena |= BIT(8);
         writel(ena, BB_PLL_ENA_SC0_REG);
-        check_pll_status(BB_PLL8_STATUS_REG,PLL8_STATUS_BIT);
+
+        check_pll_status(PLL_LOCK_DET_STATUS_REG, 8);
 }
 
 /**
@@ -81,6 +82,11 @@ static void uart_local_clock_enable(void)
         reg_val = readl(reg);
         reg_val |= BIT(8);
         writel(reg_val, reg);
+
+	/* set source to PLL8 running @384MHz */
+	reg_val = readl(reg);
+	reg_val |= 0x3;
+	writel(reg_val, reg);
 
         /* Enable root. */
         reg_val |= Uart_en_mask;

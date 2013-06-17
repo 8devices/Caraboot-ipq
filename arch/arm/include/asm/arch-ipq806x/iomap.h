@@ -69,10 +69,10 @@
 
 #define GSBI_PORT 1
 #else
-#define UART_DM_BASE         0x16640000
-#define UART_GSBI_BASE       0x16600000
+#define UART_DM_BASE         0x12490000
+#define UART_GSBI_BASE       0x12480000
 
-#define GSBI_PORT 7
+#define GSBI_PORT 2
 #endif
 
 
