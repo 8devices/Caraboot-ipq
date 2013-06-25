@@ -335,37 +335,6 @@ static int gsbi_clock_init(struct ipq_spi_slave *ds)
 {
 	int ret;
 
-	/*
-	 * Enable SFAB_AHB_S3_FCLK_CTL clock branch
-	 * to communicate with block in CFPB
-	 */
-	clrsetbits_le32(SFAB_AHB_S3_FCLK_CTL_REG, CFPB_CLK_BRANCH_ENA_MSK,
-						CFPB_CLK_BRANCH_ENA);
-
-	/* HM_cdiv:CFPB_CLK_NS reg for CFPB_2X_CLK_SRC, 1-DIV2 */
-	clrsetbits_le32(CFPB_CLK_NS_REG, CLK_DIV_MSK, CLK_DIV_2);
-
-	/* Enable CFPB slave clock SFAB_CFPB_S_HCLK_CTL clock branch */
-	clrsetbits_le32(SFAB_CFPB_S_HCLK_CTL_REG, CFPB_CLK_BRANCH_ENA_MSK,
-						CFPB_CLK_BRANCH_ENA);
-
-	/* Enable CFPB_SPLITTER_HCLK_CTL clock branch */
-	clrsetbits_le32(CFPB_SPLITTER_HCLK_CTL_REG, CFPB_CLK_BRANCH_ENA_MSK,
-						CFPB_CLK_BRANCH_ENA);
-
-	if (ds->slave.bus == GSBI5_SPI) {
-		clrsetbits_le32(CFPB0_HCLK_CTL_REG, CFPB_CLK_BRANCH_ENA_MSK,
-						CFPB_CLK_BRANCH_ENA);
-
-	} else if ((ds->slave.bus == GSBI6_SPI) ||
-			(ds->slave.bus == GSBI7_SPI)) {
-		clrsetbits_le32(CFPB2_HCLK_CTL_REG, CFPB_CLK_BRANCH_ENA_MSK,
-						CFPB_CLK_BRANCH_ENA);
-	} else {
-		printf("Unsupported port %d for SPI NOR\n", ds->slave.bus);
-		return -EINVAL;
-	}
-
 	/* Hold the GSBIn (core_num) core in reset */
 	clrsetbits_le32(GSBIn_RESET_REG(ds->slave.bus), GSBI1_RESET_MSK,
 							GSBI1_RESET);
@@ -398,17 +367,21 @@ static int gsbi_clock_init(struct ipq_spi_slave *ds)
 	clrsetbits_le32(ds->regs->qup_ns_reg, CLK_ROOT_ENA_MSK, CLK_ROOT_DIS);
 
 	clrsetbits_le32(ds->regs->qup_ns_reg, GSBIn_PLL_SRC_MSK,
-					GSBIn_PLL_SRC_PXO);
-	clrsetbits_le32(ds->regs->qup_ns_reg, GSBIn_PRE_DIV_SEL_MSK, (0 << 3));
+					GSBIn_PLL_SRC_PLL8);
+	clrsetbits_le32(ds->regs->qup_ns_reg, GSBIn_PRE_DIV_SEL_MSK,
+						(0 << GSBI_PRE_DIV_SEL_SHFT));
 
-	/* Program M/N:D values */
-	clrsetbits_le32(ds->regs->qup_md_reg, GSBIn_M_VAL_MSK, 0);
-	clrsetbits_le32(ds->regs->qup_md_reg, GSBIn_D_VAL_MSK, 0);
-	clrsetbits_le32(ds->regs->qup_ns_reg, GSBIn_N_VAL_MSK, 0);
+	/* Program M/N:D values for GSBIn_QUP_APPS_CLK @50MHz */
+	clrsetbits_le32(ds->regs->qup_md_reg, GSBIn_M_VAL_MSK,
+						(0x01 << GSBI_M_VAL_SHFT));
+	clrsetbits_le32(ds->regs->qup_md_reg, GSBIn_D_VAL_MSK,
+						(0xF7 << GSBI_D_VAL_SHFT));
+	clrsetbits_le32(ds->regs->qup_ns_reg, GSBIn_N_VAL_MSK,
+						(0xF8 << GSBI_N_VAL_SHFT));
 
 	/* Set MNCNTR_MODE = 0: Bypass mode */
 	clrsetbits_le32(ds->regs->qup_ns_reg, MNCNTR_MODE_MSK,
-					MNCNTR_MODE_BYPASS);
+					MNCNTR_MODE_DUAL_EDGE);
 
 	/* De-assert the M/N:D counter reset */
 	clrsetbits_le32(ds->regs->qup_ns_reg, MNCNTR_RST_MSK, MNCNTR_RST_DIS);

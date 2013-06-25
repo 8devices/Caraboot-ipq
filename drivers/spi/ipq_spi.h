@@ -173,9 +173,12 @@
 #define GSBI1_RESET				(1 << 0)
 #define GSBI1_RESET_MSK				0x1
 
-#define GSBIn_M_VAL_MSK				(0xFF << 16)
-#define GSBIn_N_VAL_MSK				(0xFF << 16)
-#define GSBIn_D_VAL_MSK				(0xFF << 0)
+#define GSBI_M_VAL_SHFT				16
+#define GSBIn_M_VAL_MSK				(0xFF << GSBI_M_VAL_SHFT)
+#define GSBI_N_VAL_SHFT				16
+#define GSBIn_N_VAL_MSK				(0xFF << GSBI_N_VAL_SHFT)
+#define GSBI_D_VAL_SHFT				0
+#define GSBIn_D_VAL_MSK				(0xFF << GSBI_D_VAL_SHFT)
 #define MNCNTR_RST_MSK				(1 << 7)
 #define MNCNTR_RST_ENA				(1 << 7)
 #define MNCNTR_RST_DIS				(0 << 7)
@@ -185,7 +188,8 @@
 #define MNCNTR_MODE_MSK				(0x3 << 5)
 #define MNCNTR_MODE_BYPASS			(0 << 5)
 #define MNCNTR_MODE_DUAL_EDGE			(0x2 << 5)
-#define GSBIn_PRE_DIV_SEL_MSK			(0x3 << 3)
+#define GSBI_PRE_DIV_SEL_SHFT			3
+#define GSBIn_PRE_DIV_SEL_MSK			(0x3 << GSBI_PRE_DIV_SEL_SHFT)
 #define GSBIn_PLL_SRC_MSK			(0x03 << 0)
 #define GSBIn_PLL_SRC_PXO			(0 << 0)
 #define GSBIn_PLL_SRC_PLL8			(0x3 << 0)
