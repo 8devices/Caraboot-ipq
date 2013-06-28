@@ -185,6 +185,57 @@ static struct ipq_config ipq_linux_config_4ecc_2k = {
 	.raw_page_layout = ipq_raw_page_layout_4ecc_2k
 };
 
+static struct ipq_cw_layout ipq_sbl_page_layout_8ecc_2k[] = {
+	{ 0, 512, 0, 0 },
+	{ 0, 512, 0, 0 },
+	{ 0, 512, 0, 0 },
+	{ 0, 512, 0, 0 },
+};
+
+static struct ipq_cw_layout ipq_linux_page_layout_8ecc_2k[] = {
+	{ 0, 516,   0,  0 },
+	{ 0, 516,   0,  0 },
+	{ 0, 516,   0,  0 },
+	{ 0, 500, 500, 16 },
+};
+
+static struct ipq_cw_layout ipq_raw_page_layout_8ecc_2k[] = {
+	{ 0, 532,   0,  0 },
+	{ 0, 532,   0,  0 },
+	{ 0, 532,   0,  0 },
+	{ 0, 452, 452, 80 },
+};
+
+static struct ipq_config ipq_sbl_config_8ecc_2k = {
+	.page_size = 2048,
+	.ecc_mode = ECC_REQ_8BIT,
+
+	.main_per_cw = 512,
+	.ecc_per_cw = 13,
+	.spare_per_cw = 6,
+	.bb_in_spare = 0,
+	.bb_byte = 453,
+
+	.cw_per_page = 4,
+	.ecc_page_layout = ipq_sbl_page_layout_8ecc_2k,
+	.raw_page_layout = ipq_raw_page_layout_8ecc_2k
+};
+
+static struct ipq_config ipq_linux_config_8ecc_2k = {
+	.page_size = 2048,
+	.ecc_mode = ECC_REQ_8BIT,
+
+	.main_per_cw = 516,
+	.ecc_per_cw = 13,
+	.spare_per_cw = 2,
+	.bb_in_spare = 0,
+	.bb_byte = 453,
+
+	.cw_per_page = 4,
+	.ecc_page_layout = ipq_linux_page_layout_8ecc_2k,
+	.raw_page_layout = ipq_raw_page_layout_8ecc_2k
+};
+
 static struct ipq_cw_layout ipq_sbl_page_layout_4ecc_4k[] = {
 	{ 0, 512, 0, 0 },
 	{ 0, 512, 0, 0 },
@@ -311,7 +362,7 @@ static struct ipq_config ipq_linux_config_8ecc_4k = {
 	.raw_page_layout = ipq_raw_page_layout_8ecc_4k
 };
 
-#define IPQ_CONFIGS_MAX 3
+#define IPQ_CONFIGS_MAX 4
 
 /*
  * List of supported configs. The code expects this list to be sorted
@@ -320,11 +371,13 @@ static struct ipq_config ipq_linux_config_8ecc_4k = {
 static struct ipq_config *ipq_configs[IPQ_NAND_LAYOUT_MAX][IPQ_CONFIGS_MAX] = {
 	{
 		&ipq_sbl_config_4ecc_2k,
+		&ipq_sbl_config_8ecc_2k,
 		&ipq_sbl_config_4ecc_4k,
 		&ipq_sbl_config_8ecc_4k,
 	},
 	{
 		&ipq_linux_config_4ecc_2k,
+		&ipq_linux_config_8ecc_2k,
 		&ipq_linux_config_4ecc_4k,
 		&ipq_linux_config_8ecc_4k,
 	}
