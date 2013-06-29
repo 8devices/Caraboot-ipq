@@ -11,9 +11,6 @@
 
 #define PHYBASE 0x0
 
-typedef unsigned int  u32;
-typedef unsigned short u16;
-
 enum GmacGmiiAddrReg {
 	GmiiDevMask	= 0x0000F800,	/* (PA)GMII device address                 15:11     RW         0x00    */
 	GmiiDevShift	= 11,

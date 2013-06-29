@@ -1095,6 +1095,7 @@ int ipq_gmac_eth_initialize(void)
 	gpio_tlmm_config(2, 0, GPIO_OUTPUT, GPIO_NO_PULL, GPIO_8MA, GPIO_ENABLE);
 	gpio_tlmm_config(66, 0, GPIO_OUTPUT, GPIO_NO_PULL, GPIO_16MA, GPIO_ENABLE);
 
+	athrs17_reg_init();
 	return 0;
 }
 
