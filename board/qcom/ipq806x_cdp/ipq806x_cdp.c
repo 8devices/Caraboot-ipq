@@ -18,6 +18,12 @@ DECLARE_GLOBAL_DATA_PTR;
 
 loff_t board_env_offset;
 
+int board_early_init_f(void)
+{
+	configure_uart_gpio();
+	return 0;
+}
+
 /*******************************************************
 Function description: Board specific initialization.
 I/P : None
@@ -34,7 +40,6 @@ int board_init()
 	ipq_smem_flash_info_t *sfi = &ipq_smem_flash_info;
 
 	gd->bd->bi_boot_params = IPQ_BOOT_PARAMS_ADDR;
-	configure_uart_gpio();
 
 	/*
 	 * Should be inited, before env_relocate() is called,

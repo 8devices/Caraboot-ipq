@@ -20,6 +20,8 @@
 #define CONFIG_NR_DRAM_BANKS            1
 #define CONFIG_SKIP_LOWLEVEL_INIT
 
+#define CONFIG_BOARD_EARLY_INIT_F
+
 /* Environment */
 #define CONFIG_MSM_PCOMM
 #define CONFIG_ARCH_CPU_INIT
