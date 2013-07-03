@@ -128,7 +128,8 @@ void uart_clock_config(void)
  */
 void nand_clock_config(void)
 {
-	writel(CLK_BRANCH_ENA_ENABLE, EBI2_CLK_CTL_REG);
+	writel(CLK_BRANCH_ENA(1) | ALWAYS_ON_CLK_BRANCH_ENA(1),
+	       EBI2_CLK_CTL_REG);
 
 	/* Wait for clock to stabilize. */
 	udelay(10);

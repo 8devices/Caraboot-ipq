@@ -62,6 +62,8 @@
 #define CFPB_SPLITTER_HCLK_CTL_REG          REG(0x026E0)
 #define EBI2_CLK_CTL_REG                    REG(0x03B00)
 
+#define ALWAYS_ON_CLK_BRANCH_ENA(i)         ((i) << 8)
+
 #define CLK_BRANCH_ENA_MASK                 0x00000010
 #define CLK_BRANCH_ENA_ENABLE               0x00000010
 #define CLK_BRANCH_ENA_DISABLE              0x00000000
