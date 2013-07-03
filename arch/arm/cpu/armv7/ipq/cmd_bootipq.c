@@ -59,9 +59,26 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
 	char bootargs[IH_NMLEN+32];
 	char runcmd[128];
+	int nandid = 0;
 
 	if (argc == 2 && strncmp(argv[1], "debug", 5) == 0)
 		debug = 1;
+
+	/* check the smem info to see which flash used for booting */
+	if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
+		nandid = 1;
+		if (debug) {
+			printf("Using nand device 1\n");
+		}
+		run_command("nand device 1", 0);
+	} else if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
+		if (debug) {
+			printf("Using nand device 0\n");
+		}
+	} else {
+		printf("Unsupported BOOT flash type\n");
+		return -1;
+	}
 
 	/* check the smem info to see whether the partition size is valid.
 	 * refer board/qcom/ipq806x_cdp/ipq806x_cdp.c:ipq_get_part_details
@@ -101,7 +118,7 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	}
 
 	snprintf(runcmd, sizeof(runcmd), "set autostart yes;"
-			"nboot 0x%x 0 0x%llx", img_addr, sfi->hlos.offset);
+			"nboot 0x%x %d 0x%llx", img_addr, nandid, sfi->hlos.offset);
 	if (debug)
 		printf(runcmd);
 
