@@ -38,13 +38,39 @@ static int ipq_spi_read(struct mtd_info *mtd, loff_t from, size_t len,
 			 size_t *retlen, u_char *buf)
 {
 	int ret;
+	size_t unaligned_len;
+	u_char *data;
 
-	ret = spi_flash_read(mtd->priv, from, len, buf);
-	if (ret)
-		*retlen = 0;
-	else
-		*retlen = len;
+	/* Get the unaligned no of bytes equivalent to len % mtd->erasesize */
+	unaligned_len = len & (mtd->erasesize - 1);
+	len = len - unaligned_len;
 
+	*retlen = 0;
+
+	if (len) {
+		ret = spi_flash_read(mtd->priv, from, len, buf);
+		if (ret)
+			return 0;
+		else
+			*retlen = len;
+	}
+
+	if (unaligned_len) {
+		data = (u_char *) malloc(mtd->erasesize);
+		if (data == NULL) {
+			/* retlen will have the length of the data read above */
+			return 0;
+		}
+
+		from = from + len;
+		ret = spi_flash_read(mtd->priv, from, mtd->erasesize, data);
+		if (!ret) {
+			memcpy(buf + len, data, unaligned_len);
+			*retlen += unaligned_len;
+		}
+
+		free(data);
+	}
 	return 0;
 }
 
