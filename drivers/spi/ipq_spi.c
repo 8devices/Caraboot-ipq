@@ -28,6 +28,8 @@
 #define DRV_STR_IDX		4
 #define GPIO_EN_IDX		5
 
+#define GSBI_IDX_TO_GSBI(idx)   (idx + 5)
+
 /*
  * TLMM Configuration for SPI NOR
  * gsbi_pin_conf[bus_num][GPIO_NUM, FUNC_SEL, I/O,
@@ -106,18 +108,6 @@ static unsigned int cs_gpio_array[NUM_PORTS][NUM_CS] = {
 	{
 		GSBI7_SPI_CS_0,              0,              0,              0
 	}
-};
-
-/*
- * GSBI HCLK state register bit
- * hclk_state[0] -- GSBI5
- * hclk_state[1] -- GSBI6
- * hclk_state[2] -- GSBI7
-*/
-static unsigned int hclk_state[NUM_PORTS] = {
-	GSBI5_HCLK,
-	GSBI6_HCLK,
-	GSBI7_HCLK
 };
 
 /*
@@ -247,19 +237,6 @@ static void spi_set_mode(struct ipq_spi_slave *ds, unsigned int mode)
 }
 
 /*
- * Check for HCLK state
- */
-static int check_hclk_state(unsigned int core_num, int enable)
-{
-#ifndef CONFIG_RUMI
-	return check_bit_state(CLK_HALT_CFPB_STATEB_REG,
-			hclk_state[core_num], enable, 5);
-#else
-	return 0;
-#endif
-}
-
-/*
  * Check for QUP APPS CLK state
  */
 static int check_qup_clk_state(unsigned int core_num, int enable)
@@ -339,23 +316,13 @@ static int gsbi_clock_init(struct ipq_spi_slave *ds)
 	clrsetbits_le32(GSBIn_RESET_REG(ds->slave.bus), GSBI1_RESET_MSK,
 							GSBI1_RESET);
 
-	/* Disable GSBIn (core_num) core clock branch */
-	clrsetbits_le32(GSBIn_HCLK_CTL_REG(ds->slave.bus),
-		GSBI_CLK_BRANCH_ENA_MSK, GSBI_CLK_BRANCH_DIS);
-
-	ret = check_hclk_state(ds->slave.bus, 0);
-	if (ret) {
-		printf("HCLK Halt For GSBI%d failed!!!\n", ds->slave.bus);
-		return ret;
-	}
-
 	/* Disable GSBIn (core_num) QUP core clock branch */
 	clrsetbits_le32(ds->regs->qup_ns_reg, QUP_CLK_BRANCH_ENA_MSK,
 					QUP_CLK_BRANCH_DIS);
 
-	ret = check_qup_clk_state(ds->slave.bus, 0);
+	ret = check_qup_clk_state(ds->slave.bus, 1);
 	if (ret) {
-		printf("QUP Clock Halt For GSBI%d failed!!!\n", ds->slave.bus);
+		printf("QUP Clock Halt For GSBI%d failed!\n", ds->slave.bus);
 		return ret;
 	}
 
@@ -397,24 +364,16 @@ static int gsbi_clock_init(struct ipq_spi_slave *ds)
 	clrsetbits_le32(ds->regs->qup_ns_reg, QUP_CLK_BRANCH_ENA_MSK,
 						QUP_CLK_BRANCH_ENA);
 
-	ret = check_qup_clk_state(ds->slave.bus, 1);
+	ret = check_qup_clk_state(ds->slave.bus, 0);
 	if (ret) {
 		printf("QUP Clock Enable For GSBI%d"
-				" failed!!!\n", ds->slave.bus);
-		return ret;
-	}
-
-	/* Enable GSBIn (core_num) core clock branch */
-	clrsetbits_le32(GSBIn_HCLK_CTL_REG(ds->slave.bus),
-		GSBI_CLK_BRANCH_ENA_MSK, GSBI_CLK_BRANCH_ENA);
-	ret = check_hclk_state(ds->slave.bus, 1);
-	if (ret) {
-		printf("HCLK Enable For GSBI%d failed!!!\n", ds->slave.bus);
+				" failed!\n", ds->slave.bus);
 		return ret;
 	}
 
 	/* Release GSBIn (core_num) core from reset */
-	clrsetbits_le32(GSBIn_RESET_REG(ds->slave.bus), GSBI1_RESET_MSK, 0);
+	clrsetbits_le32(GSBIn_RESET_REG(GSBI_IDX_TO_GSBI(ds->slave.bus)),
+						GSBI1_RESET_MSK, 0);
 	udelay(50);
 
 	return SUCCESS;
@@ -656,18 +615,17 @@ static unsigned char spi_read_byte(struct ipq_spi_slave *ds)
  * Function to check wheather Input or Output FIFO
  * has data to be serviced
  */
-static unsigned int check_fifo_status(uint32_t reg_addr)
+static int check_fifo_status(uint32_t reg_addr)
 {
 	unsigned int count = TIMEOUT_CNT;
 	unsigned int status_flag;
 	unsigned int val;
-	int ret;
 
 	do {
 		val = readl(reg_addr);
 		count--;
 		if (count == 0)
-			ret = -ETIMEDOUT;
+			return -ETIMEDOUT;
 		status_flag = ((val & OUTPUT_SERVICE_FLAG) | (val & INPUT_SERVICE_FLAG));
 	} while (!status_flag);
 
