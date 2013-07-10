@@ -1,39 +1,39 @@
-
 /*
-* Copyright (c) 2012 Qualcomm Atheros, Inc. *
-  Source : APQ8064 LK Boot
-
-* * Copyright (c) 2011-2012, Code Aurora Forum. All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are
-* met:
-*  * Redistributions of source code must retain the above copyright
-*    notice, this list of conditions and the following disclaimer.
-*  * Redistributions in binary form must reproduce the above
-*    copyright notice, this list of conditions and the following
-*    disclaimer in the documentation and/or other materials provided
-*    with the distribution.
-*  * Neither the name of Code Aurora Forum, Inc. nor the names of its
-*    contributors may be used to endorse or promote products derived
-*    from this software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
-* WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
-* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
-* ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
-* BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-* BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-* WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-* OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
-* IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ * Copyright (c) 2012-2013 Qualcomm Atheros, Inc.
+ * Source : APQ8064 LK Boot
+ *
+ * Copyright (c) 2012, Code Aurora Forum. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *  * Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *  * Redistributions in binary form must reproduce the above
+ *    copyright notice, this list of conditions and the following
+ *    disclaimer in the documentation and/or other materials provided
+ *    with the distribution.
+ *  * Neither the name of Code Aurora Forum, Inc. nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+ * BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+ * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+ * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #ifndef __PLATFORM_IPQ860X_CLOCK_H_
 #define __PLATFORM_IPQ860X_CLOCK_H_
 
+#include <asm/io.h>
 /* UART clock @ 7.3728 MHz */
 #define UART_DM_CLK_RX_TX_BIT_RATE 0xCC
 
@@ -77,29 +77,6 @@
 #define CLK_DIV_DIV_4                       0x00000003
 #define CLK_DIV(i)                          ((i) << 0)
 
-#ifndef CONFIG_RUMI
-#include <asm/io.h>
-
-/* Wait until PLL is enabled */
-static inline void check_pll_status(unsigned int pll_status_reg,unsigned int bit_pos)
-{
-        while((readl(pll_status_reg)& BIT(bit_pos)) == 0);
-}
-#else
-static inline void check_pll_status(unsigned int pll_status_reg,unsigned int bit_pos)
-{
-        return;
-}
-#endif
-
-#ifndef CONFIG_RUMI
-#define UART_ENABLE_PLL_CLOCK uart_pll_vote_clk_enable();
-#define UART_SET_NS_VALUE  reg_val |= (Uart_ns_val & Uart_clk_ns_mask);
-#else
-#define UART_SET_NS_VALUE reg_val |= (Uart_ns_val_rumi & Uart_clk_ns_mask);
-#define UART_ENABLE_PLL_CLOCK
-#endif
-
 #define MN_MODE_DUAL_EDGE 0x2
 #define BIT_POS_31 31
 #define BIT_POS_16 16
@@ -136,26 +113,11 @@ static inline void check_pll_status(unsigned int pll_status_reg,unsigned int bit
 #define NS_SRC_SEL(s_msb, s_lsb, s) \
     BVAL(s_msb, s_lsb, s)
 
-/*
- * Clock settings made compatible with kernel. Generate 7.3728 MHz.
- */
-#ifdef CONFIG_RUMI
-/* From 19.2 MHz in RUMI. */
-#define M_VALUE   48
-#define N_VALUE   125
-#define D_VALUE   63
-#else
-/* From 384 MHz in CDP. */
-#define M_VALUE   12
-#define N_VALUE   625
-#define D_VALUE   313
-#endif
-
 /* Uart specific clock settings */
 
-void uart_pll_vote_clk_enable(void);
-void uart_clock_config(void);
-static inline void check_pll_status(unsigned int pll_status_reg,unsigned int bit_pos);
+void uart_pll_vote_clk_enable(unsigned int);
+void uart_clock_config(unsigned int gsbi_port, unsigned int m, unsigned int n,
+		unsigned int d, unsigned int clk_dummy);
 void nand_clock_config(void);
 
 #endif  /*  __PLATFORM_IPQ860X_CLOCK_H_ */

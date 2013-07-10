@@ -63,17 +63,14 @@
 #define GPIO_CONFIG_ADDR(x) (TLMM_BASE_ADDR + 0x1000 + (x)*0x10)
 #define GPIO_IN_OUT_ADDR(x) (TLMM_BASE_ADDR + 0x1004 + (x)*0x10)
 
-#ifdef CONFIG_RUMI
-#define UART_DM_BASE         0x12450000
-#define UART_GSBI_BASE       0x12440000
-
-#define GSBI_PORT 1
-#else
-#define UART_DM_BASE         0x12490000
-#define UART_GSBI_BASE       0x12480000
-
-#define GSBI_PORT 2
-#endif
-
+#define GSBI_1			1
+#define GSBI_2			2
+#define GSBI_4			4
+#define UART1_DM_BASE         	0x12450000
+#define UART_GSBI1_BASE       	0x12440000
+#define UART2_DM_BASE		0x12490000
+#define UART_GSBI2_BASE		0x12480000
+#define UART4_DM_BASE         	0x16340000
+#define UART_GSBI4_BASE       	0x16300000
 
 #endif

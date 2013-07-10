@@ -11,6 +11,7 @@
 #include <asm/arch-ipq806x/ebi2.h>
 #include <asm/arch-ipq806x/smem.h>
 #include <asm/errno.h>
+#include "ipq806x_board_param.h"
 
 #include "ipq806x_cdp.h"
 
@@ -30,11 +31,7 @@ DECLARE_GLOBAL_DATA_PTR;
 loff_t board_env_offset;
 loff_t board_env_range;
 
-int board_early_init_f(void)
-{
-	configure_uart_gpio();
-	return 0;
-}
+board_ipq806x_params_t *gboard_param;
 
 /*******************************************************
 Function description: Board specific initialization.
@@ -42,6 +39,19 @@ I/P : None
 O/P : integer, 0 - no error.
 
 ********************************************************/
+
+static board_ipq806x_params_t *get_board_param(unsigned int machid)
+{
+        unsigned int index = 0;
+
+        for (index = 0; index < NUM_IPQ806X_BOARDS; index++) {
+                if (machid == board_params[index].machid)
+                        return &board_params[index];
+        }
+        BUG_ON(index == NUM_IPQ806X_BOARDS);
+        printf("cdp: Invalid machine id 0x%x\n", machid);
+        for (;;);
+}
 
 int board_init()
 {
@@ -51,7 +61,13 @@ int board_init()
 	loff_t board_env_size;
 	ipq_smem_flash_info_t *sfi = &ipq_smem_flash_info;
 
+	/*
+	 * after relocation gboard_param is reset to NULL
+	 * initialize again
+	 */
 	gd->bd->bi_boot_params = IPQ_BOOT_PARAMS_ADDR;
+	gd->bd->bi_arch_number = smem_get_board_machtype();
+	gboard_param = get_board_param(gd->bd->bi_arch_number);
 
 	/*
 	 * Should be inited, before env_relocate() is called,
@@ -103,9 +119,8 @@ O/P : integer, 0 - no error.
 
 int dram_init(void)
 {
-	/*TODO: Memory size will change for booting kernel*/
-	gd->ram_size = CONFIG_SYS_SDRAM_SIZE;
-	return 0;
+	gd->ram_size = gboard_param->ddr_size;
+        return 0;
 }
 
 /*******************************************************
@@ -118,29 +133,23 @@ O/P : integer, 0 - no error.
 
 void dram_init_banksize(void)
 {
-	/* TODO: Memory layout will change for booting kernel
-	+	 * This is intial bring up setup
-	+	 */
 	gd->bd->bi_dram[0].start = IPQ_KERNEL_START_ADDR;
-	gd->bd->bi_dram[0].size = IPQ_DRAM_KERNEL_SIZE;
+	gd->bd->bi_dram[0].size = gboard_param->ddr_size - GENERATED_IPQ_RESERVE_SIZE;
 
 }
 
 void configure_uart_gpio(void)
 {
+	unsigned int index = 0;
 
-#ifdef CONFIG_RUMI
-	gpio_tlmm_config(51, 1, GPIO_OUTPUT, GPIO_NO_PULL,GPIO_12MA, GPIO_DISABLE);
-	gpio_tlmm_config(52, 1, GPIO_INPUT, GPIO_NO_PULL,GPIO_12MA, GPIO_DISABLE);
-	gpio_tlmm_config(53, 1, GPIO_INPUT, GPIO_NO_PULL,GPIO_12MA, GPIO_DISABLE);
-	gpio_tlmm_config(54, 1, GPIO_OUTPUT, GPIO_NO_PULL,GPIO_12MA, GPIO_DISABLE);
-#else
-	gpio_tlmm_config(22, 1, GPIO_OUTPUT, GPIO_NO_PULL,GPIO_12MA, GPIO_DISABLE);
-	gpio_tlmm_config(23, 1, GPIO_INPUT, GPIO_NO_PULL,GPIO_12MA, GPIO_DISABLE);
-	gpio_tlmm_config(24, 1, GPIO_INPUT, GPIO_NO_PULL,GPIO_12MA, GPIO_DISABLE);
-	gpio_tlmm_config(25, 1, GPIO_OUTPUT, GPIO_NO_PULL,GPIO_12MA, GPIO_DISABLE);
-#endif
-
+	for (index = 0;index < NO_OF_DBG_UART_GPIOS; index++) {
+		gpio_tlmm_config(gboard_param->dbg_uart_gpio[index].gpio,
+				 gboard_param->dbg_uart_gpio[index].func,
+				 gboard_param->dbg_uart_gpio[index].dir,
+				 gboard_param->dbg_uart_gpio[index].pull,
+				 gboard_param->dbg_uart_gpio[index].drvstr,
+				 gboard_param->dbg_uart_gpio[index].enable);
+	}
 }
 
 /**********************************************************
@@ -248,7 +257,7 @@ int board_late_init(void)
 	ipq_get_part_details();
 
         /* get machine type from SMEM and set in env */
-	machid = smem_get_board_machtype();
+	machid = gd->bd->bi_arch_number;
 	if (machid != 0) {
 		setenv_addr("machid", (void *)machid);
 		gd->bd->bi_arch_number = machid;
@@ -256,3 +265,17 @@ int board_late_init(void)
 
 	return 0;
 }
+
+/*
+ * This function is called in the very beginning.
+ * Retreive the machtype info from SMEM and map the board specific
+ * parameters. Shared memory region at Dram address 0x40400000
+ * contains the machine id/ board type data polulated by SBL.
+ */
+int board_early_init_f(void)
+{
+	gboard_param = get_board_param(smem_get_board_machtype());
+
+	return 0;
+}
+

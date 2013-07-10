@@ -36,6 +36,10 @@
 #include <asm/arch-ipq806x/uart.h>
 #include <asm/arch-ipq806x/gpio.h>
 #include <asm/arch-ipq806x/iomap.h>
+#include "../board/qcom/ipq806x_cdp/ipq806x_cdp.h"
+
+extern board_ipq806x_params_t board_params[];
+extern board_ipq806x_params_t *gboard_param;
 
 /**
  * msm_boot_uart_dm_init_rx_transfer - Init Rx transfer
@@ -62,9 +66,9 @@ static unsigned int msm_boot_uart_dm_init_rx_transfer(unsigned int uart_dm_base)
 static unsigned int
 msm_boot_uart_dm_read(unsigned int *data, int wait)
 {
-        static int rx_last_snap_count = 0;
-        static int rx_chars_read_since_last_xfer = 0;
-        unsigned int  base = UART_DM_BASE;
+	static int rx_last_snap_count = 0;
+	static int rx_chars_read_since_last_xfer = 0;
+	unsigned int base = gboard_param->uart_dm_base;
 
         if (data == NULL)
                 return MSM_BOOT_UART_DM_E_INVAL;
@@ -123,7 +127,6 @@ msm_boot_uart_dm_read(unsigned int *data, int wait)
         if ((rx_last_snap_count - rx_chars_read_since_last_xfer) >= 0)
                 return MSM_BOOT_UART_DM_E_SUCCESS;
 
-//	msm_boot_uart_dm_init(base);
         msm_boot_uart_dm_init_rx_transfer(base);
         rx_last_snap_count = 0;
         rx_chars_read_since_last_xfer = 0;
@@ -173,13 +176,13 @@ msm_boot_uart_replace_lr_with_cr(char *data_in,
 static unsigned int
 msm_boot_uart_dm_write(char *data, unsigned int num_of_chars)
 {
-        unsigned int tx_word_count = 0;
-        unsigned int tx_char_left = 0, tx_char = 0;
-        unsigned int tx_word = 0;
-        int i = 0;
-        char *tx_data = NULL;
-        char new_data[1024];
-        unsigned int  base = UART_DM_BASE;
+	unsigned int tx_word_count = 0;
+	unsigned int tx_char_left = 0, tx_char = 0;
+	unsigned int tx_word = 0;
+	int i = 0;
+	char *tx_data = NULL;
+	char new_data[1024];
+	unsigned int base = gboard_param->uart_dm_base;
 
         if ((data == NULL) || (num_of_chars <= 0))
                 return MSM_BOOT_UART_DM_E_INVAL;
@@ -315,14 +318,25 @@ static unsigned int msm_boot_uart_dm_init(unsigned int  uart_dm_base)
  */
 void uart_dm_init(void)
 {
-        /* Configure the uart clock */
-        uart_clock_config();
-        writel(GSBI_PROTOCOL_CODE_I2C_UART <<
-               GSBI_CTRL_REG_PROTOCOL_CODE_S,
-               GSBI_CTRL_REG(UART_GSBI_BASE));
-        writel(UART_DM_CLK_RX_TX_BIT_RATE, MSM_BOOT_UART_DM_CSR(UART_DM_BASE));
-        /* Intialize UART_DM */
-        msm_boot_uart_dm_init((unsigned int)UART_DM_BASE);
+	unsigned int dm_base, gsbi_base;
+
+	dm_base = gboard_param->uart_dm_base;
+	gsbi_base = gboard_param->uart_gsbi_base;
+	configure_uart_gpio();
+
+	/* Configure the uart clock */
+        uart_clock_config(gboard_param->uart_gsbi,
+		gboard_param->mnd_value.m_value,
+		gboard_param->mnd_value.n_value,
+		gboard_param->mnd_value.d_value,
+		gboard_param->clk_dummy);
+
+	writel(GSBI_PROTOCOL_CODE_I2C_UART <<
+		GSBI_CTRL_REG_PROTOCOL_CODE_S,
+		GSBI_CTRL_REG(gsbi_base));
+        writel(UART_DM_CLK_RX_TX_BIT_RATE, MSM_BOOT_UART_DM_CSR(dm_base));
+	/* Intialize UART_DM */
+	msm_boot_uart_dm_init(dm_base);
 }
 
 /**
@@ -351,7 +365,9 @@ void serial_puts(const char *s)
  */
 int serial_tstc(void)
 {
-        return (readl(MSM_BOOT_UART_DM_SR(UART_DM_BASE)) & MSM_BOOT_UART_DM_SR_RXRDY);
+	unsigned int dm_base = gboard_param->uart_dm_base;
+
+	return (readl(MSM_BOOT_UART_DM_SR(dm_base)) & MSM_BOOT_UART_DM_SR_RXRDY);
 }
 
 /**

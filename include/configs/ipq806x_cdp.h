@@ -8,6 +8,21 @@
  * Disabled for actual chip.
  * #define CONFIG_RUMI
  */
+#if !defined(DO_DEPS_ONLY)
+/*
+ * Beat the system! tools/scripts/make-asm-offsets uses
+ * the following hard-coded define for both u-boot's
+ * ASM offsets and platform specific ASM offsets :(
+ */
+#include <generated/generic-asm-offsets.h>
+#ifdef __ASM_OFFSETS_H__
+#undef __ASM_OFFSETS_H__
+#endif
+#include <generated/asm-offsets.h>
+#endif /* !DO_DEPS_ONLY */
+
+#define CONFIG_BOARD_EARLY_INIT_F
+
 #define CONFIG_SYS_NO_FLASH
 #define CONFIG_IPQ806X_UART
 #undef CONFIG_CMD_FLASH
@@ -48,7 +63,7 @@
 #define CONFIG_SYS_PROMPT               V_PROMPT
 #define CONFIG_SYS_CBSIZE               (256 * 2) /* Console I/O Buffer Size */
 
-#define CONFIG_SYS_INIT_SP_ADDR         CONFIG_SYS_SDRAM_BASE + CONFIG_SYS_SDRAM_SIZE - GENERATED_GBL_DATA_SIZE
+#define CONFIG_SYS_INIT_SP_ADDR         CONFIG_SYS_SDRAM_BASE + GENERATED_IPQ_RESERVE_SIZE - GENERATED_GBL_DATA_SIZE
 #define CONFIG_SYS_MAXARGS              16
 #define CONFIG_SYS_LOAD_ADDR            CONFIG_SYS_TEXT_BASE + 0x100000
 #define CONFIG_SYS_PBSIZE               (CONFIG_SYS_CBSIZE + \
@@ -81,6 +96,8 @@ extern uint32_t flash_block_size;
  * of the following IPQ806x compile time definitions
  *      PHYS_OFFSET     (linux-sources/arch/arm/mach-msm/Kconfig)
  *      zreladdr        (linux-sources/arch/arm/mach-msm/Makefile.boot)
+ *      CONFIG_SYS_INIT_SP_ADDR defined above should point to the bottom.
+ *
  */
 typedef struct {
 	uint8_t	nss[4 * 1024 * 1024];
@@ -93,14 +110,13 @@ typedef struct {
 #define IPQ_MEM_RESERVE_BASE(x)		\
 	(CONFIG_SYS_SDRAM_BASE + \
 	 ((uint32_t)&(((ipq_mem_reserve_t *)0)->x)))
-#define IPQ_RESERVE_SIZE		sizeof(ipq_mem_reserve_t)
 
 #define CONFIG_IPQ_SMEM_BASE		IPQ_MEM_RESERVE_BASE(smem)
 #define IPQ_KERNEL_START_ADDR	\
-	(CONFIG_SYS_SDRAM_BASE + IPQ_RESERVE_SIZE)
+	(CONFIG_SYS_SDRAM_BASE + GENERATED_IPQ_RESERVE_SIZE)
 
 #define IPQ_DRAM_KERNEL_SIZE	\
-	(CONFIG_SYS_SDRAM_SIZE - IPQ_RESERVE_SIZE)
+	(CONFIG_SYS_SDRAM_SIZE - GENERATED_IPQ_RESERVE_SIZE)
 
 #define IPQ_BOOT_PARAMS_ADDR		(IPQ_KERNEL_START_ADDR + 0x100)
 #endif /* __ASSEMBLY__ */
@@ -112,7 +128,6 @@ typedef struct {
 #define CONFIG_CMDLINE_TAG	 1	/* enable passing of ATAGs */
 #define CONFIG_SETUP_MEMORY_TAGS 1
 
-#define CONFIG_MACH_TYPE                 MACH_TYPE_IPQ806X_CDP
 #define CONFIG_CMD_IMI
 
 #define CONFIG_CMD_SOURCE   1
