@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Qualcomm Atheros, Inc.
+ * Copyright (c) 2012 - 2013 Qualcomm Atheros, Inc.
  */
 
 #include <common.h>
@@ -119,4 +119,55 @@ void nand_clock_config(void)
 
 	/* Wait for clock to stabilize. */
 	udelay(10);
+}
+
+/* Initialising NSS clock */
+static void gmac_set_rate_mnd(unsigned int m, unsigned int not_n, unsigned int not_2d)
+{
+	unsigned int reg_val;
+
+	writel(MNCNTR_RST_ACTIVE, (void *)NSS_250MHZ_CLK_SRC0_NS);
+
+	reg_val = SRC_SEL_PLL0 | MNCNTR_MODE_DUAL_EDGE | MNCNTR_RST_ACTIVE | (not_n << 16);
+	writel(reg_val, (void *)NSS_250MHZ_CLK_SRC0_NS);
+
+	reg_val = (m << 16) | not_2d;
+	writel(reg_val, (void *)NSS_250MHZ_CLK_SRC0_MD);
+
+	setbits_le32(NSS_250MHZ_CLK_SRC0_NS, MNCNTR_ENABLE);
+	clrbits_le32(NSS_250MHZ_CLK_SRC0_NS, MNCNTR_RST_ACTIVE);
+}
+
+/**
+ * Enable NSS 250 Mhz clock
+ **/
+static void gmac_clk_ctl_enable(void)
+{
+	/* Clock Branch enable */
+	writel(0x10, (void *)NSS_250MHZ_CLK_CTL);
+	/* Clock root enable */
+	writel(0x2, (void *)NSS_250MHZ_CLK_SRC_CTL);
+}
+
+/**
+ * Bring GMAC core 0 out of reset
+ * Bring NSS clock out of reset
+ **/
+static void gmac_core_clk_config(void)
+{
+	writel(0x0, (void *)GMAC_CORE0_RESET);
+	writel(0x0, (void *)GMAC_AHB_RESET);
+	writel(0x0, (void *)TCSR_PXO_SEL);
+}
+
+/**
+ * gmac_clock_config - configures GMAC clocks
+ *
+ * Configures mnd dividers, enable source clk.
+ */
+void gmac_clock_config(unsigned int m, unsigned int not_n, unsigned int not_2d)
+{
+	gmac_set_rate_mnd(m, not_n, not_2d);
+	gmac_clk_ctl_enable();
+	gmac_core_clk_config();
 }

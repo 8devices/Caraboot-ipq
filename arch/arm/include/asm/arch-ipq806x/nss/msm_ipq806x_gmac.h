@@ -1,4 +1,4 @@
-/* * Copyright (c) 2012 Qualcomm Atheros, Inc. * */
+/* * Copyright (c) 2012 - 2013 Qualcomm Atheros, Inc. * */
 
 #ifndef __ASM_ARCH_MSM_NSS_GMAC_H
 #define __ASM_ARCH_MSM_NSS_GMAC_H
@@ -34,7 +34,36 @@
 #define NSS_QSGMII_STAT                 0x0044
 #define NSS_ETH_SPARE_CTL               0x0088
 #define NSS_ETH_SPARE_STAT              0x008C
+#define NSS_PCS_QSGMII_BERT_THLD_CTL    0x00C0
+#define NSS_PCS_CAL_LCKDT_CTL           0x0120
+#define NSS_QSGMII_PHY_QSGMII_CTL       0x0134
+#define NSS_QSGMII_PHY_SERDES_CTL       0x0144
 
+/* NSS_QSGMII_PHY_QSGMII_CTL bits */
+#define QSGMII_TX_AMPLITUDE_600mV       (0xC << 28)
+#define QSGMII_TX_SLC_10                (0x2 << 26)
+#define QSGMII_THRESHOLD_DEFAULT        (0x0 << 24)
+#define QSGMII_SLEW_RATE_DEFAULT        (0x2 << 22)
+#define QSGMII_RX_EQUALIZER_DEFAULT     (0x1 << 20)
+#define QSGMII_RX_DC_BIAS_DEFAULT       (0x2 << 18)
+#define QSGMII_PHASE_LOOP_GAIN_DEFAULT  (0x2 << 12)
+#define QSGMII_TX_DE_EMPHASIS_DEFAULT   (0x2 << 10)
+#define QSGMII_ENABLE                   (0x1 << 7)
+#define QSGMII_ENABLE_TX                (0x1 << 3)
+#define QSGMII_ENABLE_SD                (0x1 << 2)
+#define QSGMII_ENABLE_RX                (0x1 << 1)
+#define QSGMII_ENABLE_CDR               (0x1 << 0)
+
+/* NSS_QSGMII_PHY_SERDES_CTL bits */
+#define PLL_PUMP_CURRENT_600uA          (0x6 << 28)
+#define PLL_TANK_CURRENT_7mA            (0x2 << 24)
+#define PCIE_MAX_POWER_MODE             (0x1 << 20)
+#define PLL_LOOP_FILTER_RESISTOR_DEFAULT (0x4 << 4)
+#define PLL_ENABLE                      (0x1 << 2)
+#define SERDES_ENABLE_LCKDT             (0x1 << 1)
+
+/* NSS_PCS_CAL_LCKDT_CTL bits */
+#define LCKDT_RST_n                     (0x1 << 19)
 
 /* Macros to calculate register offsets */
 #define NSS_GMACn_CTL(n)                (NSS_GMAC0_CTL +  (n * 4))
@@ -72,8 +101,8 @@
 #define GMACn_PTP_CLK(x)                (1 << (GMAC0_PTP_CLK_SHIFT + x))
 
 /* NSS_ETH_CLK_DIV0 bits ; n = 0,1,2,3 */
-#define RGMII_CLK_DIV_1000                      2
-#define RGMII_CLK_DIV_100                       10
+#define RGMII_CLK_DIV_1000                      1
+#define RGMII_CLK_DIV_100                       9
 #define RGMII_CLK_DIV_10                        100
 #define SGMII_CLK_DIV_1000                      1
 #define SGMII_CLK_DIV_100                       5

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Qualcomm Atheros, Inc.
+ * Copyright (c) 2012 - 2013 Qualcomm Atheros, Inc.
  * Source : APQ8064 LK boot
  *
  * Copyright (c) 2011-2012, Code Aurora Forum. All rights reserved.
@@ -45,7 +45,11 @@ static ulong lastinc;
  */
 int timer_init(void)
 {
-        return 0;
+	writel(0, GPT_ENABLE);
+	writel(0, GPT1_ENABLE);
+	writel(GPT_ENABLE_EN, GPT_ENABLE);
+	writel(GPT_ENABLE_EN, GPT1_ENABLE);
+	return 0;
 }
 
 /**
@@ -56,7 +60,7 @@ int timer_init(void)
  */
 ulong get_timer(ulong base)
 {
-        return get_timer_masked() - base;
+	return get_timer_masked() - base;
 }
 
 /**
@@ -68,25 +72,37 @@ ulong get_timer(ulong base)
  */
 void __udelay(unsigned long usec)
 {
-        unsigned int val;
+	unsigned int val;
 
-        usec = (usec * 32 + 1000 - 32) / 1000;
+	usec = (usec * 32 + 1000 - 32) / 1000;
 
-        writel(0, GPT_CLEAR);
-        writel(0, GPT_ENABLE);
-        do {
-                val = 0;
-                val = readl(GPT_COUNT_VAL);
-        } while (val != 0);
+	writel(0, GPT1_CLEAR);
+	writel(0, GPT1_ENABLE);
+	do {
+		val = 0;
+		val = readl(GPT1_COUNT_VAL);
+	} while (val != 0);
 
-        writel(GPT_ENABLE_EN, GPT_ENABLE);
-        do {
-                val = 0;
-                val = readl(GPT_COUNT_VAL);
-        } while (val < usec) ;
+	writel(GPT_ENABLE_EN, GPT1_ENABLE);
+	do {
+		val = 0;
+		val = readl(GPT1_COUNT_VAL);
+	} while (val < usec) ;
 
-        writel(0, GPT_ENABLE);
-        writel(0, GPT_CLEAR);
+	writel(0, GPT1_ENABLE);
+	writel(0, GPT1_CLEAR);
+}
+
+#define GPT_FREQ	(32 * 1000)	/* 32 KHz */
+
+inline ulong gpt_to_sys_freq(unsigned int gpt)
+{
+	/*
+	 * get_timer() expects the timer increments to be in terms
+	 * of CONFIG_SYS_HZ. Convert GPT timer values to CONFIG_SYS_HZ
+	 * units.
+	 */
+	return (((ulong)gpt) / (GPT_FREQ / CONFIG_SYS_HZ));
 }
 
 /**
@@ -96,17 +112,17 @@ void __udelay(unsigned long usec)
  */
 ulong get_timer_masked(void)
 {
-        ulong now = READ_TIMER;	/* current tick value */
+	ulong now = gpt_to_sys_freq(readl(GPT_COUNT_VAL));
 
-        if (lastinc <= now) {	/* normal mode (non roll) */
-                /* normal mode */
-                timestamp += now - lastinc;
-                /* move stamp forward with absolute diff ticks */
-        } else {		/* we have overflow of the count down timer */
-                timestamp += now + (TIMER_LOAD_VAL - lastinc);
-        }
+	if (lastinc <= now) {	/* normal mode (non roll) */
+		/* normal mode */
+		timestamp += now - lastinc;
+		/* move stamp forward with absolute diff ticks */
+	} else {		/* we have overflow of the count down timer */
+		timestamp += now + (TIMER_LOAD_VAL - lastinc);
+	}
 
-        lastinc = now;
+	lastinc = now;
 
-        return timestamp;
+	return timestamp;
 }

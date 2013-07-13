@@ -1,5 +1,5 @@
 
-/* * Copyright (c) 2012 Qualcomm Atheros, Inc. * */
+/* * Copyright (c) 2012 - 2013 Qualcomm Atheros, Inc. * */
 
 /* \file
  * This file defines the synopsys GMAC device dependent functions.
@@ -13,7 +13,6 @@
  * Synopsys                 01/Aug/2007                              Created
  */
 #include "synopGMAC_Dev.h"
-//#include <asm/arch-ipq806x/Msm_ipq806x_gmac.h>
 #include <linux/mdio.h>
 #include <asm/arch-ipq806x/nss/msm_ipq806x_gmac.h>
 
@@ -211,7 +210,7 @@ void synopGMAC_jumbo_frame_disable(synopGMACdevice * gmacdev)
  */
 void synopGMAC_select_gmii(synopGMACdevice * gmacdev)
 {
-	synopGMACClearBits((u32 *)gmacdev->MacBase, GmacConfig, GmacMiiGmii);
+	synopGMACClearBits((u32 *)gmacdev->MacBase, GmacConfig, GmacSelectGmii);
 }
 
 /*
@@ -659,12 +658,11 @@ s32 synopGMAC_mac_init(synopGMACdevice * gmacdev)
 	{
 		gmacdev->Speed = ipq806x_get_link_speed(gmacdev->phyid);
 		gmacdev->DuplexMode = ipq806x_get_duplex(gmacdev->phyid);
-		nss_gmac_dev_set_speed(gmacdev);
 	}
 
-/*	if (gmacdev->Speed == SPEED1000) {
+	if (gmacdev->Speed == SPEED1000) {
 		synopGMAC_select_gmii(gmacdev);
-	} */else {
+	} else {
 		synopGMAC_select_mii(gmacdev);
 	}
 
@@ -714,6 +712,12 @@ s32 synopGMAC_mac_init(synopGMACdevice * gmacdev)
 		synopGMACWriteReg((u32 *)gmacdev->MacBase, GmacGmiiData, PHYreg   | 0x00000800);
 		synopGMACWriteReg((u32 *)gmacdev->MacBase, GmacGmiiAddr, GmiiBusy | 0x0000040a);
 	}
+
+	synopGMACWriteReg((u32 *)gmacdev->MacBase, GmacConfig, \
+			GmacFrameBurstEnable | GmacJumboFrameEnable | GmacSelectMii \
+			| GmacFullDuplex | GmacTxEnable | GmacRxEnable);
+	synopGMACWriteReg((u32 *)gmacdev->MacBase, GmacFrameFilter, \
+			GmacFilterOff | GmacPromiscuousModeOn);
 
 	return 0;
 }

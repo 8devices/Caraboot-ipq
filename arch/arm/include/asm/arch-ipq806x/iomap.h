@@ -1,4 +1,7 @@
-/* Copyright (c) 2008, Google Inc.
+/*
+ * Copyright (c) 2012 - 2013 Qualcomm Atheros, Inc.
+ *
+ * Copyright (c) 2008, Google Inc.
  * All rights reserved.
  *
  * Copyright (c) 2009-2012, Code Aurora Forum. All rights reserved.
@@ -48,10 +51,10 @@
 #define GPT_ENABLE           GPT_REG(0x0008)
 #define GPT_CLEAR            GPT_REG(0x000C)
 
-#define GPT1_MATCH_VAL        GPT_REG(0x00014)
-#define GPT1_COUNT_VAL        GPT_REG(0x00018)
-#define GPT1_ENABLE           GPT_REG(0x0001C)
-#define GPT1_CLEAR            GPT_REG(0x00020)
+#define GPT1_MATCH_VAL       GPT_REG(0x00010)
+#define GPT1_COUNT_VAL       GPT_REG(0x00014)
+#define GPT1_ENABLE          GPT_REG(0x00018)
+#define GPT1_CLEAR           GPT_REG(0x0001C)
 
 #define DGT_MATCH_VAL        DGT_REG(0x0000)
 #define DGT_COUNT_VAL        DGT_REG(0x0004)

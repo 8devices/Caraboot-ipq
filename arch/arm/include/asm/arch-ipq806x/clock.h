@@ -113,6 +113,22 @@
 #define NS_SRC_SEL(s_msb, s_lsb, s) \
     BVAL(s_msb, s_lsb, s)
 
+/* gmac specific clock settings */
+#define NSS_250MHZ_CLK_SRC_CTL  0x903D60
+#define NSS_250MHZ_CLK_SRC0_NS  0x903D64
+#define NSS_250MHZ_CLK_SRC0_MD  0x903D6C
+#define NSS_250MHZ_CLK_CTL      0x903D74
+#define GMAC_CORE0_RESET        0x903CBC
+#define GMAC_AHB_RESET          0x903E24
+#define TCSR_PXO_SEL            0x1A4000C0
+#define SRC_SEL_PLL0            (0x2 << 0)
+#define MNCNTR_MODE_DUAL_EDGE   (0x2 << 5)
+#define MNCNTR_ENABLE           (0x1 << 8)
+#define MNCNTR_RST_ACTIVE       (0x1 << 7)
+#define N_VAL                   15
+
+void gmac_clock_config(unsigned int m, unsigned int not_n, unsigned int not_2d);
+
 /* Uart specific clock settings */
 
 void uart_pll_vote_clk_enable(unsigned int);

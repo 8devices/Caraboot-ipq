@@ -3,10 +3,7 @@
  * mii_gpio.c
  *	MII phy control operations.
  *
- *  * Copyright (c) 2013 Qualcomm Atheros, Inc. *
- *
- * Copyright © 2012
- * Qualcomm Atheros. <www.qualcomm.com>.
+ * Copyright (c) 2012 - 2013 Qualcomm Atheros, Inc. *
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,7 +37,7 @@
 #define MII_OPCODE_WRITE	0x05
 #define MII_OPCODE_READ		0x06
 #define MII_DUTY_CYCLE		100
-#define MII_DUTY_CYCLE_TIME	(((SYSTEM_FREQ / 1000000) * MII_DUTY_CYCLE / 1000) + 1)
+#define MII_DUTY_CYCLE_TIME	((((SYSTEM_FREQ / 1000000) * MII_DUTY_CYCLE / 1000) + 1) * 2)
 #define MII_DATA_SETUP_TIME	((SYSTEM_FREQ / 100000000) + 1)
 
 /*

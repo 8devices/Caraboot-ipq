@@ -38,5 +38,3 @@
 #define SPSS_TIMER_STATUS_DGT_EN    (1 << 0)
 
 
-#define READ_TIMER    readl(GPT_COUNT_VAL)
-

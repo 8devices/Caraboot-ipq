@@ -1,5 +1,4 @@
-
-/* * Copyright (c) 2012 Qualcomm Atheros, Inc. * */
+/* * Copyright (c) 2012 - 2013 Qualcomm Atheros, Inc. * */
 
 /*
  * This is the network dependent layer to handle network related functionality.
@@ -20,7 +19,9 @@
 #include <asm/arch-ipq806x/nss/msm_ipq806x_gmac.h>
 #include <asm/arch-ipq806x/nss/clock.h>
 #include <asm/arch-ipq806x/nss/nss_reg.h>
-#include "../../../board/qcom/ipq806x_cdp/ipq806x_cdp.h"
+#include <asm/arch-ipq806x/gpio.h>
+#include <asm/arch-ipq806x/clock.h>
+#include <common.h>
 #include <linux/mii.h>
 
 
@@ -32,6 +33,9 @@ extern int eth_rx(void);
 extern void eth_halt(void);
 extern int eth_init(bd_t *bd);
 extern void cleanup_skb(void);
+
+extern int synop_phy_link_status(int speed);
+void synop_phy_outofreset(void);
 extern s32 synopGMAC_check_link(synopGMACdevice *gmacdev);
 extern uint16_t mii_read_reg(synopGMACdevice *gmacdev,  uint32_t phy, uint32_t reg);
 int eth_init_done;
@@ -66,17 +70,6 @@ static s32 gmac_plat_init(void)
 
 	TR("%s: ipq806x: NSS base done. \n",__FUNCTION__);
 
-	/*TODO: review VI scripts and update global settings. */
-	synopGMACClearBits((u32 *)nss_base, NSS_ETH_CLK_GATE_CTL, 0xFFFFFFFF);
-	synopGMACClearBits((u32 *)nss_base, NSS_ETH_CLK_DIV0, 0xFFFFFFFF);
-	synopGMACClearBits((u32 *)nss_base, NSS_ETH_CLK_DIV1, 0xFFFFFFFF);
-	synopGMACClearBits((u32 *)nss_base, NSS_ETH_CLK_SRC_CTL, 0xFFFFFFFF);
-	synopGMACClearBits((u32 *)nss_base, NSS_ETH_CLK_INV_CTL, 0xFFFFFFFF);
-	synopGMACClearBits((u32 *)nss_base, NSS_GMAC0_CTL, 0xFFFFFFFF);
-	synopGMACClearBits((u32 *)nss_base, NSS_GMAC1_CTL, 0xFFFFFFFF);
-	synopGMACClearBits((u32 *)nss_base, NSS_GMAC2_CTL , 0xFFFFFFFF);
-	synopGMACClearBits((u32 *)nss_base, NSS_GMAC3_CTL, 0xFFFFFFFF);
-	synopGMACClearBits((u32 *)nss_base, NSS_QSGMII_CLK_CTL, 0xFFFFFFFF);
 	return 0;
 }
 
@@ -93,7 +86,7 @@ static s32 gmac_dev_init(void)
 
 	val = synopGMACReadReg((u32 *)nss_base, NSS_GMACn_CTL(id));
 	TR("%s: IPQ806X_GMAC%d_CTL(0x%x) - 0x%x\n", __FUNCTION__, id ,
-		IPQ806X_GMACn_CTL(id), val);
+		NSS_GMACn_CTL(id), val);
 
 	/* Enable clk for GMACn */
 	val = GMACn_RGMII_RX_CLK(id) | GMACn_RGMII_TX_CLK(id)
@@ -584,8 +577,9 @@ static void synopGMAC_task_poll(unsigned long arg)
 			synopGMACReadReg((u32 *)gmacdev->MacBase, 0x00D8);
 		}
 	}
-
-	synopGMAC_handle_received_data(netdev, budget);
+	if (interrupt && DmaIntRxCompleted) {
+	     synopGMAC_handle_received_data(netdev, budget);
+	}
 
 	if (gmacdev->BusyTxDesc > 0) {
 		synopGMAC_handle_transmit_over(netdev);
@@ -681,8 +675,6 @@ static s32 synopGMAC_linux_open(struct eth_device *netdev)
 	/*
 	 * Lets reset the IP
 	 */
-	if (gboard_param->machid == MACH_TYPE_IPQ806X_RUMI3)
-		gmac_spare_ctl(gmacdev);
 	synopGMAC_reset(gmacdev);
 
 	/*
@@ -853,6 +845,8 @@ static s32 synopGMAC_linux_xmit_frames(struct sk_buff *skb, struct eth_device *n
 	 * Now force the DMA to start transmission
 	 */
 	synopGMAC_resume_dma_tx(gmacdev);
+	TR("%s called \n",__FUNCTION__);
+	BUG_ON(skb == NULL);
 	return NETDEV_TX_OK;
 
 drop:
@@ -914,7 +908,9 @@ s32  synopGMAC_init_network_interface(void)
                 gmacdev->synopGMACMappedAddr) ;
 		if (gboard_param->machid != MACH_TYPE_IPQ806X_RUMI3) {
 			ipq806x_dev_board_init(gmacdev);
-			gmacdev->Speed = ipq806x_get_link_speed(gmacdev->phyid);
+			synop_phy_outofreset();
+			udelay(1000);
+			gmacdev->Speed = synop_phy_link_status(gmacdev->phyid);
 		} else
 			gmac_dev_init();
 
@@ -924,11 +920,6 @@ s32  synopGMAC_init_network_interface(void)
 		 */
 		synopGMAC_attach(gmacdev, gmacdev->synopGMACMappedAddr);
 		gmacdev->synopGMACnetdev = netdev;
-		gmacdev->LinkState = synopGMAC_check_link(gmacdev);
-		if (gboard_param->machid == MACH_TYPE_IPQ806X_RUMI3) {
-			gmac_spare_ctl(gmacdev);
-			synopGMAC_reset(gmacdev);
-		}
 
 		/*
 		 * This just fill in some default MAC address
@@ -1081,6 +1072,9 @@ void synopGMAC_reset_phy(synopGMACdevice *gmacdev, u32 phyid)
 int ipq_gmac_eth_initialize(void)
 {
 	struct eth_device *dev;
+	unsigned int m = 5, not_n = 0xF4, not_2d = 0xF5;
+
+	gmac_clock_config(m, not_n, not_2d);
 
 	TR("\r\n ***** ipqg_mac_eth_initialize ***** \r\n");
 	dev = malloc(sizeof(*dev));
@@ -1094,6 +1088,13 @@ int ipq_gmac_eth_initialize(void)
 	dev->recv = ipq_gmac_eth_rx;
 	strcpy(dev->name, "ipq_gmac");
 	eth_register(dev);
+
+	/* MDIO Initialisation */
+	gpio_tlmm_config(0, 1, GPIO_OUTPUT, GPIO_NO_PULL, GPIO_8MA, GPIO_ENABLE);
+	gpio_tlmm_config(1, 1, GPIO_OUTPUT, GPIO_NO_PULL, GPIO_8MA, GPIO_DISABLE);
+	gpio_tlmm_config(2, 0, GPIO_OUTPUT, GPIO_NO_PULL, GPIO_8MA, GPIO_ENABLE);
+	gpio_tlmm_config(66, 0, GPIO_OUTPUT, GPIO_NO_PULL, GPIO_16MA, GPIO_ENABLE);
+
 	return 0;
 }
 
@@ -1195,131 +1196,71 @@ static uint32_t clk_div_qsgmii(synopGMACdevice *gmacdev)
 void nss_gmac_dev_init(synopGMACdevice *gmacdev)
 {
         uint32_t val = 0;
-        uint32_t id = 0;
-        /*
-         * Initialize wake and sleep counter values of
-         * GMAC memory footswitch control.
-         */
-        synopGMACSetBits((u32 *)MSM_CLK_CTL_BASE, GMAC_COREn_CLK_FS(id) , GMAC_FS_S_W_VAL);
+        uint32_t id = 0, div;
 
+	val = GMAC_IFG_CTL(GMAC_IFG) | GMAC_IFG_LIMIT(GMAC_IFG) | GMAC_CSYS_REQ;
+	if (gmacdev->phy_mii_type == GMAC_INTF_RGMII) {
+		val |= GMAC_PHY_RGMII;
+	} else {
+		val &= ~GMAC_PHY_RGMII;
+	}
 
-        /*
-         * Bring up GMAC core clock
-         */
-        /* a) Program GMAC_COREn_CLK_SRC_CTL register */
-        synopGMACClearBits((u32 *)MSM_CLK_CTL_BASE, GMAC_COREn_CLK_SRC_CTL(id),
-                                GMAC_DUAL_MN8_SEL |
-                                GMAC_CLK_ROOT_ENA |
-                                GMAC_CLK_LOW_PWR_ENA);
-        synopGMACSetBits((u32 *)MSM_CLK_CTL_BASE, GMAC_COREn_CLK_SRC_CTL(id),
-                              GMAC_CLK_ROOT_ENA);
+	synopGMACSetBits((u32 *)nss_base, NSS_GMACn_CTL(id), val);
 
-        /* b) Program M & D values in GMAC_COREn_CLK_SRC[0,1]_MD register. */
-        synopGMACWriteReg((u32 *)MSM_CLK_CTL_BASE, GMAC_COREn_CLK_SRC0_MD(id), 0);
-        synopGMACWriteReg((u32 *)MSM_CLK_CTL_BASE, GMAC_COREn_CLK_SRC1_MD(id), 0);
-        synopGMACSetBits((u32 *)MSM_CLK_CTL_BASE, GMAC_COREn_CLK_SRC0_MD(id),
-                              GMAC_CORE_CLK_M_VAL | GMAC_CORE_CLK_D_VAL);
-        synopGMACSetBits((u32 *)MSM_CLK_CTL_BASE, GMAC_COREn_CLK_SRC1_MD(id),
-                              GMAC_CORE_CLK_M_VAL | GMAC_CORE_CLK_D_VAL);
+	synopGMACClearBits((u32 *)MSM_CLK_CTL_BASE, GMAC_COREn_RESET(id), 0x1);
 
-        /* c) Program N values on GMAC_COREn_CLK_SRC[0,1]_NS register */
-        synopGMACWriteReg((u32 *)MSM_CLK_CTL_BASE, GMAC_COREn_CLK_SRC0_NS(id), 0);
-        synopGMACWriteReg((u32 *)MSM_CLK_CTL_BASE, GMAC_COREn_CLK_SRC1_NS(id), 0);
-        synopGMACSetBits((u32 *)MSM_CLK_CTL_BASE, GMAC_COREn_CLK_SRC0_NS(id),
-                              GMAC_CORE_CLK_N_VAL
-                              | GMAC_CORE_CLK_MNCNTR_EN
-                              | GMAC_CORE_CLK_MNCNTR_MODE_DUAL
-                              | GMAC_CORE_CLK_PRE_DIV_SEL_BYP
-                          | GMAC_CORE_CLK_SRC_SEL_PLL0);
-        synopGMACSetBits((u32 *)MSM_CLK_CTL_BASE, GMAC_COREn_CLK_SRC1_NS(id),
-                              GMAC_CORE_CLK_N_VAL
-                              | GMAC_CORE_CLK_MNCNTR_EN
-                              | GMAC_CORE_CLK_MNCNTR_MODE_DUAL
-                              | GMAC_CORE_CLK_PRE_DIV_SEL_BYP
-                              | GMAC_CORE_CLK_SRC_SEL_PLL0);
+	/* Configure clock dividers for 1000Mbps default */
+	gmacdev->Speed = SPEED1000;
+	switch (gmacdev->phy_mii_type) {
+	case GMAC_INTF_RGMII:
+		div = clk_div_rgmii(gmacdev);
+		break;
 
-        /* d) Un-halt GMACn clock */
-        synopGMACClearBits((u32 *)MSM_CLK_CTL_BASE, CLK_HALT_NSSFAB0_NSSFAB1_STATEA,
-                                GMACn_CORE_CLK_HALT(id));
+	case GMAC_INTF_SGMII:
+		div = clk_div_sgmii(gmacdev);
+		break;
 
-        /* e) CLK_COREn_CLK_CTL: select branch enable and disable clk invert */
-        synopGMACClearBits((u32 *)MSM_CLK_CTL_BASE, GMAC_COREn_CLK_CTL(id), GMAC_CLK_INV);
-        synopGMACSetBits((u32 *)MSM_CLK_CTL_BASE, GMAC_COREn_CLK_CTL(id), GMAC_CLK_BRANCH_EN);
+	case GMAC_INTF_QSGMII:
+		div = clk_div_qsgmii(gmacdev);
+		break;
+	}
 
+	val = synopGMACReadReg((u32 *)nss_base, NSS_ETH_CLK_DIV0);
 
-        /* Set GMACn Ctl */
-        val = GMAC_IFG_CTL(GMAC_IFG) | GMAC_IFG_LIMIT(GMAC_IFG) | GMAC_CSYS_REQ;
-        if (gmacdev->phy_mii_type == GMAC_INTF_RGMII) {
-                val |= GMAC_PHY_RGMII;
-        } else {
-                val &= ~GMAC_PHY_RGMII;
-        }
+	val &= ~GMACn_CLK_DIV(id, GMACn_CLK_DIV_SIZE);
+	val |= GMACn_CLK_DIV(id, div);
+	synopGMACWriteReg((u32 *)nss_base, NSS_ETH_CLK_DIV0, val);
 
-        synopGMACSetBits((u32 *)nss_base, NSS_GMACn_CTL(id), val);
-
-        val = synopGMACReadReg((u32 *)nss_base, NSS_GMACn_CTL(id));
-        TR0( "%s: NSS_GMAC%d_CTL(0x%x) - 0x%x",
-                      __FUNCTION__, id, NSS_GMACn_CTL(id), val);
-
-        /*
-         * Optionally enable/disable MACSEC bypass.
-         * We are doing this in nss_gmac_plat_init()
-         */
-
-        /*
-         * Deassert GMACn power on reset
-         */
-        synopGMACClearBits((u32 *)MSM_CLK_CTL_BASE, GMAC_COREn_RESET(id), 0x1);
-
-        /* Select Tx/Rx CLK source */
-        val = 0;
-        if (id == 0 || id == 1) {
-                if (gmacdev->phy_mii_type == GMAC_INTF_RGMII) {
-                        val |= (1 << id);
-                }
-        } else {
+	/* Select Tx/Rx CLK source */
+	val = 0;
+	if (id == 0 || id == 1) {
+		if (gmacdev->phy_mii_type == GMAC_INTF_RGMII) {
+			val |= (1 << id);
+		}
+	} else {
 		if (gmacdev->phy_mii_type == GMAC_INTF_SGMII) {
-                        val |= (1 << id);
-                }
-        }
+			val |= (1 << id);
+		}
+	}
 
         synopGMACSetBits((u32 *)nss_base, NSS_ETH_CLK_SRC_CTL, val);
 
-        /* Enable xGMII clk for GMACn */
-        val = 0;
-        if (gmacdev->phy_mii_type == GMAC_INTF_RGMII) {
-                val |= GMACn_RGMII_RX_CLK(id) | GMACn_RGMII_TX_CLK(id);
-        } else {
-                val |= GMACn_GMII_RX_CLK(id) | GMACn_GMII_TX_CLK(id);
-        }
+	synopGMACSetBits((u32 *)nss_base, NSS_QSGMII_CLK_CTL, 0x1);
 
-        /* Optionally configure RGMII CDC delay */
+	/* Enable xGMII clk for GMACn */
+	val = 0;
+	if (gmacdev->phy_mii_type == GMAC_INTF_RGMII) {
+		val |= GMACn_RGMII_RX_CLK(id) | GMACn_RGMII_TX_CLK(id);
+	} else {
+		val |= GMACn_GMII_RX_CLK(id) | GMACn_GMII_TX_CLK(id);
+	}
 
-        /* Enable PTP clock */
-        val |= GMACn_PTP_CLK(id);
-        synopGMACSetBits((u32 *)nss_base, NSS_ETH_CLK_GATE_CTL, val);
+	/* Optionally configure RGMII CDC delay */
 
-        if ((gmacdev->phy_mii_type == GMAC_INTF_SGMII)
-             || (gmacdev->phy_mii_type == GMAC_INTF_QSGMII)) {
-                nss_gmac_qsgmii_dev_init(gmacdev);
-                TR0("SGMII Specific Init for GMAC%d Done!", id);
-        }
+	/* Enable PTP clock */
+	val |= GMACn_PTP_CLK(id);
 
-        val = synopGMACReadReg((u32 *)nss_base, NSS_ETH_CLK_GATE_CTL);
-        TR0("%s:NSS_ETH_CLK_GATE_CTL(0x%x) - 0x%x",
-                   __FUNCTION__, NSS_ETH_CLK_GATE_CTL, val);
-
-        val = synopGMACReadReg((u32 *)nss_base, NSS_ETH_CLK_SRC_CTL);
-        TR0("%s:NSS_ETH_CLK_SRC_CTL(0x%x) - 0x%x",
-                      __FUNCTION__, NSS_ETH_CLK_SRC_CTL, val);
-
-        /* Read status registers */
-        val = synopGMACReadReg((u32 *)nss_base, NSS_ETH_CLK_ROOT_STAT);
-        TR0("%s:CLK_ROOT_STAT - 0x%x", __FUNCTION__, val);
-
-        val = synopGMACReadReg((u32 *)nss_base, NSS_QSGMII_CLK_CTL);
-        TR0( "%s:QSGMII_CLK_CTL - 0x%x", __FUNCTION__, val);
-
+	synopGMACSetBits((u32 *)nss_base, NSS_ETH_CLK_GATE_CTL, val);
 }
 
 /**
@@ -1345,7 +1286,7 @@ void nss_gmac_qsgmii_dev_init(synopGMACdevice *gmacdev)
         synopGMACSetBits((uint32_t *)nss_base, NSS_QSGMII_CLK_CTL, val);
 
         val = synopGMACReadReg((uint32_t *)nss_base, NSS_QSGMII_CLK_CTL);
-        TR0("%s: NSS_QSGMII_CLK_CTL(0x%x) - 0x%x",
+        TR("%s: NSS_QSGMII_CLK_CTL(0x%x) - 0x%x",
                       __FUNCTION__, NSS_QSGMII_CLK_CTL, val);
 }
 
@@ -1413,8 +1354,8 @@ int32_t nss_gmac_dev_set_speed(synopGMACdevice *gmacdev)
 	uint32_t id = gmacdev->macid;
 	uint32_t div;
 	uint32_t clk;
-//	uint32_t *nss_base = (uint32_t *)(gmacdev->ctx->nss_base);
 
+	gmacdev->phy_mii_type = GMAC_INTF_RGMII;
 	switch (gmacdev->phy_mii_type) {
 	case GMAC_INTF_RGMII:
 		div = clk_div_rgmii(gmacdev);
@@ -1497,11 +1438,25 @@ int32_t nss_gmac_common_init(void)
 {
 	volatile uint32_t val;
 
-/*	nss_base = NSS_REG_BASE;
-
-	qsgmii_base = QSGMII_REG_BASE;*/
-
 	nss_gmac_clear_all_regs();
+
+	synopGMACWriteReg(qsgmii_base, NSS_QSGMII_PHY_SERDES_CTL,
+				PLL_PUMP_CURRENT_600uA | PLL_TANK_CURRENT_7mA |
+				PCIE_MAX_POWER_MODE | PLL_LOOP_FILTER_RESISTOR_DEFAULT |
+				PLL_ENABLE | SERDES_ENABLE_LCKDT);
+
+	synopGMACWriteReg(qsgmii_base, NSS_PCS_CAL_LCKDT_CTL, LCKDT_RST_n);
+
+	synopGMACWriteReg(qsgmii_base, NSS_QSGMII_PHY_QSGMII_CTL,
+				QSGMII_TX_AMPLITUDE_600mV | QSGMII_TX_SLC_10 |
+				QSGMII_THRESHOLD_DEFAULT | QSGMII_SLEW_RATE_DEFAULT |
+				QSGMII_RX_EQUALIZER_DEFAULT | QSGMII_RX_DC_BIAS_DEFAULT |
+				QSGMII_PHASE_LOOP_GAIN_DEFAULT | QSGMII_TX_DE_EMPHASIS_DEFAULT |
+				QSGMII_ENABLE | QSGMII_ENABLE_TX |
+				QSGMII_ENABLE_SD | QSGMII_ENABLE_RX |
+				QSGMII_ENABLE_CDR);
+
+	synopGMACWriteReg(qsgmii_base, NSS_PCS_QSGMII_BERT_THLD_CTL, 0x0);
 
 	/*
 	 * Deaassert GMAC AHB reset
@@ -1512,10 +1467,8 @@ int32_t nss_gmac_common_init(void)
 	synopGMACSetBits((uint32_t *)nss_base, NSS_MACSEC_CTL, 0x7);
 
 	val = synopGMACReadReg((uint32_t *)nss_base, NSS_MACSEC_CTL);
-	TR0("%s:NSS_MACSEC_CTL(0x%x) - 0x%x",
+	TR("%s:NSS_MACSEC_CTL(0x%x) - 0x%x",
 		     __FUNCTION__, NSS_MACSEC_CTL, val);
-
-	nss_gmac_qsgmii_common_init((uint32_t *)qsgmii_base);
 
 	/*
 	 * Initialize ACC_GMAC_CUST field of NSS_ACC_REG register
@@ -1554,13 +1507,13 @@ int32_t ipq806x_get_link_speed(uint32_t phyid)
 
 int32_t ipq806x_get_duplex(uint32_t phyid)
 {
-        int32_t lpa = 0, media, duplex, adv;
-        lpa = ipq_mii_read_reg(phyid, MII_LPA);
-        printf(" get_link_speed LPA %x \r\n ", lpa);
-        adv = ipq_mii_read_reg(phyid, MII_ADVERTISE);
-        printf(" get_link_speed LPA %x ADV %x  \r\n ", lpa, adv);
-        media = mii_nway_result(lpa & adv);
-        duplex = (media & ADVERTISE_FULL) ? 1 : 0;
+	int32_t lpa = 0, media, duplex, adv;
+	lpa = ipq_mii_read_reg(phyid, MII_LPA);
+	printf(" get_link_speed LPA %x \r\n ", lpa);
+	adv = ipq_mii_read_reg(phyid, MII_ADVERTISE);
+	printf(" get_link_speed LPA %x ADV %x  \r\n ", lpa, adv);
+	media = mii_nway_result(lpa & adv);
+	duplex = (media & (ADVERTISE_FULL | ADVERTISE_1000XFULL)) ? FULLDUPLEX : HALFDUPLEX;
 
 	return duplex;
 }
