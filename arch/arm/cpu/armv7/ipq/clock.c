@@ -30,7 +30,7 @@ static void uart_set_rate_mnd(unsigned int gsbi_port, unsigned int m,
         /* Assert MND reset. */
 	setbits_le32(GSBIn_UART_APPS_NS_REG(gsbi_port), BIT(7));
 	/* Program M and D values. */
-	setbits_le32(GSBIn_UART_APPS_MD_REG(gsbi_port), MD16(m, n));
+	writel(MD16(m, n), GSBIn_UART_APPS_MD_REG(gsbi_port));
 	/* Deassert MND reset. */
 	clrbits_le32(GSBIn_UART_APPS_NS_REG(gsbi_port), BIT(7));
 }
