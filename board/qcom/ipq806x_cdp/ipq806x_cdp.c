@@ -106,8 +106,11 @@ int board_init()
 void enable_caches(void)
 {
 	icache_enable();
+	/* When dcache is enabled it causes the tftp timeout CR is raised CR.No: 513868.
+         * disabing dcache now to make tftp to work */
+#if (CONFIG_IPQ_CACHE_ENABLE == 1)
 	dcache_enable();
-
+#endif
 }
 
 

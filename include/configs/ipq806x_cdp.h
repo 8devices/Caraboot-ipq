@@ -212,5 +212,7 @@ typedef struct {
 /* NSS GEMAC */
 #define CONFIG_SYNOPSYS_GEMAC
 
+#define CONFIG_IPQ_CACHE_ENABLE 0
+
 #endif /* _IPQCDP_H */
 

@@ -441,8 +441,6 @@ static u32 synopGMAC_handle_received_data(struct eth_device *netdev, u32 quota)
 	struct sk_buff *skb;
 	u32 count = 0, refill_count = 0, reserve_len;
 
-	dcache_disable();
-
 	/*
 	 * Handle the Receive Descriptors
 	 */
@@ -500,8 +498,6 @@ static u32 synopGMAC_handle_received_data(struct eth_device *netdev, u32 quota)
 		NetReceive(skb->data, skb->len);
 		dev_kfree_skb_any(skb);
 	}
-
-	 dcache_enable();
 
 	/*
 	 * Now allocate more RX buffer and let GMAC DMA engine know about them.
