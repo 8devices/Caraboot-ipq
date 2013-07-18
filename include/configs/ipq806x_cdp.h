@@ -214,5 +214,8 @@ typedef struct {
 
 #define CONFIG_IPQ_CACHE_ENABLE 0
 
+/* Add MBN header to U-Boot */
+#define CONFIG_MBN_HEADER
+
 #endif /* _IPQCDP_H */
 

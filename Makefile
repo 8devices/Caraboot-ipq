@@ -381,6 +381,7 @@ ALL-$(CONFIG_ONENAND_U_BOOT) += $(obj)u-boot-onenand.bin
 ONENAND_BIN ?= $(obj)onenand_ipl/onenand-ipl-2k.bin
 ALL-$(CONFIG_SPL) += $(obj)spl/u-boot-spl.bin
 ALL-$(CONFIG_OF_SEPARATE) += $(obj)u-boot.dtb $(obj)u-boot-dtb.bin
+ALL-$(CONFIG_MBN_HEADER) += $(obj)u-boot.mbn
 
 all:		$(ALL-y) $(SUBDIR_EXAMPLES)
 
@@ -400,6 +401,9 @@ $(obj)u-boot.srec:	$(obj)u-boot
 $(obj)u-boot.bin:	$(obj)u-boot
 		$(OBJCOPY) ${OBJCFLAGS} -O binary $< $@
 		$(BOARD_SIZE_CHECK)
+
+$(obj)u-boot.mbn:	$(obj)u-boot.bin
+		python tools/mkheader.py $(CONFIG_SYS_TEXT_BASE) $< $@
 
 $(obj)u-boot.ldr:	$(obj)u-boot
 		$(CREATE_LDR_ENV)
