@@ -14,8 +14,18 @@
 #include "ipq806x_board_param.h"
 
 #include "ipq806x_cdp.h"
+#include <asm/arch-ipq806x/timer.h>
 
 DECLARE_GLOBAL_DATA_PTR;
+
+
+/* Watchdog bite time set to default reset value */
+#define RESET_WDT_BITE_TIME 0x31F3
+
+/* Watchdog bark time value is ketp larger than the watchdog timeout
+ * of 0x31F3, effectively disabling the watchdog bark interrupt
+ */
+#define RESET_WDT_BARK_TIME (5 * RESET_WDT_BITE_TIME)
 
 /*
  * If SMEM is not found, we provide a value, that will prevent the
@@ -173,9 +183,15 @@ int checkboard(void)
 
 void reset_cpu(ulong addr)
 {
-	/*
-	* TODO: Need to implement reset_cpu().
-	*/
+	printf("\nResetting with watch dog!\n");
+
+	writel(0, APCS_WDT0_EN);
+	writel(1, APCS_WDT0_RST);
+	writel(RESET_WDT_BARK_TIME, APCS_WDT0_BARK_TIME);
+	writel(RESET_WDT_BITE_TIME, APCS_WDT0_BITE_TIME);
+	writel(1, APCS_WDT0_EN);
+	writel(1, APCS_WDT0_CPU0_WDOG_EXPIRED_ENABLE);
+
 	for(;;);
 }
 

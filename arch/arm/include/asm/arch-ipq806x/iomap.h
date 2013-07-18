@@ -46,6 +46,13 @@
 #define GPT_REG(off)        (MSM_GPT_BASE + (off))
 #define DGT_REG(off)        (MSM_DGT_BASE + (off))
 
+#define APCS_WDT0_EN        (MSM_TMR_BASE + 0x0040)
+#define APCS_WDT0_RST       (MSM_TMR_BASE + 0x0038)
+#define APCS_WDT0_BARK_TIME (MSM_TMR_BASE + 0x004C)
+#define APCS_WDT0_BITE_TIME (MSM_TMR_BASE + 0x005C)
+
+#define APCS_WDT0_CPU0_WDOG_EXPIRED_ENABLE (MSM_CLK_CTL_BASE + 0x3820)
+
 #define GPT_MATCH_VAL        GPT_REG(0x0000)
 #define GPT_COUNT_VAL        GPT_REG(0x0004)
 #define GPT_ENABLE           GPT_REG(0x0008)
