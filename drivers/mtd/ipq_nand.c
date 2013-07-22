@@ -1065,6 +1065,8 @@ static int ipq_nand_write_oob(struct mtd_info *mtd, loff_t to,
 
 	start = to >> chip->page_shift;
 	pages = ops->len >> chip->page_shift;
+	ops->retlen = 0;
+	ops->oobretlen = 0;
 
 	for (i = start; i < (start + pages); i++) {
 		struct mtd_oob_ops page_ops;
