@@ -50,6 +50,7 @@ generated flashing script to work.
   * CONFIG_SYS_NULLDEV -- redirecting command output support
   * CONFIG_CMD_XIMG -- extracting sub-images support
   * CONFIG_CMD_NAND -- NAND Flash commands support
+  * CONFIG_CMD_NAND_YAFFS -- NAND YAFFS2 write support
   * CONFIG_CMD_SF -- SPI Flash commands support
 """
 
@@ -342,11 +343,15 @@ class NandScript(FlashScript):
         size = roundup(size, self.blocksize)
         self.append("nand erase 0x%08x 0x%08x" % (offset, size))
 
-    def write(self, offset, size):
+    def write(self, offset, size, yaffs):
         """Generate code, to write to a partition."""
 
-        size = roundup(size, self.pagesize)
-        self.append("nand write $fileaddr 0x%08x 0x%08x" % (offset, size))
+        if yaffs:
+            self.append("nand write.yaffs $fileaddr 0x%08x 0x%08x"
+                        % (offset, size))
+        else:
+            size = roundup(size, self.pagesize)
+            self.append("nand write $fileaddr 0x%08x 0x%08x" % (offset, size))
 
     def switch_layout(self, layout):
         """Generate code, to switch between sbl/linux layouts."""
@@ -369,7 +374,7 @@ class NorScript(FlashScript):
         size = roundup(size, self.blocksize)
         self.append("sf erase 0x%08x +0x%08x" % (offset, size))
 
-    def write(self, offset, size):
+    def write(self, offset, size, yaffs):
         """Generate code, to write to a partition."""
 
         size = roundup(size, self.pagesize)
@@ -418,6 +423,25 @@ class Pack(object):
         self.its_fname = None
         self.img_fname = None
 
+    def __get_yaffs(self, info, section):
+        """Get the yaffs flag for a section.
+
+        info -- ConfigParser object, containing image flashing info
+        section -- section to check if yaffs flag is set
+        """
+        try:
+            yaffs = info.get(section, "yaffs")
+            if yaffs.lower() in ["0", "no"]:
+                yaffs = False
+            elif yaffs.lower() in ["1", "yes"]:
+                yaffs = True
+            else:
+                error("invalid value for 'yaffs' in '%s'" % section)
+        except ConfigParserError, e:
+            yaffs = False
+
+        return yaffs
+
     def __gen_flash_script(self, info, script):
         """Generate the script to flash the images.
 
@@ -441,6 +465,10 @@ class Pack(object):
             except ConfigParserError, e:
                 layout = None
 
+            yaffs = self.__get_yaffs(info, section)
+            if self.flinfo.type == "nor" and yaffs == True:
+                error("yaffs cannot be used with NOR flash type")
+
             if self.ipq_nand and layout == None:
                 error("layout not specified for IPQ device")
             if not self.ipq_nand and layout != None:
@@ -460,7 +488,7 @@ class Pack(object):
             if self.ipq_nand: script.switch_layout(layout)
             script.imxtract(section)
             script.erase(offset, self.partitions[partition].length)
-            script.write(offset, size)
+            script.write(offset, size, yaffs)
 
             script.finish_activity()
 
@@ -1000,6 +1028,40 @@ filename = partition.mbn
         print images
         self.assertTrue("sbl2" in images)
         self.assertTrue("sbl1" not in images)
+
+    def test_yaffs_yes(self):
+        self.__mkconf("""
+[sbl1]
+partition = 0:SBL1
+filename = sbl1.mbn
+yaffs = yes
+""")
+        self.pack.main(self.flinfo, self.img_dname, self.img_fname,
+                       ipq_nand=False)
+
+    def test_yaffs_no(self):
+        self.__mkconf("""
+[sbl1]
+partition = 0:SBL1
+filename = sbl1.mbn
+yaffs = no
+""")
+        self.pack.main(self.flinfo, self.img_dname, self.img_fname,
+                       ipq_nand=False)
+
+    def test_yaffs_invalid(self):
+        self.__mkconf("""
+[sbl1]
+partition = 0:SBL1
+filename = sbl1.mbn
+yaffs = abcd
+""")
+        self.assertRaises(SystemExit,
+                          self.pack.main,
+                          self.flinfo,
+                          self.img_dname,
+                          self.img_fname,
+                          ipq_nand=False)
 
 if __name__ == "__main__":
     main()
