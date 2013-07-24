@@ -157,6 +157,7 @@ typedef struct synopGMACDeviceStruct
 	u32 macid;
 	u32 phyid;
 	u32 phy_mii_type;
+	u32 state;
 
 } synopGMACdevice;
 
@@ -2001,7 +2002,7 @@ static inline DmaDesc *synopGMAC_get_rx_qptr(synopGMACdevice * gmacdev)
 		return NULL;
 	}
 
-	if(synopGMAC_is_desc_owned_by_dma(rxdesc)) {
+	if((gmacdev->state == ETH_STATE_PASSIVE) || synopGMAC_is_desc_owned_by_dma(rxdesc)) {
 		return NULL;
 	}
 	BUG_ON(synopGMAC_is_desc_empty(rxdesc));

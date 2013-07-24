@@ -499,6 +499,10 @@ static u32 synopGMAC_handle_received_data(struct eth_device *netdev, u32 quota)
 		dev_kfree_skb_any(skb);
 	}
 
+	/* U-Boot could invoke eth_halt and halt our operations. */
+	if (gmacdev->state == ETH_STATE_PASSIVE)
+		return count;
+
 	/*
 	 * Now allocate more RX buffer and let GMAC DMA engine know about them.
 	 */
@@ -1012,6 +1016,7 @@ void  ipq_gmac_eth_halt(struct eth_device *dev)
 	}
 
 	synopGMAC_linux_close(synopGMACDev[0]->synopGMACnetdev);
+	synopGMACDev[0]->state = ETH_STATE_PASSIVE;
 }
 
 int  ipq_gmac_eth_init(struct eth_device *dev,bd_t *bd)
@@ -1021,10 +1026,12 @@ int  ipq_gmac_eth_init(struct eth_device *dev,bd_t *bd)
 	if (!eth_init_done) {
 		TR("eth_init: init GMAC\n");
 		synopGMAC_init_network_interface();
+		synopGMACDev[0]->state = ETH_STATE_INIT;
 		eth_init_done = 1;
 	}
 
 	synopGMAC_linux_open(synopGMACDev[0]->synopGMACnetdev);
+	synopGMACDev[0]->state = ETH_STATE_ACTIVE;
 
 	return 0;
 }
