@@ -40,15 +40,16 @@
 static ulong timestamp;
 static ulong lastinc;
 
+#define GPT_FREQ_KHZ    32
+#define GPT_FREQ	(GPT_FREQ_KHZ * 1000)	/* 32 KHz */
+
 /**
  * timer_init - initialize timer
  */
 int timer_init(void)
 {
 	writel(0, GPT_ENABLE);
-	writel(0, GPT1_ENABLE);
 	writel(GPT_ENABLE_EN, GPT_ENABLE);
-	writel(GPT_ENABLE_EN, GPT1_ENABLE);
 	return 0;
 }
 
@@ -67,33 +68,30 @@ ulong get_timer(ulong base)
  * __udelay -  generates micro second delay.
  * @usec: delay duration in microseconds
  *
- * With 33KHz clock, minimum possible delay is 30 Micro seconds and
+ * With 32KHz clock, minimum possible delay is 31.25 Micro seconds and
  * its multiples. In Rumi GPT clock is 32 KHz
  */
 void __udelay(unsigned long usec)
 {
 	unsigned int val;
+	ulong now, last;
+	ulong runcount;
 
-	usec = (usec * 32 + 1000 - 32) / 1000;
+	usec = (usec + GPT_FREQ_KHZ - 1) / GPT_FREQ_KHZ;
+	last = readl(GPT_COUNT_VAL);
+	runcount = last;
+	val = usec + last;
 
-	writel(0, GPT1_CLEAR);
-	writel(0, GPT1_ENABLE);
 	do {
-		val = 0;
-		val = readl(GPT1_COUNT_VAL);
-	} while (val != 0);
-
-	writel(GPT_ENABLE_EN, GPT1_ENABLE);
-	do {
-		val = 0;
-		val = readl(GPT1_COUNT_VAL);
-	} while (val < usec) ;
-
-	writel(0, GPT1_ENABLE);
-	writel(0, GPT1_CLEAR);
+		now = readl(GPT_COUNT_VAL);
+		if (last > now)
+			runcount += ((GPT_FREQ - last) + now);
+		else
+			runcount += (now - last);
+		last = now;
+	} while (runcount < val);
 }
 
-#define GPT_FREQ	(32 * 1000)	/* 32 KHz */
 
 inline ulong gpt_to_sys_freq(unsigned int gpt)
 {
