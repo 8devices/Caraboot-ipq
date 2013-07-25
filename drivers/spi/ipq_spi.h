@@ -127,17 +127,12 @@
 #define GSBI5_QUP_APPS_CLK			20
 #define GSBI6_QUP_APPS_CLK			16
 #define GSBI7_QUP_APPS_CLK			12
-#define CFPB_CLK_BRANCH_ENA_MSK			(1 << 4)
-#define CFPB_CLK_BRANCH_ENA			(1 << 4)
-#define CFPB_CLK_BRANCH_DIS			(0 << 4)
 #define GSBI_CLK_BRANCH_ENA_MSK			(1 << 4)
 #define GSBI_CLK_BRANCH_ENA			(1 << 4)
 #define GSBI_CLK_BRANCH_DIS			(0 << 4)
 #define QUP_CLK_BRANCH_ENA_MSK			(1 << 9)
 #define QUP_CLK_BRANCH_ENA			(1 << 9)
 #define QUP_CLK_BRANCH_DIS			(0 << 9)
-#define CLK_DIV_MSK				0x3
-#define CLK_DIV_2				(1 << 0)
 #define CLK_ROOT_ENA_MSK			(1 << 11)
 #define CLK_ROOT_ENA				(1 << 11)
 #define CLK_ROOT_DIS				(0 << 11)

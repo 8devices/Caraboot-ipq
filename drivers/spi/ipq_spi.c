@@ -111,6 +111,18 @@ static unsigned int cs_gpio_array[NUM_PORTS][NUM_CS] = {
 };
 
 /*
+ * GSBI HCLK state register bit
+ * hclk_state[0] -- GSBI5
+ * hclk_state[1] -- GSBI6
+ * hclk_state[2] -- GSBI7
+*/
+static unsigned int hclk_state[NUM_PORTS] = {
+	GSBI5_HCLK,
+	GSBI6_HCLK,
+	GSBI7_HCLK
+};
+
+/*
  * GSBI QUP_APPS_CLK state register bit
  * qup_apps_clk_state[0] -- GSBI5
  * qup_apps_clk_state[1] -- GSBI6
@@ -237,16 +249,27 @@ static void spi_set_mode(struct ipq_spi_slave *ds, unsigned int mode)
 }
 
 /*
+ * Check for HCLK state
+ */
+static int check_hclk_state(unsigned int core_num, int enable)
+{
+	if (clk_is_dummy())
+		return 0;
+
+	return check_bit_state(CLK_HALT_CFPB_STATEB_REG,
+		hclk_state[core_num], enable, 5);
+}
+
+/*
  * Check for QUP APPS CLK state
  */
 static int check_qup_clk_state(unsigned int core_num, int enable)
 {
-#ifndef CONFIG_RUMI
+	if (clk_is_dummy())
+		return 0;
+
 	return check_bit_state(CLK_HALT_CFPB_STATEB_REG,
 		qup_apps_clk_state[core_num], enable, 5);
-#else
-	return 0;
-#endif
 }
 
 /*
@@ -272,8 +295,8 @@ static void gsbi_pin_config(unsigned int port_num, int cs_num)
 	unsigned int gpio;
 	unsigned int i;
 	/* Hold the GSBIn (core_num) core in reset */
-	clrsetbits_le32(GSBIn_RESET_REG(port_num), GSBI1_RESET_MSK,
-						GSBI1_RESET);
+	clrsetbits_le32(GSBIn_RESET_REG(GSBI_IDX_TO_GSBI(port_num)),
+			GSBI1_RESET_MSK, GSBI1_RESET);
 
 	/*
 	 * Configure SPI_CLK, SPI_MISO and SPI_MOSI
@@ -313,8 +336,8 @@ static int gsbi_clock_init(struct ipq_spi_slave *ds)
 	int ret;
 
 	/* Hold the GSBIn (core_num) core in reset */
-	clrsetbits_le32(GSBIn_RESET_REG(ds->slave.bus), GSBI1_RESET_MSK,
-							GSBI1_RESET);
+	clrsetbits_le32(GSBIn_RESET_REG(GSBI_IDX_TO_GSBI(ds->slave.bus)),
+			GSBI1_RESET_MSK, GSBI1_RESET);
 
 	/* Disable GSBIn (core_num) QUP core clock branch */
 	clrsetbits_le32(ds->regs->qup_ns_reg, QUP_CLK_BRANCH_ENA_MSK,
@@ -352,7 +375,7 @@ static int gsbi_clock_init(struct ipq_spi_slave *ds)
 
 	/* De-assert the M/N:D counter reset */
 	clrsetbits_le32(ds->regs->qup_ns_reg, MNCNTR_RST_MSK, MNCNTR_RST_DIS);
-	clrsetbits_le32(ds->regs->qup_ns_reg, MNCNTR_EN, MNCNTR_EN);
+	clrsetbits_le32(ds->regs->qup_ns_reg, MNCNTR_MSK, MNCNTR_EN);
 
 	/*
 	 * Enable the GSBIn (core_num) QUP core clock root.
@@ -368,6 +391,16 @@ static int gsbi_clock_init(struct ipq_spi_slave *ds)
 	if (ret) {
 		printf("QUP Clock Enable For GSBI%d"
 				" failed!\n", ds->slave.bus);
+		return ret;
+	}
+
+	/* Enable GSBIn (core_num) core clock branch */
+	clrsetbits_le32(GSBIn_HCLK_CTL_REG(GSBI_IDX_TO_GSBI(ds->slave.bus)),
+			GSBI_CLK_BRANCH_ENA_MSK, GSBI_CLK_BRANCH_ENA);
+
+	ret = check_hclk_state(ds->slave.bus, 0);
+	if (ret) {
+		printf("HCLK Enable For GSBI%d failed!\n", ds->slave.bus);
 		return ret;
 	}
 

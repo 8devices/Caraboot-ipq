@@ -78,11 +78,18 @@
 
 #ifndef __ASSEMBLY__
 #include <compiler.h>
+#include "../../board/qcom/ipq806x_cdp/ipq806x_cdp.h"
 extern loff_t board_env_offset;
 extern loff_t board_env_range;
 extern uint32_t flash_index;
 extern uint32_t flash_chip_select;
 extern uint32_t flash_block_size;
+extern board_ipq806x_params_t *gboard_param;
+
+static uint32_t inline clk_is_dummy(void)
+{
+	return gboard_param->clk_dummy;
+}
 
 /*
  * XXX XXX Please do not instantiate this structure. XXX XXX
