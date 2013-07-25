@@ -206,7 +206,7 @@ typedef struct {
 #define CONFIG_IPQ_FIRMWARE
 #define CONFIG_BOOTCOMMAND  "bootipq"
 #define CONFIG_BOOTARGS \
-	"root=mtd:0:EFS2APPS rootfstype=jffs2 rw init=/init console=ttyHSL1,115200n8"
+	"root=mtd:0:EFS2APPS rootfstype=yaffs2,jffs2 rw init=/init console=ttyHSL1,115200n8"
 
 #define CONFIG_CMD_ECHO
 #define CONFIG_BOOTDELAY	2
