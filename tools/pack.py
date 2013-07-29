@@ -440,7 +440,42 @@ class Pack(object):
         except ConfigParserError, e:
             yaffs = False
 
+        if self.flinfo.type == "nor" and yaffs == True:
+            error("yaffs cannot be used with NOR flash type")
+
         return yaffs
+
+    def __get_layout(self, info, section):
+        """Get the layout for a section.
+
+        info -- ConfigParser object, containing image flashing info
+        section - section to retreive the layout from
+        """
+        try:
+            layout = info.get(section, "layout")
+        except ConfigParserError, e:
+            layout = None
+
+        if self.ipq_nand and layout == None:
+            error("layout not specified for IPQ device")
+
+        if not self.ipq_nand and layout != None:
+            error("layout specified for a non IPQ device")
+
+        if layout not in ("sbl", "linux", None):
+            error("invalid layout in '%s'" % section)
+
+        return layout
+
+    def __get_img_size(self, filename):
+        """Get the size of the image to be flashed
+
+        filaneme -- string, filename of the image to be flashed
+        """
+        try:
+            return getsize(os.path.join(self.images_dname, filename))
+        except OSError, e:
+            error("error getting image size '%s'" % filename, e)
 
     def __gen_flash_script(self, info, script):
         """Generate the script to flash the images.
@@ -460,27 +495,10 @@ class Pack(object):
             if include.lower() in ["0", "no"]:
                 continue
 
-            try:
-                layout = info.get(section, "layout")
-            except ConfigParserError, e:
-                layout = None
-
+            layout = self.__get_layout(info, section)
             yaffs = self.__get_yaffs(info, section)
-            if self.flinfo.type == "nor" and yaffs == True:
-                error("yaffs cannot be used with NOR flash type")
 
-            if self.ipq_nand and layout == None:
-                error("layout not specified for IPQ device")
-            if not self.ipq_nand and layout != None:
-                error("layout specified for a non IPQ device")
-
-            try:
-                size = getsize(os.path.join(self.images_dname, filename))
-            except OSError, e:
-                error("error getting image size '%s'" % filename, e)
-
-            if layout not in ("sbl", "linux", None):
-                error("invalid layout in '%s'" % section)
+            img_size = self.__get_img_size(filename)
 
             script.start_activity("Flashing %s:" % section)
 
@@ -488,7 +506,7 @@ class Pack(object):
             if self.ipq_nand: script.switch_layout(layout)
             script.imxtract(section)
             script.erase(offset, self.partitions[partition].length)
-            script.write(offset, size, yaffs)
+            script.write(offset, img_size, yaffs)
 
             script.finish_activity()
 
