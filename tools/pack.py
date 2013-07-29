@@ -499,6 +499,10 @@ class Pack(object):
             yaffs = self.__get_yaffs(info, section)
 
             img_size = self.__get_img_size(filename)
+            part_info = self.partitions[partition]
+
+            if img_size > part_info.length:
+                error("img size is larger than part. len in '%s'" % section)
 
             script.start_activity("Flashing %s:" % section)
 
@@ -900,13 +904,25 @@ class PackTestCase(TestCase):
         self.img_fname = self.img_dname + ".img"
 
         sbl1_fp = open(os.path.join(self.img_dname, "sbl1.mbn"), "w")
-        sbl1_fp.write("abcdef")
+        sbl1_fp.write("#" * blocksize * 2)
         sbl1_fp.close()
 
         part_fname = os.path.join(self.img_dname, "partition.mbn")
+
         mibib = MIBIB(part_fname, ArgParser.DEFAULT_PAGESIZE, blocksize)
-        mibib.add_part(PartInfo("0:SBL1", 0, 256 * 1024))
-        mibib.add_part(PartInfo("0:MIBIB", 256 * 1024, 1024 * 1024))
+
+        offset = 0
+        part_size = 2 * blocksize
+        mibib.add_part(PartInfo("0:SBL1", offset, part_size))
+
+        offset += part_size
+        part_size = 2 * blocksize
+        mibib.add_part(PartInfo("0:MIBIB", offset, part_size))
+
+        offset += part_size
+        part_size = 1 * blocksize
+        mibib.add_part(PartInfo("0:SBL2", offset, part_size))
+
         mibib.write()
 
     def __mkconf(self, conf_str):
@@ -1073,6 +1089,19 @@ yaffs = no
 partition = 0:SBL1
 filename = sbl1.mbn
 yaffs = abcd
+""")
+        self.assertRaises(SystemExit,
+                          self.pack.main,
+                          self.flinfo,
+                          self.img_dname,
+                          self.img_fname,
+                          ipq_nand=False)
+
+    def test_img_larger_than_partition(self):
+        self.__mkconf("""
+[sbl2]
+partition = 0:SBL2
+filename = sbl1.mbn
 """)
         self.assertRaises(SystemExit,
                           self.pack.main,
