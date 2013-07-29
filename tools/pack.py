@@ -487,6 +487,16 @@ class Pack(object):
         except OSError, e:
             error("error getting image size '%s'" % filename, e)
 
+    def __get_part_info(self, partition):
+        """Return partition info for the specified partition.
+
+        partition -- string, partition name
+        """
+        try:
+            return self.partitions[partition]
+        except KeyError, e:
+            error("invalid partition '%s'" % partition)
+
     def __gen_flash_script(self, info, script):
         """Generate the script to flash the images.
 
@@ -509,17 +519,17 @@ class Pack(object):
             yaffs = self.__get_yaffs(info, section)
 
             img_size = self.__get_img_size(filename)
-            part_info = self.partitions[partition]
+            part_info = self.__get_part_info(partition)
 
             if img_size > part_info.length:
                 error("img size is larger than part. len in '%s'" % section)
 
             script.start_activity("Flashing %s:" % section)
 
-            offset = self.partitions[partition].offset
+            offset = part_info.offset
             if self.ipq_nand: script.switch_layout(layout)
             script.imxtract(section)
-            script.erase(offset, self.partitions[partition].length)
+            script.erase(offset, part_info.length)
             script.write(offset, img_size, yaffs)
 
             script.finish_activity()
@@ -1148,6 +1158,19 @@ yaffs = no
 partition = 0:SBL1
 filename = sbl1.mbn
 yaffs = abcd
+""")
+        self.assertRaises(SystemExit,
+                          self.pack.main,
+                          self.flinfo,
+                          self.img_dname,
+                          self.img_fname,
+                          ipq_nand=False)
+
+    def test_invalid_partition(self):
+        self.__mkconf("""
+[sbl1]
+partition = 0:SBL5
+filename = sbl1.mbn
 """)
         self.assertRaises(SystemExit,
                           self.pack.main,
