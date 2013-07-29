@@ -104,7 +104,7 @@ def error(msg, ex=None):
     sys.stderr.write("\n")
     sys.exit(1)
 
-FlashInfo = namedtuple("FlashInfo", "type pagesize blocksize")
+FlashInfo = namedtuple("FlashInfo", "type pagesize blocksize chipsize")
 ImageInfo = namedtuple("ProgInfo", "name filename type")
 PartInfo = namedtuple("PartInfo", "name offset length")
 
@@ -130,10 +130,11 @@ class MIBIB(object):
                         " attr1 attr2 attr3 which_flash")
     ENTRY_FMT = "<16sLLBBBB"
 
-    def __init__(self, filename, pagesize, blocksize):
+    def __init__(self, filename, pagesize, blocksize, chipsize):
         self.filename = filename
         self.pagesize = pagesize
         self.blocksize = blocksize
+        self.chipsize = chipsize
         self.__partitions = OrderedDict()
 
     def __validate(self, part_fp):
@@ -171,9 +172,13 @@ class MIBIB(object):
             mentry = MIBIB.Entry._make(mentry)
 
             byte_offset = mentry.offset * self.blocksize
-            byte_length = mentry.length * self.blocksize
-            part_name = mentry.name.strip(chr(0))
 
+            if mentry.length == 0xFFFFFFFF:
+                byte_length = self.chipsize - byte_offset
+            else:
+                byte_length = mentry.length * self.blocksize
+
+            part_name = mentry.name.strip(chr(0))
             part_info = PartInfo(part_name, byte_offset, byte_length)
             self.__partitions[part_name] = part_info
 
@@ -199,7 +204,12 @@ class MIBIB(object):
         part_fp.write(table_str)
         for name, offset, length in self.__partitions.itervalues():
             block_offset = offset / self.blocksize
-            block_length = length / self.blocksize
+
+            if length == None:
+                block_length = 0xFFFFFFFF
+            else:
+                block_length = length / self.blocksize
+
             entry = MIBIB.Entry(name, block_offset, block_length,
                                 attr1=0, attr2=0, attr3=0, which_flash=0)
             entry_str = struct.pack(MIBIB.ENTRY_FMT, *entry)
@@ -620,7 +630,8 @@ class Pack(object):
             script = NorScript(self.flinfo)
 
         part_fname = os.path.join(self.images_dname, "partition.mbn")
-        mibib = MIBIB(part_fname, self.flinfo.pagesize, self.flinfo.blocksize)
+        mibib = MIBIB(part_fname, self.flinfo.pagesize, self.flinfo.blocksize,
+                      self.flinfo.chipsize)
         self.partitions = mibib.get_parts()
 
         script.echo("", verbose=True)
@@ -654,12 +665,14 @@ class ArgParser(object):
 
     DEFAULT_PAGESIZE = 4096
     DEFAULT_PAGES_PER_BLOCK = 64
+    DEFAULT_BLOCKS_PER_CHIP = 1024
     DEFAULT_TYPE = "nand"
 
     def __init__(self):
         self.__pagesize = None
         self.__pages_per_block = None
         self.__blocksize = None
+        self.__chipsize = None
         self.__flash_type = None
 
         self.flash_info = None
@@ -697,12 +710,29 @@ class ArgParser(object):
             except ValueError:
                 raise UsageError("invalid block size '%s'" % self.__blocksize)
 
+    def __init_chipsize(self, blocks_per_chip):
+        """Set the chipsize, from the command line argument.
+
+        blocks_per_chip -- string, no. of blocks in a flash chip
+
+        Raise UsageError, if chips_per_block is invalid
+        """
+        if blocks_per_chip == None:
+            self.__chipsize = (self.__blocksize
+                               * ArgParser.DEFAULT_BLOCKS_PER_CHIP)
+        else:
+            try:
+                self.__chipsize = self.__blocksize * int(blocks_per_chip)
+            except ValueError:
+                raise UsageError("invalid chip size '%s'" % self.__chipsize)
+
     def __init_flash_info(self):
         """Set flash_info from the parsed flash paramaters."""
 
         self.flash_info = FlashInfo(self.__flash_type,
                                     self.__pagesize,
-                                    self.__blocksize)
+                                    self.__blocksize,
+                                    self.__chipsize)
 
     def __init_flash_type(self, flash_type):
         """Set the flash_type, from the command line argument.
@@ -720,7 +750,7 @@ class ArgParser(object):
             raise UsageError("invalid flash type '%s'" % flash_type)
 
     def __init_out_fname(self, out_fname, images_dname, flash_type,
-                         pagesize, pages_per_block):
+                         pagesize, pages_per_block, blocks_per_chip):
         """Set the out_fname from the command line argument.
 
         out_fname -- string, the output filename
@@ -728,10 +758,10 @@ class ArgParser(object):
 
         if out_fname == None:
             images_dname_norm = os.path.normpath(images_dname)
-            fmt = "%s-%s-%d-%d%simg"
+            fmt = "%s-%s-%d-%d-%d%simg"
             self.out_fname = fmt % (images_dname_norm, flash_type,
                                     pagesize, pages_per_block,
-                                    os.path.extsep)
+                                    blocks_per_chip, os.path.extsep)
         else:
             if os.path.isabs(out_fname):
                 self.out_fname = out_fname
@@ -754,11 +784,12 @@ class ArgParser(object):
         flash_type = None
         pagesize = None
         pages_per_block = None
+        blocks_per_chip = None
         ipq_nand = False
         out_fname = None
 
         try:
-            opts, args = getopt(argv[1:], "ib:hp:t:o:")
+            opts, args = getopt(argv[1:], "ib:hp:t:o:c:")
         except GetoptError, e:
             raise UsageError(e.msg)
 
@@ -771,6 +802,8 @@ class ArgParser(object):
                 pagesize = value
             elif option == "-b":
                 pages_per_block = value
+            elif option == '-c':
+                blocks_per_chip = value
             elif option == "-o":
                 out_fname = value
 
@@ -780,11 +813,13 @@ class ArgParser(object):
         self.__init_flash_type(flash_type)
         self.__init_pagesize(pagesize)
         self.__init_blocksize(pages_per_block)
+        self.__init_chipsize(blocks_per_chip)
         self.__init_flash_info()
         self.__init_images_dname(args)
         self.__init_out_fname(out_fname, self.images_dname,
                               self.__flash_type, self.__pagesize,
-                              self.__blocksize / self.__pagesize)
+                              self.__blocksize / self.__pagesize,
+                              self.__chipsize / self.__blocksize)
 
         self.ipq_nand = ipq_nand
 
@@ -805,6 +840,8 @@ class ArgParser(object):
         print "              default is %d." % ArgParser.DEFAULT_PAGESIZE
         print "   -b COUNT   specifies the pages per block,"
         print "              default is %d." % ArgParser.DEFAULT_PAGES_PER_BLOCK
+        print "   -c COUNT   specifies the no. of blocks per chip"
+        print "              default is %d." % ArgParser.DEFAULT_BLOCKS_PER_CHIP
         print "   -i         specifies IPQ processor specific NAND layout"
         print "              switch, default disabled."
         print "   -o FILE    specifies the output filename"
@@ -836,10 +873,11 @@ class ArgParserTestCase(TestCase):
         self.parser.parse(["pack.py", "itest"])
         self.assertEqual(self.parser.images_dname, "itest")
 
-        fmt = "itest-%s-%d-%d.img"
+        fmt = "itest-%s-%d-%d-%d.img"
         expected_fname = fmt % (ArgParser.DEFAULT_TYPE,
                                 ArgParser.DEFAULT_PAGESIZE,
-                                ArgParser.DEFAULT_PAGES_PER_BLOCK)
+                                ArgParser.DEFAULT_PAGES_PER_BLOCK,
+                                ArgParser.DEFAULT_BLOCKS_PER_CHIP)
         self.assertEqual(self.parser.out_fname, expected_fname)
         self.assertEqual(self.parser.ipq_nand, False)
         self.assertEqual(self.parser.flash_info.type,
@@ -848,6 +886,10 @@ class ArgParserTestCase(TestCase):
                          ArgParser.DEFAULT_PAGESIZE)
         self.assertEqual(self.parser.flash_info.blocksize,
                          ArgParser.DEFAULT_PAGES_PER_BLOCK
+                         * ArgParser.DEFAULT_PAGESIZE)
+        self.assertEqual(self.parser.flash_info.chipsize,
+                         ArgParser.DEFAULT_BLOCKS_PER_CHIP
+                         * ArgParser.DEFAULT_PAGES_PER_BLOCK
                          * ArgParser.DEFAULT_PAGESIZE)
 
     def test_ipq_flag(self):
@@ -883,6 +925,13 @@ class ArgParserTestCase(TestCase):
         self.assertRaises(UsageError, self.parser.parse,
                           ["pack.py", "-b", "abcd", "itest"])
 
+    def test_blocks_per_chip_option(self):
+        self.parser.parse(["pack.py", "-c", "512", "itest"])
+        self.assertEqual(self.parser.flash_info.chipsize,
+                         ArgParser.DEFAULT_PAGESIZE
+                         * ArgParser.DEFAULT_PAGES_PER_BLOCK
+                         * 512)
+
     def test_out_fname_rel_option(self):
         self.parser.parse(["pack.py", "-o", "abcd", "/tmp/test/itest"])
         self.assertEqual(self.parser.out_fname, "/tmp/test/abcd")
@@ -896,20 +945,26 @@ class PackTestCase(TestCase):
         self.pack = Pack()
         blocksize = (ArgParser.DEFAULT_PAGESIZE
                      * ArgParser.DEFAULT_PAGES_PER_BLOCK)
+        chipsize = blocksize * ArgParser.DEFAULT_BLOCKS_PER_CHIP
 
         self.flinfo = FlashInfo(ArgParser.DEFAULT_TYPE,
                                 ArgParser.DEFAULT_PAGESIZE,
-                                blocksize)
+                                blocksize, chipsize)
         self.img_dname = mkdtemp()
+        print self.img_dname
         self.img_fname = self.img_dname + ".img"
 
         sbl1_fp = open(os.path.join(self.img_dname, "sbl1.mbn"), "w")
         sbl1_fp.write("#" * blocksize * 2)
         sbl1_fp.close()
 
+        self.__create_partition_mbn(blocksize, chipsize)
+
+    def __create_partition_mbn(self, blocksize, chipsize):
         part_fname = os.path.join(self.img_dname, "partition.mbn")
 
-        mibib = MIBIB(part_fname, ArgParser.DEFAULT_PAGESIZE, blocksize)
+        mibib = MIBIB(part_fname, ArgParser.DEFAULT_PAGESIZE, blocksize,
+                      chipsize)
 
         offset = 0
         part_size = 2 * blocksize
@@ -922,6 +977,10 @@ class PackTestCase(TestCase):
         offset += part_size
         part_size = 1 * blocksize
         mibib.add_part(PartInfo("0:SBL2", offset, part_size))
+
+        offset += part_size
+        part_size = None
+        mibib.add_part(PartInfo("0:FS", offset, part_size))
 
         mibib.write()
 
