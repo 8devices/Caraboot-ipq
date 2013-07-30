@@ -133,8 +133,23 @@ O/P : integer, 0 - no error.
 
 int dram_init(void)
 {
-	gd->ram_size = gboard_param->ddr_size;
-        return 0;
+	struct smem_ram_ptable rtable;
+	int i;
+	int mx = ARRAY_SIZE(rtable.parts);
+
+	if (smem_ram_ptable_init(&rtable) > 0) {
+		gd->ram_size = 0;
+		for (i = 0; i < mx; i++) {
+			if (rtable.parts[i].category == RAM_PARTITION_SDRAM
+			 && rtable.parts[i].type == RAM_PARTITION_SYS_MEMORY) {
+				gd->ram_size += rtable.parts[i].size;
+			}
+		}
+		gboard_param->ddr_size = gd->ram_size;
+	} else {
+		gd->ram_size = gboard_param->ddr_size;
+	}
+	return 0;
 }
 
 /*******************************************************

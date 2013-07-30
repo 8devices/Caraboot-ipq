@@ -279,6 +279,31 @@ unsigned int smem_get_board_machtype(void)
 	return machid;
 }
 
+/**
+ * smem_ptable_init - initializes RAM partition table from SMEM
+ *
+ */
+int smem_ram_ptable_init(struct smem_ram_ptable *smem_ram_ptable)
+{
+	unsigned i;
+
+	i = smem_read_alloc_entry(SMEM_USABLE_RAM_PARTITION_TABLE,
+				smem_ram_ptable,
+				sizeof(struct smem_ram_ptable));
+	if (i != 0)
+		return 0;
+
+	if (smem_ram_ptable->magic[0] != _SMEM_RAM_PTABLE_MAGIC_1 ||
+		smem_ram_ptable->magic[1] != _SMEM_RAM_PTABLE_MAGIC_2)
+		return 0;
+
+	printf("smem ram ptable found: ver: %d len: %d\n",
+		smem_ram_ptable->version, smem_ram_ptable->len);
+
+
+	return 1;
+}
+
 void ipq_set_part_entry(ipq_smem_flash_info_t *smem, ipq_part_entry_t *part,
 			uint32_t start, uint32_t size)
 {
@@ -286,7 +311,7 @@ void ipq_set_part_entry(ipq_smem_flash_info_t *smem, ipq_part_entry_t *part,
 	part->size = ((loff_t) size) * smem->flash_block_size;
 }
 
-int do_smeminfo ( cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+int do_smeminfo(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	ipq_smem_flash_info_t *sfi = &ipq_smem_flash_info;
 	int i;
