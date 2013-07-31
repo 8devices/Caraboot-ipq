@@ -218,9 +218,12 @@ class MIBIB(object):
     def get_parts(self):
         """Returns a list of partitions present in the MIBIB."""
 
-        with open(self.filename, "r") as part_fp:
-            self.__validate(part_fp)
-            self.__read_parts(part_fp)
+        try:
+            with open(self.filename, "r") as part_fp:
+                self.__validate(part_fp)
+                self.__read_parts(part_fp)
+        except IOError, e:
+            error("error opening %s" % self.filename, e)
 
         return self.__partitions
 
@@ -232,9 +235,12 @@ class MIBIB(object):
     def write(self):
         """Write the MIBIB to file, for unit testing purposes."""
 
-        with open(self.filename, "w") as part_fp:
-            self.__write_header(part_fp)
-            self.__write_parts(part_fp)
+        try:
+            with open(self.filename, "w") as part_fp:
+                self.__write_header(part_fp)
+                self.__write_parts(part_fp)
+        except IOError, e:
+            error("error opening %s" % self.filename, e)
 
 class FlashScript(object):
     """Base class for creating flash scripts."""
