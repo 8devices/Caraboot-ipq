@@ -97,6 +97,10 @@ struct smem_ptn {
 	unsigned attr;
 } __attribute__ ((__packed__));
 
+#define __str_fmt(x)		"%-" #x "s"
+#define _str_fmt(x)		__str_fmt(x)
+#define smem_ptn_name_fmt	_str_fmt(SMEM_PTN_NAME_MAX)
+
 struct smem_ptable {
 #define _SMEM_PTABLE_MAGIC_1 0x55ee73aa
 #define _SMEM_PTABLE_MAGIC_2 0xe35ebddb
@@ -153,21 +157,6 @@ static unsigned smem_read_alloc_entry(smem_mem_type_t type, void *buf, int len)
 	return 0;
 }
 
-/*
- * Print the SMEM partition table, for debug purposes. Should be
- * invoked after smem_ptable_init().
- */
-static void dump_smem_ptable(void)
-{
-	int i;
-
-	for (i = 0; i < smem_ptable.len; i++) {
-		struct smem_ptn *p = &smem_ptable.parts[i];
-		debug("%d: %s offs=0x%08x size=0x%08x attr: 0x%08x\n",
-		      i, p->name, p->start, p->size, p->attr);
-	}
-}
-
 /**
  * smem_ptable_init - initializes SMEM partition table
  *
@@ -188,8 +177,6 @@ int smem_ptable_init(void)
 
 	debug("smem ptable found: ver: %d len: %d\n",
 	      smem_ptable.version, smem_ptable.len);
-
-	dump_smem_ptable();
 
 	return 0;
 }
@@ -302,19 +289,29 @@ void ipq_set_part_entry(ipq_smem_flash_info_t *smem, ipq_part_entry_t *part,
 int do_smeminfo ( cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	ipq_smem_flash_info_t *sfi = &ipq_smem_flash_info;
+	int i;
 
 	printf(	"flash_type:		0x%x\n"
 		"flash_index:		0x%x\n"
 		"flash_chip_select:	0x%x\n"
-		"flash_block_size:	0x%x\n"
-		"hlos.offset:		0x%llx	hlos.size:	0x%llx\n"
-		"nss[0].offset:		0x%llx	nss[0].size:	0x%llx\n"
-		"nss[1].offset:		0x%llx	nss[1].size:	0x%llx\n",
+		"flash_block_size:	0x%x\n",
 			sfi->flash_type, sfi->flash_index,
-			sfi->flash_chip_select, sfi->flash_block_size,
-			sfi->hlos.offset, sfi->hlos.size,
-			sfi->nss[0].offset, sfi->nss[0].size,
-			sfi->nss[1].offset, sfi->nss[1].size);
+			sfi->flash_chip_select, sfi->flash_block_size);
+
+	if (smem_ptable.len > 0) {
+		printf("%-3s: " smem_ptn_name_fmt " %10s %16s %16s\n",
+			"No.", "Name", "Attributes", "Start", "Size");
+	} else {
+		printf("Partition information not available\n");
+	}
+
+	for (i = 0; i < smem_ptable.len; i++) {
+		struct smem_ptn *p = &smem_ptable.parts[i];
+		printf("%3d: " smem_ptn_name_fmt " 0x%08x %#16llx %#16llx\n",
+			i, p->name, p->attr,
+			((loff_t)p->start) * sfi->flash_block_size,
+			((loff_t)p->size) * sfi->flash_block_size);
+	}
 	return 0;
 }
 
