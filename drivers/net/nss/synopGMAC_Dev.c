@@ -654,11 +654,8 @@ s32 synopGMAC_mac_init(synopGMACdevice * gmacdev)
 	synopGMAC_frame_burst_enable(gmacdev);
 	synopGMAC_jumbo_frame_disable(gmacdev);
 	synopGMAC_loopback_off(gmacdev);
-	if (gboard_param->machid != MACH_TYPE_IPQ806X_RUMI3)
-	{
-		gmacdev->Speed = ipq806x_get_link_speed(gmacdev->phyid);
-		gmacdev->DuplexMode = ipq806x_get_duplex(gmacdev->phyid);
-	}
+	gmacdev->Speed = ipq806x_get_link_speed(gmacdev->phyid);
+	gmacdev->DuplexMode = ipq806x_get_duplex(gmacdev->phyid);
 
 	if (gmacdev->Speed == SPEED1000) {
 		synopGMAC_select_gmii(gmacdev);
@@ -666,18 +663,14 @@ s32 synopGMAC_mac_init(synopGMACdevice * gmacdev)
 		synopGMAC_select_mii(gmacdev);
 	}
 
-	if (gboard_param->machid == MACH_TYPE_IPQ806X_RUMI3) {
-		if (gmacdev->DuplexMode == FULLDUPLEX) {
-			synopGMAC_set_full_duplex(gmacdev);
-			synopGMAC_rx_own_enable(gmacdev);
-			synopGMAC_retry_disable(gmacdev);
-		} else {
-			synopGMAC_set_half_duplex(gmacdev);
-			synopGMAC_rx_own_disable(gmacdev);
-			synopGMAC_retry_enable(gmacdev);
-		}
+	if (gmacdev->DuplexMode == FULLDUPLEX) {
+		synopGMAC_set_full_duplex(gmacdev);
+		synopGMAC_rx_own_enable(gmacdev);
+		synopGMAC_retry_disable(gmacdev);
 	} else {
-		gmacdev->DuplexMode = ipq806x_get_duplex(gmacdev->phyid);
+		synopGMAC_set_half_duplex(gmacdev);
+		synopGMAC_rx_own_disable(gmacdev);
+		synopGMAC_retry_enable(gmacdev);
 	}
 
 	synopGMAC_pad_crc_strip_disable(gmacdev);

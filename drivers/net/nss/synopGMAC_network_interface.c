@@ -902,13 +902,8 @@ s32  synopGMAC_init_network_interface(void)
 		gmacdev->synopGMACMappedAddr = NSS_GMAC0_BASE;
 	        TR("Initializing synopsys GMAC interface at port = 0x%x\n",
                 gmacdev->synopGMACMappedAddr) ;
-		if (gboard_param->machid != MACH_TYPE_IPQ806X_RUMI3) {
-			ipq806x_dev_board_init(gmacdev);
-			synop_phy_outofreset();
-			udelay(1000);
-			gmacdev->Speed = synop_phy_link_status(gmacdev->phyid);
-		} else
-			gmac_dev_init();
+
+		gmac_dev_init();
 
 		/*
 		 * Attach the device to MAC struct This will configure all the required base addresses
@@ -1489,9 +1484,9 @@ int32_t ipq806x_get_link_speed(uint32_t phyid)
 {
 	int32_t lpa = 0, media, adv;
 	lpa = ipq_mii_read_reg(phyid, MII_LPA);
-	printf(" get_link_speed LPA %x \r\n ", lpa);
+	TR(" get_link_speed LPA %x \r\n ", lpa);
 	adv = ipq_mii_read_reg(phyid, MII_ADVERTISE);
-	printf(" get_link_speed LPA %x ADV %x  \r\n ", lpa, adv);
+	TR(" get_link_speed LPA %x ADV %x  \r\n ", lpa, adv);
 	media = mii_nway_result(lpa & adv);
 	if((media & ADVERTISE_1000XFULL))
 		return SPEED1000;
@@ -1506,9 +1501,9 @@ int32_t ipq806x_get_duplex(uint32_t phyid)
 {
 	int32_t lpa = 0, media, duplex, adv;
 	lpa = ipq_mii_read_reg(phyid, MII_LPA);
-	printf(" get_link_speed LPA %x \r\n ", lpa);
+	TR(" get_link_speed LPA %x \r\n ", lpa);
 	adv = ipq_mii_read_reg(phyid, MII_ADVERTISE);
-	printf(" get_link_speed LPA %x ADV %x  \r\n ", lpa, adv);
+	TR(" get_link_speed LPA %x ADV %x  \r\n ", lpa, adv);
 	media = mii_nway_result(lpa & adv);
 	duplex = (media & (ADVERTISE_FULL | ADVERTISE_1000XFULL)) ? FULLDUPLEX : HALFDUPLEX;
 
