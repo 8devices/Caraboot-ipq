@@ -627,7 +627,7 @@ class Pack(object):
         self.scr_fname = os.path.join(self.images_dname, "flash.scr")
         self.its_fname = os.path.join(self.images_dname, "flash.its")
 
-    def main(self, flinfo, images_dname, out_fname, ipq_nand):
+    def main(self, flinfo, images_dname, out_fname, part_fname, ipq_nand):
         """Start the packing process.
 
         flinfo -- FlashInfo object, containing flash parameters
@@ -645,7 +645,9 @@ class Pack(object):
         else:
             script = NorScript(self.flinfo)
 
-        part_fname = os.path.join(self.images_dname, "partition.mbn")
+        if not os.path.isabs(part_fname):
+            part_fname = os.path.join(self.images_dname, part_fname)
+
         mibib = MIBIB(part_fname, self.flinfo.pagesize, self.flinfo.blocksize,
                       self.flinfo.chipsize)
         self.partitions = mibib.get_parts()
@@ -683,6 +685,7 @@ class ArgParser(object):
     DEFAULT_PAGES_PER_BLOCK = 64
     DEFAULT_BLOCKS_PER_CHIP = 1024
     DEFAULT_TYPE = "nand"
+    DEFAULT_PART_FNAME = "partition.mbn"
 
     def __init__(self):
         self.__pagesize = None
@@ -694,6 +697,7 @@ class ArgParser(object):
         self.flash_info = None
         self.images_dname = None
         self.ipq_nand = False
+        self.part_fname = None
 
     def __init_pagesize(self, pagesize):
         """Set the pagesize, from the command line argument.
@@ -765,6 +769,17 @@ class ArgParser(object):
         else:
             raise UsageError("invalid flash type '%s'" % flash_type)
 
+    def __init_part_fname(self, part_fname):
+        """Set the partition filename from command line argument
+
+        part_fname -- string, the partition filename
+        """
+
+        if part_fname == None:
+            self.part_fname = ArgParser.DEFAULT_PART_FNAME
+        else:
+            self.part_fname = part_fname
+
     def __init_out_fname(self, out_fname, images_dname, flash_type,
                          pagesize, pages_per_block, blocks_per_chip):
         """Set the out_fname from the command line argument.
@@ -803,9 +818,10 @@ class ArgParser(object):
         blocks_per_chip = None
         ipq_nand = False
         out_fname = None
+        part_fname = None
 
         try:
-            opts, args = getopt(argv[1:], "ib:hp:t:o:c:")
+            opts, args = getopt(argv[1:], "ib:hp:t:o:c:m:")
         except GetoptError, e:
             raise UsageError(e.msg)
 
@@ -822,6 +838,8 @@ class ArgParser(object):
                 blocks_per_chip = value
             elif option == "-o":
                 out_fname = value
+            elif option == "-m":
+                part_fname = value
 
         if len(args) != 1:
             raise UsageError("insufficient arguments")
@@ -836,6 +854,7 @@ class ArgParser(object):
                               self.__flash_type, self.__pagesize,
                               self.__blocksize / self.__pagesize,
                               self.__chipsize / self.__blocksize)
+        self.__init_part_fname(part_fname)
 
         self.ipq_nand = ipq_nand
 
@@ -860,6 +879,8 @@ class ArgParser(object):
         print "              default is %d." % ArgParser.DEFAULT_BLOCKS_PER_CHIP
         print "   -i         specifies IPQ processor specific NAND layout"
         print "              switch, default disabled."
+        print "   -m FILE    specifies the partition filename"
+        print "              default is '%s'." % ArgParser.DEFAULT_PART_FNAME
         print "   -o FILE    specifies the output filename"
         print "              default is IDIR-TYPE-SIZE-COUNT.img"
         print "              if the filename is relative, it is relative"
@@ -879,7 +900,8 @@ def main():
 
     pack = Pack()
     pack.main(parser.flash_info, parser.images_dname,
-              parser.out_fname, parser.ipq_nand)
+              parser.out_fname, parser.part_fname,
+              parser.ipq_nand)
 
 class ArgParserTestCase(TestCase):
     def setUp(self):
@@ -956,6 +978,10 @@ class ArgParserTestCase(TestCase):
         self.parser.parse(["pack.py", "-o", "/tmp/abcd", "/tmp/test/itest"])
         self.assertEqual(self.parser.out_fname, "/tmp/abcd")
 
+    def test_partition_option(self):
+        self.parser.parse(["pack.py", "-m", "abcd", "/tmp/test/itest"])
+        self.assertEqual(self.parser.part_fname, "abcd")
+
 class PackTestCase(TestCase):
     def setUp(self):
         self.pack = Pack()
@@ -967,8 +993,8 @@ class PackTestCase(TestCase):
                                 ArgParser.DEFAULT_PAGESIZE,
                                 blocksize, chipsize)
         self.img_dname = mkdtemp()
-        print self.img_dname
         self.img_fname = self.img_dname + ".img"
+        self.part_fname = "partition.mbn"
 
         sbl1_fp = open(os.path.join(self.img_dname, "sbl1.mbn"), "w")
         sbl1_fp.write("#" * blocksize * 2)
@@ -977,7 +1003,7 @@ class PackTestCase(TestCase):
         self.__create_partition_mbn(blocksize, chipsize)
 
     def __create_partition_mbn(self, blocksize, chipsize):
-        part_fname = os.path.join(self.img_dname, "partition.mbn")
+        part_fname = os.path.join(self.img_dname, self.part_fname)
 
         mibib = MIBIB(part_fname, ArgParser.DEFAULT_PAGESIZE, blocksize,
                       chipsize)
@@ -1021,7 +1047,7 @@ filename = sbl1.mbn
 """)
 
         self.pack.main(self.flinfo, self.img_dname, self.img_fname,
-                       ipq_nand=False)
+                       self.part_fname, ipq_nand=False)
         self.assertEqual(os.path.exists(self.img_fname), True)
 
     def test_missing_conf(self):
@@ -1030,6 +1056,7 @@ filename = sbl1.mbn
                           self.flinfo,
                           self.img_dname,
                           self.img_fname,
+                          self.part_fname,
                           ipq_nand=False)
 
     def test_nand_layout(self):
@@ -1040,7 +1067,7 @@ filename = sbl1.mbn
 layout = sbl
 """)
         self.pack.main(self.flinfo, self.img_dname, self.img_fname,
-                       ipq_nand=True)
+                       self.part_fname, ipq_nand=True)
         self.assertEqual(os.path.exists(self.img_fname), True)
 
     def test_invalid_layout(self):
@@ -1055,6 +1082,7 @@ layout = abcd
                           self.flinfo,
                           self.img_dname,
                           self.img_fname,
+                          self.part_fname,
                           ipq_nand=True)
 
     def test_inconsistent_layout(self):
@@ -1069,6 +1097,7 @@ layout = sbl
                           self.flinfo,
                           self.img_dname,
                           self.img_fname,
+                          self.part_fname,
                           ipq_nand=False)
 
     def test_invalid_filename(self):
@@ -1082,6 +1111,7 @@ filename = sbl10.mbn
                           self.flinfo,
                           self.img_dname,
                           self.img_fname,
+                          self.part_fname,
                           ipq_nand=False)
 
     def test_special_chars_in_filename(self):
@@ -1096,7 +1126,7 @@ filename = sb\\l1.mbn
         sbl1_fp.close()
 
         self.pack.main(self.flinfo, self.img_dname, self.img_fname,
-                       ipq_nand=False)
+                       self.part_fname, ipq_nand=False)
         self.assertEqual(os.path.exists(self.img_fname), True)
 
     def __get_images(self):
@@ -1115,7 +1145,7 @@ filename = partition.mbn
 """)
 
         self.pack.main(self.flinfo, self.img_dname, self.img_fname,
-                       ipq_nand=False)
+                       self.part_fname, ipq_nand=False)
         count = len(self.__get_images())
         self.assertEqual(count, 3)
 
@@ -1132,7 +1162,7 @@ filename = partition.mbn
 """)
 
         self.pack.main(self.flinfo, self.img_dname, self.img_fname,
-                       ipq_nand=False)
+                       self.part_fname, ipq_nand=False)
         images = self.__get_images()
         print images
         self.assertTrue("sbl2" in images)
@@ -1146,7 +1176,7 @@ filename = sbl1.mbn
 yaffs = yes
 """)
         self.pack.main(self.flinfo, self.img_dname, self.img_fname,
-                       ipq_nand=False)
+                       self.part_fname, ipq_nand=False)
 
     def test_yaffs_no(self):
         self.__mkconf("""
@@ -1156,7 +1186,7 @@ filename = sbl1.mbn
 yaffs = no
 """)
         self.pack.main(self.flinfo, self.img_dname, self.img_fname,
-                       ipq_nand=False)
+                       self.part_fname, ipq_nand=False)
 
     def test_yaffs_invalid(self):
         self.__mkconf("""
@@ -1170,6 +1200,7 @@ yaffs = abcd
                           self.flinfo,
                           self.img_dname,
                           self.img_fname,
+                          self.part_fname,
                           ipq_nand=False)
 
     def test_invalid_partition(self):
@@ -1183,6 +1214,7 @@ filename = sbl1.mbn
                           self.flinfo,
                           self.img_dname,
                           self.img_fname,
+                          self.part_fname,
                           ipq_nand=False)
 
     def test_img_larger_than_partition(self):
@@ -1196,8 +1228,8 @@ filename = sbl1.mbn
                           self.flinfo,
                           self.img_dname,
                           self.img_fname,
+                          self.part_fname,
                           ipq_nand=False)
 
 if __name__ == "__main__":
     main()
-
