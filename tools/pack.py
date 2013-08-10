@@ -19,7 +19,8 @@ within U-Boot. The procedure to use this script is listed below.
 
   4. Create a flash configuration file, specifying the images be
      flashed, and the partition in which the images is to be
-     flashed. The file should be named 'flash.conf'.
+     flashed. The flash configuration file can be specified using the
+     -f option, default is flash.conf.
 
   5. Invoke 'pack' with the folder name as argument, pass flash
      parameters as arguments if required. A single image file will
@@ -434,7 +435,7 @@ class Pack(object):
         self.ipq_nand = None
         self.partitions = {}
 
-        self.info_fname = None
+        self.fconf_fname = None
         self.scr_fname = None
         self.its_fname = None
         self.img_fname = None
@@ -556,7 +557,7 @@ class Pack(object):
             info = ConfigParser({"include": "yes"})
             info.readfp(info_fp)
         except ConfigParserError, e:
-            error("error parsing info file '%s'" % self.info_fname, e)
+            error("error parsing info file '%s'" % self.fconf_fname, e)
 
         self.__gen_flash_script(info, script)
 
@@ -623,15 +624,18 @@ class Pack(object):
     def __create_fnames(self):
         """Populate the filenames."""
 
-        self.info_fname = os.path.join(self.images_dname, "flash.conf")
         self.scr_fname = os.path.join(self.images_dname, "flash.scr")
         self.its_fname = os.path.join(self.images_dname, "flash.its")
 
-    def main(self, flinfo, images_dname, out_fname, part_fname, ipq_nand):
+    def main(self, flinfo, images_dname, out_fname, part_fname, fconf_fname, ipq_nand):
         """Start the packing process.
 
         flinfo -- FlashInfo object, containing flash parameters
         images_dname -- string, name of images directory
+        out_fname -- string, output file path
+        part_fname -- string, partition file path
+        fconf_fname -- string, flash confing file path
+        ipq_nand -- bool, indicates whether this is an IPQ device
         """
         self.flinfo = flinfo
         self.images_dname = images_dname
@@ -648,6 +652,9 @@ class Pack(object):
         if not os.path.isabs(part_fname):
             part_fname = os.path.join(self.images_dname, part_fname)
 
+        if not os.path.isabs(fconf_fname):
+            self.fconf_fname = os.path.join(self.images_dname, fconf_fname)
+
         mibib = MIBIB(part_fname, self.flinfo.pagesize, self.flinfo.blocksize,
                       self.flinfo.chipsize)
         self.partitions = mibib.get_parts()
@@ -659,9 +666,9 @@ class Pack(object):
         script.finish_activity()
 
         try:
-            info_fp = open(self.info_fname)
+            info_fp = open(self.fconf_fname)
         except IOError, e:
-            error("error opening info file '%s'" % self.info_fname, e)
+            error("error opening info file '%s'" % self.fconf_fname, e)
 
         try:
             scr_fp = open(self.scr_fname, "wb")
@@ -686,6 +693,7 @@ class ArgParser(object):
     DEFAULT_BLOCKS_PER_CHIP = 1024
     DEFAULT_TYPE = "nand"
     DEFAULT_PART_FNAME = "partition.mbn"
+    DEFAULT_FCONF_FNAME = "flash.conf"
 
     def __init__(self):
         self.__pagesize = None
@@ -698,6 +706,7 @@ class ArgParser(object):
         self.images_dname = None
         self.ipq_nand = False
         self.part_fname = None
+        self.fconf_fname = None
 
     def __init_pagesize(self, pagesize):
         """Set the pagesize, from the command line argument.
@@ -780,6 +789,17 @@ class ArgParser(object):
         else:
             self.part_fname = part_fname
 
+    def __init_fconf_fname(self, fconf_fname):
+        """Set the flash configuration filename from command line argument
+
+        fconf_fname -- string, the flash configuration filename
+        """
+
+        if fconf_fname == None:
+            self.fconf_fname = ArgParser.DEFAULT_FCONF_FNAME
+        else:
+            self.fconf_fname = fconf_fname
+
     def __init_out_fname(self, out_fname, images_dname, flash_type,
                          pagesize, pages_per_block, blocks_per_chip):
         """Set the out_fname from the command line argument.
@@ -819,9 +839,10 @@ class ArgParser(object):
         ipq_nand = False
         out_fname = None
         part_fname = None
+        fconf_fname = None
 
         try:
-            opts, args = getopt(argv[1:], "ib:hp:t:o:c:m:")
+            opts, args = getopt(argv[1:], "ib:hp:t:o:c:m:f:")
         except GetoptError, e:
             raise UsageError(e.msg)
 
@@ -840,6 +861,8 @@ class ArgParser(object):
                 out_fname = value
             elif option == "-m":
                 part_fname = value
+            elif option == "-f":
+                fconf_fname = value
 
         if len(args) != 1:
             raise UsageError("insufficient arguments")
@@ -855,6 +878,7 @@ class ArgParser(object):
                               self.__blocksize / self.__pagesize,
                               self.__chipsize / self.__blocksize)
         self.__init_part_fname(part_fname)
+        self.__init_fconf_fname(fconf_fname)
 
         self.ipq_nand = ipq_nand
 
@@ -881,6 +905,8 @@ class ArgParser(object):
         print "              switch, default disabled."
         print "   -m FILE    specifies the partition filename"
         print "              default is '%s'." % ArgParser.DEFAULT_PART_FNAME
+        print "   -f FILE    specifies the flash configuration filename"
+        print "              default is '%s'." % ArgParser.DEFAULT_FCONF_FNAME
         print "   -o FILE    specifies the output filename"
         print "              default is IDIR-TYPE-SIZE-COUNT.img"
         print "              if the filename is relative, it is relative"
@@ -901,7 +927,7 @@ def main():
     pack = Pack()
     pack.main(parser.flash_info, parser.images_dname,
               parser.out_fname, parser.part_fname,
-              parser.ipq_nand)
+              parser.fconf_fname, parser.ipq_nand)
 
 class ArgParserTestCase(TestCase):
     def setUp(self):
@@ -982,6 +1008,10 @@ class ArgParserTestCase(TestCase):
         self.parser.parse(["pack.py", "-m", "abcd", "/tmp/test/itest"])
         self.assertEqual(self.parser.part_fname, "abcd")
 
+    def test_flash_conf_option(self):
+        self.parser.parse(["pack.py", "-f", "abcd", "/tmp/test/itest"])
+        self.assertEqual(self.parser.fconf_fname, "abcd")
+
 class PackTestCase(TestCase):
     def setUp(self):
         self.pack = Pack()
@@ -995,6 +1025,7 @@ class PackTestCase(TestCase):
         self.img_dname = mkdtemp()
         self.img_fname = self.img_dname + ".img"
         self.part_fname = "partition.mbn"
+        self.fconf_fname = "flash.conf"
 
         sbl1_fp = open(os.path.join(self.img_dname, "sbl1.mbn"), "w")
         sbl1_fp.write("#" * blocksize * 2)
@@ -1027,7 +1058,7 @@ class PackTestCase(TestCase):
         mibib.write()
 
     def __mkconf(self, conf_str):
-        conf_fname = os.path.join(self.img_dname, "flash.conf")
+        conf_fname = os.path.join(self.img_dname, self.fconf_fname)
         conf_fp = open(conf_fname, "w")
         conf_fp.write(conf_str)
         conf_fp.close()
@@ -1047,7 +1078,7 @@ filename = sbl1.mbn
 """)
 
         self.pack.main(self.flinfo, self.img_dname, self.img_fname,
-                       self.part_fname, ipq_nand=False)
+                       self.part_fname, self.fconf_fname, ipq_nand=False)
         self.assertEqual(os.path.exists(self.img_fname), True)
 
     def test_missing_conf(self):
@@ -1057,6 +1088,7 @@ filename = sbl1.mbn
                           self.img_dname,
                           self.img_fname,
                           self.part_fname,
+                          self.fconf_fname,
                           ipq_nand=False)
 
     def test_nand_layout(self):
@@ -1067,7 +1099,7 @@ filename = sbl1.mbn
 layout = sbl
 """)
         self.pack.main(self.flinfo, self.img_dname, self.img_fname,
-                       self.part_fname, ipq_nand=True)
+                       self.part_fname, self.fconf_fname, ipq_nand=True)
         self.assertEqual(os.path.exists(self.img_fname), True)
 
     def test_invalid_layout(self):
@@ -1083,6 +1115,7 @@ layout = abcd
                           self.img_dname,
                           self.img_fname,
                           self.part_fname,
+                          self.fconf_fname,
                           ipq_nand=True)
 
     def test_inconsistent_layout(self):
@@ -1098,6 +1131,7 @@ layout = sbl
                           self.img_dname,
                           self.img_fname,
                           self.part_fname,
+                          self.fconf_fname,
                           ipq_nand=False)
 
     def test_invalid_filename(self):
@@ -1112,6 +1146,7 @@ filename = sbl10.mbn
                           self.img_dname,
                           self.img_fname,
                           self.part_fname,
+                          self.fconf_fname,
                           ipq_nand=False)
 
     def test_special_chars_in_filename(self):
@@ -1126,7 +1161,7 @@ filename = sb\\l1.mbn
         sbl1_fp.close()
 
         self.pack.main(self.flinfo, self.img_dname, self.img_fname,
-                       self.part_fname, ipq_nand=False)
+                       self.part_fname, self.fconf_fname, ipq_nand=False)
         self.assertEqual(os.path.exists(self.img_fname), True)
 
     def __get_images(self):
@@ -1145,7 +1180,7 @@ filename = partition.mbn
 """)
 
         self.pack.main(self.flinfo, self.img_dname, self.img_fname,
-                       self.part_fname, ipq_nand=False)
+                       self.part_fname, self.fconf_fname, ipq_nand=False)
         count = len(self.__get_images())
         self.assertEqual(count, 3)
 
@@ -1162,7 +1197,7 @@ filename = partition.mbn
 """)
 
         self.pack.main(self.flinfo, self.img_dname, self.img_fname,
-                       self.part_fname, ipq_nand=False)
+                       self.part_fname, self.fconf_fname, ipq_nand=False)
         images = self.__get_images()
         print images
         self.assertTrue("sbl2" in images)
@@ -1176,7 +1211,7 @@ filename = sbl1.mbn
 yaffs = yes
 """)
         self.pack.main(self.flinfo, self.img_dname, self.img_fname,
-                       self.part_fname, ipq_nand=False)
+                       self.part_fname, self.fconf_fname, ipq_nand=False)
 
     def test_yaffs_no(self):
         self.__mkconf("""
@@ -1186,7 +1221,7 @@ filename = sbl1.mbn
 yaffs = no
 """)
         self.pack.main(self.flinfo, self.img_dname, self.img_fname,
-                       self.part_fname, ipq_nand=False)
+                       self.part_fname, self.fconf_fname, ipq_nand=False)
 
     def test_yaffs_invalid(self):
         self.__mkconf("""
@@ -1201,6 +1236,7 @@ yaffs = abcd
                           self.img_dname,
                           self.img_fname,
                           self.part_fname,
+                          self.fconf_fname,
                           ipq_nand=False)
 
     def test_invalid_partition(self):
@@ -1215,6 +1251,7 @@ filename = sbl1.mbn
                           self.img_dname,
                           self.img_fname,
                           self.part_fname,
+                          self.fconf_fname,
                           ipq_nand=False)
 
     def test_img_larger_than_partition(self):
@@ -1229,6 +1266,7 @@ filename = sbl1.mbn
                           self.img_dname,
                           self.img_fname,
                           self.part_fname,
+                          self.fconf_fname,
                           ipq_nand=False)
 
 if __name__ == "__main__":
