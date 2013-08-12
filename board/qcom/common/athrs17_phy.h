@@ -339,6 +339,8 @@
 #define S17_CHIPID_V1_0                 0x1201
 #define S17_CHIPID_V1_1                 0x1202
 
+#define S17_MASK_CTRL_SOFT_RET		(1 << 31)
+
 #define S17_MAC0_MAC_MII_RXCLK_SEL      (1 << 0)
 #define S17_MAC0_MAC_MII_TXCLK_SEL      (1 << 1)
 #define S17_MAC0_MAC_MII_EN             (1 << 2)

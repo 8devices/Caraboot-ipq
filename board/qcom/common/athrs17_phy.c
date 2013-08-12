@@ -133,9 +133,17 @@ athrs17_reg_write(uint32_t reg_addr, uint32_t reg_val)
 void athrs17_reg_init()
 {
 	static uint8_t athr17_init_flag;
+	uint32_t data;
 
 	if (athr17_init_flag)
 		return;
+
+	/* Reset the switch before initialization */
+	athrs17_reg_write(S17_MASK_CTRL_REG, S17_MASK_CTRL_SOFT_RET);
+	do {
+		udelay(10);
+		data = athrs17_reg_read(S17_MASK_CTRL_REG);
+	} while (data & S17_MASK_CTRL_SOFT_RET);
 
 	athrs17_reg_write(S17_P0PAD_MODE_REG, (S17_MAC0_RGMII_EN | \
 		S17_MAC0_RGMII_TXCLK_DELAY | S17_MAC0_RGMII_RXCLK_DELAY | \
