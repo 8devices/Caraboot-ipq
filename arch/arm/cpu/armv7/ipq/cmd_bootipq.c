@@ -14,6 +14,8 @@
 static int debug = 0;
 static ipq_smem_flash_info_t *sfi = &ipq_smem_flash_info;
 
+extern board_ipq806x_params_t *gboard_param;
+
 /**
  * check if the image and its header is valid and move it to
  * load address as specified in the header
@@ -52,6 +54,30 @@ static int load_nss_img(const char *runcmd, char *args, int argslen,
 	return ret;
 }
 
+/*
+ * Set the root device and bootargs for mounting root filesystem.
+ */
+static void set_fs_bootargs()
+{
+	char *bootargs;
+
+	if (sfi->flash_type == SMEM_BOOT_SPI_FLASH && gboard_param->flashdesc == ONLY_NOR) {
+		bootargs = "root=/dev/mtdblock0";
+	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH && gboard_param->flashdesc == NAND_NOR) {
+		bootargs = "root=/dev/mtdblock1";
+	} else if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
+		bootargs = "ubi.mtd=0 root=ubi0:rootfs rootfstype=ubifs";
+	} else {
+		printf("bootipq: unsupported boot flash type\n");
+		return;
+	}
+
+	if (getenv("fsbootargs") == NULL)
+		setenv("fsbootargs", bootargs);
+
+	run_command("setenv bootargs ${bootargs} ${fsbootargs}", 0);
+}
+
 /**
  * Load the NSS images and Kernel image and transfer control to kernel
  */
@@ -63,6 +89,8 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 
 	if (argc == 2 && strncmp(argv[1], "debug", 5) == 0)
 		debug = 1;
+
+	set_fs_bootargs();
 
 	/* check the smem info to see which flash used for booting */
 	if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
