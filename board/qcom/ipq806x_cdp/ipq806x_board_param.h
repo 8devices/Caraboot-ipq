@@ -325,10 +325,10 @@ board_ipq806x_params_t board_params[] = {
 	{
 		.boardid = 0,
 		.machid = MACH_TYPE_IPQ806X_DB147,
-		.ddr_size = (2 << 30),
-		.uart_gsbi = GSBI_4,
-		.uart_gsbi_base = UART_GSBI4_BASE,
-		.uart_dm_base = UART4_DM_BASE,
+		.ddr_size = (512 << 20),
+		.uart_gsbi = GSBI_2,
+		.uart_gsbi_base = UART_GSBI2_BASE,
+		.uart_dm_base = UART2_DM_BASE,
 		.mnd_value = { 12, 625, 313 },
 		.phy_id = GMAC1_MDIO_ID,
 		.gmac_base = NSS_GMAC1_BASE,
@@ -343,7 +343,7 @@ board_ipq806x_params_t board_params[] = {
 		},
 		.dbg_uart_gpio = {
 			{
-				.gpio = 11,
+				.gpio = 22,
 				.func = 1,
 				.dir = GPIO_OUTPUT,
 				.pull = GPIO_NO_PULL,
@@ -351,7 +351,7 @@ board_ipq806x_params_t board_params[] = {
 				.enable = GPIO_DISABLE
 			},
 			{
-				.gpio = 12,
+				.gpio = 23,
 				.func = 1,
 				.dir = GPIO_INPUT,
 				.pull = GPIO_NO_PULL,
