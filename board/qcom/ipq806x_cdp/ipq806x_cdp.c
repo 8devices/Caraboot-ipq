@@ -15,6 +15,7 @@
 
 #include "ipq806x_cdp.h"
 #include <asm/arch-ipq806x/timer.h>
+#include <nand.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -42,7 +43,8 @@ loff_t board_env_offset;
 loff_t board_env_range;
 
 board_ipq806x_params_t *gboard_param;
-extern int ipq_gmac_eth_initialize(void);
+extern int ipq_gmac_eth_initialize(const char *ethaddr);
+uchar ipq_def_enetaddr[6] = {0x00, 0x03, 0x7F, 0xBA, 0xDB, 0xAD};
 
 /*******************************************************
 Function description: Board specific initialization.
@@ -314,8 +316,60 @@ int board_early_init_f(void)
 	return 0;
 }
 
+/*
+ * Gets the ethernet address from the ART partition table and return the value
+ */
+int get_eth_mac_address(uchar *enetaddr)
+{
+	s32 ret;
+	u32 start_blocks;
+	u32 size_blocks;
+	u32 length = 6;
+	u32 flash_type;
+	loff_t art_offset;
+
+	if (ipq_smem_flash_info.flash_type == SMEM_BOOT_SPI_FLASH)
+		flash_type = CONFIG_IPQ_SPI_NAND_INFO_IDX;
+	else if (ipq_smem_flash_info.flash_type == SMEM_BOOT_NAND_FLASH)
+		flash_type = CONFIG_IPQ_NAND_NAND_INFO_IDX;
+	else {
+		printf("Unknown flash type\n");
+		return -EINVAL;
+	}
+
+	ret = smem_getpart("0:ART", &start_blocks, &size_blocks);
+	if (ret < 0) {
+		printf("No ART partition found\n");
+		return ret;
+	}
+
+	/*
+	 * ART partition 0th position (6 * 4) 24 bytes will contain the
+	 * 4 MAC Address. First 0-5 bytes for GMAC0, Second 6-11 bytes
+	 * for GMAC1, 12-17 bytes for GMAC2 and 18-23 bytes for GMAC3
+	 */
+	art_offset = ((loff_t) ipq_smem_flash_info.flash_block_size * start_blocks);
+
+	ret = nand_read(&nand_info[flash_type], art_offset, &length, enetaddr);
+	if (ret < 0)
+		printf("ART partition read failed..\n");
+	return ret;
+}
+
 int board_eth_init(bd_t *bis)
 {
-	return ipq_gmac_eth_initialize();
+	s32 ret;
+	uchar enetaddr[6];
+
+	ret = get_eth_mac_address(enetaddr);
+	if ((ret < 0) || (is_valid_ether_addr(enetaddr) == 0))
+		memcpy(enetaddr, ipq_def_enetaddr, 6);
+
+	printf("%s: Setting MAC as %02x:%02x:%02x:%02x:%02x:%02x "
+		"set environment variable 'ethaddr' to override\n",
+		__func__, enetaddr[0], enetaddr[1], enetaddr[2],
+		enetaddr[3], enetaddr[4], enetaddr[5]);
+
+	return ipq_gmac_eth_initialize(enetaddr);
 }
 

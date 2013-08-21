@@ -658,7 +658,8 @@ static void synopGMAC_task_poll(unsigned long arg)
  * \return Returns 0 on success and error status upon failure.
  * 
  */
-static s32 synopGMAC_linux_open(struct eth_device *netdev)
+static s32 synopGMAC_linux_open(struct eth_device *netdev,
+				struct eth_device *device)
 {
 	void *dev = NULL;;
 	synopGMACdevice *gmacdev = (synopGMACdevice *) netdev_priv(netdev);
@@ -681,7 +682,7 @@ static s32 synopGMAC_linux_open(struct eth_device *netdev)
 	 * Lets read the version of ip in to device structure
 	 */
 	synopGMAC_read_version(gmacdev);
-	synopGMAC_set_mac_addr(gmacdev, GmacAddr0High, GmacAddr0Low, netdev->dev_addr);
+	synopGMAC_set_mac_addr(gmacdev, GmacAddr0High, GmacAddr0Low, device->enetaddr);
 
 
 	/*
@@ -1030,7 +1031,7 @@ int  ipq_gmac_eth_init(struct eth_device *dev,bd_t *bd)
 		eth_init_done = 1;
 	}
 
-	synopGMAC_linux_open(synopGMACDev[0]->synopGMACnetdev);
+	synopGMAC_linux_open(synopGMACDev[0]->synopGMACnetdev, dev);
 	synopGMACDev[0]->state = ETH_STATE_ACTIVE;
 
 	return 0;
@@ -1067,7 +1068,7 @@ void synopGMAC_reset_phy(synopGMACdevice *gmacdev, u32 phyid)
 }
 
 
-int ipq_gmac_eth_initialize(void)
+int ipq_gmac_eth_initialize(const char *ethaddr)
 {
 	struct eth_device *dev;
 	unsigned int m = 5, not_n = 0xF4, not_2d = 0xF5;
@@ -1084,6 +1085,7 @@ int ipq_gmac_eth_initialize(void)
 	dev->halt = ipq_gmac_eth_halt;
 	dev->send = ipq_gmac_eth_send;
 	dev->recv = ipq_gmac_eth_rx;
+	memcpy(dev->enetaddr, ethaddr, 6);
 	strcpy(dev->name, "ipq_gmac");
 	eth_register(dev);
 
