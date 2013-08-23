@@ -41,6 +41,7 @@ DECLARE_GLOBAL_DATA_PTR;
 
 loff_t board_env_offset;
 loff_t board_env_range;
+extern int nand_env_device;
 
 board_ipq806x_params_t *gboard_param;
 extern int ipq_gmac_eth_initialize(const char *ethaddr);
@@ -99,6 +100,15 @@ int board_init()
 	if (ret < 0) {
 		printf("cdp: get boot flash failed\n");
 		return ret;
+	}
+
+	if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
+		nand_env_device = CONFIG_IPQ_NAND_NAND_INFO_IDX;
+	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
+		nand_env_device = CONFIG_IPQ_SPI_NAND_INFO_IDX;
+	} else {
+		printf("BUG: unsupported flash type : %d\n", sfi->flash_type);
+		BUG();
 	}
 
 	ret = smem_getpart("0:APPSBLENV", &start_blocks, &size_blocks);
