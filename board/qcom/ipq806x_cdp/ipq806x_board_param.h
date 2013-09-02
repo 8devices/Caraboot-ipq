@@ -204,7 +204,7 @@ board_ipq806x_params_t board_params[] = {
 	{
 		.boardid = 0,
 		.machid = MACH_TYPE_IPQ806X_AP148,
-		.ddr_size = (2 << 30),
+		.ddr_size = (256 << 20),
 		.uart_gsbi = GSBI_4,
 		.uart_gsbi_base = UART_GSBI4_BASE,
 		.uart_dm_base = UART4_DM_BASE,
@@ -220,7 +220,7 @@ board_ipq806x_params_t board_params[] = {
 		},
 		.dbg_uart_gpio = {
 			{
-				.gpio = 11,
+				.gpio = 10,
 				.func = 1,
 				.dir = GPIO_OUTPUT,
 				.pull = GPIO_NO_PULL,
@@ -228,7 +228,7 @@ board_ipq806x_params_t board_params[] = {
 				.enable = GPIO_DISABLE
 			},
 			{
-				.gpio = 12,
+				.gpio = 11,
 				.func = 1,
 				.dir = GPIO_INPUT,
 				.pull = GPIO_NO_PULL,
