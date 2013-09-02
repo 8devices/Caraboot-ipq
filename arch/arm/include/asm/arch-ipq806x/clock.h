@@ -119,6 +119,7 @@
 #define NSS_250MHZ_CLK_SRC0_MD  0x903D6C
 #define NSS_250MHZ_CLK_CTL      0x903D74
 #define GMAC_CORE0_RESET        0x903CBC
+#define GMAC_CORE1_RESET        0x903CDC
 #define GMAC_AHB_RESET          0x903E24
 #define TCSR_PXO_SEL            0x1A4000C0
 #define SRC_SEL_PLL0            (0x2 << 0)

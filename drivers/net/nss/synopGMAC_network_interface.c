@@ -65,7 +65,7 @@ static s32 gmac_plat_init(void)
 
 	/*XXX: needs cleanup. need better way to share registers between different modules. */
         nss_base = NSS_REG_BASE ;
-        gmac_base = NSS_GMAC0_BASE;
+        gmac_base = gboard_param->gmac_base;
         qsgmii_base = QSGMII_REG_BASE;
 
 	TR("%s: ipq806x: NSS base done. \n",__FUNCTION__);
@@ -74,10 +74,9 @@ static s32 gmac_plat_init(void)
 }
 
 
-static s32 gmac_dev_init(void)
+static s32 gmac_dev_init(u32 id)
 {
 	u32 val;
-	u32 id = 0;
 
 	/* Set GMACn Ctl */
 	val = GMAC_PHY_RGMII | GMAC_IFG_CTL(GMAC_IFG)
@@ -112,7 +111,7 @@ static s32 gmac_dev_init(void)
 	val = synopGMACReadReg((u32 *)nss_base, NSS_QSGMII_CLK_CTL);
 	TR("%s:QSGMII_CLK_CTL - 0x%x  \n", __FUNCTION__, val);
 
-	synopGMACSetBits((u32 *)nss_base, NSS_ETH_CLK_SRC_CTL, 0x1);
+	synopGMACSetBits((u32 *)nss_base, NSS_ETH_CLK_SRC_CTL, (0x1 << id));
 
         return 0;
 }
@@ -869,6 +868,7 @@ drop:
 s32  synopGMAC_init_network_interface(void)
 {
 	u32 i;
+	u32 id;
 	s32 err = 0;
 	struct eth_device *netdev;
 	synopGMACdevice *gmacdev;
@@ -902,13 +902,16 @@ s32  synopGMAC_init_network_interface(void)
 		}
 		netdev->priv = gmacdev;
 		gmac_plat_init();
-		gmacdev->macid = gboard_param->eth_macid;
 		gmacdev->phyid = gboard_param->phy_id; /* 6 or 4 */
-		gmacdev->synopGMACMappedAddr = NSS_GMAC0_BASE;
+		gmacdev->synopGMACMappedAddr = gmac_base;
 	        TR("Initializing synopsys GMAC interface at port = 0x%x\n",
-                gmacdev->synopGMACMappedAddr) ;
+		gmacdev->synopGMACMappedAddr) ;
 
-		gmac_dev_init();
+		id = ((gmac_base - NSS_GMAC0_BASE) / NSS_GMAC_REG_LEN);
+		if (id > 3)
+			return -EINVAL;
+
+		gmac_dev_init(id);
 
 		/*
 		 * Attach the device to MAC struct This will configure all the required base addresses
@@ -1072,6 +1075,8 @@ int ipq_gmac_eth_initialize(const char *ethaddr)
 {
 	struct eth_device *dev;
 	unsigned int m = 5, not_n = 0xF4, not_2d = 0xF5;
+	int i;
+	gpio_func_data_t *gpio_func = gboard_param->gmac_gpio;
 
 	gmac_clock_config(m, not_n, not_2d);
 
@@ -1080,7 +1085,7 @@ int ipq_gmac_eth_initialize(const char *ethaddr)
 	if (dev == NULL)
 		return -1;
 	memset(dev, 0, sizeof(*dev));
-	dev->iobase = NSS_GMAC0_BASE;
+	dev->iobase = gboard_param->gmac_base;
 	dev->init = ipq_gmac_eth_init;
 	dev->halt = ipq_gmac_eth_halt;
 	dev->send = ipq_gmac_eth_send;
@@ -1089,11 +1094,11 @@ int ipq_gmac_eth_initialize(const char *ethaddr)
 	strcpy(dev->name, "ipq_gmac");
 	eth_register(dev);
 
-	/* MDIO Initialisation */
-	gpio_tlmm_config(0, 1, GPIO_OUTPUT, GPIO_NO_PULL, GPIO_8MA, GPIO_ENABLE);
-	gpio_tlmm_config(1, 1, GPIO_OUTPUT, GPIO_NO_PULL, GPIO_8MA, GPIO_DISABLE);
-	gpio_tlmm_config(2, 0, GPIO_OUTPUT, GPIO_NO_PULL, GPIO_8MA, GPIO_ENABLE);
-	gpio_tlmm_config(66, 0, GPIO_OUTPUT, GPIO_NO_PULL, GPIO_16MA, GPIO_ENABLE);
+	for (i = 0; i < gboard_param->gmac_gpio_count; i++) {
+		gpio_tlmm_config(gpio_func->gpio, gpio_func->func, gpio_func->dir,
+			gpio_func->pull, gpio_func->drvstr, gpio_func->enable);
+		gpio_func++;
+	}
 
 	athrs17_reg_init();
 	return 0;

@@ -156,6 +156,7 @@ static void gmac_clk_ctl_enable(void)
 static void gmac_core_clk_config(void)
 {
 	writel(0x0, (void *)GMAC_CORE0_RESET);
+	writel(0x0, (void *)GMAC_CORE1_RESET);
 	writel(0x0, (void *)GMAC_AHB_RESET);
 	writel(0x0, (void *)TCSR_PXO_SEL);
 }

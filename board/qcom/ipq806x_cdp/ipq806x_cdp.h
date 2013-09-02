@@ -81,8 +81,10 @@ typedef struct {
 	unsigned int uart_dm_base;
 	unsigned int clk_dummy;
 	uart_clk_mnd_t mnd_value;
-	unsigned int eth_macid;
 	unsigned int phy_id;
+	unsigned int gmac_base;
+	unsigned int gmac_gpio_count;
+	gpio_func_data_t *gmac_gpio;
 	flash_desc flashdesc;
 	spinorflash_params_t flash_param;
 	gpio_func_data_t dbg_uart_gpio[NO_OF_DBG_UART_GPIOS];
