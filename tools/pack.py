@@ -346,6 +346,21 @@ class FlashScript(object):
 
         self.append("exit 0\n", fatal=False)
 
+    def start_if(self, var, value):
+        """Generate code, to check an environment variable.
+
+        var -- string, variable to check
+        value -- string, the value to compare with
+        """
+
+        self.append('if test "$%s" = "%s"; then\n' % (var, value),
+                    fatal=False)
+
+    def end_if(self):
+        """Generate code, to end if statement."""
+
+        self.append('fi\n', fatal=False)
+
 class NandScript(FlashScript):
     """Class for creating NAND flash scripts."""
 
@@ -484,6 +499,23 @@ class Pack(object):
 
         return layout
 
+    def __get_machid(self, info, section):
+        """Get the machid for a section.
+
+        info -- ConfigParser object, containing image flashing info
+        section -- section to retreive the machid from
+        """
+        try:
+            machid = info.get(section, "if_machid")
+            machid = int(machid, 0)
+            machid = "%x" % machid
+        except ConfigParserError, e:
+            machid = None
+        except ValueError, e:
+            error("invalid value for machid, should be integer")
+
+        return machid
+
     def __get_img_size(self, filename):
         """Get the size of the image to be flashed
 
@@ -522,6 +554,7 @@ class Pack(object):
             if include.lower() in ["0", "no"]:
                 continue
 
+            machid = self.__get_machid(info, section)
             layout = self.__get_layout(info, section)
             yaffs = self.__get_yaffs(info, section)
 
@@ -531,15 +564,19 @@ class Pack(object):
             if img_size > part_info.length:
                 error("img size is larger than part. len in '%s'" % section)
 
-            script.start_activity("Flashing %s:" % section)
+            if machid:
+                script.start_if("machid", machid)
 
+            script.start_activity("Flashing %s:" % section)
             offset = part_info.offset
             if self.ipq_nand: script.switch_layout(layout)
             script.imxtract(section)
             script.erase(offset, part_info.length)
             script.write(offset, img_size, yaffs)
-
             script.finish_activity()
+
+            if machid:
+                script.end_if()
 
         script.end()
 
@@ -663,6 +700,7 @@ class Pack(object):
 
         script.start_activity("Check environment:")
         script.check_isset("imgaddr")
+        script.check_isset("machid")
         script.finish_activity()
 
         try:
@@ -1259,6 +1297,44 @@ filename = sbl1.mbn
 [sbl2]
 partition = 0:SBL2
 filename = sbl1.mbn
+""")
+        self.assertRaises(SystemExit,
+                          self.pack.main,
+                          self.flinfo,
+                          self.img_dname,
+                          self.img_fname,
+                          self.part_fname,
+                          self.fconf_fname,
+                          ipq_nand=False)
+
+    def test_machid_in_hex(self):
+        self.__mkconf("""
+[sbl1]
+partition = 0:SBL1
+filename = sbl1.mbn
+if_machid = 0x152
+""")
+        self.pack.main(self.flinfo, self.img_dname, self.img_fname,
+                       self.part_fname, self.fconf_fname, ipq_nand=False)
+        self.assertEqual(os.path.exists(self.img_fname), True)
+
+    def test_machid_in_dec(self):
+        self.__mkconf("""
+[sbl1]
+partition = 0:SBL1
+filename = sbl1.mbn
+if_machid = 256
+""")
+        self.pack.main(self.flinfo, self.img_dname, self.img_fname,
+                       self.part_fname, self.fconf_fname, ipq_nand=False)
+        self.assertEqual(os.path.exists(self.img_fname), True)
+
+    def test_machid_invalid(self):
+        self.__mkconf("""
+[sbl1]
+partition = 0:SBL1
+filename = sbl1.mbn
+if_machid = xyz
 """)
         self.assertRaises(SystemExit,
                           self.pack.main,
