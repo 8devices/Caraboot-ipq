@@ -367,7 +367,6 @@ class NandScript(FlashScript):
     def __init__(self, flinfo, ipq_nand):
         FlashScript.__init__(self, flinfo)
         self.ipq_nand = ipq_nand
-        self.curr_layout = None
 
     def erase(self, offset, size):
         """Generate code, to erase the specified partition."""
@@ -387,18 +386,14 @@ class NandScript(FlashScript):
 
     def switch_layout(self, layout):
         """Generate code, to switch between sbl/linux layouts."""
-        if layout == self.curr_layout:
-            return
 
         self.append("ipq_nand %s" % layout)
-        self.curr_layout = layout
 
 class NorScript(FlashScript):
     """Class for creating NAND flash scripts."""
 
     def __init__(self, flinfo):
         FlashScript.__init__(self, flinfo)
-        self.curr_layout = None
 
     def erase(self, offset, size):
         """Generate code, to erase the specified partition."""
