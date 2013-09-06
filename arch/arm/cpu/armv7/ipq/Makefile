@@ -9,6 +9,9 @@ COBJS-y += clock.o
 COBJS-y += gpio.o
 COBJS-y += smem.o
 COBJS-y += cmd_bootipq.o
+ifeq ($(CONFIG_IPQ_APPSBL_DLOAD),y)
+COBJS-y += cmd_dumpipq_data.o
+endif
 
 SRCS	:= $(SOBJS:.o=.S) $(COBJS:.o=.c)
 OBJS	:= $(addprefix $(obj),$(COBJS-y) $(SOBJS-y))

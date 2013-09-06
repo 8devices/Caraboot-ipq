@@ -328,6 +328,11 @@ void board_init_f(ulong bootflag)
 
 	addr = CONFIG_SYS_SDRAM_BASE + gd->ram_size;
 
+#ifdef CONFIG_IPQ_APPSBL_DLOAD
+	/* We reserve 2MB of memory when built with crashdump enabled */
+	gd->ram_size -= (2 * 1024 * 1024);
+#endif
+
 #ifdef CONFIG_LOGBUFFER
 #ifndef CONFIG_ALT_LB_ADDR
 	/* reserve kernel log buffer */

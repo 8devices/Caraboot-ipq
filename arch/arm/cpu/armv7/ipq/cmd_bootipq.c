@@ -79,6 +79,31 @@ static void set_fs_bootargs()
 }
 
 /**
+ * Inovke the dump routine and in case of failure, do not stop unless the user
+ * requested to stop
+ */
+static int inline do_dumpipq_data()
+{
+	uint64_t etime;
+
+	if (run_command("dumpipq_data", 0) != CMD_RET_SUCCESS) {
+		printf("\nAuto crashdump saving failed!"
+			"\nPress any key within 10s to take control of U-Boot");
+
+		etime = get_timer_masked() + (10 * CONFIG_SYS_HZ);
+		while (get_timer_masked() < etime) {
+			if (tstc())
+				break;
+		}
+
+		if (get_timer_masked() < etime)
+			return CMD_RET_FAILURE;
+	}
+
+	return CMD_RET_SUCCESS;
+}
+
+/**
  * Load the NSS images and Kernel image and transfer control to kernel
  */
 static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
@@ -87,8 +112,36 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	char runcmd[128];
 	int nandid = 0;
 
+#ifdef CONFIG_IPQ_APPSBL_DLOAD
+	unsigned long * dmagic1 = (unsigned long *) 0x2A03F000;
+	unsigned long * dmagic2 = (unsigned long *) 0x2A03F004;
+#endif
+
 	if (argc == 2 && strncmp(argv[1], "debug", 5) == 0)
 		debug = 1;
+
+#ifdef CONFIG_IPQ_APPSBL_DLOAD
+	/* check if we are in download mode */
+	if (*dmagic1 == 0xE47B337D && *dmagic2 == 0x0501CAB0) {
+		/* clear the magic and run the dump command */
+		*dmagic1 = 0;
+		*dmagic2 = 0;
+		uint64_t etime = get_timer_masked() + (10 * CONFIG_SYS_HZ);
+
+		printf("\nCrashdump magic found."
+			"\nHit any key within 10s to stop dump activity...");
+		while (!tstc()) {       /* while no incoming data */
+			if (get_timer_masked() >= etime) {
+				if (do_dumpipq_data() == CMD_RET_FAILURE)
+					return CMD_RET_FAILURE;
+				/* reset the system before boot */
+				run_command("reset", 0);
+				break;
+			}
+		}
+
+	}
+#endif
 
 	set_fs_bootargs();
 

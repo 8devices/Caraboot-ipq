@@ -55,6 +55,12 @@
  */
 #define CONFIG_CONS_INDEX               1
 
+/*
+ * Enable crash dump support, this will dump the memory
+ * regions via TFTP in case magic word found in memory
+ */
+#define CONFIG_IPQ_APPSBL_DLOAD
+
 /* allow to overwrite serial and ethaddr */
 #define CONFIG_ENV_OVERWRITE
 #define CONFIG_BAUDRATE                 115200
@@ -71,8 +77,8 @@
 #define CONFIG_SYS_PBSIZE               (CONFIG_SYS_CBSIZE + \
 						sizeof(CONFIG_SYS_PROMPT) + 16)
 
-#define CONFIG_SYS_TEXT_BASE            0x40000000
 #define CONFIG_SYS_SDRAM_BASE           0x40000000
+#define CONFIG_SYS_TEXT_BASE            0x40600000
 #define CONFIG_SYS_SDRAM_SIZE           0x10000000
 #define CONFIG_MAX_RAM_BANK_SIZE        CONFIG_SYS_SDRAM_SIZE
 
@@ -111,7 +117,8 @@ static uint32_t inline clk_is_dummy(void)
 typedef struct {
 	uint8_t	nss[4 * 1024 * 1024];
 	uint8_t	smem[2 * 1024 * 1024];
-	uint8_t	pad[2 * 1024 * 1024];
+	uint8_t	uboot[1 * 1024 * 1024];
+	uint8_t	nsstcmdump[1 * 1024 * 1024];
 } __attribute__ ((__packed__)) ipq_mem_reserve_t;
 
 /* Convenience macros for the above convenience structure :-) */
@@ -128,6 +135,9 @@ typedef struct {
 	(CONFIG_SYS_SDRAM_SIZE - GENERATED_IPQ_RESERVE_SIZE)
 
 #define IPQ_BOOT_PARAMS_ADDR		(IPQ_KERNEL_START_ADDR + 0x100)
+
+#define IPQ_NSSTCM_DUMP_ADDR		(IPQ_MEM_RESERVE_BASE(nsstcmdump))
+
 #endif /* __ASSEMBLY__ */
 
 #define CONFIG_CMD_MEMORY
@@ -223,6 +233,12 @@ typedef struct {
 
 /* Add MBN header to U-Boot */
 #define CONFIG_MBN_HEADER
+
+#ifdef CONFIG_IPQ_APPSBL_DLOAD
+#define CONFIG_CMD_TFTPPUT
+/* We will be uploading very big files */
+#define CONFIG_NET_RETRY_COUNT 500
+#endif
 
 #endif /* _IPQCDP_H */
 
