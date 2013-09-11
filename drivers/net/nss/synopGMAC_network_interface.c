@@ -1030,6 +1030,7 @@ int  ipq_gmac_eth_init(struct eth_device *dev,bd_t *bd)
 	if (!eth_init_done) {
 		TR("eth_init: init GMAC\n");
 		synopGMAC_init_network_interface();
+		athrs17_reg_init();
 		synopGMACDev[0]->state = ETH_STATE_INIT;
 		eth_init_done = 1;
 	}
@@ -1100,7 +1101,6 @@ int ipq_gmac_eth_initialize(const char *ethaddr)
 		gpio_func++;
 	}
 
-	athrs17_reg_init();
 	return 0;
 }
 
