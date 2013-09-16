@@ -34,6 +34,9 @@
 #include <asm/io.h>
 #include <asm/errno.h>
 #include <asm/arch-ipq806x/smem.h>
+#include <nand.h>
+
+extern int nand_env_device;
 
 typedef enum {
 	SMEM_SPINLOCK_ARRAY = 7,
@@ -332,10 +335,21 @@ int do_smeminfo(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
 	for (i = 0; i < smem_ptable.len; i++) {
 		struct smem_ptn *p = &smem_ptable.parts[i];
+		loff_t psize;
+
+		if (p->size == (~0u)) {
+			/*
+			 * Partition size is 'till end of device', calculate
+			 * appropriately
+			 */
+			psize = nand_info[nand_env_device].size - (((loff_t)
+					p->start) * sfi->flash_block_size);
+		} else {
+			psize = ((loff_t)p->size) * sfi->flash_block_size;
+		}
 		printf("%3d: " smem_ptn_name_fmt " 0x%08x %#16llx %#16llx\n",
 			i, p->name, p->attr,
-			((loff_t)p->start) * sfi->flash_block_size,
-			((loff_t)p->size) * sfi->flash_block_size);
+			((loff_t)p->start) * sfi->flash_block_size, psize);
 	}
 	return 0;
 }
