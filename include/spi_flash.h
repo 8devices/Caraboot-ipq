@@ -41,6 +41,10 @@ struct spi_flash {
 	/* 3 or 4 byte address width */
 	u32             addr_width;
 
+	u8		read_opcode;
+
+	u8		write_opcode;
+
 	int		(*read)(struct spi_flash *flash, u32 offset,
 				size_t len, void *buf);
 	int		(*write)(struct spi_flash *flash, u32 offset,

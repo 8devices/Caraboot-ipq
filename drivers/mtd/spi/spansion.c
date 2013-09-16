@@ -34,7 +34,7 @@
 /* S25FLxx-specific commands */
 #define CMD_S25FLXX_SE		0xd8	/* Sector Erase */
 #define CMD_S25FLXX_BE		0xc7	/* Bulk Erase */
-#define OPCODE_BRWR		0x17    /* Bank register write */
+#define CMD_S25FLXX_4SE		0xdc	/* 4-byte Sector Erase */
 
 struct spansion_spi_flash_params {
 	u16 idcode1;
@@ -130,22 +130,13 @@ static const struct spansion_spi_flash_params spansion_spi_flash_table[] = {
 
 static int spansion_erase(struct spi_flash *flash, u32 offset, size_t len)
 {
-	return spi_flash_cmd_erase(flash, CMD_S25FLXX_SE, offset, len);
-}
+	u8 erase_opcode;
+	if (flash->addr_width == 4)
+		erase_opcode = CMD_S25FLXX_4SE;
+	else
+		erase_opcode = CMD_S25FLXX_SE;
 
-static int set_4byte_mode(struct spi_flash *flash, int enable)
-{
-
-	u8 cmd = OPCODE_BRWR;
-	u8 value = enable << 7;
-	unsigned int ret;
-
-	ret = spi_flash_cmd_write(flash->spi, &cmd, 1, &value, 1);
-	if (ret < 0) {
-		debug("SF: Enter 4-byte mode failed\n");
-	}
-
-	return ret;
+	return spi_flash_cmd_erase(flash, erase_opcode, offset, len);
 }
 
 struct spi_flash *spi_flash_probe_spansion(struct spi_slave *spi, u8 *idcode)
@@ -188,14 +179,9 @@ struct spi_flash *spi_flash_probe_spansion(struct spi_slave *spi, u8 *idcode)
 	flash->sector_size = params->page_size * params->pages_per_sector;
 	flash->size = flash->sector_size * params->nr_sectors;
 
-	if (flash->size < 0x1000000) {
-		flash->addr_width = 3;
-	} else {
-		ret = set_4byte_mode(flash, 1);
-		if (ret == 0)
-			flash->addr_width = 4;
-		else
-			flash->addr_width = 3;
+	if (flash->size > 0x1000000) {
+		flash->read_opcode  = CMD_4READ_ARRAY_FAST;
+		flash->write_opcode = CMD_4PAGE_PROGRAM;
 	}
 
 	return flash;

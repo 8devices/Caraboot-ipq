@@ -27,8 +27,6 @@ static void spi_flash_addr(struct spi_flash *flash, u32 addr, u8 *cmd)
 static int flash_cmdsz(struct spi_flash *flash)
 {
 	/* This is needed for driver which have not updated this parameter */
-	if (flash->addr_width != 4)
-		flash->addr_width = 3;
 
 	return 1 + flash->addr_width;
 }
@@ -93,7 +91,7 @@ int spi_flash_cmd_write_multi(struct spi_flash *flash, u32 offset,
 		return ret;
 	}
 
-	cmd[0] = CMD_PAGE_PROGRAM;
+	cmd[0] = flash->write_opcode;
 	for (actual = 0; actual < len; actual += chunk_len) {
 		chunk_len = min(len - actual, page_size - byte_addr);
 
@@ -157,7 +155,7 @@ int spi_flash_cmd_read_fast(struct spi_flash *flash, u32 offset,
 {
 	u8 cmd[6];
 
-	cmd[0] = CMD_READ_ARRAY_FAST;
+	cmd[0] = flash->read_opcode;
 	spi_flash_addr(flash, offset, cmd);
 	cmd[5] = 0x00;
 
@@ -372,6 +370,14 @@ struct spi_flash *spi_flash_probe(unsigned int bus, unsigned int cs,
 	if (!flash) {
 		printf("SF: Unsupported manufacturer %02x\n", *idp);
 		goto err_manufacturer_probe;
+	}
+
+	if (flash->size > 0x1000000) {
+		flash->addr_width = 4;
+	} else {
+		flash->addr_width = 3;
+		flash->read_opcode  = CMD_READ_ARRAY_FAST;
+		flash->write_opcode = CMD_PAGE_PROGRAM;
 	}
 
 	printf("SF: Detected %s with page size ", flash->name);

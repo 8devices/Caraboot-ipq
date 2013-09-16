@@ -19,6 +19,10 @@
 #define CMD_READ_ARRAY_SLOW		0x03
 #define CMD_READ_ARRAY_FAST		0x0b
 
+/* Spansion new commands for 4-byte address access */
+#define CMD_4READ_ARRAY_FAST		0x0c
+#define CMD_4PAGE_PROGRAM		0x12
+
 #define CMD_WRITE_STATUS		0x01
 #define CMD_PAGE_PROGRAM		0x02
 #define CMD_WRITE_DISABLE		0x04
