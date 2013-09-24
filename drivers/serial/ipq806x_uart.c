@@ -126,6 +126,11 @@ msm_boot_uart_dm_read(unsigned int *data, int *count, int wait)
 	/* Data available in FIFO; read a word. */
 	*data = readl(MSM_BOOT_UART_DM_RF(base, 0));
 
+	/* WAR for http://prism/CR/548280 */
+	if (*data == 0) {
+		return MSM_BOOT_UART_DM_E_RX_NOT_READY;
+	}
+
 	/* increment the total count of chars we've read so far */
 	rx_data_read += FIFO_DATA_SIZE;
 
