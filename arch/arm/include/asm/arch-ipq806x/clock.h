@@ -113,22 +113,67 @@
 #define NS_SRC_SEL(s_msb, s_lsb, s) \
     BVAL(s_msb, s_lsb, s)
 
-/* gmac specific clock settings */
-#define NSS_250MHZ_CLK_SRC_CTL  0x903D60
-#define NSS_250MHZ_CLK_SRC0_NS  0x903D64
-#define NSS_250MHZ_CLK_SRC0_MD  0x903D6C
-#define NSS_250MHZ_CLK_CTL      0x903D74
-#define GMAC_CORE0_RESET        0x903CBC
-#define GMAC_CORE1_RESET        0x903CDC
-#define GMAC_AHB_RESET          0x903E24
-#define TCSR_PXO_SEL            0x1A4000C0
-#define SRC_SEL_PLL0            (0x2 << 0)
-#define MNCNTR_MODE_DUAL_EDGE   (0x2 << 5)
-#define MNCNTR_ENABLE           (0x1 << 8)
-#define MNCNTR_RST_ACTIVE       (0x1 << 7)
-#define N_VAL                   15
+#define GMAC_AHB_RESET			0x903E24
 
-void gmac_clock_config(unsigned int m, unsigned int not_n, unsigned int not_2d);
+#define SRC_SEL_PLL0			(0x2 << 0)
+#define MNCNTR_MODE_DUAL_EDGE		(0x2 << 5)
+#define MNCNTR_ENABLE			(0x1 << 8)
+#define MNCNTR_RST_ACTIVE		(0x1 << 7)
+#define N_VAL				15
+
+#define GMAC_CORE_RESET(n)	\
+		((void *)(0x903CBC + ((n) * 0x20)))
+
+#define GMACSEC_CORE_RESET(n)	\
+		((void *)(0x903E28 + ((n - 1) * 4)))
+
+#define GMAC_COREn_CLCK_SRC_CTL(N)	\
+		(0x00900000 + (0x3CA0 + (32*(N-1))))
+
+#define GMAC_COREn_CLCK_SRC0_MD(N)	\
+		(0x00900000 + (0x3CA4 + (32*(N-1))))
+
+#define GMAC_COREn_CLCK_SRC1_MD(N)	\
+		(0x00900000 + (0x3CA8	+ (32*(N-1))))
+
+#define GMAC_COREn_CLCK_SRC0_NS(N)	\
+		(0x00900000 + (0x3CAC + (32*(N-1))))
+
+#define GMAC_COREn_CLCK_SRC1_NS(N)	\
+		(0x00900000 + (0x3CB0 + (32*(N-1))))
+
+#define DISABLE_DUAL_MN8_SEL		(0)
+#define DISABLE_CLK_LOW_PWR		(0 << 2)
+#define GMAC_CORE_CLCK_ROOT_ENABLE	(1 << 1)
+
+/* GMAC_COREn_CLK_SRC[0,1]_MD register bits (Assuming 133MHz) */
+#define GMAC_CORE_CLCK_M		0x32
+#define GMAC_CORE_CLCK_D		0	/* NOT(2*D) value */
+#define GMAC_CORE_CLCK_M_SHIFT		16
+#define GMAC_CORE_CLCK_D_SHIFT		0
+#define GMAC_CORE_CLCK_M_VAL		(GMAC_CORE_CLCK_M << GMAC_CORE_CLCK_M_SHIFT)
+#define GMAC_CORE_CLCK_D_VAL		(GMAC_CORE_CLCK_D << GMAC_CORE_CLCK_D_SHIFT)
+
+/* GMAC_COREn_CLK_SRC[0,1]_NS register bits (Assuming 133MHz) */
+#define GMAC_CORE_CLCK_N			0x4		/* NOT(N-M) value, N=301 */
+#define GMAC_CORE_CLCK_N_SHIFT			16
+#define GMAC_CORE_CLCK_N_VAL			(GMAC_CORE_CLCK_N << GMAC_CORE_CLCK_N_SHIFT)
+#define GMAC_CORE_CLCK_MNCNTR_EN		0x00000100	/* Enable M/N counter */
+#define GMAC_CORE_CLCK_MNCNTR_RST		0x00000080	/* Activate reset for M/N counter */
+#define GMAC_CORE_CLCK_MNCNTR_MODE_MASK		0x00000060	/* M/N counter mode mask */
+#define GMAC_CORE_CLCK_MNCNTR_MODE_SHIFT		5
+#define GMAC_CORE_CLCK_MNCNTR_MODE_DUAL		(2 << GMAC_CORE_CLCK_MNCNTR_MODE_SHIFT) /* M/N counter mode dual-edge */
+#define GMAC_CORE_CLCK_PRE_DIV_SEL_MASK		0x00000018	/* Pre divider select mask */
+#define GMAC_CORE_CLCK_PRE_DIV_SEL_SHIFT		3
+#define GMAC_CORE_CLCK_PRE_DIV_SEL_BYP		(0 << GMAC_CORE_CLCK_PRE_DIV_SEL_SHIFT)  /* Pre divider bypass */
+#define GMAC_CORE_CLCK_SRC_SEL_MASK		0x00000007	/* clk source Mux select mask */
+#define GMAC_CORE_CLCK_SRC_SEL_SHIFT		0
+#define GMAC_CORE_CLCK_SRC_SEL_PLL0		(2 << GMAC_CORE_CLCK_SRC_SEL_SHIFT)	/* output of clk source Mux is PLL0 */
+#define GMAC_COREn_CLCK_CTL(N)			(0x00900000 + (0x3CB4 + (32*(N-1))))
+
+#define GMAC_COREn_CLCK_INV_DISABLE		(0 << 5)
+#define GMAC_COREn_CLCK_BRANCH_ENA		(1 << 4)
+
 
 /* Uart specific clock settings */
 

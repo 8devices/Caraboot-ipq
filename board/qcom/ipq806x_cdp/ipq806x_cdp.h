@@ -4,7 +4,8 @@
 #ifndef  _IPQ806X_CDP_H_
 #define  _IPQ806X_CDP_H_
 
-void configure_uart_gpio(void);
+#include <phy.h>
+
 unsigned int smem_get_board_machtype(void);
 
 typedef struct {
@@ -70,10 +71,27 @@ typedef struct {
 	int vendor;
 } spinorflash_params_t;
 
-/* Board specific parameters */
+typedef struct {
+	uint count;
+	u8 addr[7];
+} ipq_gmac_phy_addr_t;
 
 typedef struct {
-	unsigned int boardid;
+	uint base;
+	int unit;
+	uint is_macsec;
+	uint is_sgmii_switch;
+	uint mac_pwr0;
+	uint mac_pwr1;
+	uint mac_conn_to_phy;
+	phy_interface_t phy;
+	ipq_gmac_phy_addr_t phy_addr;
+} ipq_gmac_board_cfg_t;
+
+#define IPQ_GMAC_NMACS		4
+
+/* Board specific parameters */
+typedef struct {
 	unsigned int machid;
 	unsigned int ddr_size;
 	unsigned int uart_gsbi;
@@ -81,14 +99,29 @@ typedef struct {
 	unsigned int uart_dm_base;
 	unsigned int clk_dummy;
 	uart_clk_mnd_t mnd_value;
-	unsigned int phy_id;
-	unsigned int gmac_base;
 	unsigned int gmac_gpio_count;
 	gpio_func_data_t *gmac_gpio;
+	ipq_gmac_board_cfg_t gmac_cfg[IPQ_GMAC_NMACS];
 	flash_desc flashdesc;
 	spinorflash_params_t flash_param;
 	gpio_func_data_t dbg_uart_gpio[NO_OF_DBG_UART_GPIOS];
 } __attribute__ ((__packed__)) board_ipq806x_params_t;
 
+extern board_ipq806x_params_t *gboard_param;
+
+static inline int gmac_cfg_is_valid(ipq_gmac_board_cfg_t *cfg)
+{
+	/*
+	 * 'cfg' is valid if and only if
+	 *	unit number is non-negative
+	 *	'cfg' pointer lies within the array range of
+	 *		board_ipq806x_params_t->gmac_cfg[]
+	 */
+	return ((cfg >= &gboard_param->gmac_cfg[0]) &&
+		(cfg < &gboard_param->gmac_cfg[IPQ_GMAC_NMACS]) &&
+		(cfg->unit >= 0));
+}
+
 unsigned int get_board_index(unsigned int machid);
+void ipq_configure_gpio(gpio_func_data_t *gpio, uint count);
 #endif

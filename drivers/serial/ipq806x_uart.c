@@ -31,12 +31,12 @@
  * SUCH DAMAGE.
  */
 
+#include <common.h>
 #include <asm/arch-ipq806x/gsbi.h>
 #include <asm/arch-ipq806x/clock.h>
 #include <asm/arch-ipq806x/uart.h>
 #include <asm/arch-ipq806x/gpio.h>
 #include <asm/arch-ipq806x/iomap.h>
-#include "../board/qcom/ipq806x_cdp/ipq806x_cdp.h"
 
 #define FIFO_DATA_SIZE	4
 
@@ -342,7 +342,7 @@ static void uart_dm_init(void)
 
 	dm_base = gboard_param->uart_dm_base;
 	gsbi_base = gboard_param->uart_gsbi_base;
-	configure_uart_gpio();
+	ipq_configure_gpio(gboard_param->dbg_uart_gpio, NO_OF_DBG_UART_GPIOS);
 
 	/* Configure the uart clock */
         uart_clock_config(gboard_param->uart_gsbi,

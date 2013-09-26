@@ -226,13 +226,17 @@ typedef struct {
 
 #define CONFIG_CMD_ECHO
 #define CONFIG_BOOTDELAY	2
-/* NSS GEMAC */
-#define CONFIG_SYNOPSYS_GEMAC
+
+#define CONFIG_IPQ_SNPS_GMAC
+
+#define CONFIG_IPQ_SWITCH_ATHRS17
 
 #define CONFIG_IPQ_CACHE_ENABLE 0
 
 /* Add MBN header to U-Boot */
 #define CONFIG_MBN_HEADER
+
+#define CONFIG_SYS_RX_ETH_BUFFER	8
 
 #ifdef CONFIG_IPQ_APPSBL_DLOAD
 #define CONFIG_CMD_TFTPPUT

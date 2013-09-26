@@ -146,6 +146,7 @@
 #define S17_P5HDRCTRL_REG               0x00b0
 #define S17_P6HDRCTRL_REG               0x00b4
 #define S17_SGMII_CTRL_REG              0x00e0
+#define S17_MAC_PWR_REG                 0x00e4
 #define S17_EEE_CTRL_REG                0x0100
 
 /* ACL Registers */
@@ -446,6 +447,7 @@
 #define S17_UNI_FLOOD_DPALL             (0x7f << S17_UNI_FLOOD_DP_SHIFT)
 
 #define S17_PWS_CHIP_AR8327             (1 << 30)
+#define S17c_PWS_SERDES_ANEG_EN         (1 << 7)
 
 /* S17_PHY_CONTROL fields */
 #define S17_CTRL_SOFTWARE_RESET                    0x8000
@@ -553,6 +555,15 @@
 
 #define S17_MAC_MAX                          7
 
+/* MAC power selector bit definitions */
+#define S17_RGMII0_1_8V                       (1 << 19)
+#define S17_RGMII1_1_8V                       (1 << 18)
+
+/* SGMII_CTRL bit definitions */
+#define S17c_SGMII_EN_LCKDT		      (1 << 0)
+#define S17c_SGMII_EN_PLL		      (1 << 1)
+#define S17c_SGMII_EN_RX		      (1 << 2)
+#define S17c_SGMII_EN_TX		      (1 << 3)
 
 #ifndef BOOL
 #define BOOL    int
@@ -565,7 +576,7 @@
 #undef HEADER_EN
 #endif
 
-void athrs17_reg_init(void);
+void athrs17_reg_init(ipq_gmac_board_cfg_t *);
 
 #endif
 

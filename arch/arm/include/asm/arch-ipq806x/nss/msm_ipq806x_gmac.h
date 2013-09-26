@@ -14,6 +14,10 @@
 #define NSS_REG_BASE                    0x03000000
 #define NSS_REG_LEN                     0x0000FFFF
 
+#define MSM_TCSR_BASE                   0x1A400000
+
+/* TCSR offsets */
+#define TCSR_PXO_SEL                    0x00C0
 
 /* Offsets of NSS config and status registers within NSS_REG_BASE */
 /* We start the GMAC numbering from 0 */
@@ -38,7 +42,10 @@
 #define NSS_PCS_CAL_LCKDT_CTL           0x0120
 #define NSS_QSGMII_PHY_QSGMII_CTL       0x0134
 #define NSS_QSGMII_PHY_SERDES_CTL       0x0144
+#define NSS_PCS_MODE_CTL                0x0068
 
+/* Offsets of MSM_CLK_CTL_BASE */
+#define MSM_CLK_CTL_BASE                0x00900000
 /* NSS_QSGMII_PHY_QSGMII_CTL bits */
 #define QSGMII_TX_AMPLITUDE_600mV       (0xC << 28)
 #define QSGMII_TX_SLC_10                (0x2 << 26)
@@ -166,21 +173,23 @@
 #define PCS_QSGMII_CTL                          0x020
 #define PCS_QSGMII_SGMII_MODE                   0x064
 #define PCS_ALL_CH_CTL                          0x080
+#define PCS_CAL_LCKDT_CTL                       0x120
 #define QSGMII_PHY_MODE_CTL                     0x128
+#define PCS_QSGMII_MAC_STAT			0x74
 
 /* Bit definitions for PCS_QSGMII_SGMII_MODE */
 #define PCS_QSGMII_MODE_SGMII			(0x0 << 0)
 #define PCS_QSGMII_MODE_QSGMII			(0x1 << 0)
 
+/* Bit definitions for PCS_MODE_CTL */
+#define PCS_MODE_CTL_SGMII_MAC_CLR              (0 << 2)
+#define PCS_MODE_CTL_SGMII_PHY_CLR              (0 << 1)
+#define PCS_MODE_CTL_SGMII_MAC_SET              (1 << 2)
+#define PCS_MODE_CTL_SGMII_PHY_SET              (1 << 1)
+
 /* Bit definitions for QSGMII_PHY_MODE_CTL */
 #define QSGMII_PHY_MODE_SGMII			(0x0 << 0)
 #define QSGMII_PHY_MODE_QSGMII			(0x1 << 0)
-
-/* MDIO addresses for individual PHYs */
-#define GMAC0_MDIO_ID				4
-#define GMAC1_MDIO_ID				6
-#define GMAC2_MDIO_ID				(-1) /* Does not use MDIO */
-#define GMAC3_MDIO_ID				(-1)
 
 /* Interface between GMAC and PHY */
 #define GMAC_INTF_RGMII				0
@@ -222,8 +231,10 @@ struct nss_gmac_platform_data {
 
 #define NSS_MAX_GMACS                           4
 
+/* public functions */
+extern uchar ipq_def_enetaddr[];
+void ipq_gmac_common_init(ipq_gmac_board_cfg_t *cfg);
+int ipq_gmac_init(ipq_gmac_board_cfg_t *cfg);
+int get_eth_mac_address(uchar *enetaddr, uint no_of_macs);
+void ipq_switch_init(ipq_gmac_board_cfg_t *cfg);
 #endif /*__ASM_ARCH_MSM_NSS_GMAC_H */
-
-
-
-

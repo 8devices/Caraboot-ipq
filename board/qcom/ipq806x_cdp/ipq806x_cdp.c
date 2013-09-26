@@ -3,7 +3,6 @@
 
 #include <common.h>
 #include <linux/mtd/ipq_nand.h>
-
 #include <asm/arch-ipq806x/gpio.h>
 #include <asm/global_data.h>
 #include <asm/io.h>
@@ -12,10 +11,11 @@
 #include <asm/arch-ipq806x/smem.h>
 #include <asm/errno.h>
 #include "ipq806x_board_param.h"
-
 #include "ipq806x_cdp.h"
+#include <asm/arch-ipq806x/nss/msm_ipq806x_gmac.h>
 #include <asm/arch-ipq806x/timer.h>
 #include <nand.h>
+#include <phy.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -53,18 +53,17 @@ I/P : None
 O/P : integer, 0 - no error.
 
 ********************************************************/
-
 static board_ipq806x_params_t *get_board_param(unsigned int machid)
 {
-        unsigned int index = 0;
+	unsigned int index = 0;
 
-        for (index = 0; index < NUM_IPQ806X_BOARDS; index++) {
-                if (machid == board_params[index].machid)
-                        return &board_params[index];
-        }
-        BUG_ON(index == NUM_IPQ806X_BOARDS);
-        printf("cdp: Invalid machine id 0x%x\n", machid);
-        for (;;);
+	for (index = 0; index < NUM_IPQ806X_BOARDS; index++) {
+		if (machid == board_params[index].machid)
+			return &board_params[index];
+	}
+	BUG_ON(index == NUM_IPQ806X_BOARDS);
+	printf("cdp: Invalid machine id 0x%x\n", machid);
+	for (;;);
 }
 
 int board_init()
@@ -122,7 +121,7 @@ int board_init()
 	board_env_range = CONFIG_ENV_SIZE;
 	BUG_ON(board_env_size < CONFIG_ENV_SIZE);
 
-        return 0;
+	return 0;
 }
 
 void enable_caches(void)
@@ -177,20 +176,6 @@ void dram_init_banksize(void)
 	gd->bd->bi_dram[0].start = IPQ_KERNEL_START_ADDR;
 	gd->bd->bi_dram[0].size = gboard_param->ddr_size - GENERATED_IPQ_RESERVE_SIZE;
 
-}
-
-void configure_uart_gpio(void)
-{
-	unsigned int index = 0;
-
-	for (index = 0;index < NO_OF_DBG_UART_GPIOS; index++) {
-		gpio_tlmm_config(gboard_param->dbg_uart_gpio[index].gpio,
-				 gboard_param->dbg_uart_gpio[index].func,
-				 gboard_param->dbg_uart_gpio[index].dir,
-				 gboard_param->dbg_uart_gpio[index].pull,
-				 gboard_param->dbg_uart_gpio[index].drvstr,
-				 gboard_param->dbg_uart_gpio[index].enable);
-	}
 }
 
 /**********************************************************
@@ -329,12 +314,12 @@ int board_early_init_f(void)
 /*
  * Gets the ethernet address from the ART partition table and return the value
  */
-int get_eth_mac_address(uchar *enetaddr)
+int get_eth_mac_address(uchar *enetaddr, uint no_of_macs)
 {
 	s32 ret;
 	u32 start_blocks;
 	u32 size_blocks;
-	u32 length = 6;
+	u32 length = (6 * no_of_macs);
 	u32 flash_type;
 	loff_t art_offset;
 
@@ -366,20 +351,26 @@ int get_eth_mac_address(uchar *enetaddr)
 	return ret;
 }
 
-int board_eth_init(bd_t *bis)
+void ipq_configure_gpio(gpio_func_data_t *gpio, uint count)
 {
-	s32 ret;
-	uchar enetaddr[6];
+	int i;
 
-	ret = get_eth_mac_address(enetaddr);
-	if ((ret < 0) || (is_valid_ether_addr(enetaddr) == 0))
-		memcpy(enetaddr, ipq_def_enetaddr, 6);
-
-	printf("%s: Setting MAC as %02x:%02x:%02x:%02x:%02x:%02x "
-		"set environment variable 'ethaddr' to override\n",
-		__func__, enetaddr[0], enetaddr[1], enetaddr[2],
-		enetaddr[3], enetaddr[4], enetaddr[5]);
-
-	return ipq_gmac_eth_initialize(enetaddr);
+	for (i = 0; i < count; i++) {
+		gpio_tlmm_config(gpio->gpio, gpio->func, gpio->dir,
+				gpio->pull, gpio->drvstr, gpio->enable);
+		gpio++;
+	}
 }
 
+int board_eth_init(bd_t *bis)
+{
+	int status;
+
+	ipq_gmac_common_init(gboard_param->gmac_cfg);
+
+	ipq_configure_gpio(gboard_param->gmac_gpio,
+			gboard_param->gmac_gpio_count);
+
+	status = ipq_gmac_init(gboard_param->gmac_cfg);
+	return status;
+}

@@ -5,8 +5,10 @@
 
 #include <asm/arch-ipq806x/iomap.h>
 #include "ipq806x_cdp.h"
+#include "../board/qcom/common/athrs17_phy.h"
 #include <asm/arch-ipq806x/gpio.h>
 #include <asm/arch-ipq806x/nss/msm_ipq806x_gmac.h>
+#include <phy.h>
 
 gpio_func_data_t gmac0_gpio[] = {
 	{
@@ -158,25 +160,34 @@ gpio_func_data_t gmac1_gpio[] = {
 	},
 };
 
+#define gmac_board_cfg(_b, _sec, _sgmii, _p, _p0, _p1, _mp, _pn, ...)	\
+{									\
+	.base			= NSS_GMAC##_b##_BASE,			\
+	.unit			= _b,					\
+	.is_macsec		= _sec,					\
+	.is_sgmii_switch	= _sgmii,				\
+	.phy			= PHY_INTERFACE_MODE_##_p,		\
+	.phy_addr		= { .count = _pn, { __VA_ARGS__ } },	\
+	.mac_pwr0		= _p0,					\
+	.mac_pwr1		= _p1,					\
+	.mac_conn_to_phy	= _mp					\
+}
+
+#define gmac_board_cfg_invalid()	{ .unit = -1, }
+
 /* Board specific parameter Array */
 board_ipq806x_params_t board_params[] = {
-#if 0
 	/*
 	 * Replicate DB149 details for RUMI until, the board no.s are
 	 * properly sorted out
 	 */
 	{
-		.boardid = 0,
 		.machid = MACH_TYPE_IPQ806X_RUMI3,
 		.ddr_size = (256 << 20),
 		.uart_gsbi = GSBI_1,
 		.uart_gsbi_base = UART_GSBI1_BASE,
 		.uart_dm_base = UART1_DM_BASE,
 		.mnd_value = { 48, 125, 63 },
-		.phy_id = GMAC1_MDIO_ID,
-		.gmac_base = NSS_GMAC0_BASE,
-		.gmac_gpio_count = ARRAY_SIZE(gmac0_gpio),
-		.gmac_gpio = gmac0_gpio,
 		.flashdesc = NAND_NOR,
 		.flash_param = {
 			.mode =	NOR_SPI_MODE_0,
@@ -204,59 +215,25 @@ board_ipq806x_params_t board_params[] = {
 		},
 		.clk_dummy = 1,
 	},
-#else
 	{
-		.boardid = 0,
-		.machid = MACH_TYPE_IPQ806X_RUMI3,
-		.ddr_size = (256 << 20),
-		.uart_gsbi = GSBI_2,
-		.uart_gsbi_base = UART_GSBI2_BASE,
-		.uart_dm_base = UART2_DM_BASE,
-		.mnd_value = { 12, 625, 313 },
-		.phy_id = GMAC1_MDIO_ID,
-		.gmac_base = NSS_GMAC0_BASE,
-		.gmac_gpio_count = ARRAY_SIZE(gmac0_gpio),
-		.gmac_gpio = gmac0_gpio,
-		.flashdesc = NAND_NOR,
-		.flash_param = {
-			.mode =	NOR_SPI_MODE_0,
-			.bus_number = GSBI_BUS_5,
-			.chip_select = SPI_CS_0,
-			.vendor = SPI_NOR_FLASH_VENDOR_SPANSION,
-		},
-		.dbg_uart_gpio = {
-			{
-				.gpio = 22,
-				.func = 1,
-				.dir = GPIO_OUTPUT,
-				.pull = GPIO_NO_PULL,
-				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
-			},
-			{
-				.gpio = 23,
-				.func = 1,
-				.dir = GPIO_INPUT,
-				.pull = GPIO_NO_PULL,
-				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
-			},
-		}
-
-	},
-#endif
-	{
-		.boardid = 0,
 		.machid = MACH_TYPE_IPQ806X_DB149,
 		.ddr_size = (256 << 20),
 		.uart_gsbi = GSBI_2,
 		.uart_gsbi_base = UART_GSBI2_BASE,
 		.uart_dm_base = UART2_DM_BASE,
 		.mnd_value = { 12, 625, 313 },
-		.phy_id = GMAC1_MDIO_ID,
-		.gmac_base = NSS_GMAC0_BASE,
 		.gmac_gpio_count = ARRAY_SIZE(gmac0_gpio),
 		.gmac_gpio = gmac0_gpio,
+		.gmac_cfg = {
+			gmac_board_cfg(0, 0, 0, RGMII, 0, 0, 0,
+					5, 4, 0, 1, 2, 3),
+			gmac_board_cfg(1, 1, 1, SGMII, 0, 0, 0,
+					4, 0, 1, 2, 3),
+			gmac_board_cfg(2, 1, 0, SGMII, 0, 0, 1,
+					1, 6),
+			gmac_board_cfg(3, 1, 0, SGMII, 0, 0, 1,
+					1, 7),
+		},
 		.flashdesc = NAND_NOR,
 		.flash_param = {
 			.mode =	NOR_SPI_MODE_0,
@@ -284,17 +261,24 @@ board_ipq806x_params_t board_params[] = {
 		}
 	},
 	{
-		.boardid = 0,
 		.machid = MACH_TYPE_IPQ806X_TB726,
 		.ddr_size = (256 << 20),
 		.uart_gsbi = GSBI_2,
 		.uart_gsbi_base = UART_GSBI2_BASE,
 		.uart_dm_base = UART2_DM_BASE,
 		.mnd_value = { 12, 625, 313 },
-		.phy_id = GMAC1_MDIO_ID,
-		.gmac_base = NSS_GMAC1_BASE,
 		.gmac_gpio_count = ARRAY_SIZE(gmac1_gpio),
 		.gmac_gpio = gmac1_gpio,
+		.gmac_cfg = {
+			gmac_board_cfg(0, 0, 0, RGMII, 0, 0, 0,
+					5, 4, 0, 1, 2, 3),
+			gmac_board_cfg(1, 1, 1, SGMII, 0, 0, 0,
+					4, 0, 1, 2, 3),
+			gmac_board_cfg(2, 1, 0, SGMII, 0, 0, 1,
+					1, 6),
+			gmac_board_cfg(3, 1, 0, SGMII, 0, 0, 1,
+					1, 7),
+		},
 		.flashdesc = NAND_NOR,
 		.flash_param = {
 			.mode =	NOR_SPI_MODE_0,
@@ -323,17 +307,22 @@ board_ipq806x_params_t board_params[] = {
 
 	},
 	{
-		.boardid = 0,
 		.machid = MACH_TYPE_IPQ806X_DB147,
 		.ddr_size = (512 << 20),
 		.uart_gsbi = GSBI_2,
 		.uart_gsbi_base = UART_GSBI2_BASE,
 		.uart_dm_base = UART2_DM_BASE,
 		.mnd_value = { 12, 625, 313 },
-		.phy_id = GMAC1_MDIO_ID,
-		.gmac_base = NSS_GMAC1_BASE,
 		.gmac_gpio_count = ARRAY_SIZE(gmac1_gpio),
 		.gmac_gpio = gmac1_gpio,
+		.gmac_cfg = {
+			gmac_board_cfg(1, 1, 0, RGMII, S17_RGMII0_1_8V,
+					S17_RGMII1_1_8V, 0, 5, 4, 0, 1, 2, 3),
+			gmac_board_cfg(2, 1, 1, SGMII, S17_RGMII0_1_8V,
+					S17_RGMII1_1_8V, 0, 4, 0, 1, 2, 3),
+			gmac_board_cfg_invalid(),
+			gmac_board_cfg_invalid(),
+		},
 		.flashdesc = NAND_NOR,
 		.flash_param = {
 			.mode =	NOR_SPI_MODE_0,
@@ -362,17 +351,22 @@ board_ipq806x_params_t board_params[] = {
 
 	},
 	{
-		.boardid = 0,
 		.machid = MACH_TYPE_IPQ806X_AP148,
 		.ddr_size = (256 << 20),
 		.uart_gsbi = GSBI_4,
 		.uart_gsbi_base = UART_GSBI4_BASE,
 		.uart_dm_base = UART4_DM_BASE,
 		.mnd_value = { 12, 625, 313 },
-		.phy_id = GMAC1_MDIO_ID,
-		.gmac_base = NSS_GMAC1_BASE,
 		.gmac_gpio_count = ARRAY_SIZE(gmac1_gpio),
 		.gmac_gpio = gmac1_gpio,
+		.gmac_cfg = {
+			gmac_board_cfg(1, 1, 0, RGMII, S17_RGMII0_1_8V,
+					S17_RGMII1_1_8V, 0, 5, 4, 0, 1, 2, 3),
+			gmac_board_cfg(2, 1, 1, SGMII, S17_RGMII0_1_8V,
+					S17_RGMII1_1_8V, 0, 4, 0, 1, 2, 3),
+			gmac_board_cfg_invalid(),
+			gmac_board_cfg_invalid(),
+		},
 		.flashdesc = NAND_NOR,
 		.flash_param = {
 			.mode =	NOR_SPI_MODE_0,
