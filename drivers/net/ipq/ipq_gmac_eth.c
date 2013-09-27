@@ -751,8 +751,6 @@ void ipq_gmac_common_init(ipq_gmac_board_cfg_t *gmac_cfg)
 
 	pcs_qsgmii_ctl_val = (PCS_QSGMII_ATHR_CSCO_AUTONEG |
 				PCS_QSGMII_SW_VER_1_7 |
-				PCS_QSGMII_CUTTHROUGH_TX |
-				PCS_QSGMII_CUTTHROUGH_RX |
 				PCS_QSGMII_SHORT_THRESH |
 				PCS_QSGMII_SHORT_LATENCY |
 				PCS_QSGMII_DEPTH_THRESH(1) |
@@ -770,7 +768,7 @@ void ipq_gmac_common_init(ipq_gmac_board_cfg_t *gmac_cfg)
 	writel(0, (QSGMII_REG_BASE + PCS_QSGMII_SGMII_MODE));
 
 	setbits_le32((QSGMII_REG_BASE + NSS_PCS_MODE_CTL), pcs_mode_ctl_val);
-	setbits_le32((QSGMII_REG_BASE + PCS_QSGMII_CTL), pcs_qsgmii_ctl_val);
+	writel(pcs_qsgmii_ctl_val, (QSGMII_REG_BASE + PCS_QSGMII_CTL));
 
 	/*
 	 * MDIO lines for all the MACs are connected through MAC0.
