@@ -68,7 +68,7 @@ static void set_fs_bootargs()
 	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH && gboard_param->flashdesc == NAND_NOR) {
 		bootargs = "root=/dev/mtdblock6";
 	} else if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
-		bootargs = "ubi.mtd=5 root=ubi0:rootfs rootfstype=ubifs";
+		bootargs = "ubi.mtd=5 rootfstype=squashfs root=/dev/mtdblock7";
 	} else {
 		printf("bootipq: unsupported boot flash type\n");
 		return;
