@@ -551,6 +551,7 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 
 	memset(enet_addr, 0, sizeof(enet_addr));
 
+	/* Getting the MAC address from ART partition */
 	ret = get_eth_mac_address(enet_addr, IPQ_GMAC_NMACS);
 
 	for (i = 0; gmac_cfg_is_valid(gmac_cfg); gmac_cfg++, i++) {
@@ -576,14 +577,19 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 
 		sprintf(dev[i]->name, "eth%d", i);
 
-		/* Getting the MAC address from ART partition */
-		if ((ret < 0) &&
-		    (!is_valid_ether_addr(&enet_addr[gmac_cfg->unit * 6])))
+		/*
+		 * Setting the Default MAC address if the MAC read from ART partition
+		 * is invalid.
+		 */
+		if ((ret < 0) ||
+		    (!is_valid_ether_addr(&enet_addr[gmac_cfg->unit * 6]))) {
 			memcpy(&dev[i]->enetaddr[0], ipq_def_enetaddr, 6);
-		else
+			dev[i]->enetaddr[5] = gmac_cfg->unit & 0xff;
+		} else {
 			memcpy(&dev[i]->enetaddr[0],
 			       &enet_addr[gmac_cfg->unit * 6],
 			       6);
+		}
 
 		ipq_info("MAC%x addr:%x:%x:%x:%x:%x:%x\n",
 			gmac_cfg->unit, dev[i]->enetaddr[0],

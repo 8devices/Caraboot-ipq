@@ -113,13 +113,13 @@ static inline int gmac_cfg_is_valid(ipq_gmac_board_cfg_t *cfg)
 {
 	/*
 	 * 'cfg' is valid if and only if
-	 *	unit number is non-negative
+	 *	unit number is non-negative and less than IPQ_GMAC_NMACS.
 	 *	'cfg' pointer lies within the array range of
 	 *		board_ipq806x_params_t->gmac_cfg[]
 	 */
 	return ((cfg >= &gboard_param->gmac_cfg[0]) &&
 		(cfg < &gboard_param->gmac_cfg[IPQ_GMAC_NMACS]) &&
-		(cfg->unit >= 0));
+		(cfg->unit >= 0) && (cfg->unit < IPQ_GMAC_NMACS));
 }
 
 unsigned int get_board_index(unsigned int machid);
