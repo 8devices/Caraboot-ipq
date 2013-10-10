@@ -277,12 +277,6 @@ static int ipq_eth_init(struct eth_device *dev, bd_t *this)
 	struct eth_dma_regs *dma_reg = (struct eth_dma_regs *)priv->dma_regs_p;
 	u32 data;
 
-#ifndef IPQ_SGMII_ENABLE_not_yet
-	/* SGMII not working yet. Skip init'ing that MAC. */
-	if (priv->is_sgmii_switch) {
-		return -1;
-	}
-#endif
 	if (ipq_phy_link_status(dev) != 0) {
 		ipq_info("Mac%x unit failed\n", priv->mac_unit);
 		return -1;
@@ -438,8 +432,6 @@ gmac_sgmii_clk_init(uint mac_unit, uint clk_div, ipq_gmac_board_cfg_t *gmac_cfg)
 				PCS_CHn_SPEED(mac_unit,
 					PCS_CH_SPEED_1000));
 
-		setbits_le32((NSS_REG_BASE + NSS_ETH_CLK_DIV0),
-			(NSS_ETH_CLK_DIV(CLK_DIV_SGMII_1000M, mac_unit)));
 		setbits_le32((NSS_REG_BASE + NSS_ETH_CLK_GATE_CTL),
 			nss_eth_clk_gate_val);
 		break;
@@ -472,7 +464,6 @@ gmac_sgmii_clk_init(uint mac_unit, uint clk_div, ipq_gmac_board_cfg_t *gmac_cfg)
 			setbits_le32((NSS_REG_BASE + NSS_ETH_CLK_GATE_CTL),
 					nss_eth_clk_gate_val);
 		} else {
-#ifndef IPQ_SGMII_ENABLE_not_yet
 			/* this part of code forces the speed of MAC 2 to
 			 * 1000Mbps disabling the Autoneg in case
 			 * of AP148/DB147 since it is connected to switch
@@ -487,17 +478,11 @@ gmac_sgmii_clk_init(uint mac_unit, uint clk_div, ipq_gmac_board_cfg_t *gmac_cfg)
 				PCS_CHn_SPEED(mac_unit,
 					PCS_CH_SPEED_1000));
 
-			setbits_le32((NSS_REG_BASE + NSS_ETH_CLK_DIV0),
-				(NSS_ETH_CLK_DIV(CLK_DIV_SGMII_1000M,
-					 mac_unit)));
-
 			setbits_le32((NSS_REG_BASE + NSS_ETH_CLK_GATE_CTL),
 				nss_eth_clk_gate_val);
-#endif
 		}
 		break;
 	}
-
 }
 
 static void ipq_gmac_mii_clk_init(struct ipq_eth_dev *priv, uint clk_div,
@@ -526,12 +511,6 @@ static void ipq_gmac_mii_clk_init(struct ipq_eth_dev *priv, uint clk_div,
 				(NSS_REG_BASE + NSS_ETH_CLK_DIV0));
 		break;
 	case PHY_INTERFACE_MODE_SGMII:
-#ifndef IPQ_SGMII_ENABLE_not_yet
-		/* SGMII not working yet. Skip init'ing that MAC. */
-		if (priv->is_sgmii_switch) {
-			return;
-		}
-#endif
 		gmac_sgmii_clk_init(gmac_idx, clk_div, gmac_cfg);
 		break;
 	default :
@@ -608,8 +587,6 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 		ipq_gmac_macs[i]->interface = gmac_cfg->phy;
 		ipq_gmac_macs[i]->phy_address = gmac_cfg->phy_addr.addr;
 		ipq_gmac_macs[i]->no_of_phys = gmac_cfg->phy_addr.count;
-		ipq_gmac_macs[i]->is_sgmii_switch =
-			gmac_cfg->is_sgmii_switch;
 
 		/* tx/rx Descriptor initialization */
 		if (ipq_gmac_tx_rx_desc_ring(dev[i]->priv) == -1)

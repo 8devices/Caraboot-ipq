@@ -446,8 +446,8 @@
 #define S17_MULTI_FLOOD_DPALL           (0x7f << S17_MULTI_FLOOD_DP_SHIFT)
 #define S17_UNI_FLOOD_DPALL             (0x7f << S17_UNI_FLOOD_DP_SHIFT)
 
-#define S17_PWS_CHIP_AR8327             (1 << 30)
-#define S17c_PWS_SERDES_ANEG_EN         (1 << 7)
+#define S17_PWS_CHIP_AR8327		(1 << 30)
+#define S17c_PWS_SERDES_ANEG_DISABLE	(1 << 7)
 
 /* S17_PHY_CONTROL fields */
 #define S17_CTRL_SOFTWARE_RESET                    0x8000
@@ -564,6 +564,18 @@
 #define S17c_SGMII_EN_PLL		      (1 << 1)
 #define S17c_SGMII_EN_RX		      (1 << 2)
 #define S17c_SGMII_EN_TX		      (1 << 3)
+#define S17c_SGMII_EN_SD		      (1 << 4)
+#define S17c_SGMII_BW_HIGH		      (1 << 6)
+#define S17c_SGMII_SEL_CLK125M		      (1 << 7)
+#define S17c_SGMII_TXDR_CTRL_600mV	      (1 << 10)
+#define S17c_SGMII_CDR_BW_8		      (3 << 13)
+#define S17c_SGMII_DIS_AUTO_LPI_25M	      (1 << 16)
+#define S17c_SGMII_MODE_CTRL_SGMII_PHY	      (1 << 22)
+#define S17c_SGMII_PAUSE_SG_TX_EN_25M	      (1 << 24)
+#define S17c_SGMII_ASYM_PAUSE_25M	      (1 << 25)
+#define S17c_SGMII_PAUSE_25M		      (1 << 26)
+#define S17c_SGMII_HALF_DUPLEX_25M	      (1 << 30)
+#define S17c_SGMII_FULL_DUPLEX_25M	      (1 << 31)
 
 #ifndef BOOL
 #define BOOL    int
@@ -575,9 +587,10 @@
 #undef HEADER_REG_CONF
 #undef HEADER_EN
 #endif
-
+void athrs17_reset_switch(void);
 void athrs17_reg_init(ipq_gmac_board_cfg_t *);
-
+void athrs17_reg_init_lan(ipq_gmac_board_cfg_t *gmac_cfg);
+void athrs17_vlan_config(void);
 #endif
 
 

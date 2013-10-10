@@ -80,7 +80,6 @@ typedef struct {
 	uint base;
 	int unit;
 	uint is_macsec;
-	uint is_sgmii_switch;
 	uint mac_pwr0;
 	uint mac_pwr1;
 	uint mac_conn_to_phy;

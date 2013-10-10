@@ -220,7 +220,6 @@
 #define ETH_MAX_FRAME_LEN			(VLAN_ETH_FRAME_LEN + \
 						 ETH_FCS_LEN + \
 						 ((4 - NET_IP_ALIGN) & 0x3))
-#undef IPQ_SGMII_ENABLE_not_yet
 /* QSGMII PHY bit definitions */
 #define QSGMII_PHY_SRDS_PLL_ICP_600UA		(6 << 28)
 #define QSGMII_PHY_SRDS_PLL_AMP			(2 << 24)
@@ -376,7 +375,6 @@ struct ipq_eth_dev {
 	int			rxdesc_count;
 	struct eth_mac_regs	*mac_regs_p;
 	struct eth_dma_regs	*dma_regs_p;
-	int			is_sgmii_switch;
 	struct eth_device *dev;
 } __attribute__ ((aligned(8)));
 

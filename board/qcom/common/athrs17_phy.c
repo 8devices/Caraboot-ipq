@@ -124,7 +124,6 @@ athrs17_reg_write(uint32_t reg_addr, uint32_t reg_val)
 	phy_reg_write(0, phy_addr, phy_reg, phy_val);
 }
 
-#ifdef IPQ_SGMII_ENABLE_not_yet
 /*********************************************************************
  * FUNCTION DESCRIPTION: V-lan configuration given by Switch team
 			 Vlan 1:PHY0,1,2,3 and Mac 6 of s17c
@@ -156,7 +155,22 @@ void athrs17_vlan_config(void)
 	athrs17_reg_write(S17_P6VLAN_CTRL0_REG, 0x10001);
 	printf("%s ...done\n", __func__);
 }
-#endif
+
+/*******************************************************************
+* FUNCTION DESCRIPTION: Reset S17 register
+* INPUT: NONE
+* OUTPUT: NONE
+*******************************************************************/
+void athrs17_reset_switch(void)
+{
+	uint32_t data;
+	/* Reset the switch before initialization */
+	athrs17_reg_write(S17_MASK_CTRL_REG, S17_MASK_CTRL_SOFT_RET);
+	do {
+		udelay(10);
+		data = athrs17_reg_read(S17_MASK_CTRL_REG);
+	} while (data & S17_MASK_CTRL_SOFT_RET);
+}
 
 /*********************************************************************
  * FUNCTION DESCRIPTION: Configure S17 register
@@ -166,13 +180,6 @@ void athrs17_vlan_config(void)
 void athrs17_reg_init(ipq_gmac_board_cfg_t *gmac_cfg)
 {
 	uint32_t data;
-
-	/* Reset the switch before initialization */
-	athrs17_reg_write(S17_MASK_CTRL_REG, S17_MASK_CTRL_SOFT_RET);
-	do {
-		udelay(10);
-		data = athrs17_reg_read(S17_MASK_CTRL_REG);
-	} while (data & S17_MASK_CTRL_SOFT_RET);
 
 	data = athrs17_reg_read(S17_MAC_PWR_REG) | gmac_cfg->mac_pwr0;
 	athrs17_reg_write(S17_MAC_PWR_REG, data);
@@ -192,9 +199,6 @@ void athrs17_reg_init(ipq_gmac_board_cfg_t *gmac_cfg)
 		(0x1 << S17_MAC0_RGMII_TXCLK_SHIFT) | \
 		(0x3 << S17_MAC0_RGMII_RXCLK_SHIFT)));
 
-#ifdef IPQ_SGMII_ENABLE_not_yet
-	athrs17_vlan_config();
-#endif
 	printf("%s: complete\n", __func__);
 }
 
@@ -208,8 +212,8 @@ void athrs17_reg_init_lan(ipq_gmac_board_cfg_t *gmac_cfg)
 	uint32_t reg_val;
 
 	athrs17_reg_write(S17_P6STATUS_REG, (S17_SPEED_1000M | S17_TXMAC_EN |
-					     S17_RXMAC_EN | S17_TX_FLOW_EN |
-					     S17_RX_FLOW_EN | S17_DUPLEX_FULL));
+					     S17_RXMAC_EN |
+					     S17_DUPLEX_FULL));
 
 	reg_val = athrs17_reg_read(S17_MAC_PWR_REG) | gmac_cfg->mac_pwr1;
 	athrs17_reg_write(S17_MAC_PWR_REG, reg_val);
@@ -218,11 +222,24 @@ void athrs17_reg_init_lan(ipq_gmac_board_cfg_t *gmac_cfg)
 	athrs17_reg_write(S17_P6PAD_MODE_REG, (reg_val | S17_MAC6_SGMII_EN));
 
 	reg_val = athrs17_reg_read(S17_PWS_REG);
-	athrs17_reg_write(S17_PWS_REG, (reg_val & ~(S17c_PWS_SERDES_ANEG_EN)));
-	athrs17_reg_write(S17_SGMII_CTRL_REG, ((S17c_SGMII_EN_LCKDT) |
-						(S17c_SGMII_EN_PLL) |
-						(S17c_SGMII_EN_RX) |
-						(S17c_SGMII_EN_TX)));
+	athrs17_reg_write(S17_PWS_REG, (reg_val | S17c_PWS_SERDES_ANEG_DISABLE));
+
+
+	athrs17_reg_write(S17_SGMII_CTRL_REG,(S17c_SGMII_EN_PLL |
+					S17c_SGMII_EN_RX |
+					S17c_SGMII_EN_TX |
+					S17c_SGMII_EN_SD |
+					S17c_SGMII_BW_HIGH |
+					S17c_SGMII_SEL_CLK125M |
+					S17c_SGMII_TXDR_CTRL_600mV |
+					S17c_SGMII_CDR_BW_8 |
+					S17c_SGMII_DIS_AUTO_LPI_25M |
+					S17c_SGMII_MODE_CTRL_SGMII_PHY |
+					S17c_SGMII_PAUSE_SG_TX_EN_25M |
+					S17c_SGMII_ASYM_PAUSE_25M |
+					S17c_SGMII_PAUSE_25M |
+					S17c_SGMII_HALF_DUPLEX_25M |
+					S17c_SGMII_FULL_DUPLEX_25M));
 }
 
 /*********************************************************************
@@ -236,12 +253,10 @@ void athrs17_reg_init_lan(ipq_gmac_board_cfg_t *gmac_cfg)
 void ipq_switch_init(ipq_gmac_board_cfg_t *gmac_cfg)
 {
 	if (gmac_cfg != NULL) {
+
+		athrs17_reset_switch();
 		athrs17_reg_init(gmac_cfg);
-
-#ifdef IPQ_SGMII_ENABLE_not_yet
 		athrs17_reg_init_lan(gmac_cfg);
-
 		athrs17_vlan_config();
-#endif
 	}
 }

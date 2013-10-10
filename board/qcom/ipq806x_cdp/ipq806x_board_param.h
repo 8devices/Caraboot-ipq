@@ -160,12 +160,11 @@ gpio_func_data_t gmac1_gpio[] = {
 	},
 };
 
-#define gmac_board_cfg(_b, _sec, _sgmii, _p, _p0, _p1, _mp, _pn, ...)	\
+#define gmac_board_cfg(_b, _sec, _p, _p0, _p1, _mp, _pn, ...)	\
 {									\
 	.base			= NSS_GMAC##_b##_BASE,			\
 	.unit			= _b,					\
 	.is_macsec		= _sec,					\
-	.is_sgmii_switch	= _sgmii,				\
 	.phy			= PHY_INTERFACE_MODE_##_p,		\
 	.phy_addr		= { .count = _pn, { __VA_ARGS__ } },	\
 	.mac_pwr0		= _p0,					\
@@ -225,13 +224,13 @@ board_ipq806x_params_t board_params[] = {
 		.gmac_gpio_count = ARRAY_SIZE(gmac0_gpio),
 		.gmac_gpio = gmac0_gpio,
 		.gmac_cfg = {
-			gmac_board_cfg(0, 0, 0, RGMII, 0, 0, 0,
-					5, 4, 0, 1, 2, 3),
-			gmac_board_cfg(1, 1, 1, SGMII, 0, 0, 0,
+			gmac_board_cfg(0, 0, RGMII, 0, 0, 0,
+					1, 4),
+			gmac_board_cfg(1, 1, SGMII, 0, 0, 0,
 					4, 0, 1, 2, 3),
-			gmac_board_cfg(2, 1, 0, SGMII, 0, 0, 1,
+			gmac_board_cfg(2, 1, SGMII, 0, 0, 1,
 					1, 6),
-			gmac_board_cfg(3, 1, 0, SGMII, 0, 0, 1,
+			gmac_board_cfg(3, 1, SGMII, 0, 0, 1,
 					1, 7),
 		},
 		.flashdesc = NAND_NOR,
@@ -269,14 +268,19 @@ board_ipq806x_params_t board_params[] = {
 		.mnd_value = { 12, 625, 313 },
 		.gmac_gpio_count = ARRAY_SIZE(gmac1_gpio),
 		.gmac_gpio = gmac1_gpio,
+
+		/* This GMAC config table is not valid as of now.
+		 * To accomodate this config, TB726 board needs
+		 * hardware rework.Moreover this setting is not
+		 * been validated in TB726 board */
 		.gmac_cfg = {
-			gmac_board_cfg(0, 0, 0, RGMII, 0, 0, 0,
-					5, 4, 0, 1, 2, 3),
-			gmac_board_cfg(1, 1, 1, SGMII, 0, 0, 0,
+			gmac_board_cfg(0, 0, RGMII, 0, 0, 0,
+					1, 4),
+			gmac_board_cfg(1, 1, SGMII, 0, 0, 0,
 					4, 0, 1, 2, 3),
-			gmac_board_cfg(2, 1, 0, SGMII, 0, 0, 1,
+			gmac_board_cfg(2, 1, SGMII, 0, 0, 1,
 					1, 6),
-			gmac_board_cfg(3, 1, 0, SGMII, 0, 0, 1,
+			gmac_board_cfg(3, 1, SGMII, 0, 0, 1,
 					1, 7),
 		},
 		.flashdesc = NAND_NOR,
@@ -316,9 +320,9 @@ board_ipq806x_params_t board_params[] = {
 		.gmac_gpio_count = ARRAY_SIZE(gmac1_gpio),
 		.gmac_gpio = gmac1_gpio,
 		.gmac_cfg = {
-			gmac_board_cfg(1, 1, 0, RGMII, S17_RGMII0_1_8V,
-					S17_RGMII1_1_8V, 0, 5, 4, 0, 1, 2, 3),
-			gmac_board_cfg(2, 1, 1, SGMII, S17_RGMII0_1_8V,
+			gmac_board_cfg(1, 1, RGMII, S17_RGMII0_1_8V,
+					S17_RGMII1_1_8V, 0, 1, 4),
+			gmac_board_cfg(2, 1, SGMII, S17_RGMII0_1_8V,
 					S17_RGMII1_1_8V, 0, 4, 0, 1, 2, 3),
 			gmac_board_cfg_invalid(),
 			gmac_board_cfg_invalid(),
@@ -360,9 +364,9 @@ board_ipq806x_params_t board_params[] = {
 		.gmac_gpio_count = ARRAY_SIZE(gmac1_gpio),
 		.gmac_gpio = gmac1_gpio,
 		.gmac_cfg = {
-			gmac_board_cfg(1, 1, 0, RGMII, S17_RGMII0_1_8V,
-					S17_RGMII1_1_8V, 0, 5, 4, 0, 1, 2, 3),
-			gmac_board_cfg(2, 1, 1, SGMII, S17_RGMII0_1_8V,
+			gmac_board_cfg(1, 1, RGMII, S17_RGMII0_1_8V,
+					S17_RGMII1_1_8V, 0, 1, 4),
+			gmac_board_cfg(2, 1, SGMII, S17_RGMII0_1_8V,
 					S17_RGMII1_1_8V, 0, 4, 0, 1, 2, 3),
 			gmac_board_cfg_invalid(),
 			gmac_board_cfg_invalid(),
