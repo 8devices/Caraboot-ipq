@@ -1287,11 +1287,19 @@ int ipq_nand_get_info_onfi(struct mtd_info *mtd)
 {
 	uint32_t status;
 	int ret;
+	uint32_t dev_cmd_vld_orig;
 	struct ipq_nand_dev *dev = MTD_IPQ_NAND_DEV(mtd);
 	struct ebi2nd_regs *regs = dev->regs;
 	struct nand_onfi_params *p = MTD_ONFI_PARAMS(mtd);
 
 	ipq_enter_raw_mode(mtd);
+
+	writel(0, &regs->addr0);
+	writel(0, &regs->addr1);
+
+	dev_cmd_vld_orig = readl(&regs->dev_cmd_vld);
+	clrsetbits_le32(&regs->dev_cmd_vld, READ_START_VLD_MASK,
+			READ_START_VLD(0));
 
 	clrsetbits_le32(&regs->dev_cmd1, READ_ADDR_MASK,
 			READ_ADDR(NAND_CMD_PARAM));
@@ -1300,11 +1308,11 @@ int ipq_nand_get_info_onfi(struct mtd_info *mtd)
 
 	ret = ipq_exec_cmd(mtd, IPQ_CMD_PAGE_READ_ALL, &status);
 	if (ret < 0)
-		return ret;
+		goto err_exit;
 
 	ret = ipq_check_read_status(mtd, status);
 	if (ret < 0)
-		return ret;
+		goto err_exit;
 
 	hw2memcpy(p, &regs->buffn_acc[0], sizeof(struct nand_onfi_params));
 
@@ -1313,9 +1321,12 @@ int ipq_nand_get_info_onfi(struct mtd_info *mtd)
 	mtd->oobsize = le16_to_cpu(p->spare_bytes_per_page);
 	mtd->size = (uint64_t)le32_to_cpu(p->blocks_per_lun) * (mtd->erasesize);
 
+err_exit:
 	/* Restoring the page read command in read command register */
 	clrsetbits_le32(&regs->dev_cmd1, READ_ADDR_MASK,
 			READ_ADDR(NAND_CMD_READ0));
+
+	writel(dev_cmd_vld_orig, &regs->dev_cmd_vld);
 
 	return 0;
 }
