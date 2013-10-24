@@ -35,6 +35,7 @@
 
 /* M25Pxx-specific commands */
 #define CMD_M25PXX_SE		0xd8	/* Sector Erase */
+#define CMD_M25PXX_4SE		0xdc	/* Sector Erase 4-byte address */
 #define CMD_M25PXX_BE		0xc7	/* Bulk Erase */
 #define CMD_M25PXX_RES		0xab	/* Release from DP, and Read Signature */
 
@@ -135,7 +136,14 @@ static const struct stmicro_spi_flash_params stmicro_spi_flash_table[] = {
 
 static int stmicro_erase(struct spi_flash *flash, u32 offset, size_t len)
 {
-	return spi_flash_cmd_erase(flash, CMD_M25PXX_SE, offset, len);
+	u8 erase_opcode;
+
+	if (flash->addr_width == 4)
+		erase_opcode = CMD_M25PXX_4SE;
+	else
+		erase_opcode = CMD_M25PXX_SE;
+
+	return spi_flash_cmd_erase(flash, erase_opcode, offset, len);
 }
 
 struct spi_flash *spi_flash_probe_stmicro(struct spi_slave *spi, u8 * idcode)
@@ -187,7 +195,11 @@ struct spi_flash *spi_flash_probe_stmicro(struct spi_slave *spi, u8 * idcode)
 	flash->page_size = params->page_size;
 	flash->sector_size = params->page_size * params->pages_per_sector;
 	flash->size = flash->sector_size * params->nr_sectors;
-	flash->addr_width = 3;
+
+	if (flash->size > 0x1000000) {
+		flash->read_opcode  = CMD_4READ_ARRAY_FAST;
+		flash->write_opcode = CMD_4PAGE_PROGRAM;
+	}
 
 	return flash;
 }

@@ -38,6 +38,7 @@
 /* MX25xx-specific commands */
 #define CMD_MX25XX_SE		0x20	/* Sector Erase */
 #define CMD_MX25XX_BE		0xD8	/* Block Erase */
+#define CMD_MX25XX_4BE		0xDC	/* Block Erase 4-byte address */
 #define CMD_MX25XX_CE		0xc7	/* Chip Erase */
 
 struct macronix_spi_flash_params {
@@ -106,6 +107,14 @@ static const struct macronix_spi_flash_params macronix_spi_flash_table[] = {
 		.nr_blocks = 256,
 		.name = "MX25L12855E",
 	},
+	{
+		.idcode = 0x2539,
+		.page_size = 256,
+		.pages_per_sector = 16,
+		.sectors_per_block = 16,
+		.nr_blocks = 512,
+		.name = "MX25U25635F",
+	},
 };
 
 static int macronix_write_status(struct spi_flash *flash, u8 sr)
@@ -149,7 +158,14 @@ static int macronix_unlock(struct spi_flash *flash)
 
 static int macronix_erase(struct spi_flash *flash, u32 offset, size_t len)
 {
-	return spi_flash_cmd_erase(flash, CMD_MX25XX_BE, offset, len);
+	u8 erase_opcode;
+
+	if (flash->addr_width == 4)
+		erase_opcode = CMD_MX25XX_4BE;
+	else
+		erase_opcode = CMD_MX25XX_SE;
+
+	return spi_flash_cmd_erase(flash, erase_opcode, offset, len);
 }
 
 struct spi_flash *spi_flash_probe_macronix(struct spi_slave *spi, u8 *idcode)
@@ -186,6 +202,11 @@ struct spi_flash *spi_flash_probe_macronix(struct spi_slave *spi, u8 *idcode)
 	flash->sector_size = params->page_size * params->pages_per_sector
 		* params->sectors_per_block;
 	flash->size = flash->sector_size * params->nr_blocks;
+
+	if (flash->size > 0x1000000) {
+		flash->read_opcode  = CMD_4READ_ARRAY_FAST;
+		flash->write_opcode = CMD_4PAGE_PROGRAM;
+	}
 
 	/* Clear BP# bits for read-only flash */
 	macronix_unlock(flash);
