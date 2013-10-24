@@ -1,5 +1,5 @@
 
-/* * Copyright (c) 2012-2013 Qualcomm Atheros, Inc. * */
+/* * Copyright (c) 2012-2013 The Linux Foundation. All rights reserved.* */
 
 /*
  * Adapted from lib/asm-offsets.c

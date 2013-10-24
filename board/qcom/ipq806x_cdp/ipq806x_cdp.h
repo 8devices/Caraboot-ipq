@@ -1,4 +1,4 @@
-/* * Copyright (c) 2012 Qualcomm Atheros, Inc. * */
+/* * Copyright (c) 2012 The Linux Foundation. All rights reserved.* */
 
 
 #ifndef  _IPQ806X_CDP_H_

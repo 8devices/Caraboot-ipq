@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Qualcomm Atheros, Inc.
+ * Copyright (c) 2013 The Linux Foundation. All rights reserved.
  *
  * See file CREDITS for list of people who contributed to this
  * project.

@@ -1,6 +1,6 @@
 /*
  * Register definitions for the IPQ GSBI Controller
- * Copyright (c) 2012 Qualcomm Atheros, Inc.
+ * Copyright (c) 2012 The Linux Foundation. All rights reserved.
  */
 
 #ifndef _IPQ_SPI_H_

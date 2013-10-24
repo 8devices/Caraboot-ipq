@@ -1,4 +1,4 @@
-/* * Copyright (c) 2012 - 2013 Qualcomm Atheros, Inc. * */
+/* * Copyright (c) 2012 - 2013 The Linux Foundation. All rights reserved.* */
 
 #ifndef __ASM_ARCH_MSM_NSS_GMAC_H
 #define __ASM_ARCH_MSM_NSS_GMAC_H

@@ -1,5 +1,5 @@
 
-/* * Copyright (c) 2012 Qualcomm Atheros, Inc. * */
+/* * Copyright (c) 2012 The Linux Foundation. All rights reserved.* */
 
 /**\file
  *  This file serves as the wrapper for the platform/OS dependent functions

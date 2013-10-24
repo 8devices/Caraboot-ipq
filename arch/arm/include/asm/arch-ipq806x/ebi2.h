@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Qualcomm Atheros, Inc.
+ * Copyright (c) 2012 The Linux Foundation. All rights reserved.
  */
 #ifndef IPQ806X_EBI2_H
 #define IPQ806X_EBI2_H

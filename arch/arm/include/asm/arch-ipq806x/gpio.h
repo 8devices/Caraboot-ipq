@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Qualcomm Atheros, Inc. *
+ * Copyright (c) 2012 The Linux Foundation. All rights reserved.*
    Source : APQ8064 LK Boot
 
  * Copyright (c) 2011-2012, Code Aurora Forum. All rights reserved.

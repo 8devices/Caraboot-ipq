@@ -1,4 +1,4 @@
-/* * Copyright (c) 2012 Qualcomm Atheros, Inc. * */
+/* * Copyright (c) 2012 The Linux Foundation. All rights reserved.* */
 
 /*\file
  * This file defines the function prototypes for the Synopsys GMAC device and the

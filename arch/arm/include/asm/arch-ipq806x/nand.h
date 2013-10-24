@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Qualcomm Atheros, Inc.
+ * Copyright (c) 2012 The Linux Foundation. All rights reserved.
  */
 #ifndef HWIO_IPQ806X_NAND_H
 #define HWIO_IPQ806X_NAND_H

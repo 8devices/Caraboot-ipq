@@ -1,4 +1,4 @@
-/* * Copyright (c) 2013 Qualcomm Atheros, Inc. * */
+/* * Copyright (c) 2013 The Linux Foundation. All rights reserved.* */
 
 #ifndef   _IPQ806X_BOARD_PARAM_H_
 #define   _IPQ806X_BOARD_PARAM_H_
