@@ -1304,6 +1304,9 @@ int ipq_nand_get_info_onfi(struct mtd_info *mtd)
 	clrsetbits_le32(&regs->dev_cmd1, READ_ADDR_MASK,
 			READ_ADDR(NAND_CMD_PARAM));
 
+	clrsetbits_le32(&regs->dev0_cfg0, NUM_ADDR_CYCLES_MASK,
+			NUM_ADDR_CYCLES(1));
+
 	ipq_init_cw_count(mtd, 0);
 
 	ret = ipq_exec_cmd(mtd, IPQ_CMD_PAGE_READ_ALL, &status);
