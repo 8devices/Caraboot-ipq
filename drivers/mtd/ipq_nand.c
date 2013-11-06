@@ -1655,6 +1655,7 @@ int ipq_nand_post_scan_init(struct mtd_info *mtd, enum ipq_nand_layout layout)
 	struct nand_chip *chip = MTD_NAND_CHIP(mtd);
 	struct nand_onfi_params *nand_onfi = MTD_ONFI_PARAMS(mtd);
 	int ret = 0;
+	char *buf;
 
 	alloc_size = (mtd->writesize   /* For dev->pad_dat */
 		      + mtd->oobsize   /* For dev->pad_oob */
@@ -1667,10 +1668,19 @@ int ipq_nand_post_scan_init(struct mtd_info *mtd, enum ipq_nand_layout layout)
 		return -ENOMEM;
 	}
 
-	dev->pad_dat = dev->buffers;
-	dev->pad_oob = dev->buffers + mtd->writesize;
-	dev->zero_page = dev->buffers + mtd->oobsize;
-	dev->zero_oob = dev->buffers + mtd->writesize;
+	buf = dev->buffers;
+
+	dev->pad_dat = buf;
+	buf += mtd->writesize;
+
+	dev->pad_oob = buf;
+	buf += mtd->oobsize;
+
+	dev->zero_page = buf;
+	buf += mtd->writesize;
+
+	dev->zero_oob = buf;
+	buf += mtd->oobsize;
 
 	memset(dev->zero_page, 0x0, mtd->writesize);
 	memset(dev->zero_oob, 0x0, mtd->oobsize);
