@@ -235,16 +235,19 @@ void board_nand_init(void)
 	struct ebi2cr_regs *ebi2_regs;
 	extern int ipq_spi_init(void);
 
-	ebi2_regs = (struct ebi2cr_regs *) EBI2CR_BASE;
+	if (gboard_param->flashdesc != NOR_MMC) {
 
-	nand_clock_config();
-	configure_nand_gpio();
+		ebi2_regs = (struct ebi2cr_regs *) EBI2CR_BASE;
 
-	/* NAND Flash is connected to CS0 */
-	clrsetbits_le32(&ebi2_regs->chip_select_cfg0, CS0_CFG_MASK,
-			CS0_CFG_SERIAL_FLASH_DEVICE);
+		nand_clock_config();
+		configure_nand_gpio();
 
-	ipq_nand_init(IPQ_NAND_LAYOUT_LINUX);
+		/* NAND Flash is connected to CS0 */
+		clrsetbits_le32(&ebi2_regs->chip_select_cfg0, CS0_CFG_MASK,
+				CS0_CFG_SERIAL_FLASH_DEVICE);
+
+		ipq_nand_init(IPQ_NAND_LAYOUT_LINUX);
+	}
 
 	ipq_spi_init();
 }

@@ -55,6 +55,7 @@ typedef enum {
 	ONLY_NAND,
 	ONLY_NOR,
 	NAND_NOR,
+	NOR_MMC,
 } flash_desc;
 
 #define NO_OF_DBG_UART_GPIOS	2

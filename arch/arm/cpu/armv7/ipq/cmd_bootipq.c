@@ -61,7 +61,9 @@ static void set_fs_bootargs()
 {
 	char *bootargs;
 
-	if (sfi->flash_type == SMEM_BOOT_SPI_FLASH && gboard_param->flashdesc == ONLY_NOR) {
+	if (sfi->flash_type == SMEM_BOOT_SPI_FLASH &&
+		(gboard_param->flashdesc == ONLY_NOR ||
+		 gboard_param->flashdesc == NOR_MMC)) {
 		bootargs = "root=/dev/mtdblock5";
 	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH && gboard_param->flashdesc == NAND_NOR) {
 		bootargs = "root=/dev/mtdblock6";
