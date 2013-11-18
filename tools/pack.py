@@ -72,6 +72,9 @@ import os.path
 import subprocess
 import struct
 import re
+import hashlib
+
+version = "1.1"
 
 #
 # Python 2.6 and earlier did not have OrderedDict use the backport
@@ -432,6 +435,15 @@ its_image_tmpl = Template("""
                 };
 """)
 
+
+def sha1(message):
+    """Returns SHA1 digest in hex format of the message."""
+
+    m = hashlib.sha1()
+    m.update(message)
+    return m.hexdigest()
+
+
 class Pack(object):
     """Class to create a flashable, multi-image blob.
 
@@ -565,7 +577,7 @@ class Pack(object):
             script.start_activity("Flashing %s:" % section)
             offset = part_info.offset
             if self.ipq_nand: script.switch_layout(layout)
-            script.imxtract(section)
+            script.imxtract(section + "-" + sha1(filename))
             script.erase(offset, part_info.length)
             script.write(offset, img_size, yaffs)
             script.finish_activity()
@@ -575,15 +587,13 @@ class Pack(object):
 
         script.end()
 
-    def __gen_script(self, script_fp, info_fp, script):
+    def __gen_script(self, script_fp, info_fp, script, images):
         """Generate the script to flash the multi-image blob.
 
         script_fp -- file object, to write script to
         info_fp -- file object, to read flashing information from
         script -- Script object, to append the commands to
-
-        Return the list of ImageInfo, containg images to be part of
-        the blob.
+        images -- list of ImageInfo, appended to, based on images in config
         """
         try:
             info = ConfigParser({"include": "yes"})
@@ -593,21 +603,15 @@ class Pack(object):
 
         self.__gen_flash_script(info, script)
 
-        try:
-            script_fp.write(script.dumps())
-        except IOError, e:
-            error("error writing to script '%s'" % script_fp.name, e)
-
-        images = []
         for section in info.sections():
             if info.get(section, "include").lower() in ["0", "no"]:
                 continue
 
             filename = info.get(section, "filename")
-            image_info = ImageInfo(section, filename, "firmware")
-            images.append(image_info)
-
-        return images
+            image_info = ImageInfo(section + "-" + sha1(filename),
+                                   filename, "firmware")
+            if image_info not in images:
+                images.append(image_info)
 
     def __its_escape(self, string):
         """Return string with ITS special characters escaped.
@@ -659,6 +663,153 @@ class Pack(object):
         self.scr_fname = os.path.join(self.images_dname, "flash.scr")
         self.its_fname = os.path.join(self.images_dname, "flash.its")
 
+    def __gen_board_script(self, board_section, machid, flinfo,
+                           part_fname, fconf_fname, images):
+        """Generate the flashing script for one board.
+
+        board_section -- string, board section in board config file
+        machid -- string, board machine ID in hex format
+        flinfo -- FlashInfo object, contains board specific flash params
+        part_fname -- string, partition file specific to the board
+        fconf_fname -- string, flash config file specific to the board
+        images -- list of ImageInfo, append images used by the board here
+        """
+        script_fp = open(self.scr_fname, "a")
+
+        try:
+            fconf_fp = open(fconf_fname)
+        except IOError, e:
+            error("error opening flash config file '%s'" % fconf_fname, e)
+
+        mibib = MIBIB(part_fname, flinfo.pagesize, flinfo.blocksize,
+                      flinfo.chipsize)
+        self.partitions = mibib.get_parts()
+
+        self.flinfo = flinfo
+        if flinfo.type == "nand":
+            self.ipq_nand = True
+            script = NandScript(flinfo, self.ipq_nand)
+        else:
+            self.ipq_nand = False
+            script = NorScript(flinfo)
+
+        script.start_if("machid", machid)
+        self.__gen_script(script_fp, fconf_fp, script, images)
+        script.end_if()
+
+        try:
+            script_fp.write(script.dumps())
+        except IOError, e:
+            error("error writing to script '%s'" % script_fp.name, e)
+
+        script_fp.close()
+
+    def __process_board_flash(self, ftype, board_section, machid, images):
+        """Extract board info from config and generate the flash script.
+
+        ftype -- string, flash type 'nand' or 'nor'
+        board_section -- string, board section in config file
+        machid -- string, board machine ID in hex format
+        images -- list of ImageInfo, append images used by the board here
+        """
+
+        pagesize_param = "%s_pagesize" % ftype
+        pages_per_block_param = "%s_pages_per_block" % ftype
+        blocks_per_chip_param = "%s_total_blocks" % ftype
+        part_fname_param = "%s_partition_mbn" % ftype
+        fconf_fname_param = "%s_flash_conf" % ftype
+
+        try:
+            pagesize = int(self.bconf.get(board_section, pagesize_param))
+            pages_per_block = int(self.bconf.get(board_section,
+                                                 pages_per_block_param))
+            blocks_per_chip = int(self.bconf.get(board_section,
+                                                 blocks_per_chip_param))
+        except ConfigParserError, e:
+            error("missing flash info in section '%s'" % board_section, e)
+        except ValueError, e:
+            error("invalid flash info in section '%s'" % board_section, e)
+
+        blocksize = pages_per_block * pagesize
+        chipsize = blocks_per_chip * blocksize
+        flinfo = FlashInfo(ftype, pagesize, blocksize, chipsize)
+
+        try:
+            part_fname = self.bconf.get(board_section, part_fname_param)
+            if not os.path.isabs(part_fname):
+                part_fname = os.path.join(self.images_dname, part_fname)
+        except ConfigParserError, e:
+            error("missing partition file in section '%s'" % board_section, e)
+
+        try:
+            fconf_fname = self.bconf.get(board_section, fconf_fname_param)
+            if not os.path.isabs(fconf_fname):
+                fconf_fname = os.path.join(self.images_dname, fconf_fname)
+        except ConfigParserError, e:
+            error("missing NAND config in section '%s'" % board_section, e)
+
+        self.__gen_board_script(board_section, machid, flinfo,
+                                part_fname, fconf_fname, images)
+
+    def __process_board(self, board_section, images):
+        try:
+            machid = int(self.bconf.get(board_section, "machid"), 0)
+            machid = "%x" % machid
+        except ConfigParserError, e:
+            error("missing machid in section '%s'" % board_section, e)
+        except ValueError, e:
+            error("invalid machid in section '%s'" % board_section, e)
+
+        try:
+            available = self.bconf.get(board_section, "nand_available")
+            if available == "true" and self.flash_type == "nand":
+                self.__process_board_flash("nand", board_section, machid, images)
+        except ConfigParserError, e:
+            error("error getting board info in section '%s'" % board_section, e)
+
+        try:
+            available = self.bconf.get(board_section, "nor_available")
+            if available == "true" and self.flash_type == "nor":
+                self.__process_board_flash("nor", board_section, machid, images)
+        except ConfigParserError, e:
+            error("error getting board info in section '%s'" % board_section, e)
+
+    def main_bconf(self, flash_type, images_dname, out_fname):
+        """Start the packing process, using board config.
+
+        flash_type -- string, indicates flash type, 'nand' or 'nor'
+        images_dname -- string, name of images directory
+        out_fname -- string, output file path
+        """
+        self.flash_type = flash_type
+        self.images_dname = images_dname
+        self.img_fname = out_fname
+
+        self.__create_fnames()
+
+        try:
+            os.unlink(self.scr_fname)
+        except OSError, e:
+            error("error deleting previous script file", e)
+
+        try:
+            bconf_fname = os.path.join(images_dname, "boardconfig")
+            bconf_fp = open(bconf_fname)
+            self.bconf = ConfigParser()
+            self.bconf.readfp(bconf_fp)
+            bconf_fp.close()
+        except IOError, e:
+            error("error reading board configuration file", e)
+        except ConfigParserError, e:
+            error("error parsing board configuration file", e)
+
+        images = []
+        for section in self.bconf.sections():
+            self.__process_board(section, images)
+
+        images.insert(0, ImageInfo("script", "flash.scr", "script"))
+        self.__mkimage(images)
+
     def main(self, flinfo, images_dname, out_fname, part_fname, fconf_fname, ipq_nand):
         """Start the packing process.
 
@@ -708,7 +859,12 @@ class Pack(object):
         except IOError, e:
             error("error opening script file '%s'" % self.scr_fname, e)
 
-        images = self.__gen_script(scr_fp, info_fp, script)
+        images = []
+        self.__gen_script(scr_fp, info_fp, script, images)
+        try:
+            scr_fp.write(script.dumps())
+        except IOError, e:
+            error("error writing to script '%s'" % script_fp.name, e)
         scr_fp.close() # Flush out all written commands
 
         images.insert(0, ImageInfo("script", "flash.scr", "script"))
@@ -738,6 +894,7 @@ class ArgParser(object):
         self.flash_info = None
         self.images_dname = None
         self.ipq_nand = False
+        self.bconf = False
         self.part_fname = None
         self.fconf_fname = None
 
@@ -834,18 +991,30 @@ class ArgParser(object):
             self.fconf_fname = fconf_fname
 
     def __init_out_fname(self, out_fname, images_dname, flash_type,
-                         pagesize, pages_per_block, blocks_per_chip):
+                         pagesize, pages_per_block, blocks_per_chip,
+                         bconf):
         """Set the out_fname from the command line argument.
 
         out_fname -- string, the output filename
+        images_dname -- string, the images dirname
+        flash_type -- string, the flash type
+        pagesize -- int, the flash page size in bytes
+        pages_per_block -- int, the flash pages per block
+        blocks_per_chip -- int, the flash blocks per chip
+        bconf -- bool, whether is board config mode
         """
 
         if out_fname == None:
-            images_dname_norm = os.path.normpath(images_dname)
-            fmt = "%s-%s-%d-%d-%d%simg"
-            self.out_fname = fmt % (images_dname_norm, flash_type,
-                                    pagesize, pages_per_block,
-                                    blocks_per_chip, os.path.extsep)
+            images_dname_norm = os.path.abspath(images_dname)
+            if bconf:
+                fmt = "%s-%s%simg"
+                self.out_fname = fmt % (images_dname_norm, flash_type,
+                                        os.path.extsep)
+            else:
+                fmt = "%s-%s-%d-%d-%d%simg"
+                self.out_fname = fmt % (images_dname_norm, flash_type,
+                                        pagesize, pages_per_block,
+                                        blocks_per_chip, os.path.extsep)
         else:
             if os.path.isabs(out_fname):
                 self.out_fname = out_fname
@@ -873,9 +1042,10 @@ class ArgParser(object):
         out_fname = None
         part_fname = None
         fconf_fname = None
+        bconf = False
 
         try:
-            opts, args = getopt(argv[1:], "ib:hp:t:o:c:m:f:")
+            opts, args = getopt(argv[1:], "Bib:hp:t:o:c:m:f:")
         except GetoptError, e:
             raise UsageError(e.msg)
 
@@ -896,6 +1066,8 @@ class ArgParser(object):
                 part_fname = value
             elif option == "-f":
                 fconf_fname = value
+            elif option == "-B":
+                bconf = True
 
         if len(args) != 1:
             raise UsageError("insufficient arguments")
@@ -909,11 +1081,13 @@ class ArgParser(object):
         self.__init_out_fname(out_fname, self.images_dname,
                               self.__flash_type, self.__pagesize,
                               self.__blocksize / self.__pagesize,
-                              self.__chipsize / self.__blocksize)
+                              self.__chipsize / self.__blocksize,
+                              bconf)
         self.__init_part_fname(part_fname)
         self.__init_fconf_fname(fconf_fname)
 
         self.ipq_nand = ipq_nand
+        self.bconf = bconf
 
     def usage(self, msg):
         """Print error message and command usage information.
@@ -944,6 +1118,27 @@ class ArgParser(object):
         print "              default is IDIR-TYPE-SIZE-COUNT.img"
         print "              if the filename is relative, it is relative"
         print "              to the parent of IDIR."
+        print
+        print "NOTE: The above invocation method of pack is deprecated."
+        print "The new pack invocation uses a board config file to retrieve"
+        print "the board specific parameters. The new invocation is provided"
+        print "below."
+        print
+        print "Usage: pack [options] IDIR"
+        print
+        print "where IDIR is the path containing the images."
+        print
+        print "   -t TYPE    specifies partition type, 'nand' or 'nor',"
+        print "              default is '%s'." % ArgParser.DEFAULT_TYPE
+        print "   -B         specifies board config should be used, for"
+        print "              flash parameters."
+        print "   -o FILE    specifies the output filename"
+        print "              default is IDIR-TYPE.img"
+        print "              if the filename is relative, it is relative"
+        print "              to the parent of IDIR."
+        print
+        print "Pack Version: %s" % version
+
 
 def main():
     """Main script entry point.
@@ -958,9 +1153,13 @@ def main():
         sys.exit(1)
 
     pack = Pack()
-    pack.main(parser.flash_info, parser.images_dname,
-              parser.out_fname, parser.part_fname,
-              parser.fconf_fname, parser.ipq_nand)
+    if parser.bconf:
+        pack.main_bconf(parser.flash_info.type, parser.images_dname,
+                        parser.out_fname)
+    else:
+        pack.main(parser.flash_info, parser.images_dname,
+                  parser.out_fname, parser.part_fname,
+                  parser.fconf_fname, parser.ipq_nand)
 
 class ArgParserTestCase(TestCase):
     def setUp(self):
