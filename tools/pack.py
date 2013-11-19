@@ -790,7 +790,7 @@ class Pack(object):
         try:
             os.unlink(self.scr_fname)
         except OSError, e:
-            error("error deleting previous script file", e)
+            pass
 
         try:
             bconf_fname = os.path.join(images_dname, "boardconfig")
