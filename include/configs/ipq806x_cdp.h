@@ -138,6 +138,8 @@ typedef struct {
 
 #define IPQ_NSSTCM_DUMP_ADDR		(IPQ_MEM_RESERVE_BASE(nsstcmdump))
 
+#define IPQ_TEMP_DUMP_ADDR		(IPQ_MEM_RESERVE_BASE(nsstcmdump))
+
 #endif /* __ASSEMBLY__ */
 
 #define CONFIG_CMD_MEMORY
