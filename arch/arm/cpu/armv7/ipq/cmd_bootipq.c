@@ -5,6 +5,7 @@
 #include <common.h>
 #include <command.h>
 #include <image.h>
+#include <nand.h>
 #include <asm/arch-ipq806x/smem.h>
 
 #define IPQ_IMG_LOAD_TEMP_ADDR (CONFIG_SYS_SDRAM_BASE + (32 << 20))
@@ -68,7 +69,11 @@ static void set_fs_bootargs()
 	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH && gboard_param->flashdesc == NAND_NOR) {
 		bootargs = "root=/dev/mtdblock6";
 	} else if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
-		bootargs = "ubi.mtd=5 rootfstype=squashfs root=/dev/mtdblock7";
+		if (nand_info[CONFIG_IPQ_SPI_NAND_INFO_IDX].size) {
+			bootargs = "ubi.mtd=5 rootfstype=squashfs root=/dev/mtdblock7";
+		} else {
+			bootargs = "ubi.mtd=5 rootfstype=squashfs root=/dev/mtdblock6";
+		}
 	} else {
 		printf("bootipq: unsupported boot flash type\n");
 		return;
