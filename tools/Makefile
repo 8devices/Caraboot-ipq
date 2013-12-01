@@ -66,6 +66,7 @@ BIN_FILES-$(CONFIG_BUILD_ENVCRC) += envcrc$(SFX)
 BIN_FILES-$(CONFIG_CMD_NET) += gen_eth_addr$(SFX)
 BIN_FILES-$(CONFIG_CMD_LOADS) += img2srec$(SFX)
 BIN_FILES-$(CONFIG_XWAY_SWAP_BYTES) += xway-swap-bytes$(SFX)
+BIN_FILES-y += dumpimage$(SFX)
 BIN_FILES-y += mkenvimage$(SFX)
 BIN_FILES-y += mkimage$(SFX)
 BIN_FILES-$(CONFIG_SMDK5250) += mksmdk5250spl$(SFX)
@@ -86,6 +87,7 @@ OBJ_FILES-$(CONFIG_LCD_LOGO) += bmp_logo.o
 OBJ_FILES-$(CONFIG_VIDEO_LOGO) += bmp_logo.o
 NOPED_OBJ_FILES-y += default_image.o
 OBJ_FILES-$(CONFIG_BUILD_ENVCRC) += envcrc.o
+NOPED_OBJ_FILES-y += dumpimage.o
 NOPED_OBJ_FILES-y += fit_image.o
 OBJ_FILES-$(CONFIG_CMD_NET) += gen_eth_addr.o
 OBJ_FILES-$(CONFIG_CMD_LOADS) += img2srec.o
@@ -195,6 +197,26 @@ $(obj)img2srec$(SFX):	$(obj)img2srec.o
 
 $(obj)xway-swap-bytes$(SFX):	$(obj)xway-swap-bytes.o
 	$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^
+	$(HOSTSTRIP) $@
+
+$(obj)dumpimage$(SFX):	$(obj)aisimage.o \
+			$(FIT_SIG_OBJS) \
+			$(obj)crc32.o \
+			$(obj)default_image.o \
+			$(obj)fit_image.o \
+			$(obj)image.o \
+			$(obj)imagetool.o \
+			$(obj)imximage.o \
+			$(obj)kwbimage.o \
+			$(obj)dumpimage.o \
+			$(obj)md5.o \
+			$(obj)omapimage.o \
+			$(obj)os_support.o \
+			$(obj)sha1.o \
+			$(obj)ublimage.o \
+			$(LIBFDT_OBJS) \
+			$(RSA_OBJS)
+	$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^ $(HOSTLIBS)
 	$(HOSTSTRIP) $@
 
 $(obj)mkenvimage$(SFX):	$(obj)crc32.o $(obj)mkenvimage.o \
