@@ -410,6 +410,16 @@ class NorScript(FlashScript):
         size = roundup(size, self.pagesize)
         self.append("sf write $fileaddr 0x%08x 0x%08x" % (offset, size))
 
+    def nand_write(self, offset, size):
+        """Handle the NOR + NAND case
+           All binaries upto HLOS will go to NOR and Root FS will go to NAND
+           Assumed all nand page sizes are less than are equal to 8KB
+           """
+        common_max_pagesize = 8*KB
+        size = roundup(size, common_max_pagesize)
+        self.append("nand device 0 && nand erase.chip")
+        self.append("nand write $fileaddr 0x%08x 0x%08x" % (offset, size))
+
     def switch_layout(self, layout):
         pass
 
@@ -541,7 +551,7 @@ class Pack(object):
         try:
             return self.partitions[partition]
         except KeyError, e:
-            error("invalid partition '%s'" % partition)
+            return None
 
     def __gen_flash_script(self, info, script):
         """Generate the script to flash the images.
@@ -549,6 +559,7 @@ class Pack(object):
         info -- ConfigParser object, containing image flashing info
         script -- Script object, to append commands to
         """
+        count = 0
 
         for section in info.sections():
             try:
@@ -568,18 +579,28 @@ class Pack(object):
             img_size = self.__get_img_size(filename)
             part_info = self.__get_part_info(partition)
 
-            if img_size > part_info.length:
+            if part_info == None:
+                if self.flinfo.type != 'norplusnand':
+                    error("Invalid partition '%s'" % partition)
+                if count > 0:
+                    error("Multiple NAND images for NOR image not allowed")
+                count = count + 1
+            elif img_size > part_info.length:
                 error("img size is larger than part. len in '%s'" % section)
 
             if machid:
                 script.start_if("machid", machid)
 
             script.start_activity("Flashing %s:" % section)
-            offset = part_info.offset
             if self.ipq_nand: script.switch_layout(layout)
             script.imxtract(section + "-" + sha1(filename))
-            script.erase(offset, part_info.length)
-            script.write(offset, img_size, yaffs)
+
+            if part_info == None:
+                script.nand_write(0, img_size)
+            else:
+                offset = part_info.offset
+                script.erase(offset, part_info.length)
+                script.write(offset, img_size, yaffs)
             script.finish_activity()
 
             if machid:
@@ -689,9 +710,11 @@ class Pack(object):
         if flinfo.type == "nand":
             self.ipq_nand = True
             script = NandScript(flinfo, self.ipq_nand)
-        else:
+        elif flinfo.type == "nor" or flinfo.type == "norplusnand":
             self.ipq_nand = False
             script = NorScript(flinfo)
+        else:
+            error("error, flash type unspecified.")
 
         script.start_if("machid", machid)
         self.__gen_script(script_fp, fconf_fp, script, images)
@@ -707,7 +730,7 @@ class Pack(object):
     def __process_board_flash(self, ftype, board_section, machid, images):
         """Extract board info from config and generate the flash script.
 
-        ftype -- string, flash type 'nand' or 'nor'
+        ftype -- string, flash type 'nand' or 'nor' or 'norplusnand'
         board_section -- string, board section in config file
         machid -- string, board machine ID in hex format
         images -- list of ImageInfo, append images used by the board here
@@ -718,6 +741,11 @@ class Pack(object):
         blocks_per_chip_param = "%s_total_blocks" % ftype
         part_fname_param = "%s_partition_mbn" % ftype
         fconf_fname_param = "%s_flash_conf" % ftype
+
+        if ftype == "norplusnand":
+            pagesize_param = "%s_pagesize" % "nor"
+            pages_per_block_param = "%s_pages_per_block" % "nor"
+            blocks_per_chip_param = "%s_total_blocks" % "nor"
 
         try:
             pagesize = int(self.bconf.get(board_section, pagesize_param))
@@ -774,10 +802,17 @@ class Pack(object):
         except ConfigParserError, e:
             error("error getting board info in section '%s'" % board_section, e)
 
+        try:
+            available = self.bconf.get(board_section, "norplusnand_available")
+            if available == "true" and self.flash_type == "norplusnand":
+                self.__process_board_flash("norplusnand", board_section, machid, images)
+        except ConfigParserError, e:
+            error("error getting board info in section '%s'" % board_section, e)
+
     def main_bconf(self, flash_type, images_dname, out_fname):
         """Start the packing process, using board config.
 
-        flash_type -- string, indicates flash type, 'nand' or 'nor'
+        flash_type -- string, indicates flash type, 'nand' or 'nor' or 'norplusnand'
         images_dname -- string, name of images directory
         out_fname -- string, output file path
         """
@@ -829,8 +864,10 @@ class Pack(object):
 
         if self.flinfo.type == "nand":
             script = NandScript(self.flinfo, self.ipq_nand)
-        else:
+        elif self.flinfo.type == "nor" or self.flinfo.type == "norplusnand":
             script = NorScript(self.flinfo)
+        else:
+            error("Invalid flash type specified. It should be 'nand' or 'nor' or 'norplusnand'")
 
         if not os.path.isabs(part_fname):
             part_fname = os.path.join(self.images_dname, part_fname)
@@ -963,7 +1000,7 @@ class ArgParser(object):
 
         if flash_type == None:
             self.__flash_type = ArgParser.DEFAULT_TYPE
-        elif flash_type in [ "nand", "nor" ]:
+        elif flash_type in [ "nand", "nor", "norplusnand" ]:
             self.__flash_type = flash_type
         else:
             raise UsageError("invalid flash type '%s'" % flash_type)
