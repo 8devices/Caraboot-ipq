@@ -14,7 +14,7 @@
 
 static int debug = 0;
 static ipq_smem_flash_info_t *sfi = &ipq_smem_flash_info;
-
+int rootfs_part_avail = 1;
 extern board_ipq806x_params_t *gboard_param;
 
 /**
@@ -62,10 +62,25 @@ static void set_fs_bootargs()
 {
 	char *bootargs;
 
+#define nand_rootfs	"ubi.mtd=" IPQ_ROOT_FS_PART_NAME " root=mtd:ubi_rootfs"
+#define nor_rootfs	"root=mtd:" IPQ_ROOT_FS_PART_NAME
+
 	if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
-		bootargs = "root=mtd:rootfs";
+		uint32_t tmp;
+
+		if (smem_getpart(IPQ_ROOT_FS_PART_NAME, &tmp, &tmp) != 0) {
+			rootfs_part_avail = 0;
+			/*
+			 * While booting out of SPI-NOR, not having a
+			 * 'rootfs' entry in the partition table implies
+			 * that the Root FS is available in the NAND flash
+			 */
+			bootargs = nand_rootfs;
+		} else {
+			bootargs = nor_rootfs;
+		}
 	} else if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
-		bootargs = "ubi.mtd=rootfs root=mtd:ubi_rootfs";
+		bootargs = nand_rootfs;
 	} else {
 		printf("bootipq: unsupported boot flash type\n");
 		return;

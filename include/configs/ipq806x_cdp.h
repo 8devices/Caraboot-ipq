@@ -61,6 +61,9 @@
  */
 #define CONFIG_IPQ_APPSBL_DLOAD
 
+#define CONFIG_IPQ_ATAG_PART_LIST
+#define IPQ_ROOT_FS_PART_NAME		"rootfs"
+
 /* allow to overwrite serial and ethaddr */
 #define CONFIG_ENV_OVERWRITE
 #define CONFIG_BAUDRATE                 115200
@@ -91,6 +94,7 @@ extern uint32_t flash_index;
 extern uint32_t flash_chip_select;
 extern uint32_t flash_block_size;
 extern board_ipq806x_params_t *gboard_param;
+extern int rootfs_part_avail;
 
 static uint32_t inline clk_is_dummy(void)
 {

@@ -263,6 +263,26 @@ static int create_fdt(bootm_headers_t *images)
 }
 #endif
 
+#ifdef CONFIG_IPQ_ATAG_PART_LIST
+void setup_ipq_partition_tag(struct tag **in_params)
+{
+	extern int rootfs_part_avail;
+
+	if (rootfs_part_avail)
+		return;
+
+	printf("Setting up atags for msm partitions\n");
+	params->hdr.tag = ATAG_MSM_PARTITION;
+	params->hdr.size = tag_size (tag_msm_ptn);
+	strncpy(params->u.ptn.name, IPQ_ROOT_FS_PART_NAME,
+					sizeof(params->u.ptn.name));
+	params->u.ptn.offset = 0;
+	params->u.ptn.size = 0;	/* Implies full device */
+	params->u.ptn.flags = 0;
+	params = tag_next (params);
+}
+#endif /* CONFIG_IPQ_ATAG_PART_LIST */
+
 /* Subcommand: PREP */
 static void boot_prep_linux(bootm_headers_t *images)
 {
@@ -284,7 +304,8 @@ static void boot_prep_linux(bootm_headers_t *images)
 	defined(CONFIG_CMDLINE_TAG) || \
 	defined(CONFIG_INITRD_TAG) || \
 	defined(CONFIG_SERIAL_TAG) || \
-	defined(CONFIG_REVISION_TAG)
+	defined(CONFIG_REVISION_TAG) || \
+	defined(CONFIG_IPQ_ATAG_PART_LIST)
 		debug("using: ATAGS\n");
 		setup_start_tag(gd->bd);
 #ifdef CONFIG_SERIAL_TAG
@@ -295,6 +316,9 @@ static void boot_prep_linux(bootm_headers_t *images)
 #endif
 #ifdef CONFIG_REVISION_TAG
 		setup_revision_tag(&params);
+#endif
+#ifdef CONFIG_IPQ_ATAG_PART_LIST
+		setup_ipq_partition_tag(&params);
 #endif
 #ifdef CONFIG_SETUP_MEMORY_TAGS
 		setup_memory_tags(gd->bd);
