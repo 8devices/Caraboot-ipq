@@ -62,18 +62,10 @@ static void set_fs_bootargs()
 {
 	char *bootargs;
 
-	if (sfi->flash_type == SMEM_BOOT_SPI_FLASH &&
-		(gboard_param->flashdesc == ONLY_NOR ||
-		 gboard_param->flashdesc == NOR_MMC)) {
-		bootargs = "root=/dev/mtdblock5";
-	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH && gboard_param->flashdesc == NAND_NOR) {
-		bootargs = "root=/dev/mtdblock6";
+	if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
+		bootargs = "root=mtd:rootfs";
 	} else if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
-		if (nand_info[CONFIG_IPQ_SPI_NAND_INFO_IDX].size) {
-			bootargs = "ubi.mtd=5 rootfstype=squashfs root=/dev/mtdblock7";
-		} else {
-			bootargs = "ubi.mtd=5 rootfstype=squashfs root=/dev/mtdblock6";
-		}
+		bootargs = "ubi.mtd=rootfs root=mtd:ubi_rootfs";
 	} else {
 		printf("bootipq: unsupported boot flash type\n");
 		return;
