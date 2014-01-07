@@ -13,7 +13,7 @@ ifeq ($(CONFIG_IPQ_APPSBL_DLOAD),y)
 COBJS-y += cmd_dumpipq_data.o
 endif
 
-SRCS	:= $(SOBJS:.o=.S) $(COBJS:.o=.c)
+SRCS	:= $(SOBJS-y:.o=.S) $(COBJS-y:.o=.c)
 OBJS	:= $(addprefix $(obj),$(COBJS-y) $(SOBJS-y))
 
 all:	 $(obj).depend $(LIB)
