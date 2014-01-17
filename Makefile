@@ -628,7 +628,7 @@ $(obj)include/generated/asm-offsets.h:	$(obj)include/autoconf.mk.dep \
 $(obj)$(CPUDIR)/$(SOC)/asm-offsets.s:	$(obj)include/autoconf.mk.dep
 	@mkdir -p $(obj)$(CPUDIR)/$(SOC)
 	if [ -f $(src)$(CPUDIR)/$(SOC)/asm-offsets.c ];then \
-		$(CC) -DDO_DEPS_ONLY \
+		$(CC) -DDO_DEPS_ONLY -DDO_SOC_DEPS_ONLY \
 		$(CFLAGS) $(CFLAGS_$(BCURDIR)/$(@F)) $(CFLAGS_$(BCURDIR)) \
 			-o $@ $(src)$(CPUDIR)/$(SOC)/asm-offsets.c -c -S; \
 	else \

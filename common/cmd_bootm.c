@@ -421,9 +421,9 @@ static int bootm_load_os(image_info_t os, ulong *load_end, int boot_progress)
 		printf("Unimplemented compression type %d\n", comp);
 		return BOOTM_ERR_UNIMPLEMENTED;
 	}
-
+#if (CONFIG_IPQ_CACHE_ENABLE == 1)
 	flush_cache(load, (*load_end - load) * sizeof(ulong));
-
+#endif
 	puts("OK\n");
 	debug("   kernel loaded at 0x%08lx, end = 0x%08lx\n", load, *load_end);
 	bootstage_mark(BOOTSTAGE_ID_KERNEL_LOADED);

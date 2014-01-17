@@ -8,7 +8,7 @@
  * Disabled for actual chip.
  * #define CONFIG_RUMI
  */
-#if !defined(DO_DEPS_ONLY)
+#if !defined(DO_DEPS_ONLY) || defined(DO_SOC_DEPS_ONLY)
 /*
  * Beat the system! tools/scripts/make-asm-offsets uses
  * the following hard-coded define for both u-boot's
@@ -18,7 +18,9 @@
 #ifdef __ASM_OFFSETS_H__
 #undef __ASM_OFFSETS_H__
 #endif
+#if !defined(DO_SOC_DEPS_ONLY)
 #include <generated/asm-offsets.h>
+#endif
 #endif /* !DO_DEPS_ONLY */
 
 #define CONFIG_BOARD_EARLY_INIT_F
@@ -118,11 +120,14 @@ static uint32_t inline clk_is_dummy(void)
  *      CONFIG_SYS_INIT_SP_ADDR defined above should point to the bottom.
  *
  */
+#if !defined(DO_DEPS_ONLY) || defined(DO_SOC_DEPS_ONLY)
 typedef struct {
 	uint8_t	nss[4 * 1024 * 1024];
 	uint8_t	smem[2 * 1024 * 1024];
 	uint8_t	uboot[1 * 1024 * 1024];
 	uint8_t	nsstcmdump[1 * 1024 * 1024];
+	uint8_t wlanfwdump[(1 * 1024 * 1024) - GENERATED_GBL_DATA_SIZE];
+	uint8_t init_stack[GENERATED_GBL_DATA_SIZE];
 } __attribute__ ((__packed__)) ipq_mem_reserve_t;
 
 /* Convenience macros for the above convenience structure :-) */
@@ -130,6 +135,7 @@ typedef struct {
 #define IPQ_MEM_RESERVE_BASE(x)		\
 	(CONFIG_SYS_SDRAM_BASE + \
 	 ((uint32_t)&(((ipq_mem_reserve_t *)0)->x)))
+#endif
 
 #define CONFIG_IPQ_SMEM_BASE		IPQ_MEM_RESERVE_BASE(smem)
 #define IPQ_KERNEL_START_ADDR	\
