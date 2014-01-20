@@ -1,5 +1,5 @@
 
-/* * Copyright (c) 2012 - 2013 The Linux Foundation. All rights reserved.* */
+/* * Copyright (c) 2012 - 2014 The Linux Foundation. All rights reserved.* */
 
 #ifndef _IPQCDP_H
 #define _IPQCDP_H
@@ -260,8 +260,6 @@ typedef struct {
 
 #define CONFIG_IPQ_SWITCH_ATHRS17
 
-#define CONFIG_IPQ_CACHE_ENABLE 0
-
 /* Add MBN header to U-Boot */
 #define CONFIG_MBN_HEADER
 
@@ -272,6 +270,10 @@ typedef struct {
 /* We will be uploading very big files */
 #define CONFIG_NET_RETRY_COUNT 500
 #endif
-
+/* L1 cache line size is 64 bytes, L2 cache line size is 128 bytes
+ * Cache flush and invalidation based on L1 cache, so the cache line
+ * size is configured to 64 */
+#define CONFIG_SYS_CACHELINE_SIZE  64
+/*#define CONFIG_SYS_DCACHE_OFF*/
 #endif /* _IPQCDP_H */
 

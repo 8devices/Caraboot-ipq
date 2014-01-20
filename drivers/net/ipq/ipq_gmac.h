@@ -1,11 +1,12 @@
 /*
- * Copyright (c) 2012 - 2013 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012 - 2014 The Linux Foundation. All rights reserved.
  */
 
 #ifndef _IPQ_GMAC_H
 #define _IPQ_GMAC_H
 #include <common.h>
 #include <net.h>
+#include <configs/ipq806x_cdp.h>
 
 #define CONFIG_MACRESET_TIMEOUT			(3 * CONFIG_SYS_HZ)
 #define CONFIG_MDIO_TIMEOUT			(3 * CONFIG_SYS_HZ)
@@ -207,8 +208,7 @@
 #define NO_OF_RX_DESC				PKTBUFSRX
 #define MAX_WAIT				1000
 
-#define CACHE_LINE_SHIFT			5
-#define CACHE_LINE_SIZE				(1 << CACHE_LINE_SHIFT)
+#define CACHE_LINE_SIZE				(CONFIG_SYS_CACHELINE_SIZE)
 
 #define VLAN_ETH_FRAME_LEN			1518
 #define ETH_ZLEN				60

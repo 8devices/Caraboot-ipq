@@ -1,5 +1,5 @@
 
-/* * Copyright (c) 2012 - 2013 The Linux Foundation. All rights reserved.* */
+/* * Copyright (c) 2012 - 2014 The Linux Foundation. All rights reserved.* */
 
 #include <common.h>
 #include <linux/mtd/ipq_nand.h>
@@ -148,9 +148,7 @@ int board_init()
 void enable_caches(void)
 {
 	icache_enable();
-	/* When dcache is enabled it causes the tftp timeout CR is raised CR.No: 513868.
-         * disabing dcache now to make tftp to work */
-#if (CONFIG_IPQ_CACHE_ENABLE == 1)
+#ifndef CONFIG_SYS_DCACHE_OFF
 	dcache_enable();
 #endif
 }
