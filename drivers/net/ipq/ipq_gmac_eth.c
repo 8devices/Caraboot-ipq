@@ -134,8 +134,8 @@ static void ipq_eth_mac_cfg(struct eth_device *dev)
 	}
 
 	ipq_mac_cfg |= (FRAME_BURST_ENABLE | TX_ENABLE | RX_ENABLE);
+	ipq_frame_filter_cfg = DISABLE_BCAST_FRAMES;
 
-	ipq_frame_filter_cfg = GMAC_FRAME_RX_ALL | PROMISCUOUS_MODE_ON;
 	writel(ipq_mac_cfg, &mac_reg->conf);
 	writel(ipq_frame_filter_cfg, &mac_reg->framefilt);
 }
