@@ -188,6 +188,7 @@
 /* GMAC Fram filter definitions */
 #define GMAC_FRAME_RX_ALL			(1 << 31)
 #define PROMISCUOUS_MODE_ON			(1 << 0)
+#define DISABLE_BCAST_FRAMES			(1 << 5)
 
 /* DMA Flow control definitions */
 #define FULL_3KB				(1 << 10)
