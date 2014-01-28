@@ -148,12 +148,14 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 			if (get_timer_masked() >= etime) {
 				if (do_dumpipq_data() == CMD_RET_FAILURE)
 					return CMD_RET_FAILURE;
-				/* reset the system before boot */
-				run_command("reset", 0);
 				break;
 			}
 		}
 
+		/* reset the system, some images might not be loaded
+		 * when crashmagic is found
+		 */
+		run_command("reset", 0);
 	}
 #endif
 
