@@ -125,7 +125,6 @@ static void ipq_eth_mac_cfg(struct eth_device *dev)
 	struct eth_mac_regs *mac_reg = (struct eth_mac_regs *)priv->mac_regs_p;
 
 	uint ipq_mac_cfg;
-	uint ipq_frame_filter_cfg;
 
 	if (priv->mac_unit > GMAC_UNIT1) {
 		ipq_mac_cfg = (priv->mac_ps | FULL_DUPLEX_ENABLE);
@@ -134,10 +133,8 @@ static void ipq_eth_mac_cfg(struct eth_device *dev)
 	}
 
 	ipq_mac_cfg |= (FRAME_BURST_ENABLE | TX_ENABLE | RX_ENABLE);
-	ipq_frame_filter_cfg = DISABLE_BCAST_FRAMES;
 
 	writel(ipq_mac_cfg, &mac_reg->conf);
-	writel(ipq_frame_filter_cfg, &mac_reg->framefilt);
 }
 
 static void ipq_eth_dma_cfg(struct eth_device *dev)
