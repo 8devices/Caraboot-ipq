@@ -27,6 +27,7 @@
  * MA 02111-1307 USA
  */
 
+#include "imagetool.h"
 #include "mkimage.h"
 #include <image.h>
 #include <u-boot/crc.h>
@@ -34,7 +35,7 @@
 static image_header_t header;
 
 static int fit_verify_header (unsigned char *ptr, int image_size,
-			struct mkimage_params *params)
+			struct image_tool_params *params)
 {
 	return fdt_check_header ((void *)ptr);
 }
@@ -59,7 +60,7 @@ static int fit_check_image_types (uint8_t type)
  * returns:
  *     only on success, otherwise calls exit (EXIT_FAILURE);
  */
-static int fit_handle_file (struct mkimage_params *params)
+static int fit_handle_file (struct image_tool_params *params)
 {
 	char tmpfile[MKIMAGE_MAX_TMPFILE_LEN];
 	char cmd[MKIMAGE_MAX_DTC_CMDLINE_LEN];
@@ -155,7 +156,7 @@ static int fit_handle_file (struct mkimage_params *params)
 	return (EXIT_SUCCESS);
 }
 
-static int fit_check_params (struct mkimage_params *params)
+static int fit_check_params (struct image_tool_params *params)
 {
 	return	((params->dflag && (params->fflag || params->lflag)) ||
 		(params->fflag && (params->dflag || params->lflag)) ||
@@ -176,5 +177,5 @@ static struct image_type_params fitimage_params = {
 
 void init_fit_image_type (void)
 {
-	mkimage_register (&fitimage_params);
+	register_image_type (&fitimage_params);
 }

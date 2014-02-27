@@ -27,7 +27,7 @@
  * MA 02111-1307 USA
  */
 
-#include "mkimage.h"
+#include "imagetool.h"
 #include <image.h>
 #include <u-boot/crc.h>
 
@@ -42,7 +42,7 @@ static int image_check_image_types(uint8_t type)
 		return EXIT_FAILURE;
 }
 
-static int image_check_params(struct mkimage_params *params)
+static int image_check_params(struct image_tool_params *params)
 {
 	return	((params->dflag && (params->fflag || params->lflag)) ||
 		(params->fflag && (params->dflag || params->lflag)) ||
@@ -50,7 +50,7 @@ static int image_check_params(struct mkimage_params *params)
 }
 
 static int image_verify_header(unsigned char *ptr, int image_size,
-			struct mkimage_params *params)
+			struct image_tool_params *params)
 {
 	uint32_t len;
 	const unsigned char *data;
@@ -99,7 +99,7 @@ static int image_verify_header(unsigned char *ptr, int image_size,
 }
 
 static void image_set_header(void *ptr, struct stat *sbuf, int ifd,
-				struct mkimage_params *params)
+				struct image_tool_params *params)
 {
 	uint32_t checksum;
 
@@ -146,5 +146,5 @@ static struct image_type_params defimage_params = {
 
 void init_default_image_type(void)
 {
-	mkimage_register(&defimage_params);
+	register_image_type(&defimage_params);
 }
