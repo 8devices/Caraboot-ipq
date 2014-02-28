@@ -143,7 +143,8 @@ static int dumpimage_extract_datafile(void *ptr, struct stat *sbuf)
 			 * if verify is successful
 			 */
 			if (curr->extract_datafile) {
-				curr->extract_datafile(ptr, &params);
+				retval = curr->extract_datafile(ptr, &params);
+				break;
 			} else {
 				fprintf(stderr,
 					"%s: extract_datafile undefined for %s\n",
