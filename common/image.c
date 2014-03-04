@@ -53,7 +53,7 @@
 
 #if defined(CONFIG_FIT)
 #include <u-boot/md5.h>
-#include <sha1.h>
+#include <u-boot-sha1.h>
 
 static int fit_check_ramdisk(const void *fit, int os_noffset,
 		uint8_t arch, int verify);

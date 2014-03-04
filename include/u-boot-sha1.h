@@ -1,5 +1,5 @@
 /**
- * \file sha1.h
+ * \file u-boot-sha1.h
  * based from http://xyssl.org/code/source/sha1/
  *  FIPS-180-1 compliant SHA-1 implementation
  *
@@ -123,4 +123,4 @@ int sha1_self_test( void );
 }
 #endif
 
-#endif /* sha1.h */
+#endif /* u-boot-sha1.h */
