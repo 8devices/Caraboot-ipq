@@ -593,17 +593,17 @@ static int ipq_exec_cmd(struct mtd_info *mtd, uint32_t cmd, uint32_t *status)
  * Check if error flags related to read operation have been set in the
  * status register.
  */
-static int ipq_check_read_status(struct mtd_info *mtd, uint32_t status)
+static int ipq_check_read_status(struct mtd_info *mtd, uint32_t status,
+					uint32_t *cw_erased)
 {
-	uint32_t cw_erased;
 	uint32_t num_errors;
 	struct ipq_nand_dev *dev = MTD_IPQ_NAND_DEV(mtd);
 	struct ebi2nd_regs *regs = dev->regs;
 
 	debug("Read Status: %08x\n", status);
 
-	cw_erased = readl(&regs->erased_cw_detect_status);
-	cw_erased &= CODEWORD_ERASED_MASK;
+	*cw_erased = readl(&regs->erased_cw_detect_status);
+	*cw_erased &= CODEWORD_ERASED_MASK;
 
 	num_errors = readl(&regs->buffer_status);
 	num_errors &= NUM_ERRORS_MASK;
@@ -611,7 +611,7 @@ static int ipq_check_read_status(struct mtd_info *mtd, uint32_t status)
 	if (status & MPU_ERROR_MASK)
 		return -EPERM;
 
-	if ((status & OP_ERR_MASK) && !cw_erased) {
+	if ((status & OP_ERR_MASK) && !*cw_erased) {
 		mtd->ecc_stats.failed++;
 		return -EBADMSG;
 	}
@@ -631,6 +631,7 @@ static int ipq_read_cw(struct mtd_info *mtd, u_int cwno,
 {
 	int ret;
 	uint32_t status;
+	uint32_t cw_erased;
 	struct ipq_nand_dev *dev = MTD_IPQ_NAND_DEV(mtd);
 	struct ebi2nd_regs *regs = dev->regs;
 	struct ipq_cw_layout *cwl = &dev->curr_page_layout[cwno];
@@ -639,22 +640,30 @@ static int ipq_read_cw(struct mtd_info *mtd, u_int cwno,
 	if (ret < 0)
 		return ret;
 
-	ret = ipq_check_read_status(mtd, status);
+	ret = ipq_check_read_status(mtd, status, &cw_erased);
 	if (ret < 0)
 		return ret;
 
 	if (ops->datbuf != NULL) {
-		hw2memcpy(ops->datbuf, &regs->buffn_acc[cwl->data_offs >> 2],
-			  cwl->data_size);
-
+		if (cw_erased) {
+			memset(ops->datbuf, 0xff, cwl->data_size);
+		} else {
+			hw2memcpy(ops->datbuf,
+					&regs->buffn_acc[cwl->data_offs >> 2],
+					cwl->data_size);
+		}
 		ops->retlen += cwl->data_size;
 		ops->datbuf += cwl->data_size;
 	}
 
 	if (ops->oobbuf != NULL) {
-		hw2memcpy(ops->oobbuf, &regs->buffn_acc[cwl->oob_offs >> 2],
-			  cwl->oob_size);
-
+		if (cw_erased) {
+			memset(ops->oobbuf, 0xff, cwl->oob_size);
+		} else {
+			hw2memcpy(ops->oobbuf,
+					&regs->buffn_acc[cwl->oob_offs >> 2],
+					cwl->oob_size);
+		}
 		ops->oobretlen += cwl->oob_size;
 		ops->oobbuf += cwl->oob_size;
 	}
@@ -706,13 +715,13 @@ static int ipq_read_page(struct mtd_info *mtd, u_long pageno,
  * length.
  */
 static u_long ipq_get_read_page_count(struct mtd_info *mtd,
-				      struct mtd_oob_ops *ops)
+				      struct mtd_oob_ops *ops, int skip)
 {
 	struct ipq_nand_dev *dev = MTD_IPQ_NAND_DEV(mtd);
 	struct nand_chip *chip = MTD_NAND_CHIP(mtd);
 
 	if (ops->datbuf != NULL) {
-		return (ops->len + mtd->writesize - 1) >> chip->page_shift;
+		return (skip + ops->len + mtd->writesize - 1) >> chip->page_shift;
 	} else {
 		if (dev->oob_per_page == 0)
 			return 0;
@@ -805,6 +814,26 @@ static void ipq_nand_read_datcopy(struct mtd_info *mtd, struct mtd_oob_ops *ops)
 	ops->retlen += datlen;
 }
 
+static void ipq_nand_read_skip_datcopy(struct mtd_info *mtd,
+					struct mtd_oob_ops *ops, int skip)
+{
+	size_t datlen;
+	struct ipq_nand_dev *dev = MTD_IPQ_NAND_DEV(mtd);
+
+	if (ops->datbuf == NULL)
+		return;
+
+	datlen = mtd->writesize - skip;
+
+	if (datlen > ops->len) {
+		datlen = ops->len;
+	}
+
+	memcpy(ops->datbuf, dev->pad_dat + skip, datlen);
+
+	ops->retlen += datlen;
+}
+
 static int ipq_nand_read_oob(struct mtd_info *mtd, loff_t from,
 			     struct mtd_oob_ops *ops)
 {
@@ -814,7 +843,7 @@ static int ipq_nand_read_oob(struct mtd_info *mtd, loff_t from,
 	uint32_t corrected;
 	struct nand_chip *chip = MTD_NAND_CHIP(mtd);
 	struct ipq_nand_dev *dev = MTD_IPQ_NAND_DEV(mtd);
-	int ret = 0;
+	int skip, ret = 0;
 
 	/* We don't support MTD_OOB_PLACE as of yet. */
 	if (ops->mode == MTD_OOB_PLACE)
@@ -824,9 +853,6 @@ static int ipq_nand_read_oob(struct mtd_info *mtd, loff_t from,
 	if (ops->datbuf && (from + ops->len) > mtd->size)
 		return -EINVAL;
 
-	if (from & (mtd->writesize - 1))
-		return -EINVAL;
-
 	if (ops->ooboffs != 0)
 		return -EINVAL;
 
@@ -834,12 +860,34 @@ static int ipq_nand_read_oob(struct mtd_info *mtd, loff_t from,
 		ipq_enter_raw_mode(mtd);
 
 	start = from >> chip->page_shift;
-	pages = ipq_get_read_page_count(mtd, ops);
+	skip = from & (mtd->writesize - 1);
+	pages = ipq_get_read_page_count(mtd, ops, skip);
 
 	debug("Start of page: %lu\n", start);
 	debug("No of pages to read: %lu\n", pages);
 
 	corrected = mtd->ecc_stats.corrected;
+
+	if (skip) {
+		struct mtd_oob_ops page_ops;
+
+		page_ops.mode = ops->mode;
+		page_ops.len = mtd->writesize;
+		page_ops.ooblen = dev->oob_per_page;
+		page_ops.datbuf = dev->pad_dat;
+		page_ops.oobbuf = ipq_nand_read_oobbuf(mtd, ops);
+		page_ops.retlen = 0;
+		page_ops.oobretlen = 0;
+
+		ret = ipq_read_page(mtd, start, &page_ops);
+		if (ret < 0)
+			goto done;
+
+		ipq_nand_read_skip_datcopy(mtd, ops, skip);
+		ipq_nand_read_oobcopy(mtd, ops);
+		start ++;
+		pages --;
+	}
 
 	for (i = start; i < (start + pages); i++) {
 		struct mtd_oob_ops page_ops;
@@ -1285,7 +1333,7 @@ static int ipq_nand_onfi_probe(struct mtd_info *mtd, uint32_t *onfi_id)
 
 int ipq_nand_get_info_onfi(struct mtd_info *mtd)
 {
-	uint32_t status;
+	uint32_t status, dummy;
 	int ret;
 	uint32_t dev_cmd_vld_orig;
 	struct ipq_nand_dev *dev = MTD_IPQ_NAND_DEV(mtd);
@@ -1313,7 +1361,7 @@ int ipq_nand_get_info_onfi(struct mtd_info *mtd)
 	if (ret < 0)
 		goto err_exit;
 
-	ret = ipq_check_read_status(mtd, status);
+	ret = ipq_check_read_status(mtd, status, &dummy);
 	if (ret < 0)
 		goto err_exit;
 
