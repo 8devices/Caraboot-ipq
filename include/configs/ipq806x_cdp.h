@@ -251,6 +251,8 @@ typedef struct {
 #define CONFIG_LZO		/* for ubi fs */
 #define CONFIG_CMD_UBIFS
 
+#define CONFIG_CMD_RUN
+
 #define CONFIG_IPQ_SNPS_GMAC
 
 #define CONFIG_IPQ_SWITCH_ATHRS17
