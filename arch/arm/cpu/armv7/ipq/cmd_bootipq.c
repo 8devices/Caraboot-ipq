@@ -6,12 +6,10 @@
 #include <command.h>
 #include <image.h>
 #include <nand.h>
+#include <errno.h>
 #include <asm/arch-ipq806x/smem.h>
 
-#define IPQ_IMG_LOAD_TEMP_ADDR (CONFIG_SYS_SDRAM_BASE + (32 << 20))
-
-#define img_addr ((void *)IPQ_IMG_LOAD_TEMP_ADDR)
-
+#define img_addr	((void *)CONFIG_SYS_LOAD_ADDR)
 static int debug = 0;
 static ipq_smem_flash_info_t *sfi = &ipq_smem_flash_info;
 int rootfs_part_avail = 1;
@@ -34,7 +32,7 @@ static int load_nss_img(const char *runcmd, char *args, int argslen,
 		return ret;
 	}
 
-	sprintf(cmd, "bootm start 0x%x; bootm loados", (uint32_t)img_addr);
+	sprintf(cmd, "bootm start 0x%x; bootm loados", CONFIG_SYS_LOAD_ADDR);
 
 	if (debug)
 		printf(cmd);
@@ -58,7 +56,7 @@ static int load_nss_img(const char *runcmd, char *args, int argslen,
 /*
  * Set the root device and bootargs for mounting root filesystem.
  */
-static void set_fs_bootargs()
+static int set_fs_bootargs(int *fs_on_nand)
 {
 	char *bootargs;
 
@@ -66,9 +64,8 @@ static void set_fs_bootargs()
 #define nor_rootfs	"root=mtd:" IPQ_ROOT_FS_PART_NAME
 
 	if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
-		uint32_t tmp;
 
-		if (smem_getpart(IPQ_ROOT_FS_PART_NAME, &tmp, &tmp) != 0) {
+		if (sfi->rootfs.offset == 0xBAD0FF5E) {
 			rootfs_part_avail = 0;
 			/*
 			 * While booting out of SPI-NOR, not having a
@@ -76,20 +73,23 @@ static void set_fs_bootargs()
 			 * that the Root FS is available in the NAND flash
 			 */
 			bootargs = nand_rootfs;
+			*fs_on_nand = 1;
 		} else {
 			bootargs = nor_rootfs;
+			*fs_on_nand = 0;
 		}
 	} else if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
 		bootargs = nand_rootfs;
+		*fs_on_nand = 1;
 	} else {
 		printf("bootipq: unsupported boot flash type\n");
-		return;
+		return -EINVAL;
 	}
 
 	if (getenv("fsbootargs") == NULL)
 		setenv("fsbootargs", bootargs);
 
-	run_command("setenv bootargs ${bootargs} ${fsbootargs}", 0);
+	return run_command("setenv bootargs ${bootargs} ${fsbootargs}", 0);
 }
 
 /**
@@ -123,8 +123,8 @@ static int inline do_dumpipq_data()
 static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
 	char bootargs[IH_NMLEN+32];
-	char runcmd[128];
-	int nandid = 0;
+	char runcmd[256];
+	int nandid = 0, ret, fs_on_nand;
 
 #ifdef CONFIG_IPQ_APPSBL_DLOAD
 	unsigned long * dmagic1 = (unsigned long *) 0x2A03F000;
@@ -159,7 +159,8 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	}
 #endif
 
-	set_fs_bootargs();
+	if ((ret = set_fs_bootargs(&fs_on_nand)))
+		return ret;
 
 	/* check the smem info to see which flash used for booting */
 	if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
@@ -183,7 +184,8 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	 */
 	if (sfi->nss[0].size != 0xBAD0FF5E) {
 		sprintf(runcmd, "nand read 0x%x 0x%llx 0x%llx",
-				img_addr, sfi->nss[0].offset, sfi->nss[0].size);
+				CONFIG_SYS_LOAD_ADDR,
+				sfi->nss[0].offset, sfi->nss[0].size);
 
 		if (load_nss_img(runcmd, bootargs, sizeof(bootargs), 0)
 				!= CMD_RET_SUCCESS)
@@ -197,7 +199,8 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 
 	if (sfi->nss[1].size != 0xBAD0FF5E) {
 		sprintf(runcmd, "nand read 0x%x 0x%llx 0x%llx",
-				img_addr, sfi->nss[1].offset, sfi->nss[1].size);
+				CONFIG_SYS_LOAD_ADDR,
+				sfi->nss[1].offset, sfi->nss[1].size);
 
 		if (load_nss_img(runcmd, bootargs, sizeof(bootargs), 1)
 				!= CMD_RET_SUCCESS)
@@ -214,8 +217,26 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 		printf("Booting from flash\n");
 	}
 
-	snprintf(runcmd, sizeof(runcmd), "set autostart yes;"
-			"nboot 0x%x %d 0x%llx", img_addr, nandid, sfi->hlos.offset);
+	if (fs_on_nand) {
+		/*
+		 * The kernel will be available inside a UBI volume
+		 */
+		snprintf(runcmd, sizeof(runcmd),
+			"set mtdids nand0=nand0 && "
+			"set mtdparts mtdparts=nand0:-@0x%llx(fs) && "
+			"ubi part fs && "
+			"ubi read 0x%x kernel && "
+			"bootm 0x%x\n", sfi->rootfs.offset,
+				CONFIG_SYS_LOAD_ADDR, CONFIG_SYS_LOAD_ADDR);
+	} else {
+		/*
+		 * Kernel is in a separate partition
+		 */
+		snprintf(runcmd, sizeof(runcmd), "set autostart yes;"
+			"nboot 0x%x %d 0x%llx", CONFIG_SYS_LOAD_ADDR,
+				nandid, sfi->hlos.offset);
+	}
+
 	if (debug)
 		printf(runcmd);
 

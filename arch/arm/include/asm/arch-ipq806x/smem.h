@@ -67,6 +67,7 @@ typedef struct {
 	uint32_t		flash_block_size;
 	ipq_part_entry_t	hlos;
 	ipq_part_entry_t	nss[2];
+	ipq_part_entry_t	rootfs;
 } ipq_smem_flash_info_t;
 
 extern ipq_smem_flash_info_t ipq_smem_flash_info;

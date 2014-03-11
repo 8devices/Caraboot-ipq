@@ -285,6 +285,7 @@ void ipq_get_part_details(void)
 		{ "0:HLOS", &smem->hlos },
 		{ "0:NSS0", &smem->nss[0] },
 		{ "0:NSS1", &smem->nss[1] },
+		{ "rootfs", &smem->rootfs },
 	};
 
 	for (i = 0; i < ARRAY_SIZE(entries); i++) {
