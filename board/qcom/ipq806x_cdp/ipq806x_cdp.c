@@ -43,7 +43,28 @@ loff_t board_env_offset;
 loff_t board_env_range;
 extern int nand_env_device;
 
-board_ipq806x_params_t *gboard_param;
+/*
+ * Don't have this as a '.bss' variable. The '.bss' and '.rel.dyn'
+ * sections seem to overlap.
+ *
+ * $ arm-none-linux-gnueabi-objdump -h u-boot
+ * . . .
+ *  8 .rel.dyn      00004ba8  40630b0c  40630b0c  00038b0c  2**2
+ *                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ *  9 .bss          0000559c  40630b0c  40630b0c  00000000  2**3
+ *                  ALLOC
+ * . . .
+ *
+ * board_early_init_f() initializes this variable, resulting in one
+ * of the relocation entries present in '.rel.dyn' section getting
+ * corrupted. Hence, when relocate_code()'s 'fixrel' executes, it
+ * patches a wrong address, which incorrectly modifies some global
+ * variable resulting in a crash.
+ *
+ * Moral of the story: Global variables that are written before
+ * relocate_code() gets executed cannot be in '.bss'
+ */
+board_ipq806x_params_t *gboard_param = (board_ipq806x_params_t *)0xbadb0ad;
 extern int ipq_gmac_eth_initialize(const char *ethaddr);
 uchar ipq_def_enetaddr[6] = {0x00, 0x03, 0x7F, 0xBA, 0xDB, 0xAD};
 
