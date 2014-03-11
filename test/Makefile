@@ -28,7 +28,7 @@ include $(TOPDIR)/config.mk
 LIB	= $(obj)libtest.o
 
 COBJS-y += munit.o
-COBJS-$(CONFIG_CMD_NAND) += nand_ut.o
+COBJS-$(CONFIG_CMD_NAND_UT) += nand_ut.o
 
 COBJS	:= $(sort $(COBJS-y))
 SRCS	:= $(COBJS:.o=.c)
