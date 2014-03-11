@@ -46,7 +46,7 @@
 #define CONFIG_ARCH_CPU_INIT
 
 #define CONFIG_ENV_SIZE                 (256 << 10) /* 256 KB */
-#define CONFIG_SYS_MALLOC_LEN           (CONFIG_ENV_SIZE + (256 << 10))
+#define CONFIG_SYS_MALLOC_LEN           (4 << 20)
 
 /*
  * Size of malloc() pool
@@ -239,6 +239,17 @@ typedef struct {
 
 #define CONFIG_CMD_ECHO
 #define CONFIG_BOOTDELAY	2
+
+#define CONFIG_MTD_DEVICE
+#define CONFIG_MTD_PARTITIONS
+#define CONFIG_CMD_MTDPARTS
+
+#define CONFIG_RBTREE		/* for ubi */
+#define CONFIG_UBIFS
+#define CONFIG_CMD_UBI
+
+#define CONFIG_LZO		/* for ubi fs */
+#define CONFIG_CMD_UBIFS
 
 #define CONFIG_IPQ_SNPS_GMAC
 
