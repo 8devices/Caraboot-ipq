@@ -83,7 +83,7 @@
 						sizeof(CONFIG_SYS_PROMPT) + 16)
 
 #define CONFIG_SYS_SDRAM_BASE           0x40000000
-#define CONFIG_SYS_TEXT_BASE            0x40600000
+#define CONFIG_SYS_TEXT_BASE            0x41200000
 #define CONFIG_SYS_SDRAM_SIZE           0x10000000
 #define CONFIG_MAX_RAM_BANK_SIZE        CONFIG_SYS_SDRAM_SIZE
 
@@ -118,14 +118,17 @@ static uint32_t inline clk_is_dummy(void)
  *      PHYS_OFFSET     (linux-sources/arch/arm/mach-msm/Kconfig)
  *      zreladdr        (linux-sources/arch/arm/mach-msm/Makefile.boot)
  *      CONFIG_SYS_INIT_SP_ADDR defined above should point to the bottom.
+ *      MSM_SHARED_RAM_PHYS (linux-sources/arch/arm/mach-msm/board-ipq806x.c)
  *
  */
 #if !defined(DO_DEPS_ONLY) || defined(DO_SOC_DEPS_ONLY)
 typedef struct {
-	uint8_t	nss[4 * 1024 * 1024];
+	uint8_t	nss[16 * 1024 * 1024];
 	uint8_t	smem[2 * 1024 * 1024];
 	uint8_t	uboot[1 * 1024 * 1024];
-	uint8_t	nsstcmdump[1 * 1024 * 1024];
+	uint8_t	nsstcmdump[128 * 1024];
+	uint8_t sbl3[384 * 1024];
+	uint8_t plcfwdump[512*1024];
 	uint8_t wlanfwdump[(1 * 1024 * 1024) - GENERATED_GBL_DATA_SIZE];
 	uint8_t init_stack[GENERATED_GBL_DATA_SIZE];
 } __attribute__ ((__packed__)) ipq_mem_reserve_t;
