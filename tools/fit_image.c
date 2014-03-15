@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2014 Qualcomm Atheros, Inc.
+ * (C) Copyright 2014 The Linux Foundation. All rights reserved.
  * (C) Copyright 2008 Semihalf
  *
  * (C) Copyright 2000-2004
