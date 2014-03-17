@@ -15,6 +15,7 @@ static ipq_smem_flash_info_t *sfi = &ipq_smem_flash_info;
 int rootfs_part_avail = 1;
 extern board_ipq806x_params_t *gboard_param;
 
+#ifdef CONFIG_IPQ_LOAD_NSS_FW
 /**
  * check if the image and its header is valid and move it to
  * load address as specified in the header
@@ -52,6 +53,8 @@ static int load_nss_img(const char *runcmd, char *args, int argslen,
 
 	return ret;
 }
+
+#endif /* CONFIG_IPQ_LOAD_NSS_FW */
 
 /*
  * Set the root device and bootargs for mounting root filesystem.
@@ -178,6 +181,7 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 		return -1;
 	}
 
+#ifdef CONFIG_IPQ_LOAD_NSS_FW
 	/* check the smem info to see whether the partition size is valid.
 	 * refer board/qcom/ipq806x_cdp/ipq806x_cdp.c:ipq_get_part_details
 	 * for more details
@@ -211,6 +215,7 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 
 		run_command("setenv bootargs ${bootargs} ${nssbootargs1}", 0);
 	}
+#endif /* CONFIG_IPQ_LOAD_NSS_FW */
 
 	if (debug) {
 		run_command("printenv bootargs", 0);

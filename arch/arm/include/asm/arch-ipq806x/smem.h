@@ -66,7 +66,9 @@ typedef struct {
 	uint32_t		flash_chip_select;
 	uint32_t		flash_block_size;
 	ipq_part_entry_t	hlos;
+#ifdef CONFIG_IPQ_LOAD_NSS_FW
 	ipq_part_entry_t	nss[2];
+#endif
 	ipq_part_entry_t	rootfs;
 } ipq_smem_flash_info_t;
 

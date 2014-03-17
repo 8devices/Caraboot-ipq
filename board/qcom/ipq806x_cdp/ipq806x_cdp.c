@@ -283,8 +283,10 @@ void ipq_get_part_details(void)
 
 	struct { char *name; ipq_part_entry_t *part; } entries[] = {
 		{ "0:HLOS", &smem->hlos },
+#ifdef CONFIG_IPQ_LOAD_NSS_FW
 		{ "0:NSS0", &smem->nss[0] },
 		{ "0:NSS1", &smem->nss[1] },
+#endif
 		{ "rootfs", &smem->rootfs },
 	};
 
