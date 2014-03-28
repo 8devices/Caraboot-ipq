@@ -297,8 +297,9 @@ void ipq_get_part_details(void)
 			printf("cdp: get part failed for %s\n", entries[i].name);
 			part->offset = 0xBAD0FF5E;
 			part->size = 0xBAD0FF5E;
+		} else {
+			ipq_set_part_entry(smem, entries[i].part, start, size);
 		}
-		ipq_set_part_entry(smem, entries[i].part, start, size);
 	}
 
 	return;

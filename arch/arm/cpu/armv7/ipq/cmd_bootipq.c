@@ -76,6 +76,7 @@ static int set_fs_bootargs(int *fs_on_nand)
 			 * that the Root FS is available in the NAND flash
 			 */
 			bootargs = nand_rootfs;
+			sfi->rootfs.offset = 0;
 			*fs_on_nand = 1;
 		} else {
 			bootargs = nor_rootfs;
