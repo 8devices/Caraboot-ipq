@@ -809,7 +809,7 @@ class Pack(object):
         except ConfigParserError, e:
             error("error getting board info in section '%s'" % board_section, e)
 
-    def main_bconf(self, flash_type, images_dname, out_fname):
+    def main_bconf(self, flash_type, images_dname, out_fname, brdconfig):
         """Start the packing process, using board config.
 
         flash_type -- string, indicates flash type, 'nand' or 'nor' or 'norplusnand'
@@ -828,7 +828,7 @@ class Pack(object):
             pass
 
         try:
-            bconf_fname = os.path.join(images_dname, "boardconfig")
+            bconf_fname = os.path.join(images_dname, brdconfig)
             bconf_fp = open(bconf_fname)
             self.bconf = ConfigParser()
             self.bconf.readfp(bconf_fp)
@@ -932,6 +932,7 @@ class ArgParser(object):
         self.images_dname = None
         self.ipq_nand = False
         self.bconf = False
+	self.bconf_fname = "boardconfig"
         self.part_fname = None
         self.fconf_fname = None
 
@@ -1080,9 +1081,10 @@ class ArgParser(object):
         part_fname = None
         fconf_fname = None
         bconf = False
+	bconf_fname = None
 
         try:
-            opts, args = getopt(argv[1:], "Bib:hp:t:o:c:m:f:")
+            opts, args = getopt(argv[1:], "Bib:hp:t:o:c:m:f:F:")
         except GetoptError, e:
             raise UsageError(e.msg)
 
@@ -1105,6 +1107,8 @@ class ArgParser(object):
                 fconf_fname = value
             elif option == "-B":
                 bconf = True
+            elif option == "-F":
+                bconf_fname = value
 
         if len(args) != 1:
             raise UsageError("insufficient arguments")
@@ -1125,6 +1129,8 @@ class ArgParser(object):
 
         self.ipq_nand = ipq_nand
         self.bconf = bconf
+	if bconf_fname != None:
+		self.bconf_fname = bconf_fname
 
     def usage(self, msg):
         """Print error message and command usage information.
@@ -1169,6 +1175,8 @@ class ArgParser(object):
         print "              default is '%s'." % ArgParser.DEFAULT_TYPE
         print "   -B         specifies board config should be used, for"
         print "              flash parameters."
+        print "   -F         specifies board config file name should be used, for"
+        print "              flash parameters. Defaults to 'boardconfig'"
         print "   -o FILE    specifies the output filename"
         print "              default is IDIR-TYPE.img"
         print "              if the filename is relative, it is relative"
@@ -1192,7 +1200,7 @@ def main():
     pack = Pack()
     if parser.bconf:
         pack.main_bconf(parser.flash_info.type, parser.images_dname,
-                        parser.out_fname)
+                        parser.out_fname, parser.bconf_fname)
     else:
         pack.main(parser.flash_info, parser.images_dname,
                   parser.out_fname, parser.part_fname,
