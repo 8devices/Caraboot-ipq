@@ -251,11 +251,7 @@ typedef struct {
 #define CONFIG_CMD_MTDPARTS
 
 #define CONFIG_RBTREE		/* for ubi */
-#define CONFIG_UBIFS
 #define CONFIG_CMD_UBI
-
-#define CONFIG_LZO		/* for ubi fs */
-#define CONFIG_CMD_UBIFS
 
 #define CONFIG_CMD_RUN
 
