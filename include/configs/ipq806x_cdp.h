@@ -254,6 +254,7 @@ typedef struct {
 #define CONFIG_CMD_UBI
 
 #define CONFIG_CMD_RUN
+#define CONFIG_CMD_BOOTZ
 
 #define CONFIG_IPQ_SNPS_GMAC
 
