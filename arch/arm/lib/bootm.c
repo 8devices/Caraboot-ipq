@@ -34,6 +34,7 @@
 #include <libfdt.h>
 #include <fdt_support.h>
 #include <asm/bootm.h>
+#include <jffs2/load_kernel.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -266,20 +267,57 @@ static int create_fdt(bootm_headers_t *images)
 #ifdef CONFIG_IPQ_ATAG_PART_LIST
 void setup_ipq_partition_tag(struct tag **in_params)
 {
-	extern int rootfs_part_avail;
+	extern int ipq_fs_on_nand, rootfs_part_avail;
+	extern uint32_t ipq_smem_get_flash_block_size(void);
+	extern struct mtd_device *current_mtd_dev;
 
-	if (rootfs_part_avail)
-		return;
+	uint32_t bs = ipq_smem_get_flash_block_size();
+	u32 tag = ipq_fs_on_nand ? ATAG_MSM_PARTITION : ATAG_IPQ_NOR_PARTITION;
+	uint32_t nr_parts = 0;
+	struct tag_msm_ptn *ptn = &params->u.ptn;
 
-	printf("Setting up atags for msm partitions\n");
-	params->hdr.tag = ATAG_MSM_PARTITION;
-	params->hdr.size = tag_size (tag_msm_ptn);
-	strncpy(params->u.ptn.name, IPQ_ROOT_FS_PART_NAME,
-					sizeof(params->u.ptn.name));
-	params->u.ptn.offset = 0;
-	params->u.ptn.size = 0;	/* Implies full device */
-	params->u.ptn.flags = 0;
-	params = tag_next (params);
+	if (!rootfs_part_avail) {
+		printf("Setting up atags for msm partition: "
+				IPQ_ROOT_FS_PART_NAME "\n");
+		strncpy(ptn->name, IPQ_ROOT_FS_PART_NAME, sizeof(ptn->name));
+		ptn->offset = 0;
+		ptn->size = (64 << 20) / bs;
+		ptn->flags = 0;
+		ptn ++;
+		nr_parts ++;
+	}
+
+	run_command("mtd", 0);
+
+	if (current_mtd_dev) {
+		struct list_head *entry;
+		struct part_info *part;
+
+		list_for_each(entry, &current_mtd_dev->parts) {
+			part = list_entry(entry, struct part_info, link);
+
+			if (strcmp(part->name, "fs") == 0)
+				continue;
+
+			printf("Setting up atags for msm partition: %s\n", part->name);
+			strncpy(ptn->name, part->name, sizeof(ptn->name));
+			ptn->offset = part->offset / bs;
+			ptn->size = part->size / bs;
+			ptn->flags = part->mask_flags;
+			ptn ++;
+			nr_parts ++;
+		}
+	} else {
+		printf("info: \"mtdparts\" not set\n");
+	}
+
+	if (nr_parts) {
+		params->hdr.tag = tag;
+		params->hdr.size = ((sizeof(struct tag_header) +
+							(sizeof(struct tag_msm_ptn) * nr_parts)) >> 2);
+		params = tag_next (params);
+	}
+
 }
 #endif /* CONFIG_IPQ_ATAG_PART_LIST */
 

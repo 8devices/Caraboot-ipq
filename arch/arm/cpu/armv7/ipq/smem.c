@@ -314,6 +314,11 @@ void ipq_set_part_entry(ipq_smem_flash_info_t *smem, ipq_part_entry_t *part,
 	part->size = ((loff_t) size) * smem->flash_block_size;
 }
 
+uint32_t ipq_smem_get_flash_block_size(void)
+{
+	return ipq_smem_flash_info.flash_block_size;
+}
+
 int do_smeminfo(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	ipq_smem_flash_info_t *sfi = &ipq_smem_flash_info;

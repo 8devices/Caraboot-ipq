@@ -3,6 +3,7 @@
 
 #define RAM_PARTITION_SDRAM 14
 #define RAM_PARTITION_SYS_MEMORY 1
+#define IPQ_NAND_ROOTFS_SIZE (64 << 20)
 
 enum {
 	SMEM_BOOT_NO_FLASH        = 0,

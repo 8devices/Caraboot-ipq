@@ -12,7 +12,7 @@
 #define img_addr	((void *)CONFIG_SYS_LOAD_ADDR)
 static int debug = 0;
 static ipq_smem_flash_info_t *sfi = &ipq_smem_flash_info;
-int rootfs_part_avail = 1;
+int ipq_fs_on_nand, rootfs_part_avail = 1;
 extern board_ipq806x_params_t *gboard_param;
 
 #ifdef CONFIG_IPQ_LOAD_NSS_FW
@@ -77,6 +77,7 @@ static int set_fs_bootargs(int *fs_on_nand)
 			 */
 			bootargs = nand_rootfs;
 			sfi->rootfs.offset = 0;
+			sfi->rootfs.size = IPQ_NAND_ROOTFS_SIZE;
 			*fs_on_nand = 1;
 		} else {
 			bootargs = nor_rootfs;
@@ -128,7 +129,7 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
 	char bootargs[IH_NMLEN+32];
 	char runcmd[256];
-	int nandid = 0, ret, fs_on_nand;
+	int nandid = 0, ret;
 
 #ifdef CONFIG_IPQ_APPSBL_DLOAD
 	unsigned long * dmagic1 = (unsigned long *) 0x2A03F000;
@@ -163,7 +164,7 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	}
 #endif
 
-	if ((ret = set_fs_bootargs(&fs_on_nand)))
+	if ((ret = set_fs_bootargs(&ipq_fs_on_nand)))
 		return ret;
 
 	/* check the smem info to see which flash used for booting */
@@ -223,26 +224,29 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 		printf("Booting from flash\n");
 	}
 
-	if (fs_on_nand) {
+	if (ipq_fs_on_nand) {
 		/*
 		 * The kernel will be available inside a UBI volume
 		 */
 		snprintf(runcmd, sizeof(runcmd),
 			"set mtdids nand0=nand0 && "
-			"set mtdparts mtdparts=nand0:-@0x%llx(fs) && "
+			"set mtdparts mtdparts=nand0:0x%llx@0x%llx(fs),${msmparts} && "
 			"ubi part fs && "
 			"ubi read 0x%x kernel && "
-			"bootm 0x%x\n", sfi->rootfs.offset,
+			"bootm 0x%x\n", sfi->rootfs.size, sfi->rootfs.offset,
 				CONFIG_SYS_LOAD_ADDR, CONFIG_SYS_LOAD_ADDR);
 	} else {
 		/*
 		 * Kernel is in a separate partition
 		 */
-		snprintf(runcmd, sizeof(runcmd), "set autostart yes;"
+		snprintf(runcmd, sizeof(runcmd),
+			/* NOR is treated as psuedo NAND */
+			"set mtdids nand1=nand1 && "
+			"set mtdparts mtdparts=nand1:${msmparts} && "
+			"set autostart yes;"
 			"nboot 0x%x %d 0x%llx", CONFIG_SYS_LOAD_ADDR,
 				nandid, sfi->hlos.offset);
 	}
-
 	if (debug)
 		printf(runcmd);
 
