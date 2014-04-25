@@ -220,6 +220,9 @@ typedef struct {
 #define CONFIG_CMD_SAVEENV
 #define CONFIG_BOARD_LATE_INIT
 
+#define CONFIG_OF_LIBFDT	1
+#define CONFIG_OF_BOARD_SETUP	1
+
 #if defined(CONFIG_ENV_IS_IN_NAND)
 
 #define CONFIG_ENV_SPI_CS               flash_chip_select

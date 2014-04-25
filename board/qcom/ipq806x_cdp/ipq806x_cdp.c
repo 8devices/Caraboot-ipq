@@ -400,3 +400,22 @@ int board_eth_init(bd_t *bis)
 	status = ipq_gmac_init(gboard_param->gmac_cfg);
 	return status;
 }
+
+
+#ifdef CONFIG_OF_BOARD_SETUP
+/*
+ * For newer kernel that boot with device tree (3.14+), all of memory is
+ * described in the /memory node, including areas that the kernel should not be
+ * touching.
+ *
+ * By default, u-boot will walk the dram bank info and populate the /memory
+ * node; here, overwrite this behavior so we describe all of memory instead.
+ */
+void ft_board_setup(void *blob, bd_t *bd)
+{
+	u64 memory_start = CONFIG_SYS_SDRAM_BASE;
+	u64 memory_size = gboard_param->ddr_size;
+
+	fdt_fixup_memory_banks(blob, &memory_start, &memory_size, 1);
+}
+#endif /* CONFIG_OF_BOARD_SETUP */
