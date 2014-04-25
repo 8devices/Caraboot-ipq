@@ -212,6 +212,8 @@ static void v7_dcache_maint_range(u32 start, u32 stop, u32 range_op)
 {
 	u32 line_len, ccsidr;
 
+	set_csselr(0, ARMV7_CSSELR_IND_DATA_UNIFIED);
+
 	ccsidr = get_ccsidr();
 	line_len = ((ccsidr & CCSIDR_LINE_SIZE_MASK) >>
 			CCSIDR_LINE_SIZE_OFFSET) + 2;

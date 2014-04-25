@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 - 2013 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012 - 2014 The Linux Foundation. All rights reserved.
  */
 
 #include <common.h>
@@ -18,6 +18,10 @@
 
 #define ipq_info	printf
 #define ipq_dbg		printf
+#define DESC_SIZE	(sizeof(ipq_gmac_desc_t))
+#define DESC_FLUSH_SIZE	(((DESC_SIZE + (CONFIG_SYS_CACHELINE_SIZE - 1)) \
+			/ CONFIG_SYS_CACHELINE_SIZE) * \
+			(CONFIG_SYS_CACHELINE_SIZE))
 
 struct ipq_eth_dev *ipq_gmac_macs[IPQ_GMAC_NMACS];
 
@@ -170,31 +174,22 @@ static void ipq_eth_flw_cntl_cfg(struct eth_device *dev)
 	setbits_le32(&mac_reg->flowcontrol, ipq_mac_flw_cntl);
 }
 
-static void __inline__ *
-plat_alloc_consistent_dmaable_memory(size_t size, dma_addr_t *dma_addr)
-{
-	void *buf = memalign(CACHE_LINE_SIZE, size);
-	*dma_addr = (dma_addr_t)(virt_to_phys(buf));
-	return buf;
-}
-
 static int ipq_gmac_alloc_fifo(int ndesc, ipq_gmac_desc_t **fifo)
 {
 	int i;
-	u32 size;
-	uchar *p = NULL;
-	dma_addr_t dma_addr;
-	size = sizeof(ipq_gmac_desc_t) * ndesc;
+	void *addr;
 
-	p  = plat_alloc_consistent_dmaable_memory(size, &dma_addr);
-	if (p  == NULL) {
-		ipq_info("Cant allocate desc  fifos\n");
-		return -1;
+	addr = memalign((CONFIG_SYS_CACHELINE_SIZE),
+			(ndesc * DESC_FLUSH_SIZE));
+
+	for (i = 0; i < ndesc; i++) {
+		fifo[i] = (ipq_gmac_desc_t *)((unsigned long)addr +
+			  (i * DESC_FLUSH_SIZE));
+		if (fifo[i] == NULL) {
+			printf("Can't allocate desc fifos\n");
+			return -1;
+		}
 	}
-
-	for (i = 0; i < ndesc; i++)
-		fifo[i] = (ipq_gmac_desc_t *) p + i;
-
 	return 0;
 }
 
@@ -209,12 +204,19 @@ static int ipq_gmac_rx_desc_setup(struct ipq_eth_dev  *priv)
 		rxdesc->length |= ((ETH_MAX_FRAME_LEN << DescSize1Shift) &
 					DescSize1Mask);
 		rxdesc->buffer1 = virt_to_phys(NetRxPackets[i]);
-		rxdesc->data1 = (u32)NetRxPackets[i];
+		rxdesc->data1 = (unsigned long)priv->desc_rx[(i + 1) %
+				NO_OF_RX_DESC];
+
 		rxdesc->extstatus = 0;
 		rxdesc->reserved1 = 0;
 		rxdesc->timestamplow = 0;
 		rxdesc->timestamphigh = 0;
 		rxdesc->status = DescOwnByDma;
+
+
+		flush_dcache_range((unsigned long)rxdesc,
+			(unsigned long)rxdesc + DESC_SIZE);
+
 	}
 	/* Assign Descriptor base address to dmadesclist addr reg */
 	writel((uint)priv->desc_rx[0], &dma_reg->rxdesclistaddr);
@@ -232,9 +234,19 @@ static int ipq_gmac_tx_rx_desc_ring(struct ipq_eth_dev  *priv)
 
 	for (i = 0; i < NO_OF_TX_DESC; i++) {
 		desc = priv->desc_tx[i];
-		memset(desc, 0, sizeof(ipq_gmac_desc_t));
+		memset(desc, 0, DESC_SIZE);
+
 		desc->status =
 		(i == (NO_OF_TX_DESC - 1)) ? TxDescEndOfRing : 0;
+
+		desc->status |= TxDescChain;
+
+		desc->data1 = (unsigned long)priv->desc_tx[(i + 1) %
+				NO_OF_TX_DESC ];
+
+		flush_dcache_range((unsigned long)desc,
+			(unsigned long)desc + DESC_SIZE);
+
 	}
 
 	if (ipq_gmac_alloc_fifo(NO_OF_RX_DESC, priv->desc_rx))
@@ -242,9 +254,17 @@ static int ipq_gmac_tx_rx_desc_ring(struct ipq_eth_dev  *priv)
 
 	for (i = 0; i < NO_OF_RX_DESC; i++) {
 		desc = priv->desc_rx[i];
-		memset(desc, 0, sizeof(ipq_gmac_desc_t));
+		memset(desc, 0, DESC_SIZE);
 		desc->length =
 		(i == (NO_OF_RX_DESC - 1)) ? RxDescEndOfRing : 0;
+		desc->length |= RxDescChain;
+
+		desc->data1 = (unsigned long)priv->desc_rx[(i + 1) %
+				NO_OF_RX_DESC];
+
+		flush_dcache_range((unsigned long)desc,
+			(unsigned long)desc + DESC_SIZE);
+
 	}
 
 	priv->next_tx = 0;
@@ -314,7 +334,13 @@ static int ipq_eth_send(struct eth_device *dev, void *packet, int length)
 	struct ipq_eth_dev *priv = dev->priv;
 	struct eth_dma_regs *dma_p = (struct eth_dma_regs *)priv->dma_regs_p;
 	ipq_gmac_desc_t *txdesc = priv->desc_tx[priv->next_tx];
-	int i = 0;
+	int i;
+
+
+
+	invalidate_dcache_range((unsigned long)txdesc,
+		       (unsigned long)txdesc + DESC_FLUSH_SIZE);
+
 
 	/* Check if the dma descriptor is still owned by DMA */
 	if (ipq_gmac_owned_by_dma(txdesc)) {
@@ -325,30 +351,48 @@ static int ipq_eth_send(struct eth_device *dev, void *packet, int length)
 	txdesc->length |= ((length <<DescSize1Shift) & DescSize1Mask);
 	txdesc->status |= (DescTxFirst | DescTxLast | DescTxIntEnable);
 	txdesc->buffer1 = virt_to_phys(packet);
-	txdesc->data1 = (u32)packet;
 	ipq_gmac_give_to_dma(txdesc);
+
+
+	flush_dcache_range((unsigned long)txdesc,
+			(unsigned long)txdesc + DESC_SIZE);
+
+	flush_dcache_range((unsigned long)(txdesc->buffer1),
+		(unsigned long)(txdesc->buffer1) + PKTSIZE_ALIGN);
 
 	/* Start the transmission */
 	writel(POLL_DATA, &dma_p->txpolldemand);
 
 	for (i = 0; i < MAX_WAIT; i++) {
+
 		udelay(10);
+
+
+		invalidate_dcache_range((unsigned long)txdesc,
+		(unsigned long)txdesc + DESC_FLUSH_SIZE);
+
 		if (!ipq_gmac_owned_by_dma(txdesc))
 			break;
 	}
+
 	if (i == MAX_WAIT) {
 		ipq_info("Tx Timed out\n");
 	}
 
 	/* reset the descriptors */
-	txdesc->status = (priv->next_tx == (NO_OF_RX_DESC - 1)) ?
+	txdesc->status = (priv->next_tx == (NO_OF_TX_DESC - 1)) ?
 	TxDescEndOfRing : 0;
+	txdesc->status |= TxDescChain;
 	txdesc->length = 0;
 	txdesc->buffer1 = 0;
-	txdesc->data1 = 0;
 
-	if (++priv->next_tx >= NO_OF_TX_DESC)
-		priv->next_tx = 0;
+	priv->next_tx = (priv->next_tx + 1) % NO_OF_TX_DESC;
+
+	txdesc->data1 = (unsigned long)priv->desc_tx[priv->next_tx];
+
+
+	flush_dcache_range((unsigned long)txdesc,
+			(unsigned long)txdesc + DESC_SIZE);
 
 	return 0;
 }
@@ -360,33 +404,51 @@ static int ipq_eth_recv(struct eth_device *dev)
 	int length = 0;
 	ipq_gmac_desc_t *rxdesc = priv->desc_rx[priv->next_rx];
 	uint status;
-	int i;
+
+	invalidate_dcache_range((unsigned long)(priv->desc_rx[0]),
+			(unsigned long)(priv->desc_rx[NO_OF_RX_DESC - 1]) +
+			DESC_FLUSH_SIZE);
 
 	for (rxdesc = priv->desc_rx[priv->next_rx];
 		!ipq_gmac_owned_by_dma(rxdesc);
 		rxdesc = priv->desc_rx[priv->next_rx]) {
 
 		status = rxdesc->status;
-		length = ((status & DescFrameLengthMask) >> DescFrameLengthShift);
-		NetReceive(NetRxPackets[priv->next_rx], length - 4);
-		i = priv->next_rx;
+		length = ((status & DescFrameLengthMask) >>
+				DescFrameLengthShift);
 
-		if (++priv->next_rx >= NO_OF_RX_DESC)
-		priv->next_rx = 0;
+
+		invalidate_dcache_range(
+			(unsigned long)(NetRxPackets[priv->next_rx]),
+			(unsigned long)(NetRxPackets[priv->next_rx]) +
+			PKTSIZE_ALIGN);
+
+		NetReceive(NetRxPackets[priv->next_rx], length - 4);
+
 
 		rxdesc->length = ((ETH_MAX_FRAME_LEN << DescSize1Shift) &
 				   DescSize1Mask);
 
-		rxdesc->length |= (i == (NO_OF_RX_DESC - 1)) ?
+		rxdesc->length |= (priv->next_rx == (NO_OF_RX_DESC - 1)) ?
 					RxDescEndOfRing : 0;
+		rxdesc->length |= RxDescChain;
 
-		rxdesc->buffer1 = virt_to_phys(NetRxPackets[i]) ;
-		rxdesc->data1 = (u32)NetRxPackets[i];
+		rxdesc->buffer1 = virt_to_phys(NetRxPackets[priv->next_rx]);
+
+		priv->next_rx = (priv->next_rx + 1) % NO_OF_RX_DESC;
+
+		rxdesc->data1 = (unsigned long)priv->desc_rx[priv->next_rx];
+
 		rxdesc->extstatus = 0;
 		rxdesc->reserved1 = 0;
 		rxdesc->timestamplow = 0;
 		rxdesc->timestamphigh = 0;
 		rxdesc->status = DescOwnByDma;
+
+
+		flush_dcache_range((unsigned long)rxdesc,
+			(unsigned long)rxdesc + DESC_SIZE);
+
 
 		writel(POLL_DATA, &dma_p->rxpolldemand);
 	}
