@@ -196,6 +196,8 @@ int smem_ptable_init(void)
 int smem_getpart(char *part_name, uint32_t *start, uint32_t *size)
 {
 	unsigned i;
+	ipq_smem_flash_info_t *sfi = &ipq_smem_flash_info;
+	struct smem_ptn *p;
 
 	for (i = 0; i < smem_ptable.len; i++) {
 		if (!strncmp(smem_ptable.parts[i].name, part_name,
@@ -205,8 +207,20 @@ int smem_getpart(char *part_name, uint32_t *start, uint32_t *size)
 	if (i == smem_ptable.len)
 		return -ENOENT;
 
-	*start = smem_ptable.parts[i].start;
-	*size = smem_ptable.parts[i].size;
+	p = &smem_ptable.parts[i];
+
+	*start = p->start;
+
+	if (p->size == (~0u)) {
+		/*
+		 * Partition size is 'till end of device', calculate
+		 * appropriately
+		 */
+		*size = (nand_info[nand_env_device].size /
+				sfi->flash_block_size) - p->start;
+	} else {
+		*size = p->size;
+	}
 
 	return 0;
 }
