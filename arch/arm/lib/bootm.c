@@ -35,6 +35,7 @@
 #include <fdt_support.h>
 #include <asm/bootm.h>
 #include <jffs2/load_kernel.h>
+#include <nand.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -285,7 +286,8 @@ void setup_ipq_partition_tag(struct tag **in_params)
 				IPQ_ROOT_FS_PART_NAME "\n");
 		strncpy(ptn->name, IPQ_ROOT_FS_PART_NAME, sizeof(ptn->name));
 		ptn->offset = 0;
-		ptn->size = (64 << 20) / bs;
+		ptn->size = (64 << 20) /
+			nand_info[CONFIG_IPQ_NAND_NAND_INFO_IDX].erasesize;
 		ptn->flags = 0;
 		ptn ++;
 		nr_parts ++;
