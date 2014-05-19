@@ -42,8 +42,10 @@
 #define BIT(s) (1<<s)
 #define Uart_ns_val  NS(BIT_POS_31,BIT_POS_16,N_VALUE,M_VALUE, 5, 4, 3, 1, 2, 0,3)
 #define Uart_clk_ns_mask  (BM(BIT_POS_31, BIT_POS_16) | BM(BIT_POS_6, BIT_POS_0))
+#define USB_clk_ns_mask  (BM(BIT_POS_23, BIT_POS_16) | BM(BIT_POS_6, BIT_POS_0))
 #define Uart_mnd_en_mask  BIT(8) * !!(625)
 #define Uart_en_mask  BIT(11)
+#define USB_en_mask  BIT(11)
 #define MD16(m, n) (BVAL(BIT_POS_31, BIT_POS_16, m) | BVAL(BIT_POS_15, BIT_POS_0, ~(n)))
 #define Uart_ns_val_rumi  NS(BIT_POS_31, BIT_POS_16, N_VALUE, M_VALUE, 5, 4, 3, 1, 2, 0,0)
 #define GSBIn_UART_APPS_MD_REG(n)           REG(0x29D0+(0x20*((n)-1)))
@@ -53,6 +55,15 @@
 #define BB_PLL8_STATUS_REG                  REG(0x3158)
 #define REG(off)        (MSM_CLK_CTL_BASE + (off))
 #define PLL8_STATUS_BIT                     16
+
+#define USB30_MASTER_CLK_CTL				REG(0x3B24)
+#define USB30_MASTER_1_CLK_CTL				REG(0x3B34)
+#define USB30_MASTER_CLK_MD					REG(0x3B28)
+#define USB30_MASTER_CLK_NS					REG(0x3B2C)
+#define USB30_MOC_UTMI_CLK_MD				REG(0x3B40)
+#define USB30_MOC_UTMI_CLK_NS				REG(0x3B44)
+#define USB30_MOC_UTMI_CLK_CTL				REG(0x3B48)
+#define USB30_MOC_1_UTMI_CLK_CTL			REG(0x3B4C)
 
 #define PLL_LOCK_DET_STATUS_REG             REG(0x03420)
 #define SFAB_AHB_S3_FCLK_CTL_REG            REG(0x0216C)
@@ -79,6 +90,7 @@
 
 #define MN_MODE_DUAL_EDGE 0x2
 #define BIT_POS_31 31
+#define BIT_POS_23 23
 #define BIT_POS_16 16
 #define BIT_POS_6  6
 #define BIT_POS_0  0

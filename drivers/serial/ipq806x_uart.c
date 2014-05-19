@@ -346,9 +346,9 @@ static void uart_dm_init(void)
 
 	/* Configure the uart clock */
         uart_clock_config(gboard_param->uart_gsbi,
-		gboard_param->mnd_value.m_value,
-		gboard_param->mnd_value.n_value,
-		gboard_param->mnd_value.d_value,
+		gboard_param->uart_mnd_value.m_value,
+		gboard_param->uart_mnd_value.n_value,
+		gboard_param->uart_mnd_value.d_value,
 		gboard_param->clk_dummy);
 
 	writel(GSBI_PROTOCOL_CODE_I2C_UART <<

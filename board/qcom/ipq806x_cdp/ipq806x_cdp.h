@@ -21,7 +21,7 @@ typedef struct {
 	unsigned int m_value;
 	unsigned int n_value;
 	unsigned int d_value;
-} uart_clk_mnd_t;
+} clk_mnd_t;
 
 /* SPI Mode */
 
@@ -98,7 +98,9 @@ typedef struct {
 	unsigned int uart_gsbi_base;
 	unsigned int uart_dm_base;
 	unsigned int clk_dummy;
-	uart_clk_mnd_t mnd_value;
+	clk_mnd_t uart_mnd_value;
+	clk_mnd_t usb_core_mnd_value;
+	clk_mnd_t usb_utmi_mnd_value;
 	unsigned int gmac_gpio_count;
 	gpio_func_data_t *gmac_gpio;
 	ipq_gmac_board_cfg_t gmac_cfg[IPQ_GMAC_NMACS];
