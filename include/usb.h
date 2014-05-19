@@ -27,7 +27,7 @@
 #define _USB_H_
 
 #include <usb_defs.h>
-#include <usbdescriptors.h>
+#include <linux/usb/ch9.h>
 
 /*
  * The EHCI spec says that we must align to at least 32 bytes.  However,
@@ -67,12 +67,6 @@ struct devrequest {
 	unsigned short	length;
 } __attribute__ ((packed));
 
-/* All standard descriptors have these 2 fields in common */
-struct usb_descriptor_header {
-	unsigned char	bLength;
-	unsigned char	bDescriptorType;
-} __attribute__ ((packed));
-
 /* Interface */
 struct usb_interface {
 	struct usb_interface_descriptor desc;
@@ -82,11 +76,18 @@ struct usb_interface {
 	unsigned char	act_altsetting;
 
 	struct usb_endpoint_descriptor ep_desc[USB_MAXENDPOINTS];
+	/*
+	 * Super Speed Device will have Super Speed Endpoint
+	 * Companion Descriptor  (section 9.6.7 of usb 3.0 spec)
+	 * Revision 1.0 June 6th 2011
+	 */
+	struct usb_ss_ep_comp_descriptor ss_ep_comp_desc[USB_MAXENDPOINTS];
+
 } __attribute__ ((packed));
 
 /* Configuration information.. */
 struct usb_config {
-	struct usb_configuration_descriptor desc;
+	struct usb_config_descriptor desc;
 
 	unsigned char	no_of_if;	/* number of interfaces */
 	struct usb_interface if_desc[USB_MAXINTERFACES];
@@ -140,7 +141,21 @@ struct usb_device {
 	int portnr;
 	struct usb_device *parent;
 	struct usb_device *children[USB_MAXCHILDREN];
+
+	void *controller;       /* hardware controller private data */
+	unsigned int slot_id;
 };
+
+/*
+ * You can initialize platform's USB host or device
+ * ports by passing this enum as an argument to
+ * board_usb_init().
+ */
+enum usb_init_type {
+	USB_INIT_HOST,
+	USB_INIT_DEVICE
+};
+
 
 /**********************************************************************
  * this is how the lowlevel part communicate with the outer world
@@ -151,10 +166,11 @@ struct usb_device {
 	defined(CONFIG_USB_SL811HS) || defined(CONFIG_USB_ISP116X_HCD) || \
 	defined(CONFIG_USB_R8A66597_HCD) || defined(CONFIG_USB_DAVINCI) || \
 	defined(CONFIG_USB_OMAP3) || defined(CONFIG_USB_DA8XX) || \
-	defined(CONFIG_USB_BLACKFIN) || defined(CONFIG_USB_AM35X)
+	defined(CONFIG_USB_BLACKFIN) || defined(CONFIG_USB_AM35X) || \
+	defined(CONFIG_USB_XHCI)
 
-int usb_lowlevel_init(void);
-int usb_lowlevel_stop(void);
+int usb_lowlevel_init(int index, enum usb_init_type init, void **controller);
+int usb_lowlevel_stop(int index);
 int submit_bulk_msg(struct usb_device *dev, unsigned long pipe,
 			void *buffer, int transfer_len);
 int submit_control_msg(struct usb_device *dev, unsigned long pipe, void *buffer,
@@ -283,7 +299,7 @@ int usb_set_interface(struct usb_device *dev, int interface, int alternate);
 /* Create various pipes... */
 #define create_pipe(dev,endpoint) \
 		(((dev)->devnum << 8) | ((endpoint) << 15) | \
-		((dev)->speed << 26) | (dev)->maxpacketsize)
+		(dev)->maxpacketsize)
 #define default_pipe(dev) ((dev)->speed << 26)
 
 #define usb_sndctrlpipe(dev, endpoint)	((PIPE_CONTROL << 30) | \
@@ -334,14 +350,16 @@ int usb_set_interface(struct usb_device *dev, int interface, int alternate);
 #define usb_pipe_endpdev(pipe)	(((pipe) >> 8) & 0x7ff)
 #define usb_pipeendpoint(pipe)	(((pipe) >> 15) & 0xf)
 #define usb_pipedata(pipe)	(((pipe) >> 19) & 1)
-#define usb_pipespeed(pipe)	(((pipe) >> 26) & 3)
-#define usb_pipeslow(pipe)	(usb_pipespeed(pipe) == USB_SPEED_LOW)
 #define usb_pipetype(pipe)	(((pipe) >> 30) & 3)
 #define usb_pipeisoc(pipe)	(usb_pipetype((pipe)) == PIPE_ISOCHRONOUS)
 #define usb_pipeint(pipe)	(usb_pipetype((pipe)) == PIPE_INTERRUPT)
 #define usb_pipecontrol(pipe)	(usb_pipetype((pipe)) == PIPE_CONTROL)
 #define usb_pipebulk(pipe)	(usb_pipetype((pipe)) == PIPE_BULK)
 
+#define usb_pipe_ep_index(pipe)	\
+		usb_pipecontrol(pipe) ? (usb_pipeendpoint(pipe) * 2) : \
+				((usb_pipeendpoint(pipe) * 2) - \
+				 (usb_pipein(pipe) ? 0 : 1))
 
 /*************************************************************************
  * Hub Stuff
@@ -382,7 +400,9 @@ void usb_hub_reset(void);
 int hub_port_reset(struct usb_device *dev, int port,
 			  unsigned short *portstat);
 
-struct usb_device *usb_alloc_new_device(void);
+struct usb_device *usb_alloc_new_device(void *controller);
 int usb_new_device(struct usb_device *dev);
+void usb_free_device(void);
+int usb_alloc_device(struct usb_device *dev);
 
 #endif /*_USB_H_ */
