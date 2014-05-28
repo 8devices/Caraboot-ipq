@@ -1,10 +1,8 @@
 /*
- * Copyright (c) 2012 - 2013 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2009-2014 The Linux Foundation. All rights reserved.
  *
  * Copyright (c) 2008, Google Inc.
  * All rights reserved.
- *
- * Copyright (c) 2009-2012, Code Aurora Forum. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -83,6 +81,7 @@
 #define UART_GSBI2_BASE		0x12480000
 #define UART4_DM_BASE         	0x16340000
 #define UART_GSBI4_BASE       	0x16300000
+#define I2C_GSBI4_BASE       	UART_GSBI4_BASE
 
 #define UART2_DM_BASE           0x12490000
 #define UART_GSBI2_BASE         0x12480000

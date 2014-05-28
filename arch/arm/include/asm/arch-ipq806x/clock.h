@@ -43,13 +43,17 @@
 #define Uart_ns_val  NS(BIT_POS_31,BIT_POS_16,N_VALUE,M_VALUE, 5, 4, 3, 1, 2, 0,3)
 #define Uart_clk_ns_mask  (BM(BIT_POS_31, BIT_POS_16) | BM(BIT_POS_6, BIT_POS_0))
 #define USB_clk_ns_mask  (BM(BIT_POS_23, BIT_POS_16) | BM(BIT_POS_6, BIT_POS_0))
+#define I2C_clk_ns_mask  (BM(BIT_POS_23, BIT_POS_16) | BM(BIT_POS_6, BIT_POS_0))
 #define Uart_mnd_en_mask  BIT(8) * !!(625)
 #define Uart_en_mask  BIT(11)
 #define USB_en_mask  BIT(11)
+#define I2C_en_mask  BIT(11)
 #define MD16(m, n) (BVAL(BIT_POS_31, BIT_POS_16, m) | BVAL(BIT_POS_15, BIT_POS_0, ~(n)))
 #define Uart_ns_val_rumi  NS(BIT_POS_31, BIT_POS_16, N_VALUE, M_VALUE, 5, 4, 3, 1, 2, 0,0)
 #define GSBIn_UART_APPS_MD_REG(n)           REG(0x29D0+(0x20*((n)-1)))
+#define GSBIn_QUP_APPS_MD_REG(n)            REG(0x29C8+(0x20*((n)-1)))
 #define GSBIn_UART_APPS_NS_REG(n)           REG(0x29D4+(0x20*((n)-1)))
+#define GSBIn_QUP_APPS_NS_REG(n)            REG(0x29CC+(0x20*((n)-1)))
 #define GSBIn_HCLK_CTL_REG(n)               REG(0x29C0+(0x20*((n)-1)))
 #define BB_PLL_ENA_SC0_REG                  REG(0x34C0)
 #define BB_PLL8_STATUS_REG                  REG(0x3158)
@@ -191,6 +195,8 @@
 
 void uart_pll_vote_clk_enable(unsigned int);
 void uart_clock_config(unsigned int gsbi_port, unsigned int m, unsigned int n,
+		unsigned int d, unsigned int clk_dummy);
+void i2c_clock_config(unsigned int gsbi_port, unsigned int m, unsigned int n,
 		unsigned int d, unsigned int clk_dummy);
 void nand_clock_config(void);
 
