@@ -108,13 +108,29 @@ static const struct macronix_spi_flash_params macronix_spi_flash_table[] = {
 		.name = "MX25L12855E",
 	},
 	{
+		.idcode = 0x2536,
+		.page_size = 256,
+		.pages_per_sector = 16,
+		.sectors_per_block = 16,
+		.nr_blocks = 64,
+		.name = "MX25U3235F",
+	},
+	{
+		.idcode = 0x2537,
+		.page_size = 256,
+		.pages_per_sector = 16,
+		.sectors_per_block = 16,
+		.nr_blocks = 128,
+		.name = "MX25U6435F",
+	},
+	{
 		.idcode = 0x2539,
 		.page_size = 256,
 		.pages_per_sector = 16,
 		.sectors_per_block = 16,
 		.nr_blocks = 512,
 		.name = "MX25U25635F",
-	},
+	}
 };
 
 static int macronix_write_status(struct spi_flash *flash, u8 sr)
@@ -163,7 +179,7 @@ static int macronix_erase(struct spi_flash *flash, u32 offset, size_t len)
 	if (flash->addr_width == 4)
 		erase_opcode = CMD_MX25XX_4BE;
 	else
-		erase_opcode = CMD_MX25XX_SE;
+		erase_opcode = CMD_MX25XX_BE;
 
 	return spi_flash_cmd_erase(flash, erase_opcode, offset, len);
 }
