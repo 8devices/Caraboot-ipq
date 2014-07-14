@@ -254,7 +254,8 @@ void board_nand_init(void)
 	struct ebi2cr_regs *ebi2_regs;
 	extern int ipq_spi_init(void);
 
-	if (gboard_param->flashdesc != NOR_MMC) {
+	if ((gboard_param->flashdesc == ONLY_NAND) ||
+	    (gboard_param->flashdesc == NAND_NOR)) {
 
 		ebi2_regs = (struct ebi2cr_regs *) EBI2CR_BASE;
 
@@ -391,6 +392,11 @@ void ipq_configure_gpio(gpio_func_data_t *gpio, uint count)
 int board_eth_init(bd_t *bis)
 {
 	int status;
+
+	if (gboard_param->machid == MACH_TYPE_IPQ806X_STORM) {
+		printf("Skipping %s for storm\n", __func__);
+		return -ENODEV;
+	}
 
 	ipq_gmac_common_init(gboard_param->gmac_cfg);
 
