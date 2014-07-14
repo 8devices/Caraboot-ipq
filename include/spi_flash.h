@@ -27,6 +27,8 @@
 #include <linux/types.h>
 #include <linux/compiler.h>
 
+#define ENOTSUPP	524	/* Operation is not supported */
+
 struct spi_flash {
 	struct spi_slave *spi;
 
@@ -45,12 +47,15 @@ struct spi_flash {
 
 	u8		write_opcode;
 
+	u16		berase_timeout;	/* Bulk erase timeout */
+
 	int		(*read)(struct spi_flash *flash, u32 offset,
 				size_t len, void *buf);
 	int		(*write)(struct spi_flash *flash, u32 offset,
 				size_t len, const void *buf);
 	int		(*erase)(struct spi_flash *flash, u32 offset,
 				size_t len);
+	int		(*berase)(struct spi_flash *flash); /* Bulk Erase */
 };
 
 struct spi_flash *spi_flash_probe(unsigned int bus, unsigned int cs,
@@ -73,6 +78,14 @@ static inline int spi_flash_erase(struct spi_flash *flash, u32 offset,
 		size_t len)
 {
 	return flash->erase(flash, offset, len);
+}
+
+static inline int spi_flash_berase(struct spi_flash *flash)
+{
+	if (!flash->berase)
+		return -ENOTSUPP;
+
+	return flash->berase(flash);
 }
 
 void spi_boot(void) __noreturn;
