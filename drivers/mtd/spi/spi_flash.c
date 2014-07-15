@@ -256,6 +256,30 @@ int spi_flash_cmd_erase(struct spi_flash *flash, u8 erase_cmd,
 	return ret;
 }
 
+int spi_flash_cmd_berase(struct spi_flash *flash, u8 erase_cmd)
+{
+	int ret;
+
+	ret = spi_claim_bus(flash->spi);
+	if (ret) {
+		debug("SF: Unable to claim SPI bus\n");
+		return ret;
+	}
+
+	ret = spi_flash_cmd_write_enable(flash);
+	if (ret)
+		goto out;
+
+	ret = spi_flash_cmd_write(flash->spi, &erase_cmd, 1, NULL, 0);
+	if (ret)
+		goto out;
+
+	ret = spi_flash_cmd_wait_ready(flash, SPI_FLASH_BERASE_TIMEOUT(flash));
+out:
+	spi_release_bus(flash->spi);
+	return ret;
+}
+
 /*
  * The following table holds all device probe functions
  *
