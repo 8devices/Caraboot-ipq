@@ -112,6 +112,20 @@ static const struct stmicro_spi_flash_params stmicro_spi_flash_table[] = {
 		.name = "M25PE16",
 	},
 	{
+		.id = 0xbb16,
+		.page_size = 256,
+		.pages_per_sector = 256,
+		.nr_sectors = 64,
+		.name = "N25Q032A",
+	},
+	{
+		.id = 0xbb17,
+		.page_size = 256,
+		.pages_per_sector = 256,
+		.nr_sectors = 128,
+		.name = "N25Q064A",
+	},
+	{
 		.id = 0xbb18,
 		.page_size = 256,
 		.pages_per_sector = 256,
