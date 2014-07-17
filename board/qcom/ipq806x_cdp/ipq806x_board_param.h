@@ -331,7 +331,7 @@ board_ipq806x_params_t board_params[] = {
 			gmac_board_cfg(3, 1, SGMII, 0, 0, 1,
 					1, 7),
 		},
-		.flashdesc = NOR_MMC,
+		.flashdesc = NAND_NOR,
 		.flash_param = {
 			.mode =	NOR_SPI_MODE_0,
 			.bus_number = GSBI_BUS_5,
