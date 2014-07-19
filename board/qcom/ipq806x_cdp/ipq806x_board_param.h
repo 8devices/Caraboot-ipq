@@ -317,6 +317,81 @@ clk_offset_t pcie_2_clk	= {
 #define PCIE20_AXI_MSTR_RESP_COMP_CTRL1 0x81c
 #endif /* CONFIG_IPQ806X_PCI*/
 
+#ifdef CONFIG_IPQ_MMC
+gpio_func_data_t emmc1_gpio[] = {
+	{
+		.gpio = 38,
+		.func = 2,
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_10MA,
+		.enable = GPIO_ENABLE
+	},
+	{
+		.gpio = 39,
+		.func = 2,
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_10MA,
+		.enable = GPIO_ENABLE
+	},
+	{
+		.gpio = 40,
+		.func = 2,
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_10MA,
+		.enable = GPIO_ENABLE
+	},
+	{
+		.gpio = 41,
+		.func = 2,
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_10MA,
+		.enable = GPIO_ENABLE
+	},
+	{
+		.gpio = 42,
+		.func = 2,
+		.pull = GPIO_NO_PULL,
+		.drvstr = GPIO_16MA,
+		.enable = GPIO_ENABLE
+	},
+	{
+		.gpio = 43,
+		.func = 2,
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_10MA,
+		.enable = GPIO_ENABLE
+	},
+	{
+		.gpio = 44,
+		.func = 2,
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_10MA,
+		.enable = GPIO_ENABLE
+	},
+	{
+		.gpio = 45,
+		.func = 2,
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_10MA,
+		.enable = GPIO_ENABLE
+	},
+	{
+		.gpio = 46,
+		.func = 2,
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_10MA,
+		.enable = GPIO_ENABLE
+	},
+	{
+		.gpio = 47,
+		.func = 2,
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_10MA,
+		.enable = GPIO_ENABLE
+	},
+};
+#endif
+
 #define gmac_board_cfg(_b, _sec, _p, _p0, _p1, _mp, _pn, ...)	\
 {									\
 	.base			= NSS_GMAC##_b##_BASE,			\
@@ -1081,8 +1156,13 @@ board_ipq806x_params_t board_params[] = {
 			pcie_board_cfg(0),
 			pcie_board_cfg(1),
 			pcie_board_cfg(2),
-		}
+		},
 #endif /* CONFIG_IPQ806X_PCI */
+
+#ifdef CONFIG_IPQ_MMC
+		.emmc_gpio = emmc1_gpio,
+		.emmc_gpio_count = ARRAY_SIZE(emmc1_gpio),
+#endif
 	},
 	{
 		.machid = MACH_TYPE_IPQ806X_STORM,

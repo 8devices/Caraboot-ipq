@@ -364,6 +364,10 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	if (debug)
 		printf(runcmd);
 
+#ifdef CONFIG_IPQ_MMC
+	board_mmc_deinit();
+#endif
+
 	if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
 		return CMD_RET_FAILURE;
 

@@ -52,6 +52,9 @@ DECLARE_GLOBAL_DATA_PTR;
 loff_t board_env_offset;
 loff_t board_env_range;
 extern int nand_env_device;
+#ifdef CONFIG_IPQ_MMC
+ipq_mmc mmc_host;
+#endif
 
 /*
  * Don't have this as a '.bss' variable. The '.bss' and '.rel.dyn'
@@ -425,6 +428,37 @@ int board_eth_init(bd_t *bis)
 	return status;
 }
 
+#ifdef CONFIG_IPQ_MMC
+int board_mmc_init(bd_t *bis)
+{
+	gpio_func_data_t *gpio = gboard_param->emmc_gpio;
+
+	if (gpio) {
+		mmc_host.base = MSM_SDC1_BASE;
+		ipq_configure_gpio(gboard_param->emmc_gpio,
+				gboard_param->emmc_gpio_count);
+		mmc_host.clk_mode = MMC_IDENTIFY_MODE;
+		emmc_clock_config(mmc_host.clk_mode);
+
+		ipq_mmc_init(bis, &mmc_host);
+	}
+	return 0;
+}
+
+void board_mmc_deinit(void)
+{
+	int i;
+	gpio_func_data_t *gpio = gboard_param->emmc_gpio;
+
+	if (gpio) {
+		for (i = 0; i < gboard_param->emmc_gpio_count; i++) {
+			gpio_tlmm_config(gpio->gpio, 0, 0, 0, 0, 0);
+			gpio++;
+		}
+		emmc_clock_disable();
+	}
+}
+#endif
 
 #ifdef CONFIG_OF_BOARD_SETUP
 /*

@@ -455,3 +455,133 @@ void pcie_clock_config(clk_offset_t *pci_clk)
 	writel(0x10, pci_clk->aux_clk_ctl);
 }
 #endif /* CONFIG_IPQ806X_PCI */
+
+#ifdef CONFIG_IPQ_MMC
+void emmc_pll_vote_clk_enable(unsigned int clk_dummy)
+{
+	setbits_le32(BB_PLL_ENA_SC0_REG, BIT(8));
+
+	if (!clk_dummy)
+		while((readl(PLL_LOCK_DET_STATUS_REG) & BIT(8)) == 0);
+}
+
+static void emmc_set_rate_mnd( unsigned int m, unsigned int n)
+{
+	/* Assert MND reset. */
+	setbits_le32(SDC1_APPS_CLK_NS, BIT(7));
+	/* Program M and D values. */
+	writel(MD8(16, m, 0, n), SDC1_APPS_CLK_MD);
+	/* Deassert MND reset. */
+	clrbits_le32(SDC1_APPS_CLK_NS, BIT(7));
+}
+
+static void emmc_set_iface_clk(void)
+{
+	setbits_le32(SDC1_HCLK_CTL, BIT(4));
+}
+
+static void emmc_local_clock_enable(unsigned int m, unsigned int n,
+			unsigned int d, unsigned int mux, unsigned int pll)
+{
+	unsigned int reg_val, emmc_ns_val;
+	void *const reg = (void *)SDC1_APPS_CLK_NS;
+
+	/*
+	 * Program the NS register, if applicable. NS registers are not
+	 * set in the set_rate path because power can be saved by deferring
+	 * the selection of a clocked source until the clock is enabled.
+	 */
+	reg_val = readl(reg);
+	reg_val &= ~(emmc_clk_ns_mask);
+	emmc_ns_val = NS(23, 16, n, m, 5, 4, 3, d, 2, 0, mux);
+	reg_val |= (emmc_ns_val & emmc_clk_ns_mask);
+	writel(reg_val,reg);
+
+
+	reg_val = readl(reg);
+	reg_val |= pll;
+	writel(reg_val, reg);
+
+	/* Enable MNCNTR_EN */
+	reg_val = readl(reg);
+	reg_val |= BIT(8);
+	writel(reg_val, reg);
+
+	/* Enable root. */
+	reg_val = readl(reg);
+	reg_val |= emmc_en_mask;
+	writel(reg_val, reg);
+
+	/* Enable branch*/
+	reg_val = readl(reg);
+	reg_val |= BIT(9);
+	writel(reg_val, reg);
+}
+
+void emmc_clock_disable(void)
+{
+	unsigned int reg_val, emmc_ns_val;
+	void *const reg = (void *)SDC1_APPS_CLK_NS;
+	emmc_ns_val = NS(23, 16, 240, 1, 5, 4, 3, 4, 2, 0, 3);
+
+	/* Assert MND reset. */
+	setbits_le32(SDC1_APPS_CLK_NS, BIT(7));
+	/* Program M and D values. */
+	writel(0, SDC1_APPS_CLK_MD);
+	/* Deassert MND reset. */
+	clrbits_le32(SDC1_APPS_CLK_NS, BIT(7));
+
+	/* Disable branch*/
+	reg_val = readl(reg);
+	reg_val &= ~BIT(9);
+	writel(reg_val, reg);
+
+	/* Disable root. */
+	reg_val = readl(reg);
+	reg_val &= ~emmc_en_mask;
+	writel(reg_val, reg);
+
+	/* Disable MNCNTR_EN */
+	reg_val = readl(reg);
+	reg_val &= ~BIT(8);
+	writel(reg_val, reg);
+
+	reg_val = readl(reg);
+	reg_val &= ~(emmc_clk_ns_mask);
+	reg_val |= emmc_ns_val & emmc_clk_ns_mask;
+	writel(reg_val, reg);
+}
+
+void emmc_clock_reset(void)
+{
+	/*APPS CLK Assert*/
+	writel(0x1, SDC1_RESET);
+	/*APPS CLK Dessert*/
+	writel(0x0, SDC1_RESET);
+}
+
+void emmc_clock_config(int mode)
+{
+	emmc_clock_disable();
+	udelay(10);
+
+	emmc_set_iface_clk();
+
+	if (mode == MMC_IDENTIFY_MODE) {
+		/*400 KHz pll8*/
+		emmc_set_rate_mnd(1, 240);
+		emmc_pll_vote_clk_enable(0);
+		emmc_local_clock_enable(1, 240, 4, 3, 3);
+		emmc_clock_reset();
+		udelay(10);
+	}
+	if (mode == MMC_DATA_TRANSFER_MODE) {
+		/*52 MHz pll8 */
+		emmc_set_rate_mnd(13, 32);
+		emmc_pll_vote_clk_enable(0);
+		emmc_local_clock_enable(13, 32, 3, 3, 3);
+		emmc_clock_reset();
+		udelay(10);
+	}
+}
+#endif

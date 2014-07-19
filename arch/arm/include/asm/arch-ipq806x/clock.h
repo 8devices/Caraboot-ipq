@@ -234,6 +234,18 @@ void pcie_clock_config(clk_offset_t *);
 void pcie_clock_shutdown(clk_offset_t *);
 #endif /*  CONFIG_IPQ806X_PCI */
 
+#ifdef CONFIG_IPQ_MMC
+#define SDC1_HCLK_CTL                           REG(0x2820)
+#define SDC1_APPS_CLK_MD                        REG(0x2828)
+#define SDC1_APPS_CLK_NS                        REG(0x282C)
+#define SDC1_RESET                              REG(0x2830)
+#define emmc_clk_ns_mask (BM(BIT_POS_23, BIT_POS_16) | BM(BIT_POS_6, BIT_POS_0))
+#define emmc_en_mask  BIT(11)
+#define MMC_IDENTIFY_MODE	0
+#define MMC_DATA_TRANSFER_MODE	1
+
+#endif
+
 /* Uart specific clock settings */
 
 void uart_pll_vote_clk_enable(unsigned int);
@@ -243,4 +255,8 @@ void i2c_clock_config(unsigned int gsbi_port, unsigned int m, unsigned int n,
 		unsigned int d, unsigned int clk_dummy);
 void nand_clock_config(void);
 
+#ifdef CONFIG_IPQ_MMC
+void emmc_clock_config(int mode);
+void emmc_clock_disable(void);
+#endif
 #endif  /*  __PLATFORM_IPQ860X_CLOCK_H_ */
