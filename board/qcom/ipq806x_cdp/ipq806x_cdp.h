@@ -59,6 +59,7 @@ typedef enum {
 } flash_desc;
 
 #define NO_OF_DBG_UART_GPIOS	2
+#define NO_OF_I2C_GPIOS     	2
 
 #define SPI_NOR_FLASH_VENDOR_MICRON       0x1
 #define SPI_NOR_FLASH_VENDOR_SPANSION     0x2
@@ -107,6 +108,12 @@ typedef struct {
 	flash_desc flashdesc;
 	spinorflash_params_t flash_param;
 	gpio_func_data_t dbg_uart_gpio[NO_OF_DBG_UART_GPIOS];
+#ifdef CONFIG_IPQ806X_I2C
+	unsigned int i2c_gsbi;
+	unsigned int i2c_gsbi_base;
+	clk_mnd_t i2c_mnd_value;
+	gpio_func_data_t i2c_gpio[NO_OF_I2C_GPIOS];
+#endif
 } __attribute__ ((__packed__)) board_ipq806x_params_t;
 
 extern board_ipq806x_params_t *gboard_param;

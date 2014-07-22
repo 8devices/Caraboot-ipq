@@ -87,6 +87,16 @@
 #define CONFIG_MAX_RAM_BANK_SIZE        CONFIG_SYS_SDRAM_SIZE
 #define CONFIG_SYS_LOAD_ADDR            (CONFIG_SYS_SDRAM_BASE + (64 << 20))
 
+/*
+ * I2C Configs
+ */
+#define CONFIG_IPQ806X_I2C		1
+
+#ifdef CONFIG_IPQ806X_I2C
+#define CONFIG_CMD_I2C
+#define CONFIG_SYS_I2C_SPEED		0
+#endif
+
 #ifndef __ASSEMBLY__
 #include <compiler.h>
 #include "../../board/qcom/ipq806x_cdp/ipq806x_cdp.h"
@@ -171,6 +181,7 @@ typedef struct {
 #define CONFIG_SYS_HUSH_PARSER
 #define CONFIG_SYS_NULLDEV
 #define CONFIG_CMD_XIMG
+
 
 /*
  * SPI Flash Configs

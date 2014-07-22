@@ -214,6 +214,29 @@ board_ipq806x_params_t board_params[] = {
 				.enable = GPIO_DISABLE
 			},
 		},
+#ifdef CONFIG_IPQ806X_I2C
+		.i2c_gsbi = GSBI_4,
+		.i2c_gsbi_base = I2C_GSBI4_BASE,
+		.i2c_mnd_value = { 1, 4, 2 },
+		.i2c_gpio = {
+			{
+				.gpio = 13,
+				.func = 1,
+				.dir = GPIO_OUTPUT,
+				.pull = GPIO_NO_PULL,
+				.drvstr = GPIO_12MA,
+				.enable = GPIO_DISABLE
+			},
+			{
+				.gpio = 12,
+				.func = 1,
+				.dir = GPIO_INPUT,
+				.pull = GPIO_NO_PULL,
+				.drvstr = GPIO_12MA,
+				.enable = GPIO_DISABLE
+			},
+		},
+#endif
 		.clk_dummy = 1,
 	},
 	{
@@ -261,7 +284,30 @@ board_ipq806x_params_t board_params[] = {
 				.drvstr = GPIO_12MA,
 				.enable = GPIO_DISABLE
 			},
+		},
+#ifdef CONFIG_IPQ806X_I2C
+		.i2c_gsbi = GSBI_4,
+		.i2c_gsbi_base = I2C_GSBI4_BASE,
+		.i2c_mnd_value = { 1, 4, 2 },
+		.i2c_gpio = {
+			{
+				.gpio = 13,
+				.func = 1,
+				.dir = GPIO_OUTPUT,
+				.pull = GPIO_NO_PULL,
+				.drvstr = GPIO_12MA,
+				.enable = GPIO_DISABLE
+			},
+			{
+				.gpio = 12,
+				.func = 1,
+				.dir = GPIO_INPUT,
+				.pull = GPIO_NO_PULL,
+				.drvstr = GPIO_12MA,
+				.enable = GPIO_DISABLE
+			},
 		}
+#endif
 	},
 	{
 		.machid = MACH_TYPE_IPQ806X_DB149_1XX,
@@ -308,7 +354,30 @@ board_ipq806x_params_t board_params[] = {
 				.drvstr = GPIO_12MA,
 				.enable = GPIO_DISABLE
 			},
+		},
+#ifdef CONFIG_IPQ806X_I2C
+		.i2c_gsbi = GSBI_4,
+		.i2c_gsbi_base = I2C_GSBI4_BASE,
+		.i2c_mnd_value = { 1, 4, 2 },
+		.i2c_gpio = {
+			{
+				.gpio = 13,
+				.func = 1,
+				.dir = GPIO_OUTPUT,
+				.pull = GPIO_NO_PULL,
+				.drvstr = GPIO_12MA,
+				.enable = GPIO_DISABLE
+			},
+			{
+				.gpio = 12,
+				.func = 1,
+				.dir = GPIO_INPUT,
+				.pull = GPIO_NO_PULL,
+				.drvstr = GPIO_12MA,
+				.enable = GPIO_DISABLE
+			},
 		}
+#endif
 	},
 	{
 		.machid = MACH_TYPE_IPQ806X_DB149_2XX,
@@ -355,7 +424,30 @@ board_ipq806x_params_t board_params[] = {
 				.drvstr = GPIO_12MA,
 				.enable = GPIO_DISABLE
 			},
+		},
+#ifdef CONFIG_IPQ806X_I2C
+		.i2c_gsbi = GSBI_4,
+		.i2c_gsbi_base = I2C_GSBI4_BASE,
+		.i2c_mnd_value = { 1, 4, 2 },
+		.i2c_gpio = {
+			{
+				.gpio = 13,
+				.func = 1,
+				.dir = GPIO_OUTPUT,
+				.pull = GPIO_NO_PULL,
+				.drvstr = GPIO_12MA,
+				.enable = GPIO_DISABLE
+			},
+			{
+				.gpio = 12,
+				.func = 1,
+				.dir = GPIO_INPUT,
+				.pull = GPIO_NO_PULL,
+				.drvstr = GPIO_12MA,
+				.enable = GPIO_DISABLE
+			},
 		}
+#endif
 	},
 	{
 		.machid = MACH_TYPE_IPQ806X_TB726,
@@ -407,8 +499,30 @@ board_ipq806x_params_t board_params[] = {
 				.drvstr = GPIO_12MA,
 				.enable = GPIO_DISABLE
 			},
+		},
+#ifdef CONFIG_IPQ806X_I2C
+		.i2c_gsbi = GSBI_4,
+		.i2c_gsbi_base = I2C_GSBI4_BASE,
+		.i2c_mnd_value = { 1, 4, 2 },
+		.i2c_gpio = {
+			{
+				.gpio = 13,
+				.func = 1,
+				.dir = GPIO_OUTPUT,
+				.pull = GPIO_NO_PULL,
+				.drvstr = GPIO_12MA,
+				.enable = GPIO_DISABLE
+			},
+			{
+				.gpio = 12,
+				.func = 1,
+				.dir = GPIO_INPUT,
+				.pull = GPIO_NO_PULL,
+				.drvstr = GPIO_12MA,
+				.enable = GPIO_DISABLE
+			},
 		}
-
+#endif
 	},
 	{
 		.machid = MACH_TYPE_IPQ806X_DB147,
@@ -453,8 +567,30 @@ board_ipq806x_params_t board_params[] = {
 				.drvstr = GPIO_12MA,
 				.enable = GPIO_DISABLE
 			},
+		},
+#ifdef CONFIG_IPQ806X_I2C
+		.i2c_gsbi = GSBI_4,
+		.i2c_gsbi_base = I2C_GSBI4_BASE,
+		.i2c_mnd_value = { 1, 4, 2 },
+		.i2c_gpio = {
+			{
+				.gpio = 13,
+				.func = 1,
+				.dir = GPIO_OUTPUT,
+				.pull = GPIO_NO_PULL,
+				.drvstr = GPIO_12MA,
+				.enable = GPIO_DISABLE
+			},
+			{
+				.gpio = 12,
+				.func = 1,
+				.dir = GPIO_INPUT,
+				.pull = GPIO_NO_PULL,
+				.drvstr = GPIO_12MA,
+				.enable = GPIO_DISABLE
+			},
 		}
-
+#endif
 	},
 	{
 		.machid = MACH_TYPE_IPQ806X_AP148,
@@ -499,8 +635,30 @@ board_ipq806x_params_t board_params[] = {
 				.drvstr = GPIO_12MA,
 				.enable = GPIO_DISABLE
 			},
+		},
+#ifdef CONFIG_IPQ806X_I2C
+		.i2c_gsbi = GSBI_4,
+		.i2c_gsbi_base = I2C_GSBI4_BASE,
+		.i2c_mnd_value = { 1, 4, 2 },
+		.i2c_gpio = {
+			{
+				.gpio = 13,
+				.func = 1,
+				.dir = GPIO_OUTPUT,
+				.pull = GPIO_NO_PULL,
+				.drvstr = GPIO_12MA,
+				.enable = GPIO_DISABLE
+			},
+			{
+				.gpio = 12,
+				.func = 1,
+				.dir = GPIO_INPUT,
+				.pull = GPIO_NO_PULL,
+				.drvstr = GPIO_12MA,
+				.enable = GPIO_DISABLE
+			},
 		}
-
+#endif
 	},
 	{
 		.machid = MACH_TYPE_IPQ806X_AP148_1XX,
@@ -545,8 +703,30 @@ board_ipq806x_params_t board_params[] = {
 				.drvstr = GPIO_12MA,
 				.enable = GPIO_DISABLE
 			},
+		},
+#ifdef CONFIG_IPQ806X_I2C
+		.i2c_gsbi = GSBI_4,
+		.i2c_gsbi_base = I2C_GSBI4_BASE,
+		.i2c_mnd_value = { 1, 4, 2 },
+		.i2c_gpio = {
+			{
+				.gpio = 13,
+				.func = 1,
+				.dir = GPIO_OUTPUT,
+				.pull = GPIO_NO_PULL,
+				.drvstr = GPIO_12MA,
+				.enable = GPIO_DISABLE
+			},
+			{
+				.gpio = 12,
+				.func = 1,
+				.dir = GPIO_INPUT,
+				.pull = GPIO_NO_PULL,
+				.drvstr = GPIO_12MA,
+				.enable = GPIO_DISABLE
+			},
 		}
-
+#endif
 	},
 	{
 		.machid = MACH_TYPE_IPQ806X_AP145,
@@ -591,8 +771,30 @@ board_ipq806x_params_t board_params[] = {
 				.drvstr = GPIO_12MA,
 				.enable = GPIO_DISABLE
 			},
+		},
+#ifdef CONFIG_IPQ806X_I2C
+		.i2c_gsbi = GSBI_4,
+		.i2c_gsbi_base = I2C_GSBI4_BASE,
+		.i2c_mnd_value = { 1, 4, 2 },
+		.i2c_gpio = {
+			{
+				.gpio = 13,
+				.func = 1,
+				.dir = GPIO_OUTPUT,
+				.pull = GPIO_NO_PULL,
+				.drvstr = GPIO_12MA,
+				.enable = GPIO_DISABLE
+			},
+			{
+				.gpio = 12,
+				.func = 1,
+				.dir = GPIO_INPUT,
+				.pull = GPIO_NO_PULL,
+				.drvstr = GPIO_12MA,
+				.enable = GPIO_DISABLE
+			},
 		}
-
+#endif
 	},
 	{
 		.machid = MACH_TYPE_IPQ806X_AP145_1XX,
@@ -637,8 +839,30 @@ board_ipq806x_params_t board_params[] = {
 				.drvstr = GPIO_12MA,
 				.enable = GPIO_DISABLE
 			},
+		},
+#ifdef CONFIG_IPQ806X_I2C
+		.i2c_gsbi = GSBI_4,
+		.i2c_gsbi_base = I2C_GSBI4_BASE,
+		.i2c_mnd_value = { 1, 4, 2 },
+		.i2c_gpio = {
+			{
+				.gpio = 13,
+				.func = 1,
+				.dir = GPIO_OUTPUT,
+				.pull = GPIO_NO_PULL,
+				.drvstr = GPIO_12MA,
+				.enable = GPIO_DISABLE
+			},
+			{
+				.gpio = 12,
+				.func = 1,
+				.dir = GPIO_INPUT,
+				.pull = GPIO_NO_PULL,
+				.drvstr = GPIO_12MA,
+				.enable = GPIO_DISABLE
+			},
 		}
-
+#endif
 	},
 	{
 		.machid = MACH_TYPE_IPQ806X_STORM,

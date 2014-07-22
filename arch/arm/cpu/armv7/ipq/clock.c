@@ -279,6 +279,107 @@ void uart_clock_config(unsigned int gsbi_port, unsigned int m,
 	uart_set_gsbi_clk(gsbi_port);
 }
 
+#ifdef CONFIG_IPQ806X_I2C
+/**
+ * i2c_set_rate_mnd - configures divider M and D values
+ *
+ * Sets the M, D parameters of the divider to generate the GSBI QUP
+ * apps clock.
+ */
+static void i2c_set_rate_mnd(unsigned int gsbi_port, unsigned int m,
+                unsigned int n)
+{
+	/* Assert MND reset. */
+	setbits_le32(GSBIn_QUP_APPS_NS_REG(gsbi_port), BIT(7));
+	/* Program M and D values. */
+	writel(MD16(m, n), GSBIn_QUP_APPS_MD_REG(gsbi_port));
+	/* Deassert MND reset. */
+	clrbits_le32(GSBIn_QUP_APPS_NS_REG(gsbi_port), BIT(7));
+}
+
+/**
+ * i2c_pll_vote_clk_enable - enables PLL8
+ */
+void i2c_pll_vote_clk_enable(unsigned int clk_dummy)
+{
+	setbits_le32(BB_PLL_ENA_SC0_REG, BIT(8));
+
+	if (!clk_dummy)
+		while((readl(PLL_LOCK_DET_STATUS_REG) & BIT(8)) == 0);
+}
+
+/**
+ * i2c_branch_clk_enable_reg - enables branch clock
+ *
+ * Enables branch clock for GSBI I2C port.
+ */
+static void i2c_branch_clk_enable_reg(unsigned int gsbi_port)
+{
+	setbits_le32(GSBIn_QUP_APPS_NS_REG(gsbi_port), BIT(9));
+}
+
+/**
+ * i2c_local_clock_enable - configures N value and enables root clocks
+ *
+ * Sets the N parameter of the divider and enables root clock and
+ * branch clocks for GSBI I2C port.
+ */
+static void i2c_local_clock_enable(unsigned int gsbi_port, unsigned int n,
+                                        unsigned int m)
+{
+	unsigned int reg_val, i2c_ns_val;
+	void *const reg = (void *)GSBIn_QUP_APPS_NS_REG(gsbi_port);
+
+	/*
+	* Program the NS register, if applicable. NS registers are not
+	* set in the set_rate path because power can be saved by deferring
+	* the selection of a clocked source until the clock is enabled.
+	*/
+	reg_val = readl(reg);
+	reg_val &= ~(I2C_clk_ns_mask);
+	i2c_ns_val =  NS(BIT_POS_23,BIT_POS_16,n,m, 5, 4, 3, 4, 2, 0, 3);
+	reg_val |= (i2c_ns_val & I2C_clk_ns_mask);
+	writel(reg_val,reg);
+
+	/* enable MNCNTR_EN */
+	reg_val = readl(reg);
+	reg_val |= BIT(8);
+	writel(reg_val, reg);
+
+	/* set source to PLL8 running @384MHz */
+	reg_val = readl(reg);
+	reg_val |= 0x3;
+	writel(reg_val, reg);
+
+	/* Enable root. */
+	reg_val |= I2C_en_mask;
+	writel(reg_val, reg);
+	i2c_branch_clk_enable_reg(gsbi_port);
+}
+
+/**
+ * i2c_set_gsbi_clk - enables HCLK for I2C GSBI port
+ */
+static void i2c_set_gsbi_clk(unsigned int gsbi_port)
+{
+	setbits_le32(GSBIn_HCLK_CTL_REG(gsbi_port), BIT(4));
+}
+
+/**
+ * i2c_clock_config - configures I2C clocks
+ *
+ * Configures GSBI I2C dividers, enable root and branch clocks.
+ */
+void i2c_clock_config(unsigned int gsbi_port, unsigned int m,
+                unsigned int n, unsigned int d, unsigned int clk_dummy)
+{
+	i2c_set_rate_mnd(gsbi_port, m, d);
+	i2c_pll_vote_clk_enable(clk_dummy);
+	i2c_local_clock_enable(gsbi_port, n, m);
+	i2c_set_gsbi_clk(gsbi_port);
+}
+#endif
+
 /**
  * nand_clock_config - configure NAND controller clocks
  *
