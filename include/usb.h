@@ -146,6 +146,16 @@ struct usb_device {
 	unsigned int slot_id;
 };
 
+/*
+ * You can initialize platform's USB host or device
+ * ports by passing this enum as an argument to
+ * board_usb_init().
+ */
+enum usb_init_type {
+	USB_INIT_HOST,
+	USB_INIT_DEVICE
+};
+
 /**********************************************************************
  * this is how the lowlevel part communicate with the outer world
  */
