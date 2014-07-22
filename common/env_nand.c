@@ -403,7 +403,7 @@ void env_relocate_spec(void)
 {
 #if !defined(ENV_IS_EMBEDDED)
 	int ret;
-	char buf[CONFIG_ENV_SIZE];
+	char buf[CONFIG_ENV_SIZE_MAX];
 
 #if defined(CONFIG_ENV_OFFSET_OOB)
 	ret = get_nand_env_oob(&nand_info[nand_env_device],

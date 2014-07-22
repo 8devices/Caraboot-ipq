@@ -139,8 +139,16 @@ int board_init()
 
 	board_env_offset = ((loff_t) sfi->flash_block_size) * start_blocks;
 	board_env_size = ((loff_t) sfi->flash_block_size) * size_blocks;
-	board_env_range = CONFIG_ENV_SIZE;
-	BUG_ON(board_env_size < CONFIG_ENV_SIZE);
+	if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
+		board_env_range = CONFIG_ENV_SIZE_MAX;
+		BUG_ON(board_env_size < CONFIG_ENV_SIZE_MAX);
+	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
+		board_env_range = board_env_size;
+		BUG_ON(board_env_size > CONFIG_ENV_SIZE_MAX);
+        } else {
+                printf("BUG: unsupported flash type : %d\n", sfi->flash_type);
+                BUG();
+        }
 
 	return 0;
 }

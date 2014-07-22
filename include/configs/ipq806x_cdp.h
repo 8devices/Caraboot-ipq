@@ -45,7 +45,7 @@
 #define CONFIG_MSM_PCOMM
 #define CONFIG_ARCH_CPU_INIT
 
-#define CONFIG_ENV_SIZE                 (256 << 10) /* 256 KB */
+#define CONFIG_ENV_SIZE_MAX             (256 << 10) /* 256 KB */
 #define CONFIG_SYS_MALLOC_LEN           (4 << 20)
 
 /*
@@ -242,7 +242,7 @@ typedef struct {
 #define CONFIG_ENV_SECT_SIZE            flash_block_size
 #define CONFIG_ENV_SPI_BUS              flash_index
 #define CONFIG_ENV_RANGE		board_env_range
-
+#define CONFIG_ENV_SIZE                 CONFIG_ENV_RANGE
 #else
 
 #error "Unsupported env. type, should be NAND (even for SPI Flash)."
