@@ -1,5 +1,14 @@
 /*
- * Copyright (c) 2012 - 2013 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012 - 2014 The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  */
 
 #include <common.h>
@@ -394,3 +403,55 @@ void nand_clock_config(void)
 	/* Wait for clock to stabilize. */
 	udelay(10);
 }
+
+#ifdef CONFIG_IPQ806X_PCI
+void pcie_clock_shutdown(clk_offset_t *pci_clk)
+{
+	/* PCIE_ALT_REF_CLK_NS */
+	writel(0x0, pci_clk->alt_ref_clk_ns);
+	/* PCIE_ALT_REF_CLK_ACR */
+	writel(0x0, pci_clk->alt_ref_clk_acr);
+
+	/* PCIE20_PARF_PHY_REFCLK */
+	writel(0x1019, pci_clk->parf_phy_refclk);
+
+	/* PCIE_ACLK_CTL */
+	writel(0x0, pci_clk->aclk_ctl);
+
+	/* PCIE_PCLK_CTL */
+	writel(0x0, pci_clk->pclk_ctl);
+
+	/* PCIE_HCLK_CTL */
+	writel(0x0, pci_clk->hclk_ctl);
+
+	/* PCIE_AUX_CLK_CTL */
+	writel(0x0, pci_clk->aux_clk_ctl);
+}
+
+void pcie_clock_config(clk_offset_t *pci_clk)
+{
+	/* PCIE_ALT_REF_CLK_NS */
+	writel(0x0A59, pci_clk->alt_ref_clk_ns);
+
+	/* PCIE_ALT_REF_CLK_ACR */
+	writel(0x0, pci_clk->alt_ref_clk_acr);
+
+	/* PCIE_ACLK_FS */
+	writel(0x4F, pci_clk->aclk_fs);
+
+	/* PCIE_PCLK_FS */
+	writel(0x4F, pci_clk->pclk_fs);
+
+	/* PCIE_ACLK_CTL */
+	writel(0x10, pci_clk->aclk_ctl);
+
+	/* PCIE_PCLK_CTL */
+	writel(0x10, pci_clk->pclk_ctl);
+
+	/* PCIE_HCLK_CTL */
+	writel(0x10, pci_clk->hclk_ctl);
+
+	/* PCIE_AUX_CLK_CTL */
+	writel(0x10, pci_clk->aux_clk_ctl);
+}
+#endif /* CONFIG_IPQ806X_PCI */

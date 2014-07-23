@@ -1,5 +1,15 @@
-
-/* * Copyright (c) 2012 - 2014 The Linux Foundation. All rights reserved.* */
+/*
+ * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
 
 #include <common.h>
 #include <linux/mtd/ipq_nand.h>
@@ -433,3 +443,193 @@ void ft_board_setup(void *blob, bd_t *bd)
 	fdt_fixup_memory_banks(blob, &memory_start, &memory_size, 1);
 }
 #endif /* CONFIG_OF_BOARD_SETUP */
+
+#ifdef CONFIG_IPQ806X_PCI
+static void ipq_pci_gpio_fixup(void)
+{
+	unsigned int machid;
+	/* get machine type from SMEM and set in env */
+	machid = gd->bd->bi_arch_number;
+
+	gpio_func_data_t *gpio_0 = gboard_param->pcie_cfg[0].pci_rst_gpio;
+	gpio_func_data_t *gpio_1 = gboard_param->pcie_cfg[1].pci_rst_gpio;
+	gpio_func_data_t *gpio_2 = gboard_param->pcie_cfg[2].pci_rst_gpio;
+
+	if (machid == MACH_TYPE_IPQ806X_RUMI3) {
+		gpio_0->gpio = -1;
+		gpio_1->gpio = -1;
+		gpio_2->gpio = -1;
+	} else if (machid == MACH_TYPE_IPQ806X_DB147) {
+		gpio_1->gpio = -1;
+		gpio_2->gpio = PCIE_1_RST_GPIO;
+	} else if ((machid == MACH_TYPE_IPQ806X_AP148) ||
+				(machid == MACH_TYPE_IPQ806X_AP148_1XX )) {
+		gpio_2->gpio = -1;
+	}
+}
+
+static void ipq_pcie_write_mask(uint32_t addr,
+				uint32_t clear_mask, uint32_t set_mask)
+{
+	uint32_t val;
+
+	val = (readl(addr) & ~clear_mask) | set_mask;
+	writel(val, addr);
+}
+
+static void ipq_pcie_parf_reset(uint32_t addr, int domain, int assert)
+
+{
+	if (assert)
+		ipq_pcie_write_mask(addr, 0, domain);
+	else
+		ipq_pcie_write_mask(addr, domain, 0);
+}
+
+static void ipq_pcie_config_controller(int id)
+{
+	pcie_params_t 	*cfg;
+	cfg = &gboard_param->pcie_cfg[id];
+
+	/*
+	 * program and enable address translation region 0 (device config
+	 * address space); region type config;
+	 * axi config address range to device config address range
+	 */
+	writel(0, cfg->pcie20 + PCIE20_PLR_IATU_VIEWPORT);
+
+	writel(4, cfg->pcie20 + PCIE20_PLR_IATU_CTRL1);
+	writel(BIT(31), cfg->pcie20 + PCIE20_PLR_IATU_CTRL2);
+	writel(cfg->axi_conf , cfg->pcie20 + PCIE20_PLR_IATU_LBAR);
+	writel(0, cfg->pcie20 + PCIE20_PLR_IATU_UBAR);
+	writel((cfg->axi_conf + PCIE_AXI_CONF_SIZE - 1),
+				cfg->pcie20 + PCIE20_PLR_IATU_LAR);
+	writel(MSM_PCIE_DEV_CFG_ADDR,
+				cfg->pcie20 + PCIE20_PLR_IATU_LTAR);
+	writel(0, cfg->pcie20 + PCIE20_PLR_IATU_UTAR);
+
+	/*
+	 * program and enable address translation region 2 (device resource
+	 * address space); region type memory;
+	 * axi device bar address range to device bar address range
+	 */
+	writel(2, cfg->pcie20 + PCIE20_PLR_IATU_VIEWPORT);
+
+	writel(0, cfg->pcie20 + PCIE20_PLR_IATU_CTRL1);
+	writel(BIT(31), cfg->pcie20 + PCIE20_PLR_IATU_CTRL2);
+	writel(cfg->axi_bar_start, cfg->pcie20 + PCIE20_PLR_IATU_LBAR);
+	writel(0, cfg->pcie20 + PCIE20_PLR_IATU_UBAR);
+	writel((cfg->axi_bar_start + cfg->axi_bar_size
+		- PCIE_AXI_CONF_SIZE - 1), cfg->pcie20 + PCIE20_PLR_IATU_LAR);
+	writel(cfg->axi_bar_start, cfg->pcie20 + PCIE20_PLR_IATU_LTAR);
+	writel(0, cfg->pcie20 + PCIE20_PLR_IATU_UTAR);
+
+	/* 1K PCIE buffer setting */
+	writel(0x3, cfg->pcie20 + PCIE20_AXI_MSTR_RESP_COMP_CTRL0);
+	writel(0x1, cfg->pcie20 + PCIE20_AXI_MSTR_RESP_COMP_CTRL1);
+
+}
+
+void board_pci_init()
+{
+	int i,j;
+	pcie_params_t 		*cfg;
+	gpio_func_data_t	*gpio_data;
+	uint32_t val;
+
+	ipq_pci_gpio_fixup();
+
+	for (i = 0; i < PCI_MAX_DEVICES; i++) {
+		cfg = &gboard_param->pcie_cfg[i];
+		gpio_data = cfg->pci_rst_gpio;
+		cfg->axi_conf = cfg->axi_bar_start +
+					cfg->axi_bar_size - PCIE_AXI_CONF_SIZE;
+		if (gpio_data->gpio != -1)
+			gpio_tlmm_config(gpio_data->gpio, gpio_data->func,
+					gpio_data->dir,	gpio_data->pull,
+					gpio_data->drvstr, gpio_data->enable);
+
+		/* assert PCIe PARF reset while powering the core */
+		ipq_pcie_parf_reset(cfg->pcie_rst, BIT(6), 0);
+
+		ipq_pcie_parf_reset(cfg->pcie_rst, BIT(2), 1);
+		pcie_clock_config(cfg->pci_clks);
+		/*
+		* de-assert PCIe PARF reset;
+		* wait 1us before accessing PARF registers
+		*/
+		ipq_pcie_parf_reset(cfg->pcie_rst, BIT(2), 0);
+		udelay(1);
+		/* Set Tx Termination Offset */
+		val = readl(cfg->parf + PCIE20_PARF_PHY_CTRL) |
+				PCIE20_PARF_PHY_CTRL_PHY_TX0_TERM_OFFST(7);
+		writel(val, cfg->parf + PCIE20_PARF_PHY_CTRL);
+
+		/* PARF programming */
+		writel(PCIE20_PARF_PCS_DEEMPH_TX_DEEMPH_GEN1(0x28) |
+			PCIE20_PARF_PCS_DEEMPH_TX_DEEMPH_GEN2_3_5DB(0x28) |
+			PCIE20_PARF_PCS_DEEMPH_TX_DEEMPH_GEN2_6DB(0x28),
+			 cfg->parf + PCIE20_PARF_PCS_DEEMPH);
+
+		writel(PCIE20_PARF_PCS_SWING_TX_SWING_FULL(0x7F) |
+			PCIE20_PARF_PCS_SWING_TX_SWING_LOW(0x7F),
+			cfg->parf + PCIE20_PARF_PCS_SWING);
+
+		writel((4<<24), cfg->parf + PCIE20_PARF_CONFIG_BITS);
+
+		writel(0x11019, cfg->pci_clks->parf_phy_refclk);
+		writel(0x10019, cfg->pci_clks->parf_phy_refclk);
+
+
+		/* enable access to PCIe slave port on system fabric */
+		if (i == 0) {
+			writel(BIT(4), PCIE_SFAB_AXI_S5_FCLK_CTL);
+		}
+
+		udelay(1);
+		/* de-assert PICe PHY, Core, POR and AXI clk domain resets */
+		ipq_pcie_parf_reset(cfg->pcie_rst, BIT(5), 0);
+		ipq_pcie_parf_reset(cfg->pcie_rst, BIT(4), 0);
+		ipq_pcie_parf_reset(cfg->pcie_rst, BIT(3), 0);
+		ipq_pcie_parf_reset(cfg->pcie_rst, BIT(0), 0);
+
+
+		/* enable link training */
+		ipq_pcie_write_mask(cfg->elbi + PCIE20_ELBI_SYS_CTRL, 0,
+								BIT(0));
+		udelay(500);
+
+		for (j = 0; j < 1000; j++) {
+			val = readl(cfg->pcie20 + PCIE20_CAP_LINKCTRLSTATUS);
+			if (val & BIT(29)) {
+				printf("PCI%d Link Intialized\n", i);
+				cfg->linkup = 1;
+				break;
+			}
+			udelay(1000);
+		}
+		ipq_pcie_config_controller(i);
+	}
+
+}
+
+void board_pci_deinit()
+{
+	int i;
+	pcie_params_t 		*cfg;
+	gpio_func_data_t	*gpio_data;
+
+	for (i = 0; i < PCI_MAX_DEVICES; i++) {
+		cfg = &gboard_param->pcie_cfg[i];
+		gpio_data = cfg->pci_rst_gpio;
+
+		if (gpio_data->gpio != -1)
+			gpio_tlmm_config(gpio_data->gpio, 0, GPIO_INPUT,
+					GPIO_NO_PULL, GPIO_2MA, GPIO_ENABLE);
+		writel(0x7d, cfg->pcie_rst);
+		writel(1, cfg->parf + PCIE20_PARF_PHY_CTRL);
+		pcie_clock_shutdown(cfg->pci_clks);
+	}
+
+}
+#endif /* CONFIG_IPQ806X_PCI */

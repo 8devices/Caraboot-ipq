@@ -1,4 +1,15 @@
-/* * Copyright (c) 2013 The Linux Foundation. All rights reserved.* */
+/*
+ * Copyright (c) 2013-2014 The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
 
 #ifndef   _IPQ806X_BOARD_PARAM_H_
 #define   _IPQ806X_BOARD_PARAM_H_
@@ -9,6 +20,8 @@
 #include <asm/arch-ipq806x/gpio.h>
 #include <asm/arch-ipq806x/nss/msm_ipq806x_gmac.h>
 #include <phy.h>
+#include <asm/sizes.h>
+#include <asm/arch-ipq806x/clock.h>
 
 gpio_func_data_t gmac0_gpio[] = {
 	{
@@ -160,6 +173,150 @@ gpio_func_data_t gmac1_gpio[] = {
 	},
 };
 
+#ifdef CONFIG_IPQ806X_PCI
+/* Address of PCIE20 PARF */
+#define PCIE20_0_PARF_PHYS      0x1b600000
+#define PCIE20_1_PARF_PHYS      0x1b800000
+#define PCIE20_2_PARF_PHYS      0x1ba00000
+
+/* Address of PCIE20 ELBI */
+#define PCIE20_0_ELBI_PHYS      0x1b502000
+#define PCIE20_1_ELBI_PHYS      0x1b702000
+#define PCIE20_2_ELBI_PHYS      0x1b902000
+
+
+/* Address of PCIE20 */
+#define PCIE20_0_PHYS           0x1b500000
+#define PCIE20_1_PHYS           0x1b700000
+#define PCIE20_2_PHYS           0x1b900000
+#define PCIE20_SIZE             SZ_4K
+
+#define PCIE20_0_AXI_BAR_PHYS	0x08000000
+#define PCIE20_0_AXI_BAR_SIZE	SZ_128M
+#define PCIE20_1_AXI_BAR_PHYS	0x2E000000
+#define PCIE20_1_AXI_BAR_SIZE	SZ_64M
+#define PCIE20_2_AXI_BAR_PHYS	0x32000000
+#define PCIE20_2_AXI_BAR_SIZE	SZ_64M
+#define PCIE_AXI_CONF_SIZE	SZ_1M
+
+#define MSM_PCIE_DEV_CFG_ADDR   0x01000000
+
+#define PCIE20_PLR_IATU_VIEWPORT        0x900
+#define PCIE20_PLR_IATU_CTRL1           0x904
+#define PCIE20_PLR_IATU_CTRL2           0x908
+#define PCIE20_PLR_IATU_LBAR            0x90C
+#define PCIE20_PLR_IATU_UBAR            0x910
+#define PCIE20_PLR_IATU_LAR             0x914
+#define PCIE20_PLR_IATU_LTAR            0x918
+#define PCIE20_PLR_IATU_UTAR            0x91c
+
+#define PCIE20_PARF_CONFIG_BITS        0x50
+#define PCIE20_ELBI_SYS_CTRL           0x04
+
+
+#define PCIE20_0_RESET            (MSM_CLK_CTL_BASE + 0x22DC)
+#define PCIE20_1_RESET            (MSM_CLK_CTL_BASE + 0x3A9C)
+#define PCIE20_2_RESET            (MSM_CLK_CTL_BASE + 0x3ADC)
+#define PCIE20_CAP                     0x70
+#define PCIE20_CAP_LINKCTRLSTATUS      (PCIE20_CAP + 0x10)
+
+#define PCIE_RST_GPIO           3
+#define PCIE_1_RST_GPIO         48
+#define PCIE_2_RST_GPIO         63
+
+
+gpio_func_data_t pci_0_rst_gpio = {
+		.gpio = PCIE_RST_GPIO,
+		.func = 1,
+		.dir = GPIO_OUTPUT,
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_12MA,
+		.enable = GPIO_DISABLE
+};
+
+gpio_func_data_t pci_1_rst_gpio = {
+		.gpio = PCIE_1_RST_GPIO,
+		.func = 1,
+		.dir = GPIO_OUTPUT,
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_12MA,
+		.enable = GPIO_DISABLE
+};
+
+gpio_func_data_t pci_2_rst_gpio = {
+		.gpio = PCIE_2_RST_GPIO,
+		.func = 1,
+		.dir = GPIO_OUTPUT,
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_12MA,
+		.enable = GPIO_DISABLE
+};
+
+clk_offset_t pcie_0_clk	= {
+	.aclk_ctl = PCIE_0_ACLK_CTL,
+	.pclk_ctl = PCIE_0_PCLK_CTL,
+	.hclk_ctl = PCIE_0_HCLK_CTL,
+	.aux_clk_ctl = PCIE_0_AUX_CLK_CTL,
+	.alt_ref_clk_ns = PCIE_0_ALT_REF_CLK_NS,
+	.alt_ref_clk_acr = PCIE_0_ALT_REF_CLK_ACR,
+	.aclk_fs = PCIE_0_ACLK_FS,
+	.pclk_fs = PCIE_0_PCLK_FS,
+	.parf_phy_refclk = PCIE20_0_PARF_PHY_REFCLK
+};
+
+clk_offset_t pcie_1_clk	= {
+	.aclk_ctl = PCIE_1_ACLK_CTL,
+	.pclk_ctl = PCIE_1_PCLK_CTL,
+	.hclk_ctl = PCIE_1_HCLK_CTL,
+	.aux_clk_ctl = PCIE_1_AUX_CLK_CTL,
+	.alt_ref_clk_ns = PCIE_1_ALT_REF_CLK_NS,
+	.alt_ref_clk_acr = PCIE_1_ALT_REF_CLK_ACR,
+	.aclk_fs = PCIE_1_ACLK_FS,
+	.pclk_fs = PCIE_1_PCLK_FS,
+	.parf_phy_refclk = PCIE20_1_PARF_PHY_REFCLK
+};
+
+clk_offset_t pcie_2_clk	= {
+	.aclk_ctl = PCIE_2_ACLK_CTL,
+	.pclk_ctl = PCIE_2_PCLK_CTL,
+	.hclk_ctl = PCIE_2_HCLK_CTL,
+	.aux_clk_ctl = PCIE_2_AUX_CLK_CTL,
+	.alt_ref_clk_ns = PCIE_2_ALT_REF_CLK_NS,
+	.alt_ref_clk_acr = PCIE_2_ALT_REF_CLK_ACR,
+	.aclk_fs = PCIE_2_ACLK_FS,
+	.pclk_fs = PCIE_2_PCLK_FS,
+	.parf_phy_refclk = PCIE20_2_PARF_PHY_REFCLK
+};
+
+#define pcie_board_cfg(_id)	\
+{									\
+	.pci_rst_gpio		= &pci_##_id##_rst_gpio,		\
+	.parf			= PCIE20_##_id##_PARF_PHYS,		\
+	.elbi			= PCIE20_##_id##_ELBI_PHYS,		\
+	.pcie20			= PCIE20_##_id##_PHYS,			\
+	.axi_bar_start		= PCIE20_##_id##_AXI_BAR_PHYS,		\
+	.axi_bar_size		= PCIE20_##_id##_AXI_BAR_SIZE,		\
+	.pcie_rst		= PCIE20_##_id##_RESET,			\
+	.pci_clks		= &pcie_##_id##_clk			\
+}
+
+#define PCIE20_PARF_PHY_CTRL           0x40
+#define __mask(a, b)    (((1 << ((a) + 1)) - 1) & ~((1 << (b)) - 1))
+#define __set(v, a, b)  (((v) << (b)) & __mask(a, b))
+#define PCIE20_PARF_PHY_CTRL_PHY_TX0_TERM_OFFST(x)      __set(x, 20, 16)
+#define PCIE20_PARF_PCS_DEEMPH         0x34
+#define PCIE20_PARF_PCS_DEEMPH_TX_DEEMPH_GEN1(x)        __set(x, 21, 16)
+#define PCIE20_PARF_PCS_DEEMPH_TX_DEEMPH_GEN2_3_5DB(x)  __set(x, 13, 8)
+#define PCIE20_PARF_PCS_DEEMPH_TX_DEEMPH_GEN2_6DB(x)    __set(x, 5, 0)
+#define PCIE20_PARF_PCS_SWING          0x38
+#define PCIE20_PARF_PCS_SWING_TX_SWING_FULL(x)          __set(x, 14, 8)
+#define PCIE20_PARF_PCS_SWING_TX_SWING_LOW(x)           __set(x, 6, 0)
+#define PCIE20_PARF_PHY_REFCLK         0x4C
+#define PCIE_SFAB_AXI_S5_FCLK_CTL       (MSM_CLK_CTL_BASE + 0x2154)
+#define PCIE20_AXI_MSTR_RESP_COMP_CTRL0 0x818
+#define PCIE20_AXI_MSTR_RESP_COMP_CTRL1 0x81c
+#endif /* CONFIG_IPQ806X_PCI*/
+
 #define gmac_board_cfg(_b, _sec, _p, _p0, _p1, _mp, _pn, ...)	\
 {									\
 	.base			= NSS_GMAC##_b##_BASE,			\
@@ -306,8 +463,15 @@ board_ipq806x_params_t board_params[] = {
 				.drvstr = GPIO_12MA,
 				.enable = GPIO_DISABLE
 			},
-		}
+		},
 #endif
+#ifdef CONFIG_IPQ806X_PCI
+		.pcie_cfg = {
+			pcie_board_cfg(0),
+			pcie_board_cfg(1),
+			pcie_board_cfg(2),
+		}
+#endif /* CONFIG_IPQ806X_PCI */
 	},
 	{
 		.machid = MACH_TYPE_IPQ806X_DB149_1XX,
@@ -376,8 +540,15 @@ board_ipq806x_params_t board_params[] = {
 				.drvstr = GPIO_12MA,
 				.enable = GPIO_DISABLE
 			},
-		}
+		},
 #endif
+#ifdef CONFIG_IPQ806X_PCI
+		.pcie_cfg = {
+			pcie_board_cfg(0),
+			pcie_board_cfg(1),
+			pcie_board_cfg(2),
+	}
+#endif /* CONFIG_IPQ806X_PCI */
 	},
 	{
 		.machid = MACH_TYPE_IPQ806X_DB149_2XX,
@@ -446,8 +617,15 @@ board_ipq806x_params_t board_params[] = {
 				.drvstr = GPIO_12MA,
 				.enable = GPIO_DISABLE
 			},
-		}
+		},
 #endif
+#ifdef CONFIG_IPQ806X_PCI
+		.pcie_cfg = {
+			pcie_board_cfg(0),
+			pcie_board_cfg(1),
+			pcie_board_cfg(2),
+		}
+#endif /* CONFIG_IPQ806X_PCI */
 	},
 	{
 		.machid = MACH_TYPE_IPQ806X_TB726,
@@ -521,8 +699,15 @@ board_ipq806x_params_t board_params[] = {
 				.drvstr = GPIO_12MA,
 				.enable = GPIO_DISABLE
 			},
-		}
+		},
 #endif
+#ifdef CONFIG_IPQ806X_PCI
+		.pcie_cfg = {
+			pcie_board_cfg(0),
+			pcie_board_cfg(1),
+			pcie_board_cfg(2),
+		}
+#endif /* CONFIG_IPQ806X_PCI */
 	},
 	{
 		.machid = MACH_TYPE_IPQ806X_DB147,
@@ -589,8 +774,15 @@ board_ipq806x_params_t board_params[] = {
 				.drvstr = GPIO_12MA,
 				.enable = GPIO_DISABLE
 			},
-		}
+		},
 #endif
+#ifdef CONFIG_IPQ806X_PCI
+		.pcie_cfg = {
+			pcie_board_cfg(0),
+			pcie_board_cfg(1),
+			pcie_board_cfg(2),
+		}
+#endif /* CONFIG_IPQ806X_PCI */
 	},
 	{
 		.machid = MACH_TYPE_IPQ806X_AP148,
@@ -657,8 +849,15 @@ board_ipq806x_params_t board_params[] = {
 				.drvstr = GPIO_12MA,
 				.enable = GPIO_DISABLE
 			},
-		}
+		},
 #endif
+#ifdef CONFIG_IPQ806X_PCI
+		.pcie_cfg = {
+			pcie_board_cfg(0),
+			pcie_board_cfg(1),
+			pcie_board_cfg(2),
+		}
+#endif /* CONFIG_IPQ806X_PCI */
 	},
 	{
 		.machid = MACH_TYPE_IPQ806X_AP148_1XX,
@@ -725,8 +924,15 @@ board_ipq806x_params_t board_params[] = {
 				.drvstr = GPIO_12MA,
 				.enable = GPIO_DISABLE
 			},
-		}
+		},
 #endif
+#ifdef CONFIG_IPQ806X_PCI
+		.pcie_cfg = {
+			pcie_board_cfg(0),
+			pcie_board_cfg(1),
+			pcie_board_cfg(2),
+		}
+#endif /* CONFIG_IPQ806X_PCI */
 	},
 	{
 		.machid = MACH_TYPE_IPQ806X_AP145,
@@ -793,8 +999,15 @@ board_ipq806x_params_t board_params[] = {
 				.drvstr = GPIO_12MA,
 				.enable = GPIO_DISABLE
 			},
-		}
+		},
 #endif
+#ifdef CONFIG_IPQ806X_PCI
+		.pcie_cfg = {
+			pcie_board_cfg(0),
+			pcie_board_cfg(1),
+			pcie_board_cfg(2),
+		}
+#endif /* CONFIG_IPQ806X_PCI */
 	},
 	{
 		.machid = MACH_TYPE_IPQ806X_AP145_1XX,
@@ -861,8 +1074,15 @@ board_ipq806x_params_t board_params[] = {
 				.drvstr = GPIO_12MA,
 				.enable = GPIO_DISABLE
 			},
-		}
+		},
 #endif
+#ifdef CONFIG_IPQ806X_PCI
+		.pcie_cfg = {
+			pcie_board_cfg(0),
+			pcie_board_cfg(1),
+			pcie_board_cfg(2),
+		}
+#endif /* CONFIG_IPQ806X_PCI */
 	},
 	{
 		.machid = MACH_TYPE_IPQ806X_STORM,
