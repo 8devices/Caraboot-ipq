@@ -213,6 +213,7 @@ typedef struct {
 #define CONFIG_SPI_FLASH_STMICRO
 #define CONFIG_SPI_FLASH_SPANSION
 #define CONFIG_SPI_FLASH_MACRONIX
+#define CONFIG_SPI_FLASH_WINBOND
 #define CONFIG_SYS_HZ                   1000
 
 #define CONFIG_SF_DEFAULT_BUS 0
