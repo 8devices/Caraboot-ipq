@@ -1,8 +1,6 @@
 /*
- * Copyright (c) 2012-2013 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
  * Source : APQ8064 LK Boot
- *
- * Copyright (c) 2012, Code Aurora Forum. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -13,9 +11,6 @@
  *    copyright notice, this list of conditions and the following
  *    disclaimer in the documentation and/or other materials provided
  *    with the distribution.
- *  * Neither the name of Code Aurora Forum, Inc. nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
  * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
@@ -33,6 +28,7 @@
 #ifndef __PLATFORM_IPQ860X_CLOCK_H_
 #define __PLATFORM_IPQ860X_CLOCK_H_
 
+#include <configs/ipq806x_cdp.h>
 #include <asm/io.h>
 /* UART clock @ 7.3728 MHz */
 #define UART_DM_CLK_RX_TX_BIT_RATE 0xCC
@@ -190,6 +186,50 @@
 #define GMAC_COREn_CLCK_INV_DISABLE		(0 << 5)
 #define GMAC_COREn_CLCK_BRANCH_ENA		(1 << 4)
 
+#ifdef CONFIG_IPQ806X_PCI
+#define PCIE_0_ACLK_CTL 			0x9022C0
+#define PCIE_1_ACLK_CTL 			0x903a80
+#define PCIE_2_ACLK_CTL 			0x903ac0
+#define PCIE_0_PCLK_CTL				0x9022D0
+#define PCIE_1_PCLK_CTL				0x903A90
+#define PCIE_2_PCLK_CTL				0x903AD0
+#define PCIE_0_HCLK_CTL				0x9022CC
+#define PCIE_1_HCLK_CTL				0x903A8C
+#define PCIE_2_HCLK_CTL				0x903ACC
+#define PCIE_0_AUX_CLK_CTL			0x9022C8
+#define PCIE_1_AUX_CLK_CTL			0x903A88
+#define PCIE_2_AUX_CLK_CTL			0x903AC8
+#define PCIE_0_ALT_REF_CLK_NS			0x903860
+#define PCIE_1_ALT_REF_CLK_NS			0x903AA0
+#define PCIE_2_ALT_REF_CLK_NS			0x903AE0
+#define PCIE_0_ALT_REF_CLK_ACR			0x901344
+#define PCIE_1_ALT_REF_CLK_ACR			0x901354
+#define PCIE_2_ALT_REF_CLK_ACR			0x90135C
+#define PCIE_0_ACLK_FS				0x9022C4
+#define PCIE_0_PCLK_FS				0x9022D4
+#define PCIE_1_ACLK_FS				0x903A84
+#define PCIE_1_PCLK_FS				0x903A94
+#define PCIE_2_ACLK_FS				0x903AC4
+#define PCIE_2_PCLK_FS				0x903AD4
+#define PCIE20_0_PARF_PHY_REFCLK		0x1B60004C
+#define PCIE20_1_PARF_PHY_REFCLK		0x1B80004C
+#define PCIE20_2_PARF_PHY_REFCLK		0x1BA0004C
+
+typedef struct {
+	unsigned int aclk_ctl;
+	unsigned int pclk_ctl;
+	unsigned int hclk_ctl;
+	unsigned int aux_clk_ctl;
+	unsigned int alt_ref_clk_ns;
+	unsigned int alt_ref_clk_acr;
+	unsigned int aclk_fs;
+	unsigned int pclk_fs;
+	unsigned int parf_phy_refclk;
+} clk_offset_t;
+
+void pcie_clock_config(clk_offset_t *);
+void pcie_clock_shutdown(clk_offset_t *);
+#endif /*  CONFIG_IPQ806X_PCI */
 
 /* Uart specific clock settings */
 

@@ -1,15 +1,28 @@
-/* * Copyright (c) 2012 The Linux Foundation. All rights reserved.* */
+/*
+ * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
 
 
 #ifndef  _IPQ806X_CDP_H_
 #define  _IPQ806X_CDP_H_
 
+#include <configs/ipq806x_cdp.h>
 #include <phy.h>
+#include <asm/arch-ipq806x/clock.h>
 
 unsigned int smem_get_board_machtype(void);
 
 typedef struct {
-	unsigned int gpio;
+	int gpio;
 	unsigned int func;
 	unsigned int dir;
 	unsigned int pull;
@@ -91,6 +104,25 @@ typedef struct {
 
 #define IPQ_GMAC_NMACS		4
 
+#ifdef CONFIG_IPQ806X_PCI
+#define PCI_MAX_DEVICES		3
+
+typedef struct {
+	gpio_func_data_t 		*pci_rst_gpio;
+	uint32_t			parf;
+	uint32_t			elbi;
+	uint32_t			pcie20;
+	uint32_t			axi_bar_start;
+	uint32_t			axi_bar_size;
+	uint32_t			pcie_rst;
+	clk_offset_t			*pci_clks;
+	uint32_t			axi_conf;
+	int 				linkup;
+} pcie_params_t;
+
+void board_pci_init(void);
+#endif /* CONFIG_IPQ806X_PCI */
+
 /* Board specific parameters */
 typedef struct {
 	unsigned int machid;
@@ -113,6 +145,9 @@ typedef struct {
 	unsigned int i2c_gsbi_base;
 	clk_mnd_t i2c_mnd_value;
 	gpio_func_data_t i2c_gpio[NO_OF_I2C_GPIOS];
+#endif
+#ifdef CONFIG_IPQ806X_PCI
+	pcie_params_t	pcie_cfg[PCI_MAX_DEVICES];
 #endif
 } __attribute__ ((__packed__)) board_ipq806x_params_t;
 

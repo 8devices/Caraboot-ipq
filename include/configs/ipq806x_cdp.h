@@ -1,5 +1,15 @@
-
-/* * Copyright (c) 2012 - 2014 The Linux Foundation. All rights reserved.* */
+/*
+ * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
 
 #ifndef _IPQCDP_H
 #define _IPQCDP_H
@@ -97,6 +107,13 @@
 #define CONFIG_SYS_I2C_SPEED		0
 #endif
 
+#define CONFIG_IPQ806X_PCI
+
+#ifdef CONFIG_IPQ806X_PCI
+#define CONFIG_PCI
+#define CONFIG_CMD_PCI
+#define CONFIG_PCI_SCAN_SHOW
+#endif
 #ifndef __ASSEMBLY__
 #include <compiler.h>
 #include "../../board/qcom/ipq806x_cdp/ipq806x_cdp.h"
@@ -107,6 +124,9 @@ extern uint32_t flash_chip_select;
 extern uint32_t flash_block_size;
 extern board_ipq806x_params_t *gboard_param;
 extern int rootfs_part_avail;
+#ifdef CONFIG_IPQ806X_PCI
+void board_pci_deinit(void);
+#endif
 
 static uint32_t inline clk_is_dummy(void)
 {
