@@ -30,7 +30,7 @@ static inline void ipq_reg_wr_delay(ipq_mmc  *host)
 static inline void
 ipq_start_command_exec(ipq_mmc  *host, struct mmc_cmd *cmd)
 {
-	unsigned int c;
+	unsigned int c = 0;
 	unsigned int arg = cmd->cmdarg;
 
 	writel(MCI_CLEAR_STATIC_MASK, host->base + MMCICLEAR);
@@ -306,6 +306,8 @@ int ipq_mmc_init(bd_t *bis, ipq_mmc *host)
 	mmc->host_caps |= MMC_MODE_HC;
 
 	mmc_register(mmc);
+	host->mmc = mmc;
+	host->dev_num = mmc->block_dev.dev;
 
 	return 0;
 }

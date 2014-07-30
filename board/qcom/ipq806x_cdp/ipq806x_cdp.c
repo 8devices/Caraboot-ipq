@@ -26,6 +26,7 @@
 #include <asm/arch-ipq806x/timer.h>
 #include <nand.h>
 #include <phy.h>
+#include <part.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -54,6 +55,7 @@ loff_t board_env_range;
 extern int nand_env_device;
 #ifdef CONFIG_IPQ_MMC
 ipq_mmc mmc_host;
+void board_mmc_env_init(void);
 #endif
 
 /*
@@ -116,15 +118,6 @@ int board_init()
 	gd->bd->bi_arch_number = smem_get_board_machtype();
 	gboard_param = get_board_param(gd->bd->bi_arch_number);
 
-	/*
-	 * Should be inited, before env_relocate() is called,
-	 * since env. offset is obtained from SMEM.
-	 */
-	ret = smem_ptable_init();
-	if (ret < 0) {
-		printf("cdp: SMEM init failed\n");
-		return ret;
-	}
 
 	ret = smem_get_boot_flash(&sfi->flash_type,
 				  &sfi->flash_index,
@@ -135,29 +128,54 @@ int board_init()
 		return ret;
 	}
 
+	/*
+	 * Should be inited, before env_relocate() is called,
+	 * since env. offset is obtained from SMEM.
+	 */
+	if (sfi->flash_type != SMEM_BOOT_MMC_FLASH) {
+		ret = smem_ptable_init();
+		if (ret < 0) {
+			printf("cdp: SMEM init failed\n");
+			return ret;
+		}
+	}
+
 	if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
 		nand_env_device = CONFIG_IPQ_NAND_NAND_INFO_IDX;
 	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
 		nand_env_device = CONFIG_IPQ_SPI_NAND_INFO_IDX;
+#ifdef CONFIG_IPQ_MMC
+	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
+		gboard_param->emmc_gpio = emmc1_gpio;
+		gboard_param->emmc_gpio_count = ARRAY_SIZE(emmc1_gpio);
+#endif
 	} else {
 		printf("BUG: unsupported flash type : %d\n", sfi->flash_type);
 		BUG();
 	}
 
-	ret = smem_getpart("0:APPSBLENV", &start_blocks, &size_blocks);
-	if (ret < 0) {
-		printf("cdp: get environment part failed\n");
-		return ret;
+
+	if (sfi->flash_type != SMEM_BOOT_MMC_FLASH) {
+		ret = smem_getpart("0:APPSBLENV", &start_blocks, &size_blocks);
+		if (ret < 0) {
+			printf("cdp: get environment part failed\n");
+			return ret;
+		}
+
+		board_env_offset = ((loff_t) sfi->flash_block_size) * start_blocks;
+		board_env_size = ((loff_t) sfi->flash_block_size) * size_blocks;
 	}
 
-	board_env_offset = ((loff_t) sfi->flash_block_size) * start_blocks;
-	board_env_size = ((loff_t) sfi->flash_block_size) * size_blocks;
 	if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
 		board_env_range = CONFIG_ENV_SIZE_MAX;
 		BUG_ON(board_env_size < CONFIG_ENV_SIZE_MAX);
 	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
 		board_env_range = board_env_size;
 		BUG_ON(board_env_size > CONFIG_ENV_SIZE_MAX);
+#ifdef CONFIG_IPQ_MMC
+	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
+		board_env_range = CONFIG_ENV_SIZE_MAX;
+#endif
         } else {
                 printf("BUG: unsupported flash type : %d\n", sfi->flash_type);
                 BUG();
@@ -333,8 +351,15 @@ void ipq_get_part_details(void)
 int board_late_init(void)
 {
 	unsigned int machid;
+	ipq_smem_flash_info_t *sfi = &ipq_smem_flash_info;
 
-	ipq_get_part_details();
+	if (sfi->flash_type != SMEM_BOOT_MMC_FLASH) {
+		ipq_get_part_details();
+#ifdef CONFIG_IPQ_MMC
+	} else {
+		board_mmc_env_init();
+#endif
+	}
 
         /* get machine type from SMEM and set in env */
 	machid = gd->bd->bi_arch_number;
@@ -429,6 +454,26 @@ int board_eth_init(bd_t *bis)
 }
 
 #ifdef CONFIG_IPQ_MMC
+
+void board_mmc_env_init(void)
+{
+
+	block_dev_desc_t *blk_dev;
+	disk_partition_t disk_info;
+	loff_t board_env_size;
+	int ret;
+
+	blk_dev = mmc_get_dev(mmc_host.dev_num);
+	ret = find_part_efi(blk_dev, "0:APPSBLENV", &disk_info);
+
+	if (!ret) {
+		board_env_offset = disk_info.start;
+		board_env_size = disk_info.size;
+		board_env_range = board_env_size;
+		BUG_ON(board_env_size > CONFIG_ENV_SIZE_MAX);
+	}
+}
+
 int board_mmc_init(bd_t *bis)
 {
 	gpio_func_data_t *gpio = gboard_param->emmc_gpio;

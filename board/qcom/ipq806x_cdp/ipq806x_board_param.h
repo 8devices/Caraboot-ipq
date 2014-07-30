@@ -1156,13 +1156,8 @@ board_ipq806x_params_t board_params[] = {
 			pcie_board_cfg(0),
 			pcie_board_cfg(1),
 			pcie_board_cfg(2),
-		},
+		}
 #endif /* CONFIG_IPQ806X_PCI */
-
-#ifdef CONFIG_IPQ_MMC
-		.emmc_gpio = emmc1_gpio,
-		.emmc_gpio_count = ARRAY_SIZE(emmc1_gpio),
-#endif
 	},
 	{
 		.machid = MACH_TYPE_IPQ806X_STORM,
