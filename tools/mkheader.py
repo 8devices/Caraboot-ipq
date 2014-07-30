@@ -1,24 +1,21 @@
 #
-# Copyright (c) 2013 The Linux Foundation. All rights reserved.
+# Copyright (c) 2014 The Linux Foundation. All rights reserved.
 #
 
 import sys
 import struct
 
-def create_header(base, size):
+def create_header(base, size, img_type):
     """Returns a packed MBN header image with the specified base and size.
 
     @arg base: integer, specifies the image load address in RAM
     @arg size: integer, specifies the size of the image
+    @arg img_type: integer, specifies the image type
     @returns: string, the MBN header
     """
 
-    # We currently do not support appending certificates. Signing GPL
-    # code might violate the GPL. So U-Boot will never be signed. So
-    # this is not required for U-Boot.
-
     header = [
-        0x5,         # Type: APPSBL
+        img_type,         # Type: APPSBL
         0x3,         # Version: 3
         0x0,         # Image source pointer
         base,        # Image destination pointer
@@ -33,10 +30,11 @@ def create_header(base, size):
     header_packed = struct.pack('<10I', *header)
     return header_packed
 
-def mkheader(base_addr, infname, outfname):
+def mkheader(base_addr, img_type, infname, outfname):
     """Prepends the image with the MBN header.
 
     @arg base_addr: integer, specifies the image load address in RAM
+    @arg img_type: integer, specifies the image type
     @arg infname: string, image filename
     @arg outfname: string, output image with header prepended
     @raises IOError: if reading/writing input/output file fails
@@ -51,7 +49,7 @@ def mkheader(base_addr, infname, outfname):
     if base_addr + insize > 0xFFFFFFFF:
         raise ValueError("invalid destination range")
 
-    header = create_header(base_addr, insize)
+    header = create_header(base_addr, insize, img_type)
     with open(outfname, "wb") as outfp:
         outfp.write(header)
         outfp.write(image)
@@ -64,7 +62,7 @@ def usage(msg=None):
     if msg != None:
         sys.stderr.write("mkheader: %s\n" % msg)
 
-    print "Usage: mkheader.py <base-addr> <input-file> <output-file>"
+    print "Usage: mkheader.py <base-addr> <img_type> <input-file> <output-file>"
 
     if msg != None:
         exit(1)
@@ -72,19 +70,20 @@ def usage(msg=None):
 def main():
     """Main entry function"""
 
-    if len(sys.argv) != 4:
+    if len(sys.argv) != 5:
         usage("incorrect no. of arguments")
 
     try:
         base_addr = int(sys.argv[1], 0)
-        infname = sys.argv[2]
-        outfname = sys.argv[3]
+        img_type = int(sys.argv[2], 0)
+        infname = sys.argv[3]
+        outfname = sys.argv[4]
     except ValueError as e:
         sys.stderr.write("mkheader: invalid base address '%s'\n" % sys.argv[1])
         exit(1)
 
     try:
-        mkheader(base_addr, infname, outfname)
+        mkheader(base_addr, img_type,  infname, outfname)
     except IOError as e:
         sys.stderr.write("mkheader: %s\n" % e)
         exit(1)

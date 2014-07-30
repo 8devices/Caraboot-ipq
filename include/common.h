@@ -880,6 +880,9 @@ int cpu_release(int nr, int argc, char * const argv[]);
 #define DIV_ROUND(n,d)		(((n) + ((d)/2)) / (d))
 #define DIV_ROUND_UP(n,d)	(((n) + (d) - 1) / (d))
 #define roundup(x, y)		((((x) + ((y) - 1)) / (y)) * (y))
+#define __round_mask(x, y) 	((__typeof__(x))((y)-1))
+#define round_up(x, y) 		((((x)-1) | __round_mask(x, y))+1)
+#define round_down(x, y) 	((x) & ~__round_mask(x, y))
 
 #define ALIGN(x,a)		__ALIGN_MASK((x),(typeof(x))(a)-1)
 #define __ALIGN_MASK(x,mask)	(((x)+(mask))&~(mask))
