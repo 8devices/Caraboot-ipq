@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2014 The Linux Foundation. All rights reserved.
  */
 
 #include <common.h>
@@ -36,6 +36,7 @@ struct dumpinfo_t dumpinfo[] = {
 	{ "CPU0_WDT.BIN", 0x0208A044, 0x00000004, 0 },
 	{ "CPU1_WDT.BIN", 0x0209A044, 0x00000004, 0 },
 	{ "WLAN_FW.BIN",  0x41400000, 0x000FFF80, 0 },
+	{ "WLAN_FW_900B.BIN", 0x44000000, 0x00600000, 0 },
 	{ "EBICS0.BIN",   0x40000000, 0x20000000, 0 },
 	{ "EBI1CS1.BIN",  0x60000000, 0x20000000, 0 }
 };
