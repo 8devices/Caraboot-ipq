@@ -142,6 +142,8 @@ struct usb_device {
 	struct usb_device *children[USB_MAXCHILDREN];
 
 	void *controller;		/* hardware controller private data */
+	/* slot_id - for xHCI enabled devices */
+	unsigned int slot_id;
 };
 
 /**********************************************************************
@@ -153,7 +155,8 @@ struct usb_device {
 	defined(CONFIG_USB_SL811HS) || defined(CONFIG_USB_ISP116X_HCD) || \
 	defined(CONFIG_USB_R8A66597_HCD) || defined(CONFIG_USB_DAVINCI) || \
 	defined(CONFIG_USB_OMAP3) || defined(CONFIG_USB_DA8XX) || \
-	defined(CONFIG_USB_BLACKFIN) || defined(CONFIG_USB_AM35X)
+	defined(CONFIG_USB_BLACKFIN) || defined(CONFIG_USB_AM35X) || \
+	defined(CONFIG_USB_XHCI)
 
 int usb_lowlevel_init(int index, void **controller);
 int usb_lowlevel_stop(int index);
@@ -342,6 +345,10 @@ int usb_set_interface(struct usb_device *dev, int interface, int alternate);
 #define usb_pipecontrol(pipe)	(usb_pipetype((pipe)) == PIPE_CONTROL)
 #define usb_pipebulk(pipe)	(usb_pipetype((pipe)) == PIPE_BULK)
 
+#define usb_pipe_ep_index(pipe)	\
+		usb_pipecontrol(pipe) ? (usb_pipeendpoint(pipe) * 2) : \
+				((usb_pipeendpoint(pipe) * 2) - \
+				 (usb_pipein(pipe) ? 0 : 1))
 
 /*************************************************************************
  * Hub Stuff
@@ -385,5 +392,6 @@ int hub_port_reset(struct usb_device *dev, int port,
 struct usb_device *usb_alloc_new_device(void *controller);
 
 int usb_new_device(struct usb_device *dev);
+int usb_alloc_device(struct usb_device *dev);
 
 #endif /*_USB_H_ */
