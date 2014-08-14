@@ -403,7 +403,7 @@ $(obj)u-boot.bin:	$(obj)u-boot
 		$(BOARD_SIZE_CHECK)
 
 $(obj)u-boot.mbn:	$(obj)u-boot.bin
-		python tools/mkheader.py $(CONFIG_SYS_TEXT_BASE) $< $@
+		python tools/mkheader.py $(CONFIG_SYS_TEXT_BASE) $(CONFIG_IPQ_APPSBL_IMG_TYPE) $< $@
 
 $(obj)u-boot.ldr:	$(obj)u-boot
 		$(CREATE_LDR_ENV)

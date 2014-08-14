@@ -305,6 +305,9 @@ typedef struct {
 /* Add MBN header to U-Boot */
 #define CONFIG_MBN_HEADER
 
+/* Apps bootloader image type used in MBN header */
+#define CONFIG_IPQ_APPSBL_IMG_TYPE      0x5
+
 #define CONFIG_SYS_RX_ETH_BUFFER	8
 
 #ifdef CONFIG_IPQ_APPSBL_DLOAD

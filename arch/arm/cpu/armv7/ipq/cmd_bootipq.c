@@ -17,12 +17,43 @@
 #include <nand.h>
 #include <errno.h>
 #include <asm/arch-ipq806x/smem.h>
+#include <asm/arch-ipq806x/scm.h>
+#include <linux/mtd/ubi.h>
 
-#define img_addr	((void *)CONFIG_SYS_LOAD_ADDR)
+#define img_addr		((void *)CONFIG_SYS_LOAD_ADDR)
+#define CE1_REG_USAGE		(0)
+#define CE1_ADM_USAGE		(1)
+#define CE1_RESOURCE		(1)
+
 static int debug = 0;
 static ipq_smem_flash_info_t *sfi = &ipq_smem_flash_info;
 int ipq_fs_on_nand, rootfs_part_avail = 1;
 extern board_ipq806x_params_t *gboard_param;
+
+typedef struct {
+	unsigned int image_type;
+	unsigned int header_vsn_num;
+	unsigned int image_src;
+	unsigned char *image_dest_ptr;
+	unsigned int image_size;
+	unsigned int code_size;
+	unsigned char *signature_ptr;
+	unsigned int signature_size;
+	unsigned char *cert_chain_ptr;
+	unsigned int cert_chain_size;
+} mbn_header_t;
+
+typedef struct {
+	unsigned int kernel_load_addr;
+	unsigned int kernel_load_size;
+} kernel_img_info_t;
+
+typedef struct {
+	unsigned int resource;
+	unsigned int channel_id;
+} switch_ce_chn_buf_t;
+
+kernel_img_info_t kernel_img_info;
 
 #ifdef CONFIG_IPQ_LOAD_NSS_FW
 /**
@@ -131,14 +162,34 @@ static int inline do_dumpipq_data()
 	return CMD_RET_SUCCESS;
 }
 
+
+#ifdef CONFIG_IPQ_LINUX_SECBOOT
+static int switch_ce_channel_buf(unsigned int channel_id)
+{
+	int ret;
+	switch_ce_chn_buf_t ce1_chn_buf;
+
+	ce1_chn_buf.resource   = CE1_RESOURCE;
+	ce1_chn_buf.channel_id = channel_id;
+
+	ret = scm_call(SCM_SVC_TZ, CE_CHN_SWITCH_CMD, &ce1_chn_buf,
+		sizeof(switch_ce_chn_buf_t), NULL, 0);
+
+	return ret;
+}
+#endif
+
 /**
  * Load the NSS images and Kernel image and transfer control to kernel
  */
 static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
+#ifdef CONFIG_IPQ_LOAD_NSS_FW
 	char bootargs[IH_NMLEN+32];
+#endif
 	char runcmd[256];
-	int nandid = 0, ret;
+	int ret;
+	unsigned int request;
 
 #ifdef CONFIG_IPQ_APPSBL_DLOAD
 	unsigned long * dmagic1 = (unsigned long *) 0x2A03F000;
@@ -182,7 +233,6 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 
 	/* check the smem info to see which flash used for booting */
 	if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
-		nandid = 1;
 		if (debug) {
 			printf("Using nand device 1\n");
 		}
@@ -237,7 +287,11 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 		printf("Booting from flash\n");
 	}
 
+	request = CONFIG_SYS_LOAD_ADDR;
+	kernel_img_info.kernel_load_addr = request;
+
 	if (ipq_fs_on_nand) {
+
 		/*
 		 * The kernel will be available inside a UBI volume
 		 */
@@ -245,10 +299,21 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 			"set mtdids nand0=nand0 && "
 			"set mtdparts mtdparts=nand0:0x%llx@0x%llx(fs),${msmparts} && "
 			"ubi part fs && "
-			"ubi read 0x%x kernel && "
-			"bootm 0x%x\n", sfi->rootfs.size, sfi->rootfs.offset,
-				CONFIG_SYS_LOAD_ADDR, CONFIG_SYS_LOAD_ADDR);
+			"ubi read 0x%x kernel && ", sfi->rootfs.size, sfi->rootfs.offset,
+			request);
+
+
+		if (debug)
+			printf(runcmd);
+
+		if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
+			return CMD_RET_FAILURE;
+
+		kernel_img_info.kernel_load_size =
+			(unsigned int)ubi_get_volume_size("kernel");
+
 	} else {
+
 		/*
 		 * Kernel is in a separate partition
 		 */
@@ -256,10 +321,46 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 			/* NOR is treated as psuedo NAND */
 			"set mtdids nand1=nand1 && "
 			"set mtdparts mtdparts=nand1:${msmparts} && "
-			"set autostart yes;"
-			"nboot 0x%x %d 0x%llx", CONFIG_SYS_LOAD_ADDR,
-				nandid, sfi->hlos.offset);
+			"nand read 0x%x 0x%llx 0x%llx",
+			request, sfi->hlos.offset, sfi->hlos.size);
+
+		if (debug)
+			printf(runcmd);
+
+		if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
+			return CMD_RET_FAILURE;
+
+		kernel_img_info.kernel_load_size =  sfi->hlos.size;
 	}
+
+#ifdef CONFIG_IPQ_LINUX_SECBOOT
+	request += sizeof(mbn_header_t);
+
+	/* This sys call will switch the CE1 channel to register usage */
+	ret = switch_ce_channel_buf(CE1_REG_USAGE);
+
+	if (ret)
+		return CMD_RET_FAILURE;
+
+	ret = scm_call(SCM_SVC_BOOT, KERNEL_AUTH_CMD, &kernel_img_info,
+		sizeof(kernel_img_info_t), NULL, 0);
+
+	if (ret) {
+		printf("Kernel image authentication failed \n");
+		BUG();
+	}
+
+	/*
+	 * This sys call will switch the CE1 channel to ADM usage
+	 * so that HLOS can use it.
+	 */
+	ret = switch_ce_channel_buf(CE1_ADM_USAGE);
+
+	if (ret)
+		return CMD_RET_FAILURE;
+#endif
+	snprintf(runcmd, sizeof(runcmd), "bootm 0x%x\n", request);
+
 	if (debug)
 		printf(runcmd);
 
