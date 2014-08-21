@@ -333,7 +333,7 @@ mmc_berase(int dev_num, unsigned long start, lbaint_t blkcnt)
 	int err = 0;
 	struct mmc *mmc = find_mmc_device(dev_num);
 	lbaint_t blk = 0, blk_r = 0;
-	int timeout = 1500;
+	int timeout = 2000;
 	int arg = SECURE_ERASE;
 
 	if (!mmc)
