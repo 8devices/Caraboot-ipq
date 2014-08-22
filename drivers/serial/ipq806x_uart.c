@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
  * Source : APQ8064 LK boot
  *
  * Copyright (c) 2011-2012, Code Aurora Forum. All rights reserved.
@@ -32,6 +32,7 @@
  */
 
 #include <common.h>
+#include <watchdog.h>
 #include <asm/arch-ipq806x/gsbi.h>
 #include <asm/arch-ipq806x/clock.h>
 #include <asm/arch-ipq806x/uart.h>
@@ -406,6 +407,7 @@ int serial_getc(void)
 	int byte;
 
 	while (!serial_tstc()) {
+		WATCHDOG_RESET();
 		/* wait for incoming data */
 	}
 

@@ -1,8 +1,9 @@
 /*
- * Copyright (c) 2012 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
  */
 
 #include <common.h>
+#include <watchdog.h>
 #include <spi.h>
 #include <malloc.h>
 #include <asm/io.h>
@@ -611,6 +612,7 @@ static void flush_fifos(struct ipq_spi_slave *ds)
 					break;
 			}
 		}
+		WATCHDOG_RESET();
 	}
 
 	(void)fifo_data;

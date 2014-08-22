@@ -64,6 +64,8 @@
 
 #define CONFIG_BOARD_EARLY_INIT_F
 
+#define CONFIG_HW_WATCHDOG
+
 /* Environment */
 #define CONFIG_MSM_PCOMM
 #define CONFIG_ARCH_CPU_INIT
