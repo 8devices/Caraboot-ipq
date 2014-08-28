@@ -20,18 +20,9 @@
 #include <asm/cache.h>
 #include <asm/io.h>
 #include <linux/list.h>
-#include <linux/usb/ch9.h>
 
 #define upper_32_bits(n) (u32)((n) >> 32)
 #define lower_32_bits(n) (u32)(n)
-
-#ifndef	BOOL_WAS_DEFINED
-#define BOOL_WAS_DEFINED
-typedef unsigned int bool;
-#endif
-
-#define false 0
-#define true 1
 
 #define MAX_EP_CTX_NUM		31
 #define XHCI_ALIGNMENT		64
