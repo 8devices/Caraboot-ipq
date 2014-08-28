@@ -140,8 +140,6 @@ struct usb_device {
 	int portnr;
 	struct usb_device *parent;
 	struct usb_device *children[USB_MAXCHILDREN];
-
-	void *controller;		/* hardware controller private data */
 };
 
 /**********************************************************************
@@ -155,9 +153,8 @@ struct usb_device {
 	defined(CONFIG_USB_OMAP3) || defined(CONFIG_USB_DA8XX) || \
 	defined(CONFIG_USB_BLACKFIN) || defined(CONFIG_USB_AM35X)
 
-int usb_lowlevel_init(int index, void **controller);
-int usb_lowlevel_stop(int index);
-
+int usb_lowlevel_init(void);
+int usb_lowlevel_stop(void);
 int submit_bulk_msg(struct usb_device *dev, unsigned long pipe,
 			void *buffer, int transfer_len);
 int submit_control_msg(struct usb_device *dev, unsigned long pipe, void *buffer,
@@ -385,8 +382,7 @@ void usb_hub_reset(void);
 int hub_port_reset(struct usb_device *dev, int port,
 			  unsigned short *portstat);
 
-struct usb_device *usb_alloc_new_device(void *controller);
-
+struct usb_device *usb_alloc_new_device(void);
 int usb_new_device(struct usb_device *dev);
 
 #endif /*_USB_H_ */
