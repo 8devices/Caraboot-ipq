@@ -180,24 +180,14 @@ static struct usb_hub_device *usb_hub_allocate(void)
 
 static inline char *portspeed(int portstatus)
 {
-	char *speed_str;
-
-	switch (portstatus & USB_PORT_STAT_SPEED_MASK) {
-	case USB_PORT_STAT_SUPER_SPEED:
-		speed_str = "5 Gb/s";
-		break;
-	case USB_PORT_STAT_HIGH_SPEED:
-		speed_str = "480 Mb/s";
-		break;
-	case USB_PORT_STAT_LOW_SPEED:
-		speed_str = "1.5 Mb/s";
-		break;
-	default:
-		speed_str = "12 Mb/s";
-		break;
-	}
-
-	return speed_str;
+	if (portstatus & (1 << USB_PORT_FEAT_SUPERSPEED))
+		return "5 Gb/s";
+	else if (portstatus & (1 << USB_PORT_FEAT_HIGHSPEED))
+		return "480 Mb/s";
+	else if (portstatus & (1 << USB_PORT_FEAT_LOWSPEED))
+		return "1.5 Mb/s";
+	else
+		return "12 Mb/s";
 }
 
 int hub_port_reset(struct usb_device *dev, int port,
@@ -296,20 +286,14 @@ void usb_hub_port_connect_change(struct usb_device *dev, int port)
 	/* Allocate a new device struct for it */
 	usb = usb_alloc_new_device(dev->controller);
 
-	switch (portstatus & USB_PORT_STAT_SPEED_MASK) {
-	case USB_PORT_STAT_SUPER_SPEED:
+	if (portstatus & USB_PORT_STAT_SUPER_SPEED)
 		usb->speed = USB_SPEED_SUPER;
-		break;
-	case USB_PORT_STAT_HIGH_SPEED:
+	else if (portstatus & USB_PORT_STAT_HIGH_SPEED)
 		usb->speed = USB_SPEED_HIGH;
-		break;
-	case USB_PORT_STAT_LOW_SPEED:
+	else if (portstatus & USB_PORT_STAT_LOW_SPEED)
 		usb->speed = USB_SPEED_LOW;
-		break;
-	default:
+	else
 		usb->speed = USB_SPEED_FULL;
-		break;
-	}
 
 	dev->children[port] = usb;
 	usb->parent = dev;
