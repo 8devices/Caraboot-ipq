@@ -27,6 +27,8 @@
 #include <nand.h>
 #include <phy.h>
 #include <part.h>
+#include <mmc.h>
+#include <environment.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -55,8 +57,21 @@ loff_t board_env_range;
 extern int nand_env_device;
 #ifdef CONFIG_IPQ_MMC
 ipq_mmc mmc_host;
-void board_mmc_env_init(void);
 #endif
+char *env_name_spec;
+extern char *mmc_env_name_spec;
+extern char *nand_env_name_spec;
+int (*saveenv)(void);
+env_t *env_ptr;
+extern env_t *mmc_env_ptr;
+extern env_t *nand_env_ptr;
+extern int mmc_env_init(void);
+extern int mmc_saveenv(void);
+extern void mmc_env_relocate_spec(void);
+
+extern int nand_env_init(void);
+extern int nand_saveenv(void);
+extern void nand_env_relocate_spec(void);
 
 /*
  * Don't have this as a '.bss' variable. The '.bss' and '.rel.dyn'
@@ -181,7 +196,38 @@ int board_init()
                 BUG();
         }
 
+	if (sfi->flash_type != SMEM_BOOT_MMC_FLASH) {
+		saveenv = nand_saveenv;
+		env_ptr = nand_env_ptr;
+		env_name_spec = nand_env_name_spec;
+#ifdef CONFIG_IPQ_MMC
+	} else {
+		saveenv = mmc_saveenv;
+		env_ptr = mmc_env_ptr;
+		env_name_spec = mmc_env_name_spec;
+#endif
+	}
+
 	return 0;
+}
+
+void env_relocate_spec(void)
+{
+	ipq_smem_flash_info_t sfi;
+
+	smem_get_boot_flash(&sfi.flash_type,
+				  &sfi.flash_index,
+				  &sfi.flash_chip_select,
+				  &sfi.flash_block_size);
+
+	if (sfi.flash_type != SMEM_BOOT_MMC_FLASH) {
+		nand_env_relocate_spec();
+#ifdef CONFIG_IPQ_MMC
+	} else {
+		mmc_env_relocate_spec();
+#endif
+	}
+
 }
 
 void enable_caches(void)
@@ -192,6 +238,26 @@ void enable_caches(void)
 #endif
 }
 
+int env_init(void)
+{
+	ipq_smem_flash_info_t sfi;
+	int ret;
+
+	smem_get_boot_flash(&sfi.flash_type,
+				  &sfi.flash_index,
+				  &sfi.flash_chip_select,
+				  &sfi.flash_block_size);
+
+	if (sfi.flash_type != SMEM_BOOT_MMC_FLASH) {
+		ret = nand_env_init();
+#ifdef CONFIG_IPQ_MMC
+	} else {
+		ret = mmc_env_init();
+#endif
+	}
+
+	return ret;
+}
 
 /*******************************************************
 Function description: DRAM initialization.
@@ -355,10 +421,6 @@ int board_late_init(void)
 
 	if (sfi->flash_type != SMEM_BOOT_MMC_FLASH) {
 		ipq_get_part_details();
-#ifdef CONFIG_IPQ_MMC
-	} else {
-		board_mmc_env_init();
-#endif
 	}
 
         /* get machine type from SMEM and set in env */
@@ -389,38 +451,63 @@ int board_early_init_f(void)
  */
 int get_eth_mac_address(uchar *enetaddr, uint no_of_macs)
 {
-	s32 ret;
+	s32 ret = 0 ;
 	u32 start_blocks;
 	u32 size_blocks;
 	u32 length = (6 * no_of_macs);
 	u32 flash_type;
 	loff_t art_offset;
+	ipq_smem_flash_info_t *sfi = &ipq_smem_flash_info;
+#ifdef CONFIG_IPQ_MMC
+	block_dev_desc_t *blk_dev;
+	disk_partition_t disk_info;
+	struct mmc *mmc;
+#endif
 
-	if (ipq_smem_flash_info.flash_type == SMEM_BOOT_SPI_FLASH)
-		flash_type = CONFIG_IPQ_SPI_NAND_INFO_IDX;
-	else if (ipq_smem_flash_info.flash_type == SMEM_BOOT_NAND_FLASH)
-		flash_type = CONFIG_IPQ_NAND_NAND_INFO_IDX;
-	else {
-		printf("Unknown flash type\n");
-		return -EINVAL;
+	if (sfi->flash_type != SMEM_BOOT_MMC_FLASH) {
+		if (ipq_smem_flash_info.flash_type == SMEM_BOOT_SPI_FLASH)
+			flash_type = CONFIG_IPQ_SPI_NAND_INFO_IDX;
+		else if (ipq_smem_flash_info.flash_type == SMEM_BOOT_NAND_FLASH)
+			flash_type = CONFIG_IPQ_NAND_NAND_INFO_IDX;
+		else {
+			printf("Unknown flash type\n");
+			return -EINVAL;
+		}
+
+		ret = smem_getpart("0:ART", &start_blocks, &size_blocks);
+		if (ret < 0) {
+			printf("No ART partition found\n");
+			return ret;
+		}
+
+		/*
+		 * ART partition 0th position (6 * 4) 24 bytes will contain the
+		 * 4 MAC Address. First 0-5 bytes for GMAC0, Second 6-11 bytes
+		 * for GMAC1, 12-17 bytes for GMAC2 and 18-23 bytes for GMAC3
+		 */
+		art_offset = ((loff_t) ipq_smem_flash_info.flash_block_size * start_blocks);
+
+		ret = nand_read(&nand_info[flash_type], art_offset, &length, enetaddr);
+		if (ret < 0)
+			printf("ART partition read failed..\n");
+#ifdef CONFIG_IPQ_MMC
+	} else {
+		blk_dev = mmc_get_dev(mmc_host.dev_num);
+		ret = find_part_efi(blk_dev, "0:ART", &disk_info);
+		/*
+		 * ART partition 0th position (6 * 4) 24 bytes will contain the
+		 * 4 MAC Address. First 0-5 bytes for GMAC0, Second 6-11 bytes
+		 * for GMAC1, 12-17 bytes for GMAC2 and 18-23 bytes for GMAC3
+		 */
+		art_offset = ((loff_t) blk_dev->blksz * start_blocks);
+		mmc = mmc_host.mmc;
+		ret = mmc->block_dev.block_read(mmc_host.dev_num, art_offset, length,
+									enetaddr);
+
+		if (ret < 0)
+			printf("ART partition read failed..\n");
+#endif
 	}
-
-	ret = smem_getpart("0:ART", &start_blocks, &size_blocks);
-	if (ret < 0) {
-		printf("No ART partition found\n");
-		return ret;
-	}
-
-	/*
-	 * ART partition 0th position (6 * 4) 24 bytes will contain the
-	 * 4 MAC Address. First 0-5 bytes for GMAC0, Second 6-11 bytes
-	 * for GMAC1, 12-17 bytes for GMAC2 and 18-23 bytes for GMAC3
-	 */
-	art_offset = ((loff_t) ipq_smem_flash_info.flash_block_size * start_blocks);
-
-	ret = nand_read(&nand_info[flash_type], art_offset, &length, enetaddr);
-	if (ret < 0)
-		printf("ART partition read failed..\n");
 	return ret;
 }
 
@@ -455,23 +542,27 @@ int board_eth_init(bd_t *bis)
 
 #ifdef CONFIG_IPQ_MMC
 
-void board_mmc_env_init(void)
+int board_mmc_env_init(void)
 {
-
 	block_dev_desc_t *blk_dev;
 	disk_partition_t disk_info;
 	loff_t board_env_size;
 	int ret;
 
+	if(mmc_init(mmc_host.mmc)) {
+		printf("MMC init failed \n");
+		return -1;
+	}
 	blk_dev = mmc_get_dev(mmc_host.dev_num);
 	ret = find_part_efi(blk_dev, "0:APPSBLENV", &disk_info);
 
-	if (!ret) {
-		board_env_offset = disk_info.start;
-		board_env_size = disk_info.size;
+	if (ret) {
+		board_env_offset = disk_info.start * disk_info.blksz;
+		board_env_size = disk_info.size * disk_info.blksz;
 		board_env_range = board_env_size;
 		BUG_ON(board_env_size > CONFIG_ENV_SIZE_MAX);
 	}
+	return ret;
 }
 
 int board_mmc_init(bd_t *bis)
@@ -486,6 +577,7 @@ int board_mmc_init(bd_t *bis)
 		emmc_clock_config(mmc_host.clk_mode);
 
 		ipq_mmc_init(bis, &mmc_host);
+		board_mmc_env_init();
 	}
 	return 0;
 }

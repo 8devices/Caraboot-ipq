@@ -339,7 +339,11 @@ int	envmatch     (uchar *, int);
 char	*getenv	     (const char *);
 int	getenv_f     (const char *name, char *buf, unsigned len);
 ulong getenv_ulong(const char *name, int base, ulong default_val);
+#ifdef CONFIG_IPQ806X_ENV
+extern int	(*saveenv)   (void);
+#else
 int	saveenv	     (void);
+#endif
 #ifdef CONFIG_PPC		/* ARM version to be fixed! */
 int inline setenv    (const char *, const char *);
 #else

@@ -36,6 +36,8 @@
 #define CONFIG_BOARD_EARLY_INIT_F
 
 #define CONFIG_SYS_NO_FLASH
+#define CONFIG_SYS_CACHELINE_SIZE   64
+#define CONFIG_IPQ806X_ENV
 
 #ifdef CONFIG_IPQ806X_USB
 #define CONFIG_USB_XHCI
@@ -44,7 +46,6 @@
 #define CONFIG_USB_STORAGE
 #define CONFIG_SYS_USB_XHCI_MAX_ROOT_PORTS 2
 #define CONFIG_USB_MAX_CONTROLLER_COUNT 2
-#define CONFIG_SYS_CACHELINE_SIZE   64
 #define BOOL_WAS_DEFINED
 #endif
 
@@ -133,6 +134,8 @@
 #define CONFIG_MMC
 #define CONFIG_EFI_PARTITION
 #define CONFIG_GENERIC_MMC
+#define CONFIG_ENV_IS_IN_MMC
+#define CONFIG_SYS_MMC_ENV_DEV  0
 #endif
 
 #ifndef __ASSEMBLY__
@@ -268,7 +271,6 @@ typedef struct {
 /*
  * U-Boot Env Configs
  */
-
 #define CONFIG_ENV_IS_IN_NAND
 #define CONFIG_CMD_SAVEENV
 #define CONFIG_BOARD_LATE_INIT
@@ -276,7 +278,7 @@ typedef struct {
 #define CONFIG_OF_LIBFDT	1
 #define CONFIG_OF_BOARD_SETUP	1
 
-#if defined(CONFIG_ENV_IS_IN_NAND)
+#if defined(CONFIG_ENV_IS_IN_NAND) || defined(CONFIG_ENV_IS_IN_MMC)
 
 #define CONFIG_ENV_SPI_CS               flash_chip_select
 #define CONFIG_ENV_SPI_MODE             SPI_MODE_0
