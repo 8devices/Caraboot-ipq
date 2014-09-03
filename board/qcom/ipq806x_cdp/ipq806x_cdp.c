@@ -678,14 +678,14 @@ void board_pci_init()
 								BIT(0));
 		udelay(500);
 
-		for (j = 0; j < 1000; j++) {
+		for (j = 0; j < 400; j++) {
 			val = readl(cfg->pcie20 + PCIE20_CAP_LINKCTRLSTATUS);
 			if (val & BIT(29)) {
 				printf("PCI%d Link Intialized\n", i);
 				cfg->linkup = 1;
 				break;
 			}
-			udelay(1000);
+			udelay(35);
 		}
 		ipq_pcie_config_controller(i);
 	}
