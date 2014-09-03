@@ -18,6 +18,7 @@
 #include <configs/ipq806x_cdp.h>
 #include <phy.h>
 #include <asm/arch-ipq806x/clock.h>
+#include <asm/u-boot.h>
 
 unsigned int smem_get_board_machtype(void);
 
@@ -149,6 +150,11 @@ typedef struct {
 #ifdef CONFIG_IPQ806X_PCI
 	pcie_params_t	pcie_cfg[PCI_MAX_DEVICES];
 #endif
+#ifdef CONFIG_IPQ_MMC
+	gpio_func_data_t *emmc_gpio;
+	unsigned int emmc_gpio_count;
+#endif
+
 } __attribute__ ((__packed__)) board_ipq806x_params_t;
 
 extern board_ipq806x_params_t *gboard_param;
@@ -168,4 +174,17 @@ static inline int gmac_cfg_is_valid(ipq_gmac_board_cfg_t *cfg)
 
 unsigned int get_board_index(unsigned int machid);
 void ipq_configure_gpio(gpio_func_data_t *gpio, uint count);
+
+#ifdef CONFIG_IPQ_MMC
+
+#define MSM_SDC1_BASE      0x12400000
+
+typedef struct {
+	uint base;
+	uint clk_mode;
+} ipq_mmc;
+
+int ipq_mmc_init(bd_t *, ipq_mmc *);
+void board_mmc_deinit(void);
+#endif
 #endif

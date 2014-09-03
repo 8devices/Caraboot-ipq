@@ -126,6 +126,15 @@
 #define CONFIG_CMD_PCI
 #define CONFIG_PCI_SCAN_SHOW
 #endif
+#define CONFIG_IPQ_MMC
+
+#ifdef CONFIG_IPQ_MMC
+#define CONFIG_CMD_MMC
+#define CONFIG_MMC
+#define CONFIG_EFI_PARTITION
+#define CONFIG_GENERIC_MMC
+#endif
+
 #ifndef __ASSEMBLY__
 #include <compiler.h>
 #include "../../board/qcom/ipq806x_cdp/ipq806x_cdp.h"
@@ -322,5 +331,6 @@ typedef struct {
  * size is configured to 64 */
 #define CONFIG_SYS_CACHELINE_SIZE  64
 /*#define CONFIG_SYS_DCACHE_OFF*/
+
 #endif /* _IPQCDP_H */
 
