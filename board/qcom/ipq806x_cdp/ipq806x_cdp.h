@@ -182,8 +182,11 @@ void ipq_configure_gpio(gpio_func_data_t *gpio, uint count);
 typedef struct {
 	uint base;
 	uint clk_mode;
+	struct mmc *mmc;
+	int dev_num;
 } ipq_mmc;
 
+extern ipq_mmc mmc_host;
 int ipq_mmc_init(bd_t *, ipq_mmc *);
 void board_mmc_deinit(void);
 #endif

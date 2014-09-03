@@ -19,6 +19,7 @@
 #include <asm/arch-ipq806x/smem.h>
 #include <asm/arch-ipq806x/scm.h>
 #include <linux/mtd/ubi.h>
+#include <part.h>
 
 #define img_addr		((void *)CONFIG_SYS_LOAD_ADDR)
 #define CE1_REG_USAGE		(0)
@@ -29,6 +30,9 @@ static int debug = 0;
 static ipq_smem_flash_info_t *sfi = &ipq_smem_flash_info;
 int ipq_fs_on_nand, rootfs_part_avail = 1;
 extern board_ipq806x_params_t *gboard_param;
+#ifdef CONFIG_IPQ_MMC
+static ipq_mmc *host = &mmc_host;
+#endif
 
 typedef struct {
 	unsigned int image_type;
@@ -102,6 +106,12 @@ static int load_nss_img(const char *runcmd, char *args, int argslen,
 static int set_fs_bootargs(int *fs_on_nand)
 {
 	char *bootargs;
+#ifdef CONFIG_IPQ_MMC
+	char emmc_rootfs[30];
+	block_dev_desc_t *blk_dev = mmc_get_dev(host->dev_num);
+	disk_partition_t disk_info;
+	int pos;
+#endif
 
 #define nand_rootfs	"ubi.mtd=" IPQ_ROOT_FS_PART_NAME " root=mtd:ubi_rootfs"
 #define nor_rootfs	"root=mtd:" IPQ_ROOT_FS_PART_NAME
@@ -126,6 +136,14 @@ static int set_fs_bootargs(int *fs_on_nand)
 	} else if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
 		bootargs = nand_rootfs;
 		*fs_on_nand = 1;
+#ifdef CONFIG_IPQ_MMC
+	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
+		pos = find_part_efi(blk_dev, "0:rootfs", &disk_info);
+		snprintf(emmc_rootfs, sizeof(emmc_rootfs),
+			"root=/dev/mmcblk0p%d", pos);
+		bootargs = emmc_rootfs;
+		*fs_on_nand = 0;
+#endif
 	} else {
 		printf("bootipq: unsupported boot flash type\n");
 		return -EINVAL;
@@ -190,6 +208,10 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	char runcmd[256];
 	int ret;
 	unsigned int request;
+#ifdef CONFIG_IPQ_MMC
+	block_dev_desc_t *blk_dev = mmc_get_dev(host->dev_num);
+	disk_partition_t disk_info;
+#endif
 
 #ifdef CONFIG_IPQ_APPSBL_DLOAD
 	unsigned long * dmagic1 = (unsigned long *) 0x2A03F000;
@@ -240,6 +262,10 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	} else if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
 		if (debug) {
 			printf("Using nand device 0\n");
+		}
+	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
+		if (debug) {
+			printf("Using MMC device\n");
 		}
 	} else {
 		printf("Unsupported BOOT flash type\n");
@@ -312,6 +338,19 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 		kernel_img_info.kernel_load_size =
 			(unsigned int)ubi_get_volume_size("kernel");
 
+#ifdef CONFIG_IPQ_MMC
+	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
+		ret = find_part_efi(blk_dev, "0:HLOS", &disk_info);
+
+		snprintf(runcmd, sizeof(runcmd), "mmc read 0x%x 0x%X 0x%X",
+				CONFIG_SYS_LOAD_ADDR,
+				(uint)disk_info.start, (uint)disk_info.size);
+
+		if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
+			return CMD_RET_FAILURE;
+
+		kernel_img_info.kernel_load_size = disk_info.size * disk_info.blksz;
+#endif
 	} else {
 
 		/*
