@@ -75,21 +75,15 @@ ipq_start_command(ipq_mmc *host, struct mmc_cmd *cmd)
 		if ((status & MCI_CMDCRCFAIL) && (cmd->cmdidx != MMC_CMD_SEND_OP_COND)) {
 			rc = UNUSABLE_ERR;
 		}
-		if ((cmd->resp_type == MMC_RSP_R2) ||
-			(cmd->resp_type == MMC_RSP_R3) ||
-			(cmd->resp_type == MMC_RSP_R6) ||
-			(cmd->resp_type == MMC_RSP_R7)) {
-
-			cmd->response[0] = readl(host->base + MMCIRESPONSE0);
-			/*
-			 * Read rest of the response registers only if
-			 * long response is expected for this command
-			 */
-			if (cmd->resp_type & MMC_RSP_136) {
-				cmd->response[1] = readl(host->base + MMCIRESPONSE1);
-				cmd->response[2] = readl(host->base + MMCIRESPONSE2);
-				cmd->response[3] = readl(host->base + MMCIRESPONSE3);
-			}
+		cmd->response[0] = readl(host->base + MMCIRESPONSE0);
+		/*
+		 * Read rest of the response registers only if
+		 * long response is expected for this command
+		 */
+		if (cmd->resp_type & MMC_RSP_136) {
+			cmd->response[1] = readl(host->base + MMCIRESPONSE1);
+			cmd->response[2] = readl(host->base + MMCIRESPONSE2);
+			cmd->response[3] = readl(host->base + MMCIRESPONSE3);
 		}
 	}
 
