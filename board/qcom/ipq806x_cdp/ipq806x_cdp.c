@@ -29,6 +29,7 @@
 #include <part.h>
 #include <mmc.h>
 #include <environment.h>
+#include <watchdog.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -116,6 +117,13 @@ static board_ipq806x_params_t *get_board_param(unsigned int machid)
 	printf("cdp: Invalid machine id 0x%x\n", machid);
 	for (;;);
 }
+
+#ifdef CONFIG_HW_WATCHDOG
+void hw_watchdog_reset(void)
+{
+	writel(1, APCS_WDT0_RST);
+}
+#endif
 
 int board_init()
 {
