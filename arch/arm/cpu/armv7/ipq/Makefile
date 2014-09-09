@@ -8,9 +8,7 @@ SOBJS-y = timer.o
 COBJS-y += clock.o
 COBJS-y += gpio.o
 COBJS-y += smem.o
-ifeq ($(CONFIG_IPQ_LINUX_SECBOOT),y)
 COBJS-y += scm.o
-endif
 COBJS-y += cmd_bootipq.o
 ifeq ($(CONFIG_IPQ_APPSBL_DLOAD),y)
 COBJS-y += cmd_dumpipq_data.o
