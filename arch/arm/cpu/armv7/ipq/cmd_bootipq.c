@@ -138,7 +138,7 @@ static int set_fs_bootargs(int *fs_on_nand)
 		*fs_on_nand = 1;
 #ifdef CONFIG_IPQ_MMC
 	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
-		pos = find_part_efi(blk_dev, "0:rootfs", &disk_info);
+		pos = find_part_efi(blk_dev, IPQ_ROOT_FS_PART_NAME, &disk_info);
 		snprintf(emmc_rootfs, sizeof(emmc_rootfs),
 			"root=/dev/mmcblk0p%d", pos);
 		bootargs = emmc_rootfs;
