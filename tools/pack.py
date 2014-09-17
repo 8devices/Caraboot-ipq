@@ -117,90 +117,6 @@ def roundup(value, roundto):
 
     return ((value + roundto - 1) // roundto) * roundto
 
-class GPT(object):
-    GPTheader = namedtuple("GPTheader", "signature revision header_size"
-                            " crc32 current_lba backup_lba first_usable_lba"
-                            " last_usable_lba disk_guid start_lba_part_entry"
-                            " num_part_entry part_entry_size part_crc32")
-    GPT_SIGNATURE = 'EFI PART'
-    GPT_REVISION = '\x00\x00\x01\x00'
-    GPT_HEADER_SIZE = 0x5C
-    GPT_HEADER_FMT = "<8s4sLL4xQQQQ16sQLLL"
-
-    GPTtable = namedtuple("GPTtable", "part_type unique_guid first_lba"
-                           " last_lba attribute_flag part_name")
-    GPT_TABLE_FMT = "<16s16sQQQ72s"
-
-    def __init__(self, filename, pagesize, blocksize, chipsize):
-        self.filename = filename
-        self.pagesize = pagesize
-        self.blocksize = blocksize
-        self.chipsize = chipsize
-        self.__partitions = OrderedDict()
-
-    def __validate_and_read_parts(self, part_fp):
-        """Validate the GPT and read the partition"""
-        part_fp.seek(self.blocksize, os.SEEK_SET)
-        gptheader_str = part_fp.read(struct.calcsize(GPT.GPT_HEADER_FMT))
-        gptheader = struct.unpack(GPT.GPT_HEADER_FMT, gptheader_str)
-        gptheader = GPT.GPTheader._make(gptheader)
-
-        if gptheader.signature != GPT.GPT_SIGNATURE:
-            error("Invalid signature")
-
-        if gptheader.revision != GPT.GPT_REVISION:
-            error("Unsupported GPT Revision")
-
-        if gptheader.header_size != GPT.GPT_HEADER_SIZE:
-            error("Invalid Header size")
-
-        # Adding GPT partition info. This has to be flashed first.
-        # GPT Header starts at LBA1 so (current_lba -1) will give the
-        # starting of primary GPT.
-        # blocksize will equal to gptheader.first_usuable_lba - current_lba + 1
-
-        name = "0:GPT"
-        block_start = gptheader.current_lba - 1
-        block_count = gptheader.first_usable_lba - gptheader.current_lba + 1
-        part_info = PartInfo(name, block_start, block_count)
-        self.__partitions[name] = part_info
-
-        part_fp.seek(2 * self.blocksize, os.SEEK_SET)
-
-        for i in range(gptheader.num_part_entry):
-            gpt_table_str = part_fp.read(struct.calcsize(GPT.GPT_TABLE_FMT))
-            gpt_table = struct.unpack(GPT.GPT_TABLE_FMT, gpt_table_str)
-            gpt_table = GPT.GPTtable._make(gpt_table)
-
-            block_start = gpt_table.first_lba
-            block_count = gpt_table.last_lba - gpt_table.first_lba + 1
-
-            part_name = gpt_table.part_name.strip(chr(0))
-            name = part_name.replace('\0','')
-            part_info = PartInfo(name, block_start, block_count)
-            self.__partitions[name] = part_info
-
-        # Adding the GPT Backup partition.
-        # GPT header backup_lba gives block number where the GPT backup header will be.
-        # GPT Backup header will start from offset of 32 blocks before
-        # the GPTheader.backup_lba. Backup GPT size is 33 blocks.
-        name = "0:GPTBACKUP"
-        block_start = gptheader.backup_lba - 32
-        block_count = 33
-        part_info = PartInfo(name, block_start, block_count)
-        self.__partitions[name] = part_info
-
-    def get_parts(self):
-        """Returns a list of partitions present in the GPT."""
-
-        try:
-            with open(self.filename, "r") as part_fp:
-                self.__validate_and_read_parts(part_fp)
-        except IOError, e:
-            error("error opening %s" % self.filename, e)
-
-        return self.__partitions
-
 class MIBIB(object):
     Header = namedtuple("Header", "magic1 magic2 version age")
     HEADER_FMT = "<LLLL"
@@ -494,25 +410,15 @@ class NorScript(FlashScript):
         size = roundup(size, self.pagesize)
         self.append("sf write $fileaddr 0x%08x 0x%08x" % (offset, size))
 
-    def switch_layout(self, layout):
-        pass
-
-class EmmcScript(FlashScript):
-    """Class for creating EMMC scripts."""
-
-    def __init__(self, flinfo):
-        FlashScript.__init__(self, flinfo)
-
-    def erase(self, offset, size):
-        """Generate code, to erase the specified partition."""
-
-        self.append("mmc erase 0x%08x %x" % (offset, size))
-
-    def write(self, offset, size, yaffs):
-        """Generate code, to write to a partition."""
-        size = roundup(size, self.blocksize)
-        blk_cnt = size / self.blocksize
-        self.append("mmc write $fileaddr 0x%08x %x" % (offset, blk_cnt))
+    def nand_write(self, offset, size):
+        """Handle the NOR + NAND case
+           All binaries upto HLOS will go to NOR and Root FS will go to NAND
+           Assumed all nand page sizes are less than are equal to 8KB
+           """
+        common_max_pagesize = 8*KB
+        size = roundup(size, common_max_pagesize)
+        self.append("nand device 0 && nand erase.chip")
+        self.append("nand write $fileaddr 0x%08x 0x%08x" % (offset, size))
 
     def switch_layout(self, layout):
         pass
@@ -673,18 +579,14 @@ class Pack(object):
             img_size = self.__get_img_size(filename)
             part_info = self.__get_part_info(partition)
 
-            if self.flinfo.type != "emmc":
-               if part_info == None:
-                   if self.flinfo.type != 'norplusnand':
-                       error("Invalid partition '%s'" % partition)
-                   if count > 0:
-                       error("Multiple NAND images for NOR image not allowed")
-                   count = count + 1
-               elif img_size > part_info.length:
-                   error("img size is larger than part. len in '%s'" % section)
-            else:
-               if img_size > (part_info.length * self.flinfo.blocksize):
-               error("img size is larger than part. len in '%s'" % section)
+            if part_info == None:
+                if self.flinfo.type != 'norplusnand':
+                    error("Invalid partition '%s'" % partition)
+                if count > 0:
+                    error("Multiple NAND images for NOR image not allowed")
+                count = count + 1
+            elif img_size > part_info.length:
+                error("img size is larger than part. len in '%s'" % section)
 
             if machid:
                 script.start_if("machid", machid)
@@ -800,13 +702,9 @@ class Pack(object):
         except IOError, e:
             error("error opening flash config file '%s'" % fconf_fname, e)
 
-        if flinfo.type != "emmc":
-            mibib = MIBIB(part_fname, flinfo.pagesize, flinfo.blocksize,
-                          flinfo.chipsize)
-            self.partitions = mibib.get_parts()
-        else:
-            gpt = GPT(part_fname, flinfo.pagesize, flinfo.blocksize, flinfo.chipsize)
-            self.partitions = gpt.get_parts()
+        mibib = MIBIB(part_fname, flinfo.pagesize, flinfo.blocksize,
+                      flinfo.chipsize)
+        self.partitions = mibib.get_parts()
 
         self.flinfo = flinfo
         if flinfo.type == "nand":
@@ -815,9 +713,6 @@ class Pack(object):
         elif flinfo.type == "nor" or flinfo.type == "norplusnand":
             self.ipq_nand = False
             script = NorScript(flinfo)
-        elif flinfo.type == "emmc":
-            self.ipq_nand = False
-            script = EmmcScript(flinfo)
         else:
             error("error, flash type unspecified.")
 
@@ -832,54 +727,10 @@ class Pack(object):
 
         script_fp.close()
 
-    def __process_board_flash_emmc(self, ftype, board_section, machid, images):
-        """Extract board info from config and generate the flash script.
-
-        ftype -- string, flash type 'emmc'
-        board_section -- string, board section in config file
-        machid -- string, board machine ID in hex format
-        images -- list of ImageInfo, append images used by the board here
-        """
-
-        pagesize_param = "%s_pagesize" % ftype
-        blocksize_param = "%s_blocksize" % ftype
-        blocks_per_chip_param = "%s_total_blocks" % ftype
-        part_fname_param = "%s_partition_mbn" % ftype
-        fconf_fname_param = "%s_flash_conf" % ftype
-
-        try:
-            pagesize = int(self.bconf.get(board_section, pagesize_param))
-            blocksize = int(self.bconf.get(board_section, blocksize_param))
-            chipsize = int(self.bconf.get(board_section,
-                                                 blocks_per_chip_param))
-        except ConfigParserError, e:
-            error("missing flash info in section '%s'" % board_section, e)
-        except ValueError, e:
-            error("invalid flash info in section '%s'" % board_section, e)
-
-        flinfo = FlashInfo(ftype, pagesize, blocksize, chipsize)
-
-        try:
-            part_fname = self.bconf.get(board_section, part_fname_param)
-            if not os.path.isabs(part_fname):
-                part_fname = os.path.join(self.images_dname, part_fname)
-        except ConfigParserError, e:
-            error("missing partition file in section '%s'" % board_section, e)
-
-        try:
-            fconf_fname = self.bconf.get(board_section, fconf_fname_param)
-            if not os.path.isabs(fconf_fname):
-                fconf_fname = os.path.join(self.images_dname, fconf_fname)
-        except ConfigParserError, e:
-            error("missing NAND config in section '%s'" % board_section, e)
-
-        self.__gen_board_script(board_section, machid, flinfo,
-                                part_fname, fconf_fname, images)
-
     def __process_board_flash(self, ftype, board_section, machid, images):
         """Extract board info from config and generate the flash script.
 
-        ftype -- string, flash type 'nand' or 'nor' or 'emmc' or 'norplusnand'
+        ftype -- string, flash type 'nand' or 'nor' or 'norplusnand'
         board_section -- string, board section in config file
         machid -- string, board machine ID in hex format
         images -- list of ImageInfo, append images used by the board here
@@ -952,13 +803,6 @@ class Pack(object):
             error("error getting board info in section '%s'" % board_section, e)
 
         try:
-            available = self.bconf.get(board_section, "emmc_available")
-            if available == "true" and self.flash_type == "emmc":
-                self.__process_board_flash_emmc("emmc", board_section, machid, images)
-        except ConfigParserError, e:
-            error("error getting board info in section '%s'" % board_section, e)
-
-        try:
             available = self.bconf.get(board_section, "norplusnand_available")
             if available == "true" and self.flash_type == "norplusnand":
                 self.__process_board_flash("norplusnand", board_section, machid, images)
@@ -968,7 +812,7 @@ class Pack(object):
     def main_bconf(self, flash_type, images_dname, out_fname, brdconfig):
         """Start the packing process, using board config.
 
-        flash_type -- string, indicates flash type, 'nand' or 'nor' or 'emmc' or 'norplusnand'
+        flash_type -- string, indicates flash type, 'nand' or 'nor' or 'norplusnand'
         images_dname -- string, name of images directory
         out_fname -- string, output file path
         """
@@ -1022,8 +866,6 @@ class Pack(object):
             script = NandScript(self.flinfo, self.ipq_nand)
         elif self.flinfo.type == "nor" or self.flinfo.type == "norplusnand":
             script = NorScript(self.flinfo)
-        elif self.flinfo.type == "emmc":
-            script = EmmcScript(self.flinfo)
         else:
             error("Invalid flash type specified. It should be 'nand' or 'nor' or 'norplusnand'")
 
@@ -1159,7 +1001,7 @@ class ArgParser(object):
 
         if flash_type == None:
             self.__flash_type = ArgParser.DEFAULT_TYPE
-        elif flash_type in [ "nand", "nor", "emmc", "norplusnand" ]:
+        elif flash_type in [ "nand", "nor", "norplusnand" ]:
             self.__flash_type = flash_type
         else:
             raise UsageError("invalid flash type '%s'" % flash_type)
@@ -1329,7 +1171,7 @@ class ArgParser(object):
         print
         print "where IDIR is the path containing the images."
         print
-        print "   -t TYPE    specifies partition type, 'nand' or 'nor', or 'emmc'"
+        print "   -t TYPE    specifies partition type, 'nand' or 'nor',"
         print "              default is '%s'." % ArgParser.DEFAULT_TYPE
         print "   -B         specifies board config should be used, for"
         print "              flash parameters."
