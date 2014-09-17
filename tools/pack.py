@@ -684,7 +684,7 @@ class Pack(object):
                    error("img size is larger than part. len in '%s'" % section)
             else:
                if img_size > (part_info.length * self.flinfo.blocksize):
-                   error("img size is larger than part. len in '%s'" % section)
+               error("img size is larger than part. len in '%s'" % section)
 
             if machid:
                 script.start_if("machid", machid)
