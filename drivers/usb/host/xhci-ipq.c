@@ -226,7 +226,7 @@ static void partial_rx_reset_init(unsigned int ipq_base)
 static void  uw_ssusb_pre_init(unsigned int ipq_base)
 {
 	u32  set_bits, tmp;
-	u16 data;
+
 	/* GCTL Reset ON */
 	writel(0x800, ipq_base + DWC3_SSUSB_REG_GCTL);
 	/* Config SS PHY CTRL */
@@ -433,15 +433,15 @@ static int ipq_xhci_core_init(struct ipq_xhci *ipq, unsigned int ipq_base)
 
 	/* Configure the usb core clock */
     usb_ss_core_clock_config(0,
-		gboard_param->uart_mnd_value.m_value,
-		gboard_param->uart_mnd_value.n_value,
-		gboard_param->uart_mnd_value.d_value,
+		gboard_param->usb_core_mnd_value.m_value,
+		gboard_param->usb_core_mnd_value.n_value,
+		gboard_param->usb_core_mnd_value.d_value,
 		gboard_param->clk_dummy);
 	/* Configure the usb core clock */
     usb_ss_utmi_clock_config(0,
-		gboard_param->uart_mnd_value.m_value,
-		gboard_param->uart_mnd_value.n_value,
-		gboard_param->uart_mnd_value.d_value,
+		gboard_param->usb_utmi_mnd_value.m_value,
+		gboard_param->usb_utmi_mnd_value.n_value,
+		gboard_param->usb_utmi_mnd_value.d_value,
 		gboard_param->clk_dummy);
 
 	usb30_common_pre_init(0, ipq_base);
