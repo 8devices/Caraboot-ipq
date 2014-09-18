@@ -722,7 +722,6 @@ static void ipq_gmac_core_reset(ipq_gmac_board_cfg_t *gmac_cfg)
 	}
 
 	writel(0, (void *)GMAC_AHB_RESET);
-	writel(0, (MSM_TCSR_BASE + TCSR_PXO_SEL));
 }
 
 uint ipq_mdio_read(uint phy_addr, uint reg_offset, ushort *data)
