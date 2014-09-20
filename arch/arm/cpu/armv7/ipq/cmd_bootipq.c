@@ -553,7 +553,8 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 		if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
 			return CMD_RET_FAILURE;
 
-		kernel_img_info.kernel_load_size = disk_info.size * disk_info.blksz;
+		snprintf(runcmd, sizeof(runcmd),"bootm 0x%x\n",
+					CONFIG_SYS_LOAD_ADDR);
 #endif
 	} else {
 

@@ -507,9 +507,8 @@ int get_eth_mac_address(uchar *enetaddr, uint no_of_macs)
 		 * 4 MAC Address. First 0-5 bytes for GMAC0, Second 6-11 bytes
 		 * for GMAC1, 12-17 bytes for GMAC2 and 18-23 bytes for GMAC3
 		 */
-		art_offset = ((loff_t) blk_dev->blksz * start_blocks);
 		mmc = mmc_host.mmc;
-		ret = mmc->block_dev.block_read(mmc_host.dev_num, art_offset, length,
+		ret = mmc->block_dev.block_read(mmc_host.dev_num, disk_info.start, disk_info.size,
 									enetaddr);
 
 		if (ret < 0)
