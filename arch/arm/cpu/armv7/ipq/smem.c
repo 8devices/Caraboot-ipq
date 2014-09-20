@@ -52,9 +52,10 @@ typedef enum {
 	SMEM_BOOT_FLASH_CHIP_SELECT = 423,
 	SMEM_BOOT_FLASH_BLOCK_SIZE = 424,
 	SMEM_MACHID_INFO_LOCATION = 425,
+	SMEM_BOOT_DUALPARTINFO = 427,
 	SMEM_FIRST_VALID_TYPE = SMEM_SPINLOCK_ARRAY,
-	SMEM_LAST_VALID_TYPE = SMEM_MACHID_INFO_LOCATION,
-	SMEM_MAX_SIZE = SMEM_MACHID_INFO_LOCATION + 1,
+	SMEM_LAST_VALID_TYPE = SMEM_BOOT_DUALPARTINFO,
+	SMEM_MAX_SIZE = SMEM_BOOT_DUALPARTINFO + 1,
 } smem_mem_type_t;
 
 struct smem_proc_comm {
@@ -119,6 +120,7 @@ static struct smem_ptable smem_ptable;
 static struct smem *smem = (void *)(CONFIG_IPQ_SMEM_BASE);
 
 ipq_smem_flash_info_t ipq_smem_flash_info;
+ipq_smem_bootconfig_info_t ipq_smem_bootconfig_info;
 
 /**
  * smem_read_alloc_entry - reads an entry from SMEM
@@ -180,6 +182,50 @@ int smem_ptable_init(void)
 
 	debug("smem ptable found: ver: %d len: %d\n",
 	      smem_ptable.version, smem_ptable.len);
+
+	return 0;
+}
+
+/**
+ * smem_bootconfig_info - retrieve bootconfig flags
+ */
+int smem_bootconfig_info(void)
+{
+	unsigned ret;
+
+	ret = smem_read_alloc_entry(SMEM_BOOT_DUALPARTINFO,
+		&ipq_smem_bootconfig_info, sizeof(ipq_smem_bootconfig_info_t));
+
+	if (ret != 0)
+		return -ENOMSG;
+
+	if (ipq_smem_bootconfig_info.magic != _SMEM_DUAL_BOOTINFO_MAGIC)
+		return -ENOMSG;
+
+	debug("smem bootconfig info found: active: %d update_started_on: %d \
+		update_completed_on: %d boot_kernel_success : %d\n",
+		ipq_smem_bootconfig_info.active,
+		ipq_smem_bootconfig_info.update_started_on,
+		ipq_smem_bootconfig_info.update_completed_on,
+		ipq_smem_bootconfig_info.boot_kernel_success);
+
+	return 0;
+}
+
+unsigned int get_active_partition(void)
+{
+	if (ipq_smem_bootconfig_info.active !=
+		ipq_smem_bootconfig_info.update_completed_on) {
+		if (ipq_smem_bootconfig_info.active)
+			return 0;
+		else
+			return 1;
+	} else {
+		if (ipq_smem_bootconfig_info.active)
+			return 1;
+		else
+			return 0;
+	}
 
 	return 0;
 }
