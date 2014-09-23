@@ -36,6 +36,7 @@
 #include <asm/bootm.h>
 #include <jffs2/load_kernel.h>
 #include <nand.h>
+#include <asm/arch-ipq806x/smem.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -285,12 +286,39 @@ void setup_ipq_partition_tag(struct tag **in_params)
 		printf("Setting up atags for msm partition: "
 				IPQ_ROOT_FS_PART_NAME "\n");
 		strncpy(ptn->name, IPQ_ROOT_FS_PART_NAME, sizeof(ptn->name));
-		ptn->offset = 0;
-		ptn->size = (64 << 20) /
+		if (ipq_smem_bootconfig_info.magic == _SMEM_DUAL_BOOTINFO_MAGIC) {
+			/* When active 0 rootfs is at @0 offset */
+			if (get_active_partition() == 0)
+				ptn->offset = 0;
+			else
+			/* When active 1 rootfs is at @0x4000000 offset */
+				ptn->offset = IPQ_NAND_ROOTFS_SIZE /
+						nand_info[CONFIG_IPQ_NAND_NAND_INFO_IDX].erasesize;
+		} else {
+			ptn->offset = 0;
+		}
+		ptn->size = IPQ_NAND_ROOTFS_SIZE /
 			nand_info[CONFIG_IPQ_NAND_NAND_INFO_IDX].erasesize;
 		ptn->flags = 0;
 		ptn ++;
 		nr_parts ++;
+
+		if (ipq_smem_bootconfig_info.magic == _SMEM_DUAL_BOOTINFO_MAGIC) {
+			strncpy(ptn->name, IPQ_ROOT_FS_ALT_PART_NAME, sizeof(ptn->name));
+
+			/* When active is 0 rootfs_1 will be @0x4000000 offset */
+			if (get_active_partition() == 0)
+				ptn->offset = IPQ_NAND_ROOTFS_SIZE /
+						nand_info[CONFIG_IPQ_NAND_NAND_INFO_IDX].erasesize;
+			else
+			/* When active is 1 rootfs_1 will be @0 offset */
+				ptn->offset = 0;
+			ptn->size = IPQ_NAND_ROOTFS_SIZE /
+					nand_info[CONFIG_IPQ_NAND_NAND_INFO_IDX].erasesize;
+			ptn->flags = 0;
+			ptn ++;
+			nr_parts ++;
+		}
 	}
 
 	run_command("mtd", 0);

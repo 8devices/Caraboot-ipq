@@ -90,6 +90,7 @@
 
 #define CONFIG_IPQ_ATAG_PART_LIST
 #define IPQ_ROOT_FS_PART_NAME		"rootfs"
+#define IPQ_ROOT_FS_ALT_PART_NAME	IPQ_ROOT_FS_PART_NAME "_1"
 
 /* allow to overwrite serial and ethaddr */
 #define CONFIG_ENV_OVERWRITE

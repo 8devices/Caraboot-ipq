@@ -112,6 +112,7 @@ static int set_fs_bootargs(int *fs_on_nand)
 	disk_partition_t disk_info;
 	int pos;
 #endif
+	unsigned int active_part = 0;
 
 #define nand_rootfs	"ubi.mtd=" IPQ_ROOT_FS_PART_NAME " root=mtd:ubi_rootfs"
 #define nor_rootfs	"root=mtd:" IPQ_ROOT_FS_PART_NAME
@@ -126,9 +127,15 @@ static int set_fs_bootargs(int *fs_on_nand)
 			 * that the Root FS is available in the NAND flash
 			 */
 			bootargs = nand_rootfs;
-			sfi->rootfs.offset = 0;
-			sfi->rootfs.size = IPQ_NAND_ROOTFS_SIZE;
 			*fs_on_nand = 1;
+			if (smem_bootconfig_info() == 0) {
+				active_part = get_active_partition();
+				sfi->rootfs.offset = active_part * IPQ_NAND_ROOTFS_SIZE;
+				sfi->rootfs.size = IPQ_NAND_ROOTFS_SIZE;
+			} else {
+				sfi->rootfs.offset = 0;
+				sfi->rootfs.size = IPQ_NAND_ROOTFS_SIZE;
+			}
 		} else {
 			bootargs = nor_rootfs;
 			*fs_on_nand = 0;
