@@ -68,7 +68,7 @@ static void usb_set_rate_mnd(unsigned int usb_port, unsigned int m,
 	/* Assert MND reset. */
 	setbits_le32(USB30_MASTER_CLK_NS, BIT(7));
 	/* Program M and D values. */
-	writel(MD16(m, n), USB30_MASTER_CLK_MD);
+	writel(MD8(16, m, 0, n), USB30_MASTER_CLK_MD);
 	/* Deassert MND reset. */
 	clrbits_le32(USB30_MASTER_CLK_NS, BIT(7));
 }
@@ -79,7 +79,7 @@ static void usb_set_rate_mnd_utmi(unsigned int usb_port, unsigned int m,
 	/* Assert MND reset. */
 	setbits_le32(USB30_MOC_UTMI_CLK_NS, BIT(7));
 	/* Program M and D values. */
-	writel(MD16(m, n), USB30_MOC_UTMI_CLK_MD);
+	writel(MD8(16, m, 0, n), USB30_MOC_UTMI_CLK_MD);
 	/* Deassert MND reset. */
 	clrbits_le32(USB30_MOC_UTMI_CLK_NS, BIT(7));
 }
@@ -128,6 +128,7 @@ static void usb_utmi_local_clock_enable(unsigned int usb_port, unsigned int n,
 	writel(reg_val, reg);
 
 	/* Enable root. */
+	reg_val = readl(reg);
 	reg_val |= USB_en_mask;
 	writel(reg_val, reg);
 }
@@ -166,6 +167,7 @@ static void usb_local_clock_enable(unsigned int usb_port, unsigned int n,
 	writel(reg_val, reg);
 
 	/* Enable root. */
+	reg_val = readl(reg);
 	reg_val |= USB_en_mask;
 	writel(reg_val, reg);
 }
@@ -258,7 +260,7 @@ static void uart_set_gsbi_clk(unsigned int gsbi_port)
 void usb_ss_core_clock_config(unsigned int usb_port, unsigned int m,
 		unsigned int n, unsigned int d, unsigned int clk_dummy)
 {
-	usb_set_rate_mnd(usb_port, m, d);
+	usb_set_rate_mnd(usb_port, m, n);
 	usb_pll_vote_clk_enable(clk_dummy);
 	usb_local_clock_enable(usb_port, n, m);
 	usb_set_master_clk(usb_port);
@@ -268,7 +270,7 @@ void usb_ss_core_clock_config(unsigned int usb_port, unsigned int m,
 void usb_ss_utmi_clock_config(unsigned int usb_port, unsigned int m,
 		unsigned int n, unsigned int d, unsigned int clk_dummy)
 {
-	usb_set_rate_mnd_utmi(usb_port, m, d);
+	usb_set_rate_mnd_utmi(usb_port, m, n);
 	usb_utmi_local_clock_enable(usb_port, n, m);
 	usb_set_utmi_clk(usb_port);
 	usb_set_utmi_1_clk(usb_port);

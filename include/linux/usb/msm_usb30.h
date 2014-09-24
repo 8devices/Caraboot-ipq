@@ -125,9 +125,6 @@
 #define USB30_MODE_DEVICE	0
 #define USB30_MODE_HOST		1
 
-#define USB30_RESET             REG(0x3B50)
-#define USB30_1_RESET                           REG(0x3B58)
-
 struct dwc3_platform_data {
 	u8 usb_mode;
 	u8 pwr_en;
