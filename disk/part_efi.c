@@ -113,6 +113,13 @@ static char *print_efiname(gpt_entry *pte)
 	return name;
 }
 
+/**
+ * find_part_efi() - Returns partition number for corresponding
+ * partition name
+ *
+ * returns > 0 (partition number) if partition is valid,  -1 on error.
+ */
+
 int find_part_efi(block_dev_desc_t * dev_desc, char *name, disk_partition_t * info)
 {
 	ALLOC_CACHE_ALIGN_BUFFER(gpt_header, gpt_head, 1);
