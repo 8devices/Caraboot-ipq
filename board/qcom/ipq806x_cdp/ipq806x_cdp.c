@@ -507,9 +507,11 @@ int get_eth_mac_address(uchar *enetaddr, uint no_of_macs)
 		 * 4 MAC Address. First 0-5 bytes for GMAC0, Second 6-11 bytes
 		 * for GMAC1, 12-17 bytes for GMAC2 and 18-23 bytes for GMAC3
 		 */
-		mmc = mmc_host.mmc;
-		ret = mmc->block_dev.block_read(mmc_host.dev_num, disk_info.start, disk_info.size,
-									enetaddr);
+		if (ret > 0) {
+			mmc = mmc_host.mmc;
+			ret = mmc->block_dev.block_read(mmc_host.dev_num, disk_info.start, disk_info.size,
+										enetaddr);
+		}
 
 		if (ret < 0)
 			printf("ART partition read failed..\n");
@@ -563,7 +565,7 @@ int board_mmc_env_init(void)
 	blk_dev = mmc_get_dev(mmc_host.dev_num);
 	ret = find_part_efi(blk_dev, "0:APPSBLENV", &disk_info);
 
-	if (ret) {
+	if (ret > 0) {
 		board_env_offset = disk_info.start * disk_info.blksz;
 		board_env_size = disk_info.size * disk_info.blksz;
 		board_env_range = board_env_size;

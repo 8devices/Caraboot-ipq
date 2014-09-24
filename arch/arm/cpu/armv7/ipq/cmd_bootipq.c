@@ -146,10 +146,13 @@ static int set_fs_bootargs(int *fs_on_nand)
 #ifdef CONFIG_IPQ_MMC
 	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
 		pos = find_part_efi(blk_dev, IPQ_ROOT_FS_PART_NAME, &disk_info);
-		snprintf(emmc_rootfs, sizeof(emmc_rootfs),
-			"root=/dev/mmcblk0p%d", pos);
-		bootargs = emmc_rootfs;
-		*fs_on_nand = 0;
+
+		if (pos > 0) {
+			snprintf(emmc_rootfs, sizeof(emmc_rootfs),
+				"root=/dev/mmcblk0p%d", pos);
+			bootargs = emmc_rootfs;
+			*fs_on_nand = 0;
+		}
 #endif
 	} else {
 		printf("bootipq: unsupported boot flash type\n");
@@ -346,14 +349,16 @@ static int do_bootmbn(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
 		ret = find_part_efi(blk_dev, "0:HLOS", &disk_info);
 
-		snprintf(runcmd, sizeof(runcmd), "mmc read 0x%x 0x%X 0x%X",
-				CONFIG_SYS_LOAD_ADDR,
-				(uint)disk_info.start, (uint)disk_info.size);
+		if (ret > 0) {
+			snprintf(runcmd, sizeof(runcmd), "mmc read 0x%x 0x%X 0x%X",
+					CONFIG_SYS_LOAD_ADDR,
+					(uint)disk_info.start, (uint)disk_info.size);
 
-		if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
-			return CMD_RET_FAILURE;
+			if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
+				return CMD_RET_FAILURE;
 
-		kernel_img_info.kernel_load_size = disk_info.size * disk_info.blksz;
+			kernel_img_info.kernel_load_size = disk_info.size * disk_info.blksz;
+		}
 #endif
 	} else {
 
@@ -553,15 +558,17 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
 		ret = find_part_efi(blk_dev, "0:HLOS", &disk_info);
 
-		snprintf(runcmd, sizeof(runcmd), "mmc read 0x%x 0x%X 0x%X",
-				CONFIG_SYS_LOAD_ADDR,
-				(uint)disk_info.start, (uint)disk_info.size);
+		if (ret > 0) {
+			snprintf(runcmd, sizeof(runcmd), "mmc read 0x%x 0x%X 0x%X",
+					CONFIG_SYS_LOAD_ADDR,
+					(uint)disk_info.start, (uint)disk_info.size);
 
-		if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
-			return CMD_RET_FAILURE;
+			if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
+				return CMD_RET_FAILURE;
 
-		snprintf(runcmd, sizeof(runcmd),"bootm 0x%x\n",
-					CONFIG_SYS_LOAD_ADDR);
+			snprintf(runcmd, sizeof(runcmd),"bootm 0x%x\n",
+						CONFIG_SYS_LOAD_ADDR);
+		}
 #endif
 	} else {
 
