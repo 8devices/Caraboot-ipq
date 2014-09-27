@@ -342,6 +342,23 @@
 
 #define S17_MASK_CTRL_SOFT_RET		(1 << 31)
 
+#define S17_GLOBAL_INT0_ACL_INI_INT        (1<<29)
+#define S17_GLOBAL_INT0_LOOKUP_INI_INT     (1<<28)
+#define S17_GLOBAL_INT0_QM_INI_INT         (1<<27)
+#define S17_GLOBAL_INT0_MIB_INI_INT        (1<<26)
+#define S17_GLOBAL_INT0_OFFLOAD_INI_INT    (1<<25)
+#define S17_GLOBAL_INT0_HARDWARE_INI_DONE  (1<<24)
+
+#define S17_GLOBAL_INITIALIZED_STATUS 				\
+			(					\
+			S17_GLOBAL_INT0_ACL_INI_INT | 		\
+			S17_GLOBAL_INT0_LOOKUP_INI_INT | 	\
+			S17_GLOBAL_INT0_QM_INI_INT | 		\
+			S17_GLOBAL_INT0_MIB_INI_INT | 		\
+			S17_GLOBAL_INT0_OFFLOAD_INI_INT |	\
+			S17_GLOBAL_INT0_HARDWARE_INI_DONE	\
+			)
+
 #define S17_MAC0_MAC_MII_RXCLK_SEL      (1 << 0)
 #define S17_MAC0_MAC_MII_TXCLK_SEL      (1 << 1)
 #define S17_MAC0_MAC_MII_EN             (1 << 2)
@@ -587,7 +604,7 @@
 #undef HEADER_REG_CONF
 #undef HEADER_EN
 #endif
-void athrs17_reset_switch(void);
+int athrs17_init_switch(void);
 void athrs17_reg_init(ipq_gmac_board_cfg_t *);
 void athrs17_reg_init_lan(ipq_gmac_board_cfg_t *gmac_cfg);
 void athrs17_vlan_config(void);

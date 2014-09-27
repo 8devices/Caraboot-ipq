@@ -690,9 +690,13 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 		eth_register(dev[i]);
 
 		if (!s17_init_done) {
-			ipq_switch_init(gmac_cfg);
-			s17_init_done = 1;
-			ipq_info("S17 inits done\n");
+			if (ipq_switch_init(gmac_cfg) == 0) {
+				s17_init_done = 1;
+				ipq_info("S17 inits done\n");
+			} else {
+				ipq_info("S17 inits failed\n");
+				goto failed;
+			}
 		}
 	}
 

@@ -161,15 +161,27 @@ void athrs17_vlan_config(void)
 * INPUT: NONE
 * OUTPUT: NONE
 *******************************************************************/
-void athrs17_reset_switch(void)
+int athrs17_init_switch(void)
 {
 	uint32_t data;
+	uint32_t i = 0;
+
 	/* Reset the switch before initialization */
 	athrs17_reg_write(S17_MASK_CTRL_REG, S17_MASK_CTRL_SOFT_RET);
 	do {
 		udelay(10);
 		data = athrs17_reg_read(S17_MASK_CTRL_REG);
 	} while (data & S17_MASK_CTRL_SOFT_RET);
+
+	do {
+		udelay(10);
+		data = athrs17_reg_read(S17_GLOBAL_INT0_REG);
+		i++;
+		if (i == 10)
+			return -1;
+	} while ((data & S17_GLOBAL_INITIALIZED_STATUS) != S17_GLOBAL_INITIALIZED_STATUS);
+
+	return 0;
 }
 
 /*********************************************************************
@@ -250,13 +262,19 @@ void athrs17_reg_init_lan(ipq_gmac_board_cfg_t *gmac_cfg)
  * OUTPUT: NONE
  *
 **********************************************************************/
-void ipq_switch_init(ipq_gmac_board_cfg_t *gmac_cfg)
+int ipq_switch_init(ipq_gmac_board_cfg_t *gmac_cfg)
 {
-	if (gmac_cfg != NULL) {
+	int ret;
 
-		athrs17_reset_switch();
+	if (gmac_cfg == NULL)
+		return -1;
+
+	ret = athrs17_init_switch();
+	if (ret != -1) {
 		athrs17_reg_init(gmac_cfg);
 		athrs17_reg_init_lan(gmac_cfg);
 		athrs17_vlan_config();
 	}
+
+	return ret;
 }
