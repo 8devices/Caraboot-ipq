@@ -103,8 +103,20 @@ void i2c_ipq_board_init(void)
 	gsbi_base_addr = gboard_param->i2c_gsbi_base;
 	gsbi_port = gboard_param->i2c_gsbi;
 
+	/*
+	 * Currently I2C GPIO lines (12(SDA), 13(SCLK)) are configured by
+	 * RPM firmware for PMIC. Trustzone firmware configures the TLMM
+	 * RPU in such a way that only RPM will be able to configure those
+	 * GPIOs. If Krait non secure (u-boot) tries to write to those GPIO
+	 * registers will lead to Master port L2 error.
+	 * GSBI4 uses GPIO 12 and 13 lines for I2C.
+	 * So for GSBI4 we will not update the GPIO configs. RPM would have
+	 * already configured this.`
+	 */
+
 	/* Configure the GPIOs */
-	ipq_configure_gpio(gboard_param->i2c_gpio, NO_OF_I2C_GPIOS);
+	if (gsbi_port != GSBI_4)
+		ipq_configure_gpio(gboard_param->i2c_gpio, NO_OF_I2C_GPIOS);
 
 	/* Configure the I2C clock */
 	i2c_clock_config(gboard_param->i2c_gsbi,
