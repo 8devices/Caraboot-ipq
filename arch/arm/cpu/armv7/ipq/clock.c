@@ -411,8 +411,6 @@ void pcie_clock_shutdown(clk_offset_t *pci_clk)
 {
 	/* PCIE_ALT_REF_CLK_NS */
 	writel(0x0, pci_clk->alt_ref_clk_ns);
-	/* PCIE_ALT_REF_CLK_ACR */
-	writel(0x0, pci_clk->alt_ref_clk_acr);
 
 	/* PCIE20_PARF_PHY_REFCLK */
 	writel(0x1019, pci_clk->parf_phy_refclk);
@@ -435,8 +433,6 @@ void pcie_clock_config(clk_offset_t *pci_clk)
 	/* PCIE_ALT_REF_CLK_NS */
 	writel(0x0A59, pci_clk->alt_ref_clk_ns);
 
-	/* PCIE_ALT_REF_CLK_ACR */
-	writel(0x0, pci_clk->alt_ref_clk_acr);
 
 	/* PCIE_ACLK_FS */
 	writel(0x4F, pci_clk->aclk_fs);
