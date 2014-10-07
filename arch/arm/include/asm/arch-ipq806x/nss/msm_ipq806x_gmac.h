@@ -236,5 +236,5 @@ extern uchar ipq_def_enetaddr[];
 void ipq_gmac_common_init(ipq_gmac_board_cfg_t *cfg);
 int ipq_gmac_init(ipq_gmac_board_cfg_t *cfg);
 int get_eth_mac_address(uchar *enetaddr, uint no_of_macs);
-void ipq_switch_init(ipq_gmac_board_cfg_t *cfg);
+int ipq_switch_init(ipq_gmac_board_cfg_t *cfg);
 #endif /*__ASM_ARCH_MSM_NSS_GMAC_H */
