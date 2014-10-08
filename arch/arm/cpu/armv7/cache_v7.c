@@ -32,6 +32,33 @@
 #define ARMV7_DCACHE_CLEAN_INVAL_RANGE	4
 
 #ifndef CONFIG_SYS_DCACHE_OFF
+
+void set_l2_indirect_reg(u32 reg_addr, u32 val)
+{
+
+	asm volatile ("mcr     p15, 3, %[l2cpselr], c15, c0, 6\n\t"
+		      "isb\n\t"
+		      "mcr     p15, 3, %[l2cpdr],   c15, c0, 7\n\t"
+		      "isb\n\t"
+			:
+			: [l2cpselr]"r" (reg_addr), [l2cpdr]"r" (val)
+	);
+}
+
+u32 get_l2_indirect_reg(u32 reg_addr)
+{
+	u32 val;
+
+	asm volatile ("mcr     p15, 3, %[l2cpselr], c15, c0, 6\n\t"
+		      "isb\n\t"
+		      "mrc     p15, 3, %[l2cpdr],   c15, c0, 7\n\t"
+			: [l2cpdr]"=r" (val)
+			: [l2cpselr]"r" (reg_addr)
+	);
+
+	return val;
+}
+
 /*
  * Write the level and type you want to Cache Size Selection Register(CSSELR)
  * to get size details from Current Cache Size ID Register(CCSIDR)

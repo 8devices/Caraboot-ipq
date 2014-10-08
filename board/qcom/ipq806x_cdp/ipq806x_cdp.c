@@ -42,6 +42,18 @@ DECLARE_GLOBAL_DATA_PTR;
  */
 #define RESET_WDT_BARK_TIME (5 * RESET_WDT_BITE_TIME)
 
+#define L2ESR_IND_ADDR		(0x204)
+
+/* L2ESR bit fields */
+#define L2ESR_MPDCD		BIT(0)
+#define L2ESR_MPSLV		BIT(1)
+#define L2ESR_TSESB		BIT(2)
+#define L2ESR_TSEDB		BIT(3)
+#define L2ESR_DSESB		BIT(4)
+#define L2ESR_DSEDB		BIT(5)
+#define L2ESR_MSE		BIT(6)
+#define L2ESR_MPLDREXNOK	BIT(8)
+
 /*
  * If SMEM is not found, we provide a value, that will prevent the
  * environment from being written to random location in the flash.
@@ -73,7 +85,6 @@ extern void mmc_env_relocate_spec(void);
 extern int nand_env_init(void);
 extern int nand_saveenv(void);
 extern void nand_env_relocate_spec(void);
-
 /*
  * Don't have this as a '.bss' variable. The '.bss' and '.rel.dyn'
  * sections seem to overlap.
@@ -118,6 +129,35 @@ static board_ipq806x_params_t *get_board_param(unsigned int machid)
 	for (;;);
 }
 
+#ifdef CONFIG_IPQ_REPORT_L2ERR
+static void report_l2err(u32 l2esr)
+{
+	if (l2esr & L2ESR_MPDCD)
+		printf("L2 Master port decode error\n");
+
+	if (l2esr & L2ESR_MPSLV)
+		printf("L2 master port slave error\n");
+
+	if (l2esr & L2ESR_TSESB)
+		printf("L2 tag soft error, single-bit\n");
+
+	if (l2esr & L2ESR_TSEDB)
+		printf("L2 tag soft error, double-bit\n");
+
+	if (l2esr & L2ESR_DSESB)
+		printf("L2 data soft error, single-bit\n");
+
+	if (l2esr & L2ESR_DSEDB)
+		printf("L2 data soft error, double-bit\n");
+
+	if (l2esr & L2ESR_MSE)
+		printf("L2 modified soft error\n");
+
+	if (l2esr & L2ESR_MPLDREXNOK)
+		printf("L2 master port LDREX received Normal OK response\n");
+}
+#endif
+
 #ifdef CONFIG_HW_WATCHDOG
 void hw_watchdog_reset(void)
 {
@@ -131,6 +171,17 @@ int board_init()
 	uint32_t start_blocks;
 	uint32_t size_blocks;
 	loff_t board_env_size;
+
+#ifdef CONFIG_IPQ_REPORT_L2ERR
+	u32 l2esr;
+
+	/* Record any kind of L2 errors caused during
+	 * the previous boot stages as we are clearing
+	 * the L2 errors before jumping to linux.
+	 * Refer to cleanup_before_linux() */
+	l2esr = get_l2_indirect_reg(L2ESR_IND_ADDR);
+	report_l2err(l2esr);
+#endif
 	ipq_smem_flash_info_t *sfi = &ipq_smem_flash_info;
 
 	/*
@@ -244,6 +295,17 @@ void enable_caches(void)
 #ifndef CONFIG_SYS_DCACHE_OFF
 	dcache_enable();
 #endif
+}
+
+void clear_l2cache_err(void)
+{
+	unsigned int val;
+
+	val = get_l2_indirect_reg(L2ESR_IND_ADDR);
+#ifdef CONFIG_IPQ_REPORT_L2ERR
+	report_l2err(val);
+#endif
+	set_l2_indirect_reg(L2ESR_IND_ADDR, val);
 }
 
 int env_init(void)

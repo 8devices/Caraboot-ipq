@@ -727,6 +727,9 @@ void	flush_dcache_range(unsigned long start, unsigned long stop);
 void	invalidate_dcache_range(unsigned long start, unsigned long stop);
 void	invalidate_dcache_all(void);
 void	invalidate_icache_all(void);
+void	set_l2_indirect_reg(u32 reg_addr, u32 val);
+void	clear_l2cache_err(void);
+u32 	get_l2_indirect_reg(u32 reg_addr);
 
 /* arch/$(ARCH)/lib/ticks.S */
 unsigned long long get_ticks(void);
