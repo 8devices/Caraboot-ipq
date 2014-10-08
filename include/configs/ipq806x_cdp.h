@@ -315,6 +315,10 @@ typedef struct {
 #define CONFIG_CMD_BOOTZ
 
 #define CONFIG_IPQ_SNPS_GMAC
+#define CONFIG_IPQ_MDIO
+#define CONFIG_MII
+#define CONFIG_CMD_MII
+
 
 #define CONFIG_IPQ_SWITCH_ATHRS17
 

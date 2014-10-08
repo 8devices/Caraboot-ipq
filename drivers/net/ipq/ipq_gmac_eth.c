@@ -7,9 +7,11 @@
 #include <asm-generic/errno.h>
 #include <asm/io.h>
 #include <asm/arch-ipq806x/nss/msm_ipq806x_gmac.h>
+#include <asm/arch-ipq806x/nss/ipq_mdio.h>
 #include <asm/arch-ipq806x/gpio.h>
 #include <malloc.h>
 #include <phy.h>
+#include <miiphy.h>
 #include <asm/arch-ipq806x/nss/clock.h>
 #include <asm/arch-ipq806x/nss/nss_reg.h>
 #include <asm/arch-ipq806x/gpio.h>
@@ -28,9 +30,9 @@ struct ipq_eth_dev *ipq_gmac_macs[IPQ_GMAC_NMACS];
 static void config_auto_neg(struct eth_device *dev)
 {
 	struct ipq_eth_dev *priv = dev->priv;
-	ipq_mdio_write(priv->phy_address[0],
-			PHY_CONTROL_REG,
-			AUTO_NEG_ENABLE);
+
+	miiphy_write(priv->phy_name, priv->phy_address[0],
+			PHY_CONTROL_REG, AUTO_NEG_ENABLE);
 }
 
 static int ipq_phy_link_status(struct eth_device *dev)
@@ -43,8 +45,10 @@ static int ipq_phy_link_status(struct eth_device *dev)
 	udelay(1000);
 
 	for (i = 0; i < priv->no_of_phys; i++) {
-		ipq_mdio_read(priv->phy_address[i], PHY_SPECIFIC_STATUS_REG,
-				&phy_status);
+
+		miiphy_read(priv->phy_name, priv->phy_address[i],
+				PHY_SPECIFIC_STATUS_REG, &phy_status);
+
 		port_status = ((phy_status & Mii_phy_status_link_up) >>
 				(MII_PHY_STAT_SHIFT));
 		if (port_status == 1)
@@ -687,6 +691,10 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 
 		ipq_gmac_mii_clk_init(ipq_gmac_macs[i], clk_div_val, gmac_cfg);
 
+		strcpy(ipq_gmac_macs[i]->phy_name, gmac_cfg->phy_name);
+
+		ipq_phy_mdio_init(gmac_cfg->phy_name);
+
 		eth_register(dev[i]);
 
 		if (!s17_init_done) {
@@ -699,7 +707,6 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 			}
 		}
 	}
-
 	return 0;
 
 failed:
@@ -726,61 +733,6 @@ static void ipq_gmac_core_reset(ipq_gmac_board_cfg_t *gmac_cfg)
 	}
 
 	writel(0, (void *)GMAC_AHB_RESET);
-}
-
-uint ipq_mdio_read(uint phy_addr, uint reg_offset, ushort *data)
-{
-	uint reg_base = NSS_GMAC0_BASE;
-	uint timeout = MII_MDIO_TIMEOUT;
-	uint miiaddr;
-	uint start;
-	uint ret_val;
-
-	miiaddr = (((phy_addr << MIIADDRSHIFT) & MII_ADDRMSK) |
-	((reg_offset << MIIREGSHIFT) & MII_REGMSK));
-
-	miiaddr |= (MII_BUSY | MII_CLKRANGE_250_300M);
-	writel(miiaddr, (reg_base + MII_ADDR_REG_ADDR));
-	udelay(10);
-
-	start = get_timer(0);
-	while (get_timer(start) < timeout) {
-		if (!(readl(reg_base + MII_ADDR_REG_ADDR) & MII_BUSY)) {
-			ret_val = readl(reg_base + MII_DATA_REG_ADDR);
-			if (data != NULL)
-				*data = ret_val;
-			return ret_val;
-		}
-		udelay(1000);
-	}
-	return -1;
-}
-
-uint ipq_mdio_write(uint phy_addr, uint reg_offset, ushort data)
-{
-	const uint reg_base = NSS_GMAC0_BASE;
-	const uint timeout = MII_MDIO_TIMEOUT;
-	uint miiaddr;
-	uint start;
-
-	writel(data, (reg_base + MII_DATA_REG_ADDR));
-
-	miiaddr = (((phy_addr << MIIADDRSHIFT) & MII_ADDRMSK) |
-			((reg_offset << MIIREGSHIFT) & MII_REGMSK) |
-			(MII_WRITE));
-
-	miiaddr |= (MII_BUSY | MII_CLKRANGE_250_300M);
-	writel(miiaddr, (reg_base + MII_ADDR_REG_ADDR));
-	udelay(10);
-
-	start = get_timer(0);
-	while (get_timer(start) < timeout) {
-		if (!(readl(reg_base + MII_ADDR_REG_ADDR) & MII_BUSY)) {
-			return 0;
-		}
-		udelay(1000);
-	}
-	return -1;
 }
 
 void ipq_gmac_common_init(ipq_gmac_board_cfg_t *gmac_cfg)

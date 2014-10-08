@@ -101,6 +101,7 @@ typedef struct {
 	uint mac_conn_to_phy;
 	phy_interface_t phy;
 	ipq_gmac_phy_addr_t phy_addr;
+	const char phy_name[MDIO_NAME_LEN];
 } ipq_gmac_board_cfg_t;
 
 #define IPQ_GMAC_NMACS		4
