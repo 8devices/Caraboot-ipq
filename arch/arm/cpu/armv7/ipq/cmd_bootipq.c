@@ -129,13 +129,12 @@ static int set_fs_bootargs(int *fs_on_nand)
 			bootargs = nand_rootfs;
 			*fs_on_nand = 1;
 			if (smem_bootconfig_info() == 0) {
-				active_part = get_active_partition();
+				active_part = get_rootfs_active_partition();
 				sfi->rootfs.offset = active_part * IPQ_NAND_ROOTFS_SIZE;
-				sfi->rootfs.size = IPQ_NAND_ROOTFS_SIZE;
 			} else {
 				sfi->rootfs.offset = 0;
-				sfi->rootfs.size = IPQ_NAND_ROOTFS_SIZE;
 			}
+			sfi->rootfs.size = IPQ_NAND_ROOTFS_SIZE;
 		} else {
 			bootargs = nor_rootfs;
 			*fs_on_nand = 0;

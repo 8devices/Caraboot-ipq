@@ -201,33 +201,20 @@ int smem_bootconfig_info(void)
 
 	if (ipq_smem_bootconfig_info.magic != _SMEM_DUAL_BOOTINFO_MAGIC)
 		return -ENOMSG;
-
-	debug("smem bootconfig info found: active: %d update_started_on: %d \
-		update_completed_on: %d boot_kernel_success : %d\n",
-		ipq_smem_bootconfig_info.active,
-		ipq_smem_bootconfig_info.update_started_on,
-		ipq_smem_bootconfig_info.update_completed_on,
-		ipq_smem_bootconfig_info.boot_kernel_success);
-
 	return 0;
 }
 
-unsigned int get_active_partition(void)
+unsigned int get_rootfs_active_partition(void)
 {
-	if (ipq_smem_bootconfig_info.active !=
-		ipq_smem_bootconfig_info.update_completed_on) {
-		if (ipq_smem_bootconfig_info.active)
-			return 0;
-		else
-			return 1;
-	} else {
-		if (ipq_smem_bootconfig_info.active)
-			return 1;
-		else
-			return 0;
+	int i;
+
+	for (i = 0; i < ipq_smem_bootconfig_info.numaltpart; i++) {
+		if (strncmp("rootfs", ipq_smem_bootconfig_info.per_part_entry[i].name,
+			     ALT_PART_NAME_LENGTH) == 0)
+			return ipq_smem_bootconfig_info.per_part_entry[i].primaryboot;
 	}
 
-	return 0;
+	return 0; /* alt partition not available */
 }
 
 /**
