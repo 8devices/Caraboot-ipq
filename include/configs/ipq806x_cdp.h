@@ -337,5 +337,9 @@ typedef struct {
 #define CONFIG_SYS_CACHELINE_SIZE  64
 /*#define CONFIG_SYS_DCACHE_OFF*/
 
+/* Enabling this flag will report any L2 errors.
+ * By default we are disabling it */
+/*#define CONFIG_IPQ_REPORT_L2ERR*/
+
 #endif /* _IPQCDP_H */
 
