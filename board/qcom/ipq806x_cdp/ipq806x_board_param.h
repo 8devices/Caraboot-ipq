@@ -392,7 +392,7 @@ gpio_func_data_t emmc1_gpio[] = {
 };
 #endif
 
-#define gmac_board_cfg(_b, _sec, _p, _p0, _p1, _mp, _pn, ...)	\
+#define gmac_board_cfg(_b, _sec, _p, _p0, _p1, _mp, _pn, ...)		\
 {									\
 	.base			= NSS_GMAC##_b##_BASE,			\
 	.unit			= _b,					\
@@ -401,7 +401,8 @@ gpio_func_data_t emmc1_gpio[] = {
 	.phy_addr		= { .count = _pn, { __VA_ARGS__ } },	\
 	.mac_pwr0		= _p0,					\
 	.mac_pwr1		= _p1,					\
-	.mac_conn_to_phy	= _mp					\
+	.mac_conn_to_phy	= _mp,					\
+	.phy_name		= "IPQ MDIO"#_b		 		\
 }
 
 #define gmac_board_cfg_invalid()	{ .unit = -1, }

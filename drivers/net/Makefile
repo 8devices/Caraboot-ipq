@@ -82,6 +82,7 @@ COBJS-$(CONFIG_XILINX_LL_TEMAC) += xilinx_ll_temac.o xilinx_ll_temac_mdio.o \
 COBJS-$(CONFIG_SYNOPSYS_GEMAC) += nss/synopGMAC_network_interface.o nss/synopGMAC_Dev.o nss/uboot_skb.o nss/mii_gpio.o nss/synop_mdio_acc.o
 COBJS-$(CONFIG_SYNOPSYS_GEMAC) += ../../board/qcom/common/athrs17_phy.o
 COBJS-$(CONFIG_IPQ_SNPS_GMAC) += ipq/ipq_gmac_eth.o
+COBJS-$(CONFIG_IPQ_MDIO) += ipq/ipq_mdio.o
 COBJS-$(CONFIG_IPQ_SWITCH_ATHRS17) += ../../board/qcom/common/athrs17_phy.o
 
 COBJS	:= $(sort $(COBJS-y))
