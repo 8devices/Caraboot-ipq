@@ -78,26 +78,31 @@ extern ipq_smem_flash_info_t ipq_smem_flash_info;
 void ipq_set_part_entry(ipq_smem_flash_info_t *sfi, ipq_part_entry_t *part,
 			uint32_t start, uint32_t size);
 
-typedef struct {
+#define ALT_PART_NAME_LENGTH 16
+struct per_part_info
+{
+	char name[ALT_PART_NAME_LENGTH];
+	uint32_t primaryboot;
+	uint32_t upgraded;
+};
+
+#define NUM_ALT_PARTITION 2
+typedef struct
+{
 #define _SMEM_DUAL_BOOTINFO_MAGIC       0xA5A3A1A0
 	/* Magic number for identification when reading from flash */
 	uint32_t magic;
-	/* active indicates the which partition to choose */
-	uint32_t    active;
-	/* update_started_on indicate which partition used for update */
-	uint32_t    update_started_on;
-	/* update_completed_on indicate which partition
-	 * used for update and is completed */
-	uint32_t    update_completed_on;
-	/* boot_kernel_success indicate which partition
-	 * is used for test kernel booting
-	 */
-	uint32_t    boot_kernel_success;
+	/* upgradeinprogress indicates to attempting the upgrade */
+	uint32_t    upgradeinprogress;
+	/* numaltpart indicate number of alt partitions */
+	uint32_t    numaltpart;
+
+	struct per_part_info per_part_entry[NUM_ALT_PARTITION];
 } ipq_smem_bootconfig_info_t;
 
 extern ipq_smem_bootconfig_info_t ipq_smem_bootconfig_info;
 
 int smem_bootconfig_info(void);
-unsigned int get_active_partition(void);
+unsigned int get_rootfs_active_partition(void);
 
 #endif

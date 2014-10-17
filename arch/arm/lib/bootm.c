@@ -288,7 +288,7 @@ void setup_ipq_partition_tag(struct tag **in_params)
 		strncpy(ptn->name, IPQ_ROOT_FS_PART_NAME, sizeof(ptn->name));
 		if (ipq_smem_bootconfig_info.magic == _SMEM_DUAL_BOOTINFO_MAGIC) {
 			/* When active 0 rootfs is at @0 offset */
-			if (get_active_partition() == 0)
+			if (get_rootfs_active_partition() == 0)
 				ptn->offset = 0;
 			else
 			/* When active 1 rootfs is at @0x4000000 offset */
@@ -307,7 +307,7 @@ void setup_ipq_partition_tag(struct tag **in_params)
 			strncpy(ptn->name, IPQ_ROOT_FS_ALT_PART_NAME, sizeof(ptn->name));
 
 			/* When active is 0 rootfs_1 will be @0x4000000 offset */
-			if (get_active_partition() == 0)
+			if (get_rootfs_active_partition() == 0)
 				ptn->offset = IPQ_NAND_ROOTFS_SIZE /
 						nand_info[CONFIG_IPQ_NAND_NAND_INFO_IDX].erasesize;
 			else
