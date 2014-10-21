@@ -499,9 +499,7 @@ class NorScript(FlashScript):
            All binaries upto HLOS will go to NOR and Root FS will go to NAND
            Assumed all nand page sizes are less than are equal to 8KB
            """
-        common_max_pagesize = 8*KB
-        size = roundup(size, common_max_pagesize)
-        self.append("nand device 0 && nand erase.chip")
+        self.append("nand device 0 && nand erase 0x%08x 0x%08x" % (offset, size))
         self.append("nand write $fileaddr 0x%08x 0x%08x" % (offset, size))
 
     def switch_layout(self, layout):
@@ -564,6 +562,8 @@ class Pack(object):
     Combine multiple images present in a directory, and generate a
     U-Boot script to flash the images.
     """
+    # The maximum rootfs size is 64MB
+    norplusnand_rootfs_img_size = (64 * 1024 * 1024)
 
     def __init__(self):
         self.flinfo = None
@@ -687,9 +687,8 @@ class Pack(object):
                if part_info == None:
                    if self.flinfo.type != 'norplusnand':
                        error("Invalid partition '%s'" % partition)
-                   if count > 0:
-                       error("Multiple NAND images for NOR image not allowed")
-                   count = count + 1
+                   if count > 2:
+                       error("More than 2 NAND images for NOR+NAND is not allowed")
                elif img_size > part_info.length:
                    error("img size is larger than part. len in '%s'" % section)
             else:
@@ -704,7 +703,10 @@ class Pack(object):
             script.imxtract(section + "-" + sha1(filename))
 
             if part_info == None:
-                script.nand_write(0, img_size)
+                offset = count * Pack.norplusnand_rootfs_img_size
+                img_size = Pack.norplusnand_rootfs_img_size
+                script.nand_write(offset, img_size)
+                count = count + 1
             else:
                 offset = part_info.offset
                 script.erase(offset, part_info.length)
