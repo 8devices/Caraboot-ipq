@@ -26,6 +26,7 @@
 #define CE1_ADM_USAGE		(1)
 #define CE1_RESOURCE		(1)
 
+DECLARE_GLOBAL_DATA_PTR;
 static int debug = 0;
 static ipq_smem_flash_info_t *sfi = &ipq_smem_flash_info;
 int ipq_fs_on_nand, rootfs_part_avail = 1;
@@ -144,8 +145,16 @@ static int set_fs_bootargs(int *fs_on_nand)
 		*fs_on_nand = 1;
 #ifdef CONFIG_IPQ_MMC
 	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
-		pos = find_part_efi(blk_dev, IPQ_ROOT_FS_PART_NAME, &disk_info);
-
+		if (smem_bootconfig_info() == 0) {
+			active_part = get_rootfs_active_partition();
+			if (active_part) {
+				pos = find_part_efi(blk_dev, IPQ_ROOT_FS_ALT_PART_NAME, &disk_info);
+			} else {
+				pos = find_part_efi(blk_dev, IPQ_ROOT_FS_PART_NAME, &disk_info);
+			}
+		} else {
+			pos = find_part_efi(blk_dev, IPQ_ROOT_FS_PART_NAME, &disk_info);
+		}
 		if (pos > 0) {
 			snprintf(emmc_rootfs, sizeof(emmc_rootfs),
 				"root=/dev/mmcblk0p%d", pos);
@@ -414,8 +423,12 @@ static int do_bootmbn(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	board_mmc_deinit();
 #endif
 
-	if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
+	if (run_command(runcmd, 0) != CMD_RET_SUCCESS) {
+#ifdef CONFIG_IPQ_MMC
+		mmc_initialize(gd->bd);
+#endif
 		return CMD_RET_FAILURE;
+	}
 
 	return CMD_RET_SUCCESS;
 }
@@ -434,6 +447,7 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 #endif
 	char runcmd[256];
 	int nandid = 0, ret;
+	unsigned int active_part = 0;
 
 #ifdef CONFIG_IPQ_MMC
 	block_dev_desc_t *blk_dev = mmc_get_dev(host->dev_num);
@@ -555,7 +569,16 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 				CONFIG_SYS_LOAD_ADDR, CONFIG_SYS_LOAD_ADDR);
 #ifdef CONFIG_IPQ_MMC
 	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
-		ret = find_part_efi(blk_dev, "0:HLOS", &disk_info);
+		if (smem_bootconfig_info() == 0) {
+			active_part = get_rootfs_active_partition();
+			if (active_part) {
+				ret = find_part_efi(blk_dev, "0:HLOS_1", &disk_info);
+			} else {
+				ret = find_part_efi(blk_dev, "0:HLOS", &disk_info);
+			}
+		} else {
+			ret = find_part_efi(blk_dev, "0:HLOS", &disk_info);
+		}
 
 		if (ret > 0) {
 			snprintf(runcmd, sizeof(runcmd), "mmc read 0x%x 0x%X 0x%X",
@@ -590,8 +613,12 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	board_mmc_deinit();
 #endif
 
-	if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
+	if (run_command(runcmd, 0) != CMD_RET_SUCCESS) {
+#ifdef CONFIG_IPQ_MMC
+		mmc_initialize(gd->bd);
+#endif
 		return CMD_RET_FAILURE;
+	}
 
 	return CMD_RET_SUCCESS;
 }
