@@ -595,15 +595,18 @@ static int ipq_exec_cmd(struct mtd_info *mtd, uint32_t cmd, uint32_t *status)
  */
 static int ipq_check_read_status(struct mtd_info *mtd, uint32_t status)
 {
-	uint32_t cw_erased;
+	uint32_t cw_erased = 0;
 	uint32_t num_errors;
 	struct ipq_nand_dev *dev = MTD_IPQ_NAND_DEV(mtd);
 	struct ebi2nd_regs *regs = dev->regs;
 
 	debug("Read Status: %08x\n", status);
 
-	cw_erased = readl(&regs->erased_cw_detect_status);
-	cw_erased &= CODEWORD_ERASED_MASK;
+	/* Hardware handles erased page detection for BCH */
+	if (dev->dev_cfg1 & ENABLE_BCH_ECC(1)) {
+		cw_erased = readl(&regs->erased_cw_detect_status);
+		cw_erased &= CODEWORD_ERASED_MASK;
+	}
 
 	num_errors = readl(&regs->buffer_status);
 	num_errors &= NUM_ERRORS_MASK;
@@ -618,6 +621,60 @@ static int ipq_check_read_status(struct mtd_info *mtd, uint32_t status)
 
 	if (num_errors)
 		mtd->ecc_stats.corrected++;
+
+	return 0;
+}
+
+/* On reading an erased page,value 0x54 will appear on the offsets 3
+ * and 175 in a page in case of linux layout and value 0x76 will appear
+ * in the offset 243 in case of SBL. So parse the entire page and
+ * put 0xFFs on those offsets so that it appears all 0xffs */
+static int ipq_nand_handle_erased_pg(struct mtd_info *mtd,
+	struct mtd_oob_ops *ops, struct ipq_cw_layout *cwl, int ret)
+{
+	int i;
+	uint8_t tmp[3];
+	struct ipq_nand_dev *dev = MTD_IPQ_NAND_DEV(mtd);
+
+	if (ret != -EBADMSG)
+		return ret;
+
+	/* Hardware handles erased page detection for BCH */
+	if (dev->dev_cfg1 & ENABLE_BCH_ECC(1))
+		return ret;
+
+	tmp[0] = ops->datbuf[3];
+	tmp[1] = ops->datbuf[175];
+	tmp[2] = ops->datbuf[243];
+
+	switch (cwl->data_size) {
+	case 516:
+	case 500:
+		if (!((tmp[0] == 0x54 && tmp[1] == 0xff) ||
+		      (tmp[0] == 0xff && tmp[1] == 0x54)))
+			return ret;
+		break;
+	case 512:
+		if (tmp[2] != 0x76)
+			return ret;
+		break;
+	default:
+		return ret;
+	}
+
+	ops->datbuf[3] = ops->datbuf[175] = ops->datbuf[243] = 0xff;
+
+	/* Check if codeword is full of 0xff */
+	for (i = 0; (i < cwl->data_size) && (ops->datbuf[i] == 0xff); i++);
+
+	if (i < cwl->data_size) {
+		ops->datbuf[3] = tmp[0];
+		ops->datbuf[175] = tmp[1];
+		ops->datbuf[243] = tmp[2];
+		return ret;
+	}
+
+	mtd->ecc_stats.failed--;
 
 	return 0;
 }
@@ -640,18 +697,22 @@ static int ipq_read_cw(struct mtd_info *mtd, u_int cwno,
 		return ret;
 
 	ret = ipq_check_read_status(mtd, status);
-	if (ret < 0)
-		return ret;
 
 	if (ops->datbuf != NULL) {
 		hw2memcpy(ops->datbuf, &regs->buffn_acc[cwl->data_offs >> 2],
 			  cwl->data_size);
+
+		ret = ipq_nand_handle_erased_pg(mtd, ops, cwl, ret);
+		if (ret < 0)
+			return ret;
 
 		ops->retlen += cwl->data_size;
 		ops->datbuf += cwl->data_size;
 	}
 
 	if (ops->oobbuf != NULL) {
+		if (ret < 0)
+			return ret;
 		hw2memcpy(ops->oobbuf, &regs->buffn_acc[cwl->oob_offs >> 2],
 			  cwl->oob_size);
 
