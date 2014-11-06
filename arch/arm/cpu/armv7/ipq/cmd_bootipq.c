@@ -115,8 +115,8 @@ static int set_fs_bootargs(int *fs_on_nand)
 #endif
 	unsigned int active_part = 0;
 
-#define nand_rootfs	"ubi.mtd=" IPQ_ROOT_FS_PART_NAME " root=mtd:ubi_rootfs"
-#define nor_rootfs	"root=mtd:" IPQ_ROOT_FS_PART_NAME
+#define nand_rootfs	"ubi.mtd=" IPQ_ROOT_FS_PART_NAME " root=mtd:ubi_rootfs rootfstype=squashfs"
+#define nor_rootfs	"root=mtd:" IPQ_ROOT_FS_PART_NAME " rootfstype=squashfs"
 
 	if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
 
