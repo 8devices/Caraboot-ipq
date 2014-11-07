@@ -86,7 +86,7 @@ struct per_part_info
 	uint32_t upgraded;
 };
 
-#define NUM_ALT_PARTITION 2
+#define NUM_ALT_PARTITION 3
 typedef struct
 {
 #define _SMEM_DUAL_BOOTINFO_MAGIC       0xA5A3A1A0
