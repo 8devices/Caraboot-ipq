@@ -25,10 +25,10 @@ unsigned int smem_get_board_machtype(void);
 typedef struct {
 	int gpio;
 	unsigned int func;
-	unsigned int dir;
+	unsigned int out;
 	unsigned int pull;
 	unsigned int drvstr;
-	unsigned int enable;
+	unsigned int oe;
 } gpio_func_data_t;
 
 typedef struct {

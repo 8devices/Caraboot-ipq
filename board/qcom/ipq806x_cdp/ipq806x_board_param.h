@@ -27,34 +27,30 @@ gpio_func_data_t gmac0_gpio[] = {
 	{
 		.gpio = 0,
 		.func = 1,
-		.dir = GPIO_OUTPUT,
 		.pull = GPIO_NO_PULL,
 		.drvstr = GPIO_8MA,
-		.enable = GPIO_ENABLE
+		.oe = GPIO_OE_DISABLE
 	},
 	{
 		.gpio = 1,
 		.func = 1,
-		.dir = GPIO_OUTPUT,
 		.pull = GPIO_NO_PULL,
 		.drvstr = GPIO_8MA,
-		.enable = GPIO_DISABLE
+		.oe = GPIO_OE_ENABLE
 	},
 	{
 		.gpio = 2,
 		.func = 0,
-		.dir = GPIO_OUTPUT,
 		.pull = GPIO_NO_PULL,
 		.drvstr = GPIO_8MA,
-		.enable = GPIO_ENABLE
+		.oe = GPIO_OE_DISABLE
 	},
 	{
 		.gpio = 66,
 		.func = 0,
-		.dir = GPIO_OUTPUT,
 		.pull = GPIO_NO_PULL,
 		.drvstr = GPIO_16MA,
-		.enable = GPIO_ENABLE
+		.oe = GPIO_OE_DISABLE
 	},
 };
 
@@ -62,114 +58,100 @@ gpio_func_data_t gmac1_gpio[] = {
 	{
 		.gpio = 0,
 		.func = 1,
-		.dir = GPIO_OUTPUT,
 		.pull = GPIO_NO_PULL,
 		.drvstr = GPIO_8MA,
-		.enable = GPIO_ENABLE
+		.oe = GPIO_OE_DISABLE
 	},
 	{
 		.gpio = 1,
 		.func = 1,
-		.dir = GPIO_OUTPUT,
 		.pull = GPIO_NO_PULL,
 		.drvstr = GPIO_8MA,
-		.enable = GPIO_DISABLE
+		.oe = GPIO_OE_ENABLE
 	},
 	{
 		.gpio = 51,
 		.func = 2,
-		.dir = GPIO_OUTPUT,
 		.pull = GPIO_NO_PULL,
 		.drvstr = GPIO_8MA,
-		.enable = GPIO_ENABLE
+		.oe = GPIO_OE_DISABLE
 	},
 	{
 		.gpio = 52,
 		.func = 2,
-		.dir = GPIO_OUTPUT,
 		.pull = GPIO_NO_PULL,
 		.drvstr = GPIO_8MA,
-		.enable = GPIO_ENABLE
+		.oe = GPIO_OE_DISABLE
 	},
 	{
 		.gpio = 59,
 		.func = 2,
-		.dir = GPIO_OUTPUT,
 		.pull = GPIO_NO_PULL,
 		.drvstr = GPIO_8MA,
-		.enable = GPIO_ENABLE
+		.oe = GPIO_OE_DISABLE
 	},
 	{
 		.gpio = 60,
 		.func = 2,
-		.dir = GPIO_OUTPUT,
 		.pull = GPIO_NO_PULL,
 		.drvstr = GPIO_8MA,
-		.enable = GPIO_ENABLE
+		.oe = GPIO_OE_DISABLE
 	},
 	{
 		.gpio = 61,
 		.func = 2,
-		.dir = GPIO_OUTPUT,
 		.pull = GPIO_NO_PULL,
 		.drvstr = GPIO_8MA,
-		.enable = GPIO_ENABLE
+		.oe = GPIO_OE_DISABLE
 	},
 	{
 		.gpio = 62,
 		.func = 2,
-		.dir = GPIO_OUTPUT,
 		.pull = GPIO_NO_PULL,
 		.drvstr = GPIO_8MA,
-		.enable = GPIO_ENABLE
+		.oe = GPIO_OE_DISABLE
 	},
 	{
 		.gpio = 27,
 		.func = 2,
-		.dir = GPIO_OUTPUT,
 		.pull = GPIO_NO_PULL,
 		.drvstr = GPIO_8MA,
-		.enable = GPIO_DISABLE
+		.oe = GPIO_OE_ENABLE
 	},
 	{
 		.gpio = 28,
 		.func = 2,
-		.dir = GPIO_OUTPUT,
 		.pull = GPIO_NO_PULL,
 		.drvstr = GPIO_8MA,
-		.enable = GPIO_DISABLE
+		.oe = GPIO_OE_ENABLE
 	},
 	{
 		.gpio = 29,
 		.func = 2,
-		.dir = GPIO_OUTPUT,
 		.pull = GPIO_NO_PULL,
 		.drvstr = GPIO_8MA,
-		.enable = GPIO_DISABLE
+		.oe = GPIO_OE_ENABLE
 	},
 	{
 		.gpio = 30,
 		.func = 2,
-		.dir = GPIO_OUTPUT,
 		.pull = GPIO_NO_PULL,
 		.drvstr = GPIO_8MA,
-		.enable = GPIO_DISABLE
+		.oe = GPIO_OE_ENABLE
 	},
 	{
 		.gpio = 31,
 		.func = 2,
-		.dir = GPIO_OUTPUT,
 		.pull = GPIO_NO_PULL,
 		.drvstr = GPIO_8MA,
-		.enable = GPIO_DISABLE
+		.oe = GPIO_OE_ENABLE
 	},
 	{
 		.gpio = 32,
 		.func = 2,
-		.dir = GPIO_OUTPUT,
 		.pull = GPIO_NO_PULL,
 		.drvstr = GPIO_8MA,
-		.enable = GPIO_DISABLE
+		.oe = GPIO_OE_ENABLE
 	},
 };
 
@@ -228,28 +210,25 @@ gpio_func_data_t gmac1_gpio[] = {
 gpio_func_data_t pci_0_rst_gpio = {
 		.gpio = PCIE_RST_GPIO,
 		.func = 1,
-		.dir = GPIO_OUTPUT,
 		.pull = GPIO_PULL_UP,
 		.drvstr = GPIO_12MA,
-		.enable = GPIO_DISABLE
+		.oe = GPIO_OE_ENABLE
 };
 
 gpio_func_data_t pci_1_rst_gpio = {
 		.gpio = PCIE_1_RST_GPIO,
 		.func = 1,
-		.dir = GPIO_OUTPUT,
 		.pull = GPIO_PULL_UP,
 		.drvstr = GPIO_12MA,
-		.enable = GPIO_DISABLE
+		.oe = GPIO_OE_ENABLE
 };
 
 gpio_func_data_t pci_2_rst_gpio = {
 		.gpio = PCIE_2_RST_GPIO,
 		.func = 1,
-		.dir = GPIO_OUTPUT,
 		.pull = GPIO_PULL_UP,
 		.drvstr = GPIO_12MA,
-		.enable = GPIO_DISABLE
+		.oe = GPIO_OE_ENABLE
 };
 
 clk_offset_t pcie_0_clk	= {
@@ -324,70 +303,70 @@ gpio_func_data_t emmc1_gpio[] = {
 		.func = 2,
 		.pull = GPIO_PULL_UP,
 		.drvstr = GPIO_10MA,
-		.enable = GPIO_ENABLE
+		.oe = GPIO_OE_DISABLE
 	},
 	{
 		.gpio = 39,
 		.func = 2,
 		.pull = GPIO_PULL_UP,
 		.drvstr = GPIO_10MA,
-		.enable = GPIO_ENABLE
+		.oe = GPIO_OE_DISABLE
 	},
 	{
 		.gpio = 40,
 		.func = 2,
 		.pull = GPIO_PULL_UP,
 		.drvstr = GPIO_10MA,
-		.enable = GPIO_ENABLE
+		.oe = GPIO_OE_DISABLE
 	},
 	{
 		.gpio = 41,
 		.func = 2,
 		.pull = GPIO_PULL_UP,
 		.drvstr = GPIO_10MA,
-		.enable = GPIO_ENABLE
+		.oe = GPIO_OE_DISABLE
 	},
 	{
 		.gpio = 42,
 		.func = 2,
 		.pull = GPIO_NO_PULL,
 		.drvstr = GPIO_16MA,
-		.enable = GPIO_ENABLE
+		.oe = GPIO_OE_DISABLE
 	},
 	{
 		.gpio = 43,
 		.func = 2,
 		.pull = GPIO_PULL_UP,
 		.drvstr = GPIO_10MA,
-		.enable = GPIO_ENABLE
+		.oe = GPIO_OE_DISABLE
 	},
 	{
 		.gpio = 44,
 		.func = 2,
 		.pull = GPIO_PULL_UP,
 		.drvstr = GPIO_10MA,
-		.enable = GPIO_ENABLE
+		.oe = GPIO_OE_DISABLE
 	},
 	{
 		.gpio = 45,
 		.func = 2,
 		.pull = GPIO_PULL_UP,
 		.drvstr = GPIO_10MA,
-		.enable = GPIO_ENABLE
+		.oe = GPIO_OE_DISABLE
 	},
 	{
 		.gpio = 46,
 		.func = 2,
 		.pull = GPIO_PULL_UP,
 		.drvstr = GPIO_10MA,
-		.enable = GPIO_ENABLE
+		.oe = GPIO_OE_DISABLE
 	},
 	{
 		.gpio = 47,
 		.func = 2,
 		.pull = GPIO_PULL_UP,
 		.drvstr = GPIO_10MA,
-		.enable = GPIO_ENABLE
+		.oe = GPIO_OE_DISABLE
 	},
 };
 #endif
@@ -433,18 +412,16 @@ board_ipq806x_params_t board_params[] = {
 			{
 				.gpio = 51,
 				.func = 1,
-				.dir = GPIO_OUTPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 			{
 				.gpio = 52,
 				.func = 1,
-				.dir = GPIO_INPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 		},
 #ifdef CONFIG_IPQ806X_I2C
@@ -455,18 +432,16 @@ board_ipq806x_params_t board_params[] = {
 			{
 				.gpio = 13,
 				.func = 1,
-				.dir = GPIO_OUTPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 			{
 				.gpio = 12,
 				.func = 1,
-				.dir = GPIO_INPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 		},
 #endif
@@ -504,18 +479,16 @@ board_ipq806x_params_t board_params[] = {
 			{
 				.gpio = 22,
 				.func = 1,
-				.dir = GPIO_OUTPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 			{
 				.gpio = 23,
 				.func = 1,
-				.dir = GPIO_INPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 		},
 #ifdef CONFIG_IPQ806X_I2C
@@ -526,18 +499,16 @@ board_ipq806x_params_t board_params[] = {
 			{
 				.gpio = 13,
 				.func = 1,
-				.dir = GPIO_OUTPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 			{
 				.gpio = 12,
 				.func = 1,
-				.dir = GPIO_INPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 		},
 #endif
@@ -581,18 +552,16 @@ board_ipq806x_params_t board_params[] = {
 			{
 				.gpio = 22,
 				.func = 1,
-				.dir = GPIO_OUTPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 			{
 				.gpio = 23,
 				.func = 1,
-				.dir = GPIO_INPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 		},
 #ifdef CONFIG_IPQ806X_I2C
@@ -603,18 +572,16 @@ board_ipq806x_params_t board_params[] = {
 			{
 				.gpio = 13,
 				.func = 1,
-				.dir = GPIO_OUTPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 			{
 				.gpio = 12,
 				.func = 1,
-				.dir = GPIO_INPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 		},
 #endif
@@ -658,18 +625,16 @@ board_ipq806x_params_t board_params[] = {
 			{
 				.gpio = 22,
 				.func = 1,
-				.dir = GPIO_OUTPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 			{
 				.gpio = 23,
 				.func = 1,
-				.dir = GPIO_INPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 		},
 #ifdef CONFIG_IPQ806X_I2C
@@ -680,18 +645,16 @@ board_ipq806x_params_t board_params[] = {
 			{
 				.gpio = 13,
 				.func = 1,
-				.dir = GPIO_OUTPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 			{
 				.gpio = 12,
 				.func = 1,
-				.dir = GPIO_INPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 		},
 #endif
@@ -740,18 +703,16 @@ board_ipq806x_params_t board_params[] = {
 			{
 				.gpio = 22,
 				.func = 1,
-				.dir = GPIO_OUTPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 			{
 				.gpio = 23,
 				.func = 1,
-				.dir = GPIO_INPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 		},
 #ifdef CONFIG_IPQ806X_I2C
@@ -762,18 +723,16 @@ board_ipq806x_params_t board_params[] = {
 			{
 				.gpio = 13,
 				.func = 1,
-				.dir = GPIO_OUTPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 			{
 				.gpio = 12,
 				.func = 1,
-				.dir = GPIO_INPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 		},
 #endif
@@ -815,18 +774,16 @@ board_ipq806x_params_t board_params[] = {
 			{
 				.gpio = 22,
 				.func = 1,
-				.dir = GPIO_OUTPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 			{
 				.gpio = 23,
 				.func = 1,
-				.dir = GPIO_INPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 		},
 #ifdef CONFIG_IPQ806X_I2C
@@ -837,18 +794,16 @@ board_ipq806x_params_t board_params[] = {
 			{
 				.gpio = 13,
 				.func = 1,
-				.dir = GPIO_OUTPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 			{
 				.gpio = 12,
 				.func = 1,
-				.dir = GPIO_INPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 		},
 #endif
@@ -890,18 +845,16 @@ board_ipq806x_params_t board_params[] = {
 			{
 				.gpio = 10,
 				.func = 1,
-				.dir = GPIO_OUTPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 			{
 				.gpio = 11,
 				.func = 1,
-				.dir = GPIO_INPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 		},
 #ifdef CONFIG_IPQ806X_I2C
@@ -912,18 +865,16 @@ board_ipq806x_params_t board_params[] = {
 			{
 				.gpio = 13,
 				.func = 1,
-				.dir = GPIO_OUTPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 			{
 				.gpio = 12,
 				.func = 1,
-				.dir = GPIO_INPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 		},
 #endif
@@ -965,18 +916,16 @@ board_ipq806x_params_t board_params[] = {
 			{
 				.gpio = 10,
 				.func = 1,
-				.dir = GPIO_OUTPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 			{
 				.gpio = 11,
 				.func = 1,
-				.dir = GPIO_INPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 		},
 #ifdef CONFIG_IPQ806X_I2C
@@ -987,18 +936,16 @@ board_ipq806x_params_t board_params[] = {
 			{
 				.gpio = 13,
 				.func = 1,
-				.dir = GPIO_OUTPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 			{
 				.gpio = 12,
 				.func = 1,
-				.dir = GPIO_INPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 		},
 #endif
@@ -1040,18 +987,16 @@ board_ipq806x_params_t board_params[] = {
 			{
 				.gpio = 10,
 				.func = 1,
-				.dir = GPIO_OUTPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 			{
 				.gpio = 11,
 				.func = 1,
-				.dir = GPIO_INPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 		},
 #ifdef CONFIG_IPQ806X_I2C
@@ -1062,18 +1007,16 @@ board_ipq806x_params_t board_params[] = {
 			{
 				.gpio = 13,
 				.func = 1,
-				.dir = GPIO_OUTPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 			{
 				.gpio = 12,
 				.func = 1,
-				.dir = GPIO_INPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 		},
 #endif
@@ -1115,18 +1058,16 @@ board_ipq806x_params_t board_params[] = {
 			{
 				.gpio = 10,
 				.func = 1,
-				.dir = GPIO_OUTPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 			{
 				.gpio = 11,
 				.func = 1,
-				.dir = GPIO_INPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 		},
 #ifdef CONFIG_IPQ806X_I2C
@@ -1137,18 +1078,16 @@ board_ipq806x_params_t board_params[] = {
 			{
 				.gpio = 13,
 				.func = 1,
-				.dir = GPIO_OUTPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 			{
 				.gpio = 12,
 				.func = 1,
-				.dir = GPIO_INPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 		},
 #endif
@@ -1190,18 +1129,16 @@ board_ipq806x_params_t board_params[] = {
 			{
 				.gpio = 10,
 				.func = 1,
-				.dir = GPIO_OUTPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 			{
 				.gpio = 11,
 				.func = 1,
-				.dir = GPIO_INPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 		},
 #ifdef CONFIG_IPQ806X_I2C
@@ -1212,18 +1149,16 @@ board_ipq806x_params_t board_params[] = {
 			{
 				.gpio = 13,
 				.func = 1,
-				.dir = GPIO_OUTPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 			{
 				.gpio = 12,
 				.func = 1,
-				.dir = GPIO_INPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 		},
 #endif
@@ -1263,18 +1198,16 @@ board_ipq806x_params_t board_params[] = {
 			{
 				.gpio = 10,
 				.func = 1,
-				.dir = GPIO_OUTPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 			{
 				.gpio = 11,
 				.func = 1,
-				.dir = GPIO_INPUT,
 				.pull = GPIO_NO_PULL,
 				.drvstr = GPIO_12MA,
-				.enable = GPIO_DISABLE
+				.oe = GPIO_OE_ENABLE
 			},
 		}
 
