@@ -40,23 +40,33 @@ unsigned int func - Functionality number
 unsigned int dir  - direction 0- i/p, 1- o/p
 unsigned int pull - pull up/down, no pull range(0-3)
 unsigned int drvstr - range (0 - 7)-> (2- 16)MA steps of 2
-unsigned int enable - 1 - Disable, 2- Enable.
+unsigned int oe - 0 - Disable, 1- Enable.
 
 Return : None
 *******************************************************/
 
 
 void gpio_tlmm_config(unsigned int gpio, unsigned int func,
-                      unsigned int dir, unsigned int pull,
-                      unsigned int drvstr, unsigned int enable)
+                      unsigned int out, unsigned int pull,
+                      unsigned int drvstr, unsigned int oe)
 {
         unsigned int val = 0;
         val |= pull;
         val |= func << 2;
         val |= drvstr << 6;
-        val |= enable << 9;
+        val |= oe << 9;
         unsigned int *addr = (unsigned int *)GPIO_CONFIG_ADDR(gpio);
         writel(val, addr);
+
+	/* Output value is only relevant if GPIO has been configured for fixed
+	 * output setting - i.e. func == 0 */
+	if (func == 0) {
+		addr = (unsigned int *)GPIO_IN_OUT_ADDR(gpio);
+		val = readl(addr);
+		val |= out << 1;
+		writel(val, addr);
+	}
+
         return;
 }
 

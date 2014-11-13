@@ -404,24 +404,24 @@ void reset_cpu(ulong addr)
 static void configure_nand_gpio(void)
 {
 	/* EBI2 CS, CLE, ALE, WE, OE */
-	gpio_tlmm_config(34, 1, 0, GPIO_NO_PULL, GPIO_10MA, GPIO_DISABLE);
-	gpio_tlmm_config(35, 1, 0, GPIO_NO_PULL, GPIO_10MA, GPIO_DISABLE);
-	gpio_tlmm_config(36, 1, 0, GPIO_NO_PULL, GPIO_10MA, GPIO_DISABLE);
-	gpio_tlmm_config(37, 1, 0, GPIO_NO_PULL, GPIO_10MA, GPIO_DISABLE);
-	gpio_tlmm_config(38, 1, 0, GPIO_NO_PULL, GPIO_10MA, GPIO_DISABLE);
+	gpio_tlmm_config(34, 1, 0, GPIO_NO_PULL, GPIO_10MA, GPIO_OE_ENABLE);
+	gpio_tlmm_config(35, 1, 0, GPIO_NO_PULL, GPIO_10MA, GPIO_OE_ENABLE);
+	gpio_tlmm_config(36, 1, 0, GPIO_NO_PULL, GPIO_10MA, GPIO_OE_ENABLE);
+	gpio_tlmm_config(37, 1, 0, GPIO_NO_PULL, GPIO_10MA, GPIO_OE_ENABLE);
+	gpio_tlmm_config(38, 1, 0, GPIO_NO_PULL, GPIO_10MA, GPIO_OE_ENABLE);
 
 	/* EBI2 BUSY */
-	gpio_tlmm_config(39, 1, 0, GPIO_PULL_UP, GPIO_10MA, GPIO_DISABLE);
+	gpio_tlmm_config(39, 1, 0, GPIO_PULL_UP, GPIO_10MA, GPIO_OE_ENABLE);
 
 	/* EBI2 D7 - D0 */
-	gpio_tlmm_config(40, 1, 0, GPIO_KEEPER, GPIO_10MA, GPIO_DISABLE);
-	gpio_tlmm_config(41, 1, 0, GPIO_KEEPER, GPIO_10MA, GPIO_DISABLE);
-	gpio_tlmm_config(42, 1, 0, GPIO_KEEPER, GPIO_10MA, GPIO_DISABLE);
-	gpio_tlmm_config(43, 1, 0, GPIO_KEEPER, GPIO_10MA, GPIO_DISABLE);
-	gpio_tlmm_config(44, 1, 0, GPIO_KEEPER, GPIO_10MA, GPIO_DISABLE);
-	gpio_tlmm_config(45, 1, 0, GPIO_KEEPER, GPIO_10MA, GPIO_DISABLE);
-	gpio_tlmm_config(46, 1, 0, GPIO_KEEPER, GPIO_10MA, GPIO_DISABLE);
-	gpio_tlmm_config(47, 1, 0, GPIO_KEEPER, GPIO_10MA, GPIO_DISABLE);
+	gpio_tlmm_config(40, 1, 0, GPIO_KEEPER, GPIO_10MA, GPIO_OE_ENABLE);
+	gpio_tlmm_config(41, 1, 0, GPIO_KEEPER, GPIO_10MA, GPIO_OE_ENABLE);
+	gpio_tlmm_config(42, 1, 0, GPIO_KEEPER, GPIO_10MA, GPIO_OE_ENABLE);
+	gpio_tlmm_config(43, 1, 0, GPIO_KEEPER, GPIO_10MA, GPIO_OE_ENABLE);
+	gpio_tlmm_config(44, 1, 0, GPIO_KEEPER, GPIO_10MA, GPIO_OE_ENABLE);
+	gpio_tlmm_config(45, 1, 0, GPIO_KEEPER, GPIO_10MA, GPIO_OE_ENABLE);
+	gpio_tlmm_config(46, 1, 0, GPIO_KEEPER, GPIO_10MA, GPIO_OE_ENABLE);
+	gpio_tlmm_config(47, 1, 0, GPIO_KEEPER, GPIO_10MA, GPIO_OE_ENABLE);
 }
 
 void board_nand_init(void)
@@ -587,8 +587,8 @@ void ipq_configure_gpio(gpio_func_data_t *gpio, uint count)
 	int i;
 
 	for (i = 0; i < count; i++) {
-		gpio_tlmm_config(gpio->gpio, gpio->func, gpio->dir,
-				gpio->pull, gpio->drvstr, gpio->enable);
+		gpio_tlmm_config(gpio->gpio, gpio->func, gpio->out,
+				gpio->pull, gpio->drvstr, gpio->oe);
 		gpio++;
 	}
 }
@@ -596,11 +596,6 @@ void ipq_configure_gpio(gpio_func_data_t *gpio, uint count)
 int board_eth_init(bd_t *bis)
 {
 	int status;
-
-	if (gboard_param->machid == MACH_TYPE_IPQ806X_STORM) {
-		printf("Skipping %s for storm\n", __func__);
-		return -ENODEV;
-	}
 
 	ipq_gmac_common_init(gboard_param->gmac_cfg);
 
@@ -788,8 +783,8 @@ void board_pci_init()
 					cfg->axi_bar_size - PCIE_AXI_CONF_SIZE;
 		if (gpio_data->gpio != -1)
 			gpio_tlmm_config(gpio_data->gpio, gpio_data->func,
-					gpio_data->dir,	gpio_data->pull,
-					gpio_data->drvstr, gpio_data->enable);
+					gpio_data->out,	gpio_data->pull,
+					gpio_data->drvstr, gpio_data->oe);
 
 		/* assert PCIe PARF reset while powering the core */
 		ipq_pcie_parf_reset(cfg->pcie_rst, BIT(6), 0);
@@ -867,7 +862,7 @@ void board_pci_deinit()
 
 		if (gpio_data->gpio != -1)
 			gpio_tlmm_config(gpio_data->gpio, 0, GPIO_INPUT,
-					GPIO_NO_PULL, GPIO_2MA, GPIO_ENABLE);
+					GPIO_NO_PULL, GPIO_2MA, GPIO_OE_DISABLE);
 		writel(0x7d, cfg->pcie_rst);
 		writel(1, cfg->parf + PCIE20_PARF_PHY_CTRL);
 		pcie_clock_shutdown(cfg->pci_clks);

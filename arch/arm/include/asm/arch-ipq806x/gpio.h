@@ -37,6 +37,10 @@
 #define GPIO_INPUT      0
 #define GPIO_OUTPUT     1
 
+/* GPIO TLMM: Output value */
+#define GPIO_OUT_LOW	0
+#define GPIO_OUT_HIGH	1
+
 /* GPIO TLMM: Pullup/Pulldown */
 #define GPIO_NO_PULL    0
 #define GPIO_PULL_DOWN  1
@@ -54,8 +58,8 @@
 #define GPIO_16MA       7
 
 /* GPIO TLMM: Status */
-#define GPIO_ENABLE     0
-#define GPIO_DISABLE    1
+#define GPIO_OE_DISABLE	0
+#define GPIO_OE_ENABLE	1
 
 void gpio_tlmm_config(unsigned int gpio, unsigned int func,
                       unsigned int dir, unsigned int pull,
