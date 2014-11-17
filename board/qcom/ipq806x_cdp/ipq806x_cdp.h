@@ -139,6 +139,7 @@ typedef struct {
 	unsigned int gmac_gpio_count;
 	gpio_func_data_t *gmac_gpio;
 	ipq_gmac_board_cfg_t gmac_cfg[IPQ_GMAC_NMACS];
+	gpio_func_data_t *switch_gpio;
 	flash_desc flashdesc;
 	spinorflash_params_t flash_param;
 	gpio_func_data_t dbg_uart_gpio[NO_OF_DBG_UART_GPIOS];

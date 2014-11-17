@@ -155,6 +155,15 @@ gpio_func_data_t gmac1_gpio[] = {
 	},
 };
 
+gpio_func_data_t storm_switch_gpio = {
+	.gpio = 26,
+	.func = 0,
+	.out = GPIO_OUT_LOW,
+	.pull = GPIO_PULL_DOWN,
+	.drvstr = GPIO_8MA,
+	.oe = GPIO_OE_ENABLE
+};
+
 #ifdef CONFIG_IPQ806X_PCI
 /* Address of PCIE20 PARF */
 #define PCIE20_0_PARF_PHYS      0x1b600000
@@ -1182,11 +1191,14 @@ board_ipq806x_params_t board_params[] = {
 		.gmac_gpio_count = ARRAY_SIZE(gmac0_gpio),
 		.gmac_gpio = gmac0_gpio,
 		.gmac_cfg = {
-			gmac_board_cfg(0, 0, RGMII, 0, 0, 0, 1, 4),
+			gmac_board_cfg(0, 1, RGMII, S17_RGMII0_1_8V,
+					S17_RGMII1_1_8V, 0, 1, 4),
+			gmac_board_cfg(2, 1, SGMII, S17_RGMII0_1_8V,
+					S17_RGMII1_1_8V, 0, 3, 0, 1, 2),
 			gmac_board_cfg_invalid(),
-			gmac_board_cfg(2, 1, SGMII, 0, 0, 0, 4, 0, 1, 2, 3),
 			gmac_board_cfg_invalid(),
 		},
+		.switch_gpio = &storm_switch_gpio,
 		.flashdesc = ONLY_NOR,
 		.flash_param = {
 			.mode =	NOR_SPI_MODE_0,

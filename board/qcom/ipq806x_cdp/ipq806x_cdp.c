@@ -596,6 +596,12 @@ void ipq_configure_gpio(gpio_func_data_t *gpio, uint count)
 int board_eth_init(bd_t *bis)
 {
 	int status;
+	gpio_func_data_t *gpio = gboard_param->switch_gpio;
+
+	if (gpio) {
+		gpio_tlmm_config(gpio->gpio, gpio->func, gpio->out,
+				gpio->pull, gpio->drvstr, gpio->oe);
+	};
 
 	ipq_gmac_common_init(gboard_param->gmac_cfg);
 
