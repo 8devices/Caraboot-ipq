@@ -254,6 +254,42 @@ void athrs17_reg_init_lan(ipq_gmac_board_cfg_t *gmac_cfg)
 					S17c_SGMII_FULL_DUPLEX_25M));
 }
 
+struct athrs17_regmap {
+	uint32_t start;
+	uint32_t end;
+};
+
+struct athrs17_regmap regmap[] = {
+	{ 0x000, 0x0e0 },
+	{ 0x100, 0x168 },
+	{ 0x200, 0x270 },
+	{ 0x400, 0x454 },
+	{ 0x600, 0x718 },
+	{ 0x800, 0xb70 },
+	{ 0xC00, 0xC80 },
+};
+
+int do_ar8xxx_dump(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]) {
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(regmap); i++) {
+		uint32_t reg;
+		struct athrs17_regmap *section = &regmap[i];
+
+		for (reg = section->start; reg <= section->end; reg += sizeof(uint32_t)) {
+			uint32_t val = athrs17_reg_read(reg);
+			printf("%03lx: %08lx\n", reg, val);
+		}
+	}
+
+	return 0;
+};
+U_BOOT_CMD(
+	ar8xxx_dump,    1,    1,    do_ar8xxx_dump,
+	"Dump ar8xxx registers",
+	"\n    - print all ar8xxx registers\n"
+);
+
 /*********************************************************************
  *
  * FUNCTION DESCRIPTION: This function invokes RGMII,
