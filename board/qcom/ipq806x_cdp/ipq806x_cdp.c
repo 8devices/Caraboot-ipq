@@ -621,9 +621,16 @@ int board_mmc_env_init(void)
 	loff_t board_env_size;
 	int ret;
 
-	if(mmc_init(mmc_host.mmc)) {
-		printf("MMC init failed \n");
-		return -1;
+	if (mmc_init(mmc_host.mmc)) {
+		/* The HS mode command(cmd6) is getting timed out. So mmc card is
+		 * not getting initialized properly. Since the env partition is not
+		 * visible, the env default values are writing into the default
+		 * partition (start of the mmc device). So do a reset again.
+		 */
+		if (mmc_init(mmc_host.mmc)) {
+			printf("MMC init failed \n");
+			return -1;
+		}
 	}
 	blk_dev = mmc_get_dev(mmc_host.dev_num);
 	ret = find_part_efi(blk_dev, "0:APPSBLENV", &disk_info);
