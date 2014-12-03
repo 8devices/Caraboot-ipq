@@ -92,7 +92,8 @@ struct smem {
 };
 
 #define SMEM_PTN_NAME_MAX     16
-#define SMEM_PTABLE_PARTS_MAX 16
+#define SMEM_PTABLE_PARTS_MAX 32
+#define SMEM_PTABLE_PARTS_DEFAULT 16
 
 struct smem_ptn {
 	char name[SMEM_PTN_NAME_MAX];
@@ -173,6 +174,14 @@ int smem_ptable_init(void)
 
 	ret = smem_read_alloc_entry(SMEM_AARM_PARTITION_TABLE,
 				    &smem_ptable, sizeof(smem_ptable));
+
+	if (ret != 0) {
+		/*
+		 * Trying for max partition 16 in case of smem_read_alloc_entry fails
+		 */
+		ret = smem_read_alloc_entry(SMEM_AARM_PARTITION_TABLE, &smem_ptable,
+			sizeof(smem_ptable) - (sizeof(struct smem_ptn) * SMEM_PTABLE_PARTS_DEFAULT));
+	}
 	if (ret != 0)
 		return -ENOMSG;
 
