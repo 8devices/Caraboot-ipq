@@ -656,7 +656,7 @@ struct xhci_ep_ctx {
 #define MAX_BURST_SHIFT		(8)
 #define CTX_TO_MAX_BURST(p)	(((p) >> 8) & 0xff)
 #define MAX_PACKET(p)		(((p)&0xffff) << 16)
-#define MAX_PACKET_MASK		(0xffff)
+#define MAX_PACKET_MASK		(0xffff << 16)
 #define MAX_PACKET_DECODED(p)	(((p) >> 16) & 0xffff)
 #define MAX_PACKET_SHIFT	(16)
 
