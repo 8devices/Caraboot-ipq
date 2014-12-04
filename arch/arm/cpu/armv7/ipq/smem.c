@@ -53,9 +53,10 @@ typedef enum {
 	SMEM_BOOT_FLASH_BLOCK_SIZE = 424,
 	SMEM_MACHID_INFO_LOCATION = 425,
 	SMEM_BOOT_DUALPARTINFO = 427,
+	SMEM_PARTITION_TABLE_OFFSET = 428,
 	SMEM_FIRST_VALID_TYPE = SMEM_SPINLOCK_ARRAY,
-	SMEM_LAST_VALID_TYPE = SMEM_BOOT_DUALPARTINFO,
-	SMEM_MAX_SIZE = SMEM_BOOT_DUALPARTINFO + 1,
+	SMEM_LAST_VALID_TYPE = SMEM_PARTITION_TABLE_OFFSET,
+	SMEM_MAX_SIZE = SMEM_PARTITION_TABLE_OFFSET + 1,
 } smem_mem_type_t;
 
 struct smem_proc_comm {
@@ -226,6 +227,22 @@ unsigned int get_rootfs_active_partition(void)
 	return 0; /* alt partition not available */
 }
 
+unsigned int get_partition_table_offset(void)
+{
+	int ret;
+	uint32_t primary_mibib;
+
+	ret = smem_read_alloc_entry(SMEM_PARTITION_TABLE_OFFSET,
+				    &primary_mibib, sizeof(uint32_t));
+	if (ret != 0) {
+		printf("smem: SMEM_PARTITION_TABLE_OFFSET failed\n");
+		primary_mibib = 0;
+	}
+
+	return primary_mibib;
+
+}
+
 /**
  * smem_getpart - retreive partition start and size
  * @part_name: partition name
@@ -383,9 +400,11 @@ int do_smeminfo(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	printf(	"flash_type:		0x%x\n"
 		"flash_index:		0x%x\n"
 		"flash_chip_select:	0x%x\n"
-		"flash_block_size:	0x%x\n",
+		"flash_block_size:	0x%x\n"
+		"partition table offset 0x%x\n",
 			sfi->flash_type, sfi->flash_index,
-			sfi->flash_chip_select, sfi->flash_block_size);
+			sfi->flash_chip_select, sfi->flash_block_size,
+			get_partition_table_offset());
 
 	if (smem_ptable.len > 0) {
 		printf("%-3s: " smem_ptn_name_fmt " %10s %16s %16s\n",
