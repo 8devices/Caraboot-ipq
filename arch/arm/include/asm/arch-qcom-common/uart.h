@@ -74,6 +74,13 @@ enum MSM_BOOT_UART_DM_BITS_PER_CHAR {
         MSM_BOOT_UART_DM_8_BPS
 };
 
+/* UART clock @ 7.3728 MHz */
+#ifdef CONFIG_IPQ806X
+#define UART_DM_CLK_RX_TX_BIT_RATE 0xCC
+#elif defined CONFIG_QCA961X
+#define UART_DM_CLK_RX_TX_BIT_RATE 0xff
+#endif
+
 /* 8-N-1 Configuration */
 #define MSM_BOOT_UART_DM_8_N_1_MODE          (MSM_BOOT_UART_DM_NO_PARITY | \
                                              (MSM_BOOT_UART_DM_SBL_1 << 2) | \

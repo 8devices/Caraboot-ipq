@@ -38,7 +38,11 @@
 
 #define FIFO_DATA_SIZE	4
 
+#if defined CONFIG_IPQ806X
 extern board_ipq806x_params_t *gboard_param;
+#elif defined CONFIG_QCA961X
+extern board_qca961x_params_t *gboard_param;
+#endif
 
 static unsigned int msm_boot_uart_dm_init(unsigned int  uart_dm_base);
 
@@ -338,6 +342,8 @@ static void uart_dm_init(void)
 	unsigned int dm_base, gsbi_base;
 
 	dm_base = gboard_param->uart_dm_base;
+
+#ifdef CONFIG_IPQ806X
 	gsbi_base = gboard_param->uart_gsbi_base;
 	ipq_configure_gpio(gboard_param->dbg_uart_gpio, NO_OF_DBG_UART_GPIOS);
 
@@ -351,7 +357,9 @@ static void uart_dm_init(void)
 	writel(GSBI_PROTOCOL_CODE_I2C_UART <<
 		GSBI_CTRL_REG_PROTOCOL_CODE_S,
 		GSBI_CTRL_REG(gsbi_base));
+#endif
         writel(UART_DM_CLK_RX_TX_BIT_RATE, MSM_BOOT_UART_DM_CSR(dm_base));
+
 	/* Intialize UART_DM */
 	msm_boot_uart_dm_init(dm_base);
 }

@@ -33,6 +33,7 @@
 #endif
 #endif /* !DO_DEPS_ONLY */
 
+#define CONFIG_IPQ806X
 #define CONFIG_BOARD_EARLY_INIT_F
 
 #define CONFIG_SYS_NO_FLASH
