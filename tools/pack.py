@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (c) 2013 The Linux Foundation. All rights reserved.
+# Copyright (c) 2013-2014 The Linux Foundation. All rights reserved.
 #
 """
 Script to create a U-Boot flashable multi-image blob.
@@ -464,12 +464,13 @@ class NandScript(FlashScript):
     def write(self, offset, size, yaffs):
         """Generate code, to write to a partition."""
 
-        if yaffs:
-            self.append("nand write.yaffs $fileaddr 0x%08x 0x%08x"
+        if size > 0:
+            if yaffs:
+                self.append("nand write.yaffs $fileaddr 0x%08x 0x%08x"
                         % (offset, size))
-        else:
-            size = roundup(size, self.pagesize)
-            self.append("nand write $fileaddr 0x%08x 0x%08x" % (offset, size))
+            else:
+                size = roundup(size, self.pagesize)
+                self.append("nand write $fileaddr 0x%08x 0x%08x" % (offset, size))
 
     def switch_layout(self, layout):
         """Generate code, to switch between sbl/linux layouts."""
@@ -491,8 +492,9 @@ class NorScript(FlashScript):
     def write(self, offset, size, yaffs):
         """Generate code, to write to a partition."""
 
-        size = roundup(size, self.pagesize)
-        self.append("sf write $fileaddr 0x%08x 0x%08x" % (offset, size))
+        if size > 0:
+            size = roundup(size, self.pagesize)
+            self.append("sf write $fileaddr 0x%08x 0x%08x" % (offset, size))
 
     def nand_write(self, offset, size):
         """Handle the NOR + NAND case
@@ -500,7 +502,8 @@ class NorScript(FlashScript):
            Assumed all nand page sizes are less than are equal to 8KB
            """
         self.append("nand device 0 && nand erase 0x%08x 0x%08x" % (offset, size))
-        self.append("nand write $fileaddr 0x%08x 0x%08x" % (offset, size))
+        if size > 0:
+            self.append("nand write $fileaddr 0x%08x 0x%08x" % (offset, size))
 
     def switch_layout(self, layout):
         pass
@@ -518,9 +521,10 @@ class EmmcScript(FlashScript):
 
     def write(self, offset, size, yaffs):
         """Generate code, to write to a partition."""
-        size = roundup(size, self.blocksize)
-        blk_cnt = size / self.blocksize
-        self.append("mmc write $fileaddr 0x%08x %x" % (offset, blk_cnt))
+        if size > 0:
+           size = roundup(size, self.blocksize)
+           blk_cnt = size / self.blocksize
+           self.append("mmc write $fileaddr 0x%08x %x" % (offset, blk_cnt))
 
     def switch_layout(self, layout):
         pass
@@ -642,6 +646,9 @@ class Pack(object):
 
         filaneme -- string, filename of the image to be flashed
         """
+
+        if filename.lower() == "none":
+            return 0
         try:
             return getsize(os.path.join(self.images_dname, filename))
         except OSError, e:
@@ -692,15 +699,17 @@ class Pack(object):
                elif img_size > part_info.length:
                    error("img size is larger than part. len in '%s'" % section)
             else:
-               if img_size > (part_info.length * self.flinfo.blocksize):
-                   error("img size is larger than part. len in '%s'" % section)
+                if (img_size > 0):
+                    if img_size > (part_info.length * self.flinfo.blocksize):
+                        error("img size is larger than part. len in '%s'" % section)
 
             if machid:
                 script.start_if("machid", machid)
 
             script.start_activity("Flashing %s:" % section)
             if self.ipq_nand: script.switch_layout(layout)
-            script.imxtract(section + "-" + sha1(filename))
+            if img_size > 0:
+               script.imxtract(section + "-" + sha1(filename))
 
             if part_info == None:
                 offset = count * Pack.norplusnand_rootfs_img_size
@@ -741,8 +750,9 @@ class Pack(object):
             filename = info.get(section, "filename")
             image_info = ImageInfo(section + "-" + sha1(filename),
                                    filename, "firmware")
-            if image_info not in images:
-                images.append(image_info)
+            if filename.lower() != "none":
+               if image_info not in images:
+                   images.append(image_info)
 
     def __its_escape(self, string):
         """Return string with ITS special characters escaped.
