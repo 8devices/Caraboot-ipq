@@ -16,7 +16,7 @@
 #include "ipq_i2c.h"
 #include <asm/io.h>
 #include <asm/errno.h>
-#include <asm/arch-ipq806x/gsbi.h>
+#include <asm/arch-qcom-common/gsbi.h>
 #include <asm/arch-ipq806x/gpio.h>
 #include <asm/arch-ipq806x/iomap.h>
 #include <asm/arch-ipq806x/clock.h>
