@@ -321,6 +321,7 @@ typedef struct {
 
 
 #define CONFIG_IPQ_SWITCH_ATHRS17
+#define CONFIG_IPQ_SWITCH_QCA8511
 
 /* Add MBN header to U-Boot */
 #define CONFIG_MBN_HEADER

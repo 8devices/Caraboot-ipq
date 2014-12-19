@@ -255,6 +255,7 @@
 
 
 #define PCS_CHn_ANEG_EN(ch)			(1 << ((ch * 8) + 7))
+#define PCS_CHn_ANEG_DISABLE(ch)		(~PCS_CHn_ANEG_EN(ch))
 
 #define PCS_SGMII_MAC				2
 

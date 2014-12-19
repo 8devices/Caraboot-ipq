@@ -262,7 +262,7 @@ void athrs17_reg_init_lan(ipq_gmac_board_cfg_t *gmac_cfg)
  * OUTPUT: NONE
  *
 **********************************************************************/
-int ipq_switch_init(ipq_gmac_board_cfg_t *gmac_cfg)
+int ipq_athrs17_init(ipq_gmac_board_cfg_t *gmac_cfg)
 {
 	int ret;
 
@@ -274,6 +274,7 @@ int ipq_switch_init(ipq_gmac_board_cfg_t *gmac_cfg)
 		athrs17_reg_init(gmac_cfg);
 		athrs17_reg_init_lan(gmac_cfg);
 		athrs17_vlan_config();
+		printf ("S17c init  done\n");
 	}
 
 	return ret;

@@ -137,6 +137,7 @@
 #define GMAC2_RX_CLK_HALT                       (1 << 12)
 #define GMAC3_TX_CLK_HALT                       (1 << 13)
 #define GMAC3_RX_CLK_HALT                       (1 << 14)
+#define NSS_QSGMII_CLK_CTL_CLR_MSK		0
 
 #define GMAC0_QSGMII_TX_CLK_SHIFT               7
 #define GMAC0_QSGMII_RX_CLK_SHIFT               8
@@ -175,6 +176,7 @@
 #define PCS_ALL_CH_CTL                          0x080
 #define PCS_CAL_LCKDT_CTL                       0x120
 #define QSGMII_PHY_MODE_CTL                     0x128
+#define QSGMII_PHY_QSGMII_CTL			0x134
 #define PCS_QSGMII_MAC_STAT			0x74
 
 /* Bit definitions for PCS_QSGMII_SGMII_MODE */
@@ -190,6 +192,9 @@
 /* Bit definitions for QSGMII_PHY_MODE_CTL */
 #define QSGMII_PHY_MODE_SGMII			(0x0 << 0)
 #define QSGMII_PHY_MODE_QSGMII			(0x1 << 0)
+
+/* Bit definitions for QSGMII_PHY_QSGMII_CTL */
+#define QSGMII_TX_SLC_CTL(x)			(x << 26)
 
 /* Interface between GMAC and PHY */
 #define GMAC_INTF_RGMII				0
@@ -236,5 +241,7 @@ extern uchar ipq_def_enetaddr[];
 void ipq_gmac_common_init(ipq_gmac_board_cfg_t *cfg);
 int ipq_gmac_init(ipq_gmac_board_cfg_t *cfg);
 int get_eth_mac_address(uchar *enetaddr, uint no_of_macs);
-int ipq_switch_init(ipq_gmac_board_cfg_t *cfg);
+int ipq_qca8511_init(ipq_gmac_board_cfg_t *gmac_cfg);
+int ipq_athrs17_init(ipq_gmac_board_cfg_t *gmac_cfg);
+void ipq_register_switch(int(*sw_init)(ipq_gmac_board_cfg_t *cfg));
 #endif /*__ASM_ARCH_MSM_NSS_GMAC_H */

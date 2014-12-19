@@ -24,8 +24,13 @@
 #define DESC_FLUSH_SIZE	(((DESC_SIZE + (CONFIG_SYS_CACHELINE_SIZE - 1)) \
 			/ CONFIG_SYS_CACHELINE_SIZE) * \
 			(CONFIG_SYS_CACHELINE_SIZE))
+static struct ipq_eth_dev *ipq_gmac_macs[IPQ_GMAC_NMACS];
+static int (*ipq_switch_init)(ipq_gmac_board_cfg_t *cfg);
 
-struct ipq_eth_dev *ipq_gmac_macs[IPQ_GMAC_NMACS];
+void ipq_register_switch(int(*sw_init)(ipq_gmac_board_cfg_t *cfg))
+{
+	ipq_switch_init = sw_init;
+}
 
 static void config_auto_neg(struct eth_device *dev)
 {
@@ -190,7 +195,7 @@ static int ipq_gmac_alloc_fifo(int ndesc, ipq_gmac_desc_t **fifo)
 		fifo[i] = (ipq_gmac_desc_t *)((unsigned long)addr +
 			  (i * DESC_FLUSH_SIZE));
 		if (fifo[i] == NULL) {
-			printf("Can't allocate desc fifos\n");
+			ipq_info("Can't allocate desc fifos\n");
 			return -1;
 		}
 	}
@@ -485,7 +490,19 @@ gmac_sgmii_clk_init(uint mac_unit, uint clk_div, ipq_gmac_board_cfg_t *gmac_cfg)
 
 	writel(gmac_ctl_val, (NSS_REG_BASE + NSS_GMACn_CTL(mac_unit)));
 
+	if (gmac_cfg->phy == PHY_INTERFACE_MODE_QSGMII) {
+		nss_eth_clk_gate_val = GMACn_GMII_RX_CLK(mac_unit) |
+					GMACn_GMII_TX_CLK(mac_unit);
+		clrbits_le32((NSS_REG_BASE + NSS_ETH_CLK_SRC_CTL),
+				(1 << mac_unit));
+		writel(NSS_QSGMII_CLK_CTL_CLR_MSK,
+				(NSS_REG_BASE + NSS_QSGMII_CLK_CTL));
+		setbits_le32((NSS_REG_BASE + NSS_ETH_CLK_DIV0),
+				GMACn_CLK_DIV(mac_unit, 1));
+	}
+
 	switch (mac_unit) {
+	case GMAC_UNIT0:
 	case GMAC_UNIT1:
 		setbits_le32((QSGMII_REG_BASE + PCS_ALL_CH_CTL),
 				PCS_CHn_FORCE_SPEED(mac_unit));
@@ -494,7 +511,6 @@ gmac_sgmii_clk_init(uint mac_unit, uint clk_div, ipq_gmac_board_cfg_t *gmac_cfg)
 		setbits_le32((QSGMII_REG_BASE + PCS_ALL_CH_CTL),
 				PCS_CHn_SPEED(mac_unit,
 					PCS_CH_SPEED_1000));
-
 		setbits_le32((NSS_REG_BASE + NSS_ETH_CLK_GATE_CTL),
 			nss_eth_clk_gate_val);
 		break;
@@ -574,6 +590,7 @@ static void ipq_gmac_mii_clk_init(struct ipq_eth_dev *priv, uint clk_div,
 				(NSS_REG_BASE + NSS_ETH_CLK_DIV0));
 		break;
 	case PHY_INTERFACE_MODE_SGMII:
+	case PHY_INTERFACE_MODE_QSGMII:
 		gmac_sgmii_clk_init(gmac_idx, clk_div, gmac_cfg);
 		break;
 	default :
@@ -584,7 +601,7 @@ static void ipq_gmac_mii_clk_init(struct ipq_eth_dev *priv, uint clk_div,
 
 int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 {
-	static int s17_init_done = 0;
+	static int sw_init_done = 0;
 	struct eth_device *dev[IPQ_GMAC_NMACS];
 	uint clk_div_val;
 	uchar enet_addr[IPQ_GMAC_NMACS * 6];
@@ -697,12 +714,11 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 
 		eth_register(dev[i]);
 
-		if (!s17_init_done) {
+		if (!sw_init_done) {
 			if (ipq_switch_init(gmac_cfg) == 0) {
-				s17_init_done = 1;
-				ipq_info("S17 inits done\n");
+				sw_init_done = 1;
 			} else {
-				ipq_info("S17 inits failed\n");
+				ipq_info("Switch inits failed\n");
 				goto failed;
 			}
 		}
@@ -739,32 +755,53 @@ void ipq_gmac_common_init(ipq_gmac_board_cfg_t *gmac_cfg)
 {
 	uint pcs_qsgmii_ctl_val;
 	uint pcs_mode_ctl_val;
+	uint i;
+	ipq_gmac_board_cfg_t *gmac_tmp_cfg = gmac_cfg;
 
 	pcs_mode_ctl_val = (PCS_CHn_ANEG_EN(GMAC_UNIT1) |
-				PCS_CHn_ANEG_EN(GMAC_UNIT2) |
-				PCS_CHn_ANEG_EN(GMAC_UNIT3) |
-				PCS_CHn_ANEG_EN(GMAC_UNIT0) |
-				PCS_SGMII_MAC);
+			PCS_CHn_ANEG_EN(GMAC_UNIT2) |
+			PCS_CHn_ANEG_EN(GMAC_UNIT3) |
+			PCS_CHn_ANEG_EN(GMAC_UNIT0) |
+			PCS_SGMII_MAC);
 
 	pcs_qsgmii_ctl_val = (PCS_QSGMII_ATHR_CSCO_AUTONEG |
-				PCS_QSGMII_SW_VER_1_7 |
-				PCS_QSGMII_SHORT_THRESH |
-				PCS_QSGMII_SHORT_LATENCY |
-				PCS_QSGMII_DEPTH_THRESH(1) |
-				PCS_CHn_SERDES_SN_DETECT(0) |
-				PCS_CHn_SERDES_SN_DETECT(1) |
-				PCS_CHn_SERDES_SN_DETECT(2) |
-				PCS_CHn_SERDES_SN_DETECT(3) |
-				PCS_CHn_SERDES_SN_DETECT_2(0) |
-				PCS_CHn_SERDES_SN_DETECT_2(1) |
-				PCS_CHn_SERDES_SN_DETECT_2(2) |
-				PCS_CHn_SERDES_SN_DETECT_2(3));
+			PCS_QSGMII_SW_VER_1_7 |
+			PCS_QSGMII_SHORT_THRESH |
+			PCS_QSGMII_SHORT_LATENCY |
+			PCS_QSGMII_DEPTH_THRESH(1) |
+			PCS_CHn_SERDES_SN_DETECT(0) |
+			PCS_CHn_SERDES_SN_DETECT(1) |
+			PCS_CHn_SERDES_SN_DETECT(2) |
+			PCS_CHn_SERDES_SN_DETECT(3) |
+			PCS_CHn_SERDES_SN_DETECT_2(0) |
+			PCS_CHn_SERDES_SN_DETECT_2(1) |
+			PCS_CHn_SERDES_SN_DETECT_2(2) |
+			PCS_CHn_SERDES_SN_DETECT_2(3));
 
-	writel(MACSEC_BYPASS_EXT_EN,(NSS_REG_BASE + NSS_MACSEC_CTL));
-	writel(0, (QSGMII_REG_BASE + QSGMII_PHY_MODE_CTL));
-	writel(0, (QSGMII_REG_BASE + PCS_QSGMII_SGMII_MODE));
+	for (i = 0; gmac_cfg_is_valid(gmac_tmp_cfg); gmac_tmp_cfg++, i++) {
+		switch(gmac_tmp_cfg->phy) {
+		case PHY_INTERFACE_MODE_SGMII:
+			writel(QSGMII_PHY_MODE_SGMII,
+				(QSGMII_REG_BASE + QSGMII_PHY_MODE_CTL));
+			writel(PCS_QSGMII_MODE_SGMII,
+				(QSGMII_REG_BASE + PCS_QSGMII_SGMII_MODE));
+			break;
+		case PHY_INTERFACE_MODE_QSGMII:
+			pcs_mode_ctl_val = (PCS_SGMII_MAC);
+			writel(QSGMII_PHY_MODE_QSGMII,
+				(QSGMII_REG_BASE + QSGMII_PHY_MODE_CTL));
+			writel(PCS_QSGMII_MODE_QSGMII,
+				(QSGMII_REG_BASE + PCS_QSGMII_SGMII_MODE));
+			clrbits_le32((QSGMII_REG_BASE + QSGMII_PHY_QSGMII_CTL),
+				QSGMII_TX_SLC_CTL(3));
+			break;
+		default:
+			break;
+		}
+	}
 
-	setbits_le32((QSGMII_REG_BASE + NSS_PCS_MODE_CTL), pcs_mode_ctl_val);
+	writel(MACSEC_BYPASS_EXT_EN, (NSS_REG_BASE + NSS_MACSEC_CTL));
+	writel(pcs_mode_ctl_val, (QSGMII_REG_BASE + NSS_PCS_MODE_CTL));
 	writel(pcs_qsgmii_ctl_val, (QSGMII_REG_BASE + PCS_QSGMII_CTL));
 
 	/*
