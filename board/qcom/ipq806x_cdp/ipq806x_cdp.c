@@ -607,6 +607,18 @@ int board_eth_init(bd_t *bis)
 
 	ipq_configure_gpio(gboard_param->gmac_gpio,
 			gboard_param->gmac_gpio_count);
+	/*
+	 * Register the swith driver routines before
+	 * initing the GMAC
+	 */
+	switch (gboard_param->machid) {
+	case MACH_TYPE_IPQ806X_AP160_2XX:
+		ipq_register_switch(ipq_qca8511_init);
+		break;
+	default:
+		ipq_register_switch(ipq_athrs17_init);
+		break;
+	}
 
 	status = ipq_gmac_init(gboard_param->gmac_cfg);
 	return status;
