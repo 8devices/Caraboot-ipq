@@ -40,6 +40,8 @@ struct spi_flash {
 	u32		page_size;
 	/* Erase (sector) size */
 	u32		sector_size;
+	/* Erase (block) size */
+	u32		block_size;
 	/* 3 or 4 byte address width */
 	u32             addr_width;
 

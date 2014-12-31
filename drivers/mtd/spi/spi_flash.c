@@ -206,14 +206,13 @@ int spi_flash_cmd_wait_ready(struct spi_flash *flash, unsigned long timeout)
 		CMD_READ_STATUS, STATUS_WIP);
 }
 
-int spi_flash_cmd_erase(struct spi_flash *flash, u8 erase_cmd,
-			u32 offset, size_t len)
+static int spi_flash_cmd_erase_block_or_sector(struct spi_flash *flash, u8 erase_cmd,
+					u32 erase_size, u32 offset, size_t len)
 {
-	u32 start, end, erase_size;
+	u32 start, end;
 	int ret;
 	u8 cmd[5];
 
-	erase_size = flash->sector_size;
 	if (offset % erase_size || len % erase_size) {
 		debug("SF: Erase offset/length not multiple of erase size\n");
 		return -1;
@@ -254,6 +253,22 @@ int spi_flash_cmd_erase(struct spi_flash *flash, u8 erase_cmd,
  out:
 	spi_release_bus(flash->spi);
 	return ret;
+}
+
+/* Block Erase */
+int spi_flash_cmd_erase_block(struct spi_flash *flash, u8 erase_cmd,
+			u32 offset, size_t len)
+{
+	return spi_flash_cmd_erase_block_or_sector(flash, erase_cmd, flash->block_size,
+			offset, len);
+}
+
+/* Sector Erase */
+int spi_flash_cmd_erase(struct spi_flash *flash, u8 erase_cmd,
+			u32 offset, size_t len)
+{
+	return spi_flash_cmd_erase_block_or_sector(flash, erase_cmd, flash->sector_size,
+			offset, len);
 }
 
 int spi_flash_cmd_berase(struct spi_flash *flash, u8 erase_cmd)
