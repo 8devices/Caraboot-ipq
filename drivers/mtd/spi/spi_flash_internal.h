@@ -97,6 +97,10 @@ int spi_flash_cmd_wait_ready(struct spi_flash *flash, unsigned long timeout);
 int spi_flash_cmd_erase(struct spi_flash *flash, u8 erase_cmd,
 			u32 offset, size_t len);
 
+/* Erase block */
+int spi_flash_cmd_erase_block(struct spi_flash *flash, u8 erase_cmd,
+			u32 offset, size_t len);
+
 /* Manufacturer-specific probe functions */
 struct spi_flash *spi_flash_probe_spansion(struct spi_slave *spi, u8 *idcode);
 struct spi_flash *spi_flash_probe_atmel(struct spi_slave *spi, u8 *idcode);

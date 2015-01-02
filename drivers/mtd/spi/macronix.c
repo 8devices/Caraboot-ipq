@@ -175,13 +175,23 @@ static int macronix_unlock(struct spi_flash *flash)
 static int macronix_erase(struct spi_flash *flash, u32 offset, size_t len)
 {
 	u8 erase_opcode;
+	int ret;
 
-	if (flash->addr_width == 4)
-		erase_opcode = CMD_MX25XX_4BE;
-	else
-		erase_opcode = CMD_MX25XX_BE;
+	if ((offset % flash->block_size) == 0 && (len % flash->block_size) == 0) {
+		/* Block Erase */
+		if (flash->addr_width == 4)
+			erase_opcode = CMD_MX25XX_4BE;
+		else
+			erase_opcode = CMD_MX25XX_BE;
 
-	return spi_flash_cmd_erase(flash, erase_opcode, offset, len);
+		ret = spi_flash_cmd_erase_block(flash, erase_opcode, offset, len);
+	} else {
+		/* Sector Erase */
+		erase_opcode = CMD_MX25XX_SE;
+		ret = spi_flash_cmd_erase(flash, erase_opcode, offset, len);
+	}
+
+	return ret;
 }
 
 struct spi_flash *spi_flash_probe_macronix(struct spi_slave *spi, u8 *idcode)
@@ -215,9 +225,9 @@ struct spi_flash *spi_flash_probe_macronix(struct spi_slave *spi, u8 *idcode)
 	flash->erase = macronix_erase;
 	flash->read = spi_flash_cmd_read_fast;
 	flash->page_size = params->page_size;
-	flash->sector_size = params->page_size * params->pages_per_sector
-		* params->sectors_per_block;
-	flash->size = flash->sector_size * params->nr_blocks;
+	flash->sector_size = params->page_size * params->pages_per_sector;
+	flash->block_size = flash->sector_size * params->sectors_per_block;
+	flash->size = flash->block_size * params->nr_blocks;
 
 	if (flash->size > 0x1000000) {
 		flash->read_opcode  = CMD_4READ_ARRAY_FAST;
