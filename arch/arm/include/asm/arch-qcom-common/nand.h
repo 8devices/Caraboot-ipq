@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2012 The Linux Foundation. All rights reserved.
  */
-#ifndef HWIO_IPQ806X_NAND_H
-#define HWIO_IPQ806X_NAND_H
+#ifndef QCOM_NAND_H
+#define QCOM_NAND_H
 
 #define EBI2ND_BASE                                       (0x1ac00000)
 

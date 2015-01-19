@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2012 The Linux Foundation. All rights reserved.
  */
-#ifndef IPQ806X_EBI2_H
-#define IPQ806X_EBI2_H
+#ifndef QCOM_EBI2_H
+#define QCOM_EBI2_H
 
 #define EBI2CR_BASE                                       (0x1A600000)
 

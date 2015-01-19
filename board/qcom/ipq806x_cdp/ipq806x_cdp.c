@@ -17,8 +17,8 @@
 #include <asm/global_data.h>
 #include <asm/io.h>
 #include <asm/arch-ipq806x/clock.h>
-#include <asm/arch-ipq806x/ebi2.h>
 #include <asm/arch-ipq806x/smem.h>
+#include <asm/arch-qcom-common/ebi2.h>
 #include <asm/errno.h>
 #include "ipq806x_board_param.h"
 #include "ipq806x_cdp.h"
