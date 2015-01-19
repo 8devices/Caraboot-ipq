@@ -24,6 +24,13 @@ struct ebi2cr_regs {
 	uint32_t misr_value;                              /* 0x00000064 */
 	uint32_t clkon_cfg;                               /* 0x00000068 */
 	uint32_t core_clkon_cfg;                          /* 0x0000006C */
+	uint8_t reserved3[48];
+	/* QPIC */
+	uint32_t qpic_qpic_version;			  /* 0x00000100 */
+	uint32_t qpic_qpic_ctrl;			  /* 0x00000104 */
+	uint32_t qpic_qpic_hwinfo;			  /* 0x00000108 */
+	uint32_t qpic_qpic_reg_permission;		  /* 0x0000010C */
+	uint32_t qpic_qpic_debug;			  /* 0x00000110 */
 };
 
 /* Register: EBI2_CHIP_SELECT_CFG0 */
