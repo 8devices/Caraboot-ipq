@@ -9,7 +9,7 @@
 #include <asm/io.h>
 #include <asm/errno.h>
 #include "ipq_spi.h"
-#include <asm/arch-ipq806x/gpio.h>
+#include <asm/arch-qcom-common/gpio.h>
 #include <asm/arch-ipq806x/iomap.h>
 
 #define SUCCESS		0

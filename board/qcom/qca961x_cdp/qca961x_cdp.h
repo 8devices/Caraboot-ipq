@@ -36,13 +36,24 @@
 
 #define NO_OF_DBG_UART_GPIOS	2
 
+typedef struct {
+	int gpio;
+	unsigned int func;
+	unsigned int out;
+	unsigned int pull;
+	unsigned int drvstr;
+	unsigned int oe;
+} gpio_func_data_t;
+
 /* Board specific parameters */
 typedef struct {
 	unsigned int machid;
 	unsigned int ddr_size;
 	unsigned int uart_dm_base;
+	gpio_func_data_t dbg_uart_gpio[NO_OF_DBG_UART_GPIOS];
 } __attribute__ ((__packed__)) board_qca961x_params_t;
 
 extern board_qca961x_params_t *gboard_param;
 unsigned int get_board_index(unsigned int machid);
+void qca_configure_gpio(gpio_func_data_t *gpio, uint count);
 #endif

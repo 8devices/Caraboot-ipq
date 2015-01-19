@@ -31,6 +31,7 @@
 #include <common.h>
 #include <asm/global_data.h>
 #include <asm/io.h>
+#include <asm/arch-qcom-common/gpio.h>
 #include <asm/errno.h>
 #include <linux/mtd/ipq_nand.h>
 #include <asm/arch-qcom-common/nand.h>
@@ -137,6 +138,17 @@ int dram_init(void)
 void board_nand_init(void)
 {
 	ipq_nand_init(IPQ_NAND_LAYOUT_LINUX, QCOM_NAND_QPIC);
+}
+
+void qca_configure_gpio(gpio_func_data_t *gpio, uint count)
+{
+	int i;
+
+	for (i = 0; i < count; i++) {
+		gpio_tlmm_config(gpio->gpio, gpio->func, gpio->out,
+				 gpio->pull, gpio->drvstr, gpio->oe);
+		gpio++;
+	}
 }
 
 #ifdef CONFIG_OF_BOARD_SETUP

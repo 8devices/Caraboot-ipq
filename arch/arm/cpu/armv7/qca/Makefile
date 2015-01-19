@@ -1,7 +1,7 @@
 
 include $(TOPDIR)/config.mk
 
-SOBJS-y = timer.o
+SOBJS-y = timer.o gpio.o
 
 LIB	=  $(obj)lib$(SOC).o
 

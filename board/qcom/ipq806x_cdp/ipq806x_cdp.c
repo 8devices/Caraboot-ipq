@@ -13,7 +13,7 @@
 
 #include <common.h>
 #include <linux/mtd/ipq_nand.h>
-#include <asm/arch-ipq806x/gpio.h>
+#include <asm/arch-qcom-common/gpio.h>
 #include <asm/global_data.h>
 #include <asm/io.h>
 #include <asm/arch-ipq806x/clock.h>
