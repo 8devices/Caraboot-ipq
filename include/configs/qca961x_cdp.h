@@ -31,6 +31,21 @@
 #ifndef _QCA961X_CDP_H
 #define _QCA961X_CDP_H
 
+#if !defined(DO_DEPS_ONLY) || defined(DO_SOC_DEPS_ONLY)
+/*
+ * Beat the system! tools/scripts/make-asm-offsets uses
+ * the following hard-coded define for both u-boot's
+ * ASM offsets and platform specific ASM offsets :(
+ */
+#include <generated/generic-asm-offsets.h>
+#ifdef __ASM_OFFSETS_H__
+#undef __ASM_OFFSETS_H__
+#endif
+#if !defined(DO_SOC_DEPS_ONLY)
+#include <generated/asm-offsets.h>
+#endif
+#endif /* !DO_DEPS_ONLY */
+
 #define CONFIG_QCA961X
 #define CONFIG_BOARD_EARLY_INIT_F
 #define CONFIG_SYS_NO_FLASH
@@ -66,6 +81,48 @@
 #include "../../board/qcom/qca961x_cdp/qca961x_cdp.h"
 extern loff_t board_env_offset;
 extern loff_t board_env_range;
+
+/*
+ * XXX XXX Please do not instantiate this structure. XXX XXX
+ * This is just a convenience to avoid
+ *      - adding #defines for every new reservation
+ *      - updating the multiple associated defines like smem base,
+ *        kernel start etc...
+ *      - re-calculation of the defines if the order changes or
+ *        some reservations are deleted
+ * For new reservations just adding a member to the structure should
+ * suffice.
+ * Ensure that the size of this structure matches with the definition
+ * of the following QCA961x compile time definitions
+ *      PHYS_OFFSET     (linux-sources/arch/arm/mach-msm/Kconfig)
+ *      zreladdr        (linux-sources/arch/arm/mach-msm/Makefile.boot)
+ *      CONFIG_SYS_INIT_SP_ADDR defined above should point to the bottom.
+ *      MSM_SHARED_RAM_PHYS (linux-sources/arch/arm/mach-msm/board-qca961x.c)
+ *
+ */
+#if !defined(DO_DEPS_ONLY) || defined(DO_SOC_DEPS_ONLY)
+typedef struct {
+	uint8_t uboot[1024 * 1024 - GENERATED_GBL_DATA_SIZE];	/* ~1MB */
+	uint8_t init_stack[GENERATED_GBL_DATA_SIZE];
+	uint8_t sbl[1024 * 1024];				/* 1 MB */
+	uint8_t cnss_debug[6 * 1024 * 1024];			/* 6 MB */
+	uint8_t tz_apps[3 * 1024 * 1024];			/* 3 MB */
+	uint8_t smem[512 * 1024];				/* 512 KB */
+	uint8_t tz[1536 * 1024];				/* 1.5 MB */
+}
+
+#define QCA_MEM_RESERVE_SIZE(x)		sizeof(((qca_mem_reserve_t *)0)->x)
+#define QCA_MEM_RESERVE_BASE(x)		\
+	(CONFIG_SYS_SDRAM_BASE + \
+	 ((uint32_t)&(((qca_mem_reserve_t *)0)->x)))
+#endif
+
+#define CONFIG_QCA_SMEM_BASE		QCA_MEM_RESERVE_BASE(smem)
+#define QCA_KERNEL_START_ADDR	\
+	(CONFIG_SYS_SDRAM_BASE + GENERATED_QCA_RESERVE_SIZE)
+
+#define QCA_DRAM_KERNEL_SIZE	\
+	(CONFIG_SYS_SDRAM_SIZE - GENERATED_QCA_RESERVE_SIZE)
 #endif
 
 /* Environment */
