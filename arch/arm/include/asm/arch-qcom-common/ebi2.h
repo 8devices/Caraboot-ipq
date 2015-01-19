@@ -4,7 +4,7 @@
 #ifndef QCOM_EBI2_H
 #define QCOM_EBI2_H
 
-#define EBI2CR_BASE                                       (0x1A600000)
+#define IPQ806x_EBI2CR_BASE				(0x1A600000)
 
 struct ebi2cr_regs {
 	uint32_t chip_select_cfg0;                        /* 0x00000000 */

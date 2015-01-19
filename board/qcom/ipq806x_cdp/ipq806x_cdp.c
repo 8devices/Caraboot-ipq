@@ -432,7 +432,7 @@ void board_nand_init(void)
 	if ((gboard_param->flashdesc == ONLY_NAND) ||
 	    (gboard_param->flashdesc == NAND_NOR)) {
 
-		ebi2_regs = (struct ebi2cr_regs *) EBI2CR_BASE;
+		ebi2_regs = (struct ebi2cr_regs *) IPQ806x_EBI2CR_BASE;
 
 		nand_clock_config();
 		configure_nand_gpio();
