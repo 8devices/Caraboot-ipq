@@ -69,8 +69,11 @@ extern loff_t board_env_range;
 #endif
 
 /* Environment */
+#define CONFIG_QCA961X_ENV
 #define CONFIG_ARCH_CPU_INIT
-#define CONFIG_ENV_IS_NOWHERE
+#define CONFIG_ENV_IS_IN_NAND
+#define CONFIG_CMD_SAVEENV
+#define CONFIG_ENV_OFFSET		board_env_offset
 #define CONFIG_ENV_SIZE_MAX		(256 << 10) /* 256 KB */
 #define CONFIG_ENV_RANGE		board_env_range
 #define CONFIG_ENV_SIZE			CONFIG_ENV_RANGE
