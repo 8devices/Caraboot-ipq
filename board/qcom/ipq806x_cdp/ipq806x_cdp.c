@@ -19,6 +19,7 @@
 #include <asm/arch-ipq806x/clock.h>
 #include <asm/arch-ipq806x/smem.h>
 #include <asm/arch-qcom-common/ebi2.h>
+#include <asm/arch-qcom-common/nand.h>
 #include <asm/errno.h>
 #include "ipq806x_board_param.h"
 #include "ipq806x_cdp.h"
@@ -441,7 +442,7 @@ void board_nand_init(void)
 		clrsetbits_le32(&ebi2_regs->chip_select_cfg0, CS0_CFG_MASK,
 				CS0_CFG_SERIAL_FLASH_DEVICE);
 
-		ipq_nand_init(IPQ_NAND_LAYOUT_LINUX);
+		ipq_nand_init(IPQ_NAND_LAYOUT_LINUX, QCOM_NAND_IPQ);
 	}
 
 	ipq_spi_init();

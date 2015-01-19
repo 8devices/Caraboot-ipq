@@ -8,6 +8,6 @@ enum ipq_nand_layout {
 	IPQ_NAND_LAYOUT_MAX
 };
 
-int ipq_nand_init(enum ipq_nand_layout layout);
+int ipq_nand_init(enum ipq_nand_layout layout, int variant);
 
 #endif

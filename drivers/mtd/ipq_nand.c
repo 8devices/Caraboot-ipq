@@ -127,6 +127,8 @@ struct ipq_nand_dev {
 	uint32_t read_cmd;
 	uint32_t write_cmd;
 	u_int oob_per_page;
+
+	int variant;
 };
 
 #define MTD_NAND_CHIP(mtd) ((struct nand_chip *)((mtd)->priv))
@@ -1798,7 +1800,7 @@ static struct nand_chip nand_chip[CONFIG_SYS_MAX_NAND_DEVICE];
 /*
  * Initialize controller and register as an MTD device.
  */
-int ipq_nand_init(enum ipq_nand_layout layout)
+int ipq_nand_init(enum ipq_nand_layout layout, int variant)
 {
 	uint32_t status;
 	struct nand_chip *chip;
@@ -1808,7 +1810,12 @@ int ipq_nand_init(enum ipq_nand_layout layout)
 	mtd = &nand_info[CONFIG_IPQ_NAND_NAND_INFO_IDX];
 	mtd->priv = &nand_chip[0];
 
-	ipq_nand_dev.regs = (struct ebi2nd_regs *) IPQ806x_EBI2ND_BASE;
+	ipq_nand_dev.variant = variant;
+
+	if (variant == QCOM_NAND_IPQ)
+		ipq_nand_dev.regs = (struct ebi2nd_regs *) IPQ806x_EBI2ND_BASE;
+	else
+		ipq_nand_dev.regs = (struct ebi2nd_regs *) QCA961x_EBI2ND_BASE;
 
 	chip = mtd->priv;
 	chip->priv = &ipq_nand_dev;
@@ -1892,7 +1899,11 @@ static int do_ipq_nand_cmd(cmd_tbl_t *cmdtp, int flag,
 
 	nand_curr_device = -1;
 
-	ret = ipq_nand_init(layout);
+#if defined CONFIG_IPQ806X
+	ret = ipq_nand_init(layout, QCOM_NAND_IPQ);
+#elif defined CONFIG_QCA961X
+	ret = ipq_nand_init(layout, QCOM_NAND_QPIC);
+#endif
 	if (ret < 0)
 		return CMD_RET_FAILURE;
 
