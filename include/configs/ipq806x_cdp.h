@@ -49,7 +49,7 @@
 #define CONFIG_USB_MAX_CONTROLLER_COUNT 2
 #endif
 
-#define CONFIG_IPQ806X_UART
+#define CONFIG_QCOM_UART
 #undef CONFIG_CMD_FLASH
 #undef CONFIG_CMD_FPGA		        /* FPGA configuration support */
 #undef CONFIG_CMD_IMI

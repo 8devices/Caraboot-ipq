@@ -33,8 +33,8 @@
 
 #include <common.h>
 #include <watchdog.h>
-#include <asm/arch-ipq806x/gsbi.h>
-#include <asm/arch-ipq806x/uart.h>
+#include <asm/arch-qcom-common/uart.h>
+#include <asm/arch-qcom-common/gsbi.h>
 
 #define FIFO_DATA_SIZE	4
 
