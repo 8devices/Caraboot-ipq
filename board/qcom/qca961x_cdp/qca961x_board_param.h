@@ -32,6 +32,7 @@
 #define _QCA961X_BOARD_PARAM_H_
 
 #include <asm/arch-qca961x/iomap.h>
+#include <asm/arch-qcom-common/gpio.h>
 #include <asm/sizes.h>
 #include "qca961x_cdp.h"
 
@@ -41,11 +42,40 @@ board_qca961x_params_t board_params[] = {
 		.machid = MACH_TYPE_QCA961X_RUMI,
 		.ddr_size = (256 << 20),
 		.uart_dm_base = UART1_DM_BASE,
+		.dbg_uart_gpio = {
+			{
+				.gpio = 16,
+				.func = 1,
+				.pull = GPIO_NO_PULL,
+				.oe = GPIO_OE_ENABLE
+			},
+			{
+				.gpio = 17,
+				.func = 1,
+				.pull = GPIO_NO_PULL,
+				.oe = GPIO_OE_ENABLE
+			},
+		},
 	},
 	{
 		.machid = MACH_TYPE_QCA961X_VIRTIO,
 		.ddr_size = (256 << 20),
 		.uart_dm_base = UART1_DM_BASE,
+		.dbg_uart_gpio = {
+			{
+				.gpio = 16,
+				.func = 1,
+				.pull = GPIO_NO_PULL,
+				.oe = GPIO_OE_ENABLE
+			},
+			{
+				.gpio = 17,
+				.func = 1,
+				.pull = GPIO_NO_PULL,
+				.oe = GPIO_OE_ENABLE
+			},
+		},
+
 	},
 };
 

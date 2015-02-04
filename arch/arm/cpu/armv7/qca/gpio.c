@@ -28,17 +28,44 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _PLATFORM_QCA961X_IOMAP_H_
-#define _PLATFORM_QCA961X_IOMAP_H_
+#include <asm/arch-qca961x/iomap.h>
+#include <asm/arch-qcom-common/gpio.h>
+#include <asm/io.h>
 
-#include <configs/qca961x_cdp.h>
-#define CLK_CTL_BASE		0x01800000
-#define GCNT_BASE		0x004a1000
-#define TIMER_BASE		0x0B021000
-#define UART2_DM_BASE		0x078b0000
-#define UART1_DM_BASE		0x078af000
-#define TLMM_BASE		0x01000000
-#define GPIO_CONFIG_ADDR(x) (TLMM_BASE + (x)*0x1000)
-#define GPIO_IN_OUT_ADDR(x) (TLMM_BASE + 0x4 + (x)*0x1000)
+/*******************************************************
+Function description: configure GPIO functinality
+Arguments :
+unsigned int gpio - Gpio number
+unsigned int func - Functionality number
+unsigned int dir  - direction 0- i/p, 1- o/p
+unsigned int pull - pull up/down, no pull range(0-3)
+unsigned int drvstr - range (0 - 7)-> (2- 16)MA steps of 2
+unsigned int oe - 0 - Disable, 1- Enable.
 
-#endif /* _PLATFORM_QCA961X_IOMAP_H_ */
+Return : None
+*******************************************************/
+
+
+void gpio_tlmm_config(unsigned int gpio, unsigned int func,
+		      unsigned int out, unsigned int pull,
+		      unsigned int drvstr, unsigned int oe)
+{
+	unsigned int val = 0;
+	val |= pull;
+	val |= func << 2;
+	val |= drvstr << 6;
+	val |= oe << 9;
+	unsigned int *addr = (unsigned int *)GPIO_CONFIG_ADDR(gpio);
+	writel(val, addr);
+
+	/* Output value is only relevant if GPIO has been configured for fixed
+	 * output setting - i.e. func == 0 */
+	if (func == 0) {
+		addr = (unsigned int *)GPIO_IN_OUT_ADDR(gpio);
+		val = readl(addr);
+		val |= out << 1;
+		writel(val, addr);
+	}
+
+	return;
+}

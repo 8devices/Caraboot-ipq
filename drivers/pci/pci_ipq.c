@@ -18,7 +18,7 @@
 #include <asm/sizes.h>
 #include <asm/io.h>
 #include <asm/arch-ipq806x/iomap.h>
-#include <asm/arch-ipq806x/gpio.h>
+#include <asm/arch-qcom-common/gpio.h>
 #include "../../board/qcom/ipq806x_cdp/ipq806x_cdp.h"
 
 #define PCI_CFG0_RDWR	0x4

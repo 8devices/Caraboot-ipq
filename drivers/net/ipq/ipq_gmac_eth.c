@@ -8,13 +8,12 @@
 #include <asm/io.h>
 #include <asm/arch-ipq806x/nss/msm_ipq806x_gmac.h>
 #include <asm/arch-ipq806x/nss/ipq_mdio.h>
-#include <asm/arch-ipq806x/gpio.h>
 #include <malloc.h>
 #include <phy.h>
 #include <miiphy.h>
 #include <asm/arch-ipq806x/nss/clock.h>
 #include <asm/arch-ipq806x/nss/nss_reg.h>
-#include <asm/arch-ipq806x/gpio.h>
+#include <asm/arch-qcom-common/gpio.h>
 #include <asm/arch-ipq806x/clock.h>
 #include "ipq_gmac.h"
 

@@ -17,7 +17,7 @@
 #include <asm/arch-ipq806x/iomap.h>
 #include "ipq806x_cdp.h"
 #include "../board/qcom/common/athrs17_phy.h"
-#include <asm/arch-ipq806x/gpio.h>
+#include <asm/arch-qcom-common/gpio.h>
 #include <asm/arch-ipq806x/nss/msm_ipq806x_gmac.h>
 #include <phy.h>
 #include <asm/sizes.h>

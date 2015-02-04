@@ -357,6 +357,8 @@ static void uart_dm_init(void)
 	writel(GSBI_PROTOCOL_CODE_I2C_UART <<
 		GSBI_CTRL_REG_PROTOCOL_CODE_S,
 		GSBI_CTRL_REG(gsbi_base));
+#elif defined CONFIG_QCA961X
+	qca_configure_gpio(gboard_param->dbg_uart_gpio, NO_OF_DBG_UART_GPIOS);
 #endif
         writel(UART_DM_CLK_RX_TX_BIT_RATE, MSM_BOOT_UART_DM_CSR(dm_base));
 
