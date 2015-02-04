@@ -10,7 +10,7 @@
 
 #include <asm/io.h>
 #include <asm/errno.h>
-#include <asm/arch-ipq806x/nand.h>
+#include <asm/arch-qcom-common/nand.h>
 
 #define spi_print(...)	printf("ipq_spi: " __VA_ARGS__)
 

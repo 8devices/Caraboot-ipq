@@ -10,7 +10,7 @@
 
 #include <asm/io.h>
 #include <asm/errno.h>
-#include <asm/arch-ipq806x/nand.h>
+#include <asm/arch-qcom-common/nand.h>
 
 /*
  * MTD, NAND and the IPQ806x NAND controller uses various terms to
