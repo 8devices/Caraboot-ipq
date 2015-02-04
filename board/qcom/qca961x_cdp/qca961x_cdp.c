@@ -32,6 +32,8 @@
 #include <asm/global_data.h>
 #include <asm/io.h>
 #include <asm/errno.h>
+#include <linux/mtd/ipq_nand.h>
+#include <asm/arch-qcom-common/nand.h>
 #include "qca961x_board_param.h"
 #include "qca961x_cdp.h"
 
@@ -103,6 +105,11 @@ int dram_init(void)
 {
 	gd->ram_size = 0x10000000; /* 256 MB */
 	return 0;
+}
+
+void board_nand_init(void)
+{
+	ipq_nand_init(IPQ_NAND_LAYOUT_LINUX, QCOM_NAND_QPIC);
 }
 
 #ifdef CONFIG_OF_BOARD_SETUP
