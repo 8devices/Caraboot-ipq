@@ -89,6 +89,9 @@ struct ebi2nd_regs {
 	uint32_t qpic_nand_mpu_bypass;			  /* 0x00000f44 */
 };
 
+#define QCOM_NAND_IPQ				0
+#define QCOM_NAND_QPIC				1
+
 /* Register: NAND_DEVn_CFG0 */
 #define SET_RD_MODE_AFTER_STATUS_MASK            0x80000000
 #define SET_RD_MODE_AFTER_STATUS_SEND_READ_CMD   0x80000000
