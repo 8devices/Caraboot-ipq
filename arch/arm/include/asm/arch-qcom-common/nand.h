@@ -25,7 +25,8 @@ struct ebi2nd_regs {
 	uint32_t sflashc_exec_cmd;                        /* 0x0000003C */
 	uint32_t flash_read_id;                           /* 0x00000040 */
 	uint32_t flash_read_status;                       /* 0x00000044 */
-	uint8_t reserved0[8];
+	uint32_t flash_read_id2;                          /* 0x00000048 */
+	uint8_t reserved0[4];
 	uint32_t flash_config_data;                       /* 0x00000050 */
 	uint32_t flash_config;                            /* 0x00000054 */
 	uint32_t flash_config_mode;                       /* 0x00000058 */
@@ -68,6 +69,23 @@ struct ebi2nd_regs {
 	uint32_t hw_profile_cfg;                          /* 0x000000F8 */
 	uint32_t hw_info;                                 /* 0x000000FC */
 	uint32_t buffn_acc[144];                          /* 0x00000100 */
+	uint8_t reserved5[3008];			  /* 0x00000340 */
+	uint32_t qpic_nand_ctrl;			  /* 0x00000f00 */
+	uint32_t qpic_nand_status;			  /* 0x00000f04 */
+	uint32_t qpic_nand_version;			  /* 0x00000f08 */
+	uint32_t qpic_nand_debug;			  /* 0x00000f0c */
+	uint32_t qpic_irq_stts;				  /* 0x00000f10 */
+	uint32_t qpic_irq_clr;				  /* 0x00000f14 */
+	uint32_t qpic_irq_en;				  /* 0x00000f18 */
+	uint32_t qpic_nand_mutex;			  /* 0x00000f1c */
+	uint32_t qpic_nand_read_location_0;		  /* 0x00000f20 */
+	uint32_t qpic_nand_read_location_1;		  /* 0x00000f24 */
+	uint32_t qpic_nand_read_location_2;		  /* 0x00000f28 */
+	uint32_t qpic_nand_read_location_3;		  /* 0x00000f2c */
+	uint32_t qpic_nand_read_location_4;		  /* 0x00000f30 */
+	uint8_t reserved6[12];				  /* 0x00000f34 */
+	uint32_t qpic_nand_config_bits;			  /* 0x00000f40 */
+	uint32_t qpic_nand_mpu_bypass;			  /* 0x00000f44 */
 };
 
 /* Register: NAND_DEVn_CFG0 */
