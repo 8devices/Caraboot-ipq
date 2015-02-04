@@ -34,14 +34,10 @@
 #include <common.h>
 #include <watchdog.h>
 #include <asm/arch-ipq806x/gsbi.h>
-#include <asm/arch-ipq806x/clock.h>
 #include <asm/arch-ipq806x/uart.h>
-#include <asm/arch-ipq806x/gpio.h>
-#include <asm/arch-ipq806x/iomap.h>
 
 #define FIFO_DATA_SIZE	4
 
-extern board_ipq806x_params_t board_params[];
 extern board_ipq806x_params_t *gboard_param;
 
 static unsigned int msm_boot_uart_dm_init(unsigned int  uart_dm_base);
