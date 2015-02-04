@@ -92,4 +92,28 @@ extern loff_t board_env_range;
  * size is configured to 64 */
 #define CONFIG_SYS_CACHELINE_SIZE	64
 
+/*
+ * NAND Flash Configs
+ */
+
+#define CONFIG_IPQ_NAND
+#define CONFIG_CMD_NAND
+#define CONFIG_CMD_NAND_YAFFS
+#define CONFIG_CMD_MEMORY
+#define CONFIG_SYS_NAND_SELF_INIT
+#define CONFIG_SYS_NAND_ONFI_DETECTION
+
+#define CONFIG_IPQ_MAX_SPI_DEVICE	1
+#define CONFIG_IPQ_MAX_NAND_DEVICE	1
+
+#define CONFIG_IPQ_NAND_NAND_INFO_IDX	0
+#define CONFIG_IPQ_SPI_NAND_INFO_IDX	1
+
+/*
+ * Expose SPI driver as a pseudo NAND driver to make use
+ * of U-Boot's MTD framework.
+ */
+#define CONFIG_SYS_MAX_NAND_DEVICE	(CONFIG_IPQ_MAX_NAND_DEVICE + \
+					 CONFIG_IPQ_MAX_SPI_DEVICE)
+
 #endif /* _IPQCDP_H */
