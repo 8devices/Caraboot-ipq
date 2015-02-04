@@ -1120,6 +1120,8 @@ extern unsigned int __machine_arch_type;
 #define MACH_TYPE_IPQ806X_AP160_2XX    4991
 #define MACH_TYPE_IPQ806X_AP161        4972
 #define MACH_TYPE_OMAP5_SEVM           3777
+#define MACH_TYPE_QCA961X_RUMI         5000
+#define MACH_TYPE_QCA961X_VIRTIO       5001
 
 #ifdef CONFIG_ARCH_EBSA110
 # ifdef machine_arch_type
