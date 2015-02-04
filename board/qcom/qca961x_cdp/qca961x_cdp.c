@@ -34,17 +34,23 @@
 #include <asm/errno.h>
 #include <linux/mtd/ipq_nand.h>
 #include <asm/arch-qcom-common/nand.h>
+#include <environment.h>
 #include "qca961x_board_param.h"
 #include "qca961x_cdp.h"
 
 DECLARE_GLOBAL_DATA_PTR;
 
-
 loff_t board_env_offset;
 loff_t board_env_range;
 extern int nand_env_device;
 char *env_name_spec;
-
+extern char *nand_env_name_spec;
+int (*saveenv)(void);
+env_t *env_ptr;
+extern env_t *nand_env_ptr;
+extern int nand_env_init(void);
+extern int nand_saveenv(void);
+extern void nand_env_relocate_spec(void);
 /*
  * Don't have this as a '.bss' variable. The '.bss' and '.rel.dyn'
  * sections seem to overlap.
@@ -68,8 +74,29 @@ char *env_name_spec;
  */
 board_qca961x_params_t *gboard_param = (board_qca961x_params_t *)0xbadb0ad;
 
+int env_init(void)
+{
+	return nand_env_init();
+}
+
+void env_relocate_spec(void)
+{
+	nand_env_relocate_spec();
+};
+
 int board_init(void)
 {
+	/* Hardcoded board param for now. Need to retrieve from SMEM */
+	gboard_param = board_params;
+
+	/* Hardcode everything for NAND */
+	nand_env_device = CONFIG_IPQ_NAND_NAND_INFO_IDX;
+	board_env_offset = 0x40000;
+	board_env_range = CONFIG_ENV_SIZE_MAX;
+	saveenv = nand_saveenv;
+	env_ptr = nand_env_ptr;
+	env_name_spec = nand_env_name_spec;
+
 	return 0;
 }
 
