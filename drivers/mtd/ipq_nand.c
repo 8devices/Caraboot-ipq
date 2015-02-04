@@ -172,6 +172,21 @@ static struct ipq_config ipq_sbl_config_4ecc_2k = {
 	.raw_page_layout = ipq_raw_page_layout_4ecc_2k
 };
 
+static struct ipq_config qpic_sbl_config_4ecc_2k = {
+	.page_size = 2048,
+	.ecc_mode = ECC_REQ_4BIT,
+
+	.main_per_cw = 512,
+	.ecc_per_cw = 7,
+	.spare_per_cw = 8,
+	.bb_in_spare = 0,
+	.bb_byte = 465,
+
+	.cw_per_page = 4,
+	.ecc_page_layout = ipq_sbl_page_layout_4ecc_2k,
+	.raw_page_layout = ipq_raw_page_layout_4ecc_2k
+};
+
 static struct ipq_config ipq_linux_config_4ecc_2k = {
 	.page_size = 2048,
 	.ecc_mode = ECC_REQ_4BIT,
@@ -179,6 +194,21 @@ static struct ipq_config ipq_linux_config_4ecc_2k = {
 	.main_per_cw = 516,
 	.ecc_per_cw = 10,
 	.spare_per_cw = 1,
+	.bb_in_spare = 0,
+	.bb_byte = 465,
+
+	.cw_per_page = 4,
+	.ecc_page_layout = ipq_linux_page_layout_4ecc_2k,
+	.raw_page_layout = ipq_raw_page_layout_4ecc_2k
+};
+
+static struct ipq_config qpic_linux_config_4ecc_2k = {
+	.page_size = 2048,
+	.ecc_mode = ECC_REQ_4BIT,
+
+	.main_per_cw = 516,
+	.ecc_per_cw = 7,
+	.spare_per_cw = 4,
 	.bb_in_spare = 0,
 	.bb_byte = 465,
 
@@ -286,6 +316,21 @@ static struct ipq_config ipq_sbl_config_4ecc_4k = {
 	.raw_page_layout = ipq_raw_page_layout_4ecc_4k
 };
 
+static struct ipq_config qpic_sbl_config_4ecc_4k = {
+	.page_size = 4096,
+	.ecc_mode = ECC_REQ_4BIT,
+
+	.main_per_cw = 512,
+	.ecc_per_cw = 7,
+	.spare_per_cw = 8,
+	.bb_in_spare = 0,
+	.bb_byte = 401,
+
+	.cw_per_page = 8,
+	.ecc_page_layout = ipq_sbl_page_layout_4ecc_4k,
+	.raw_page_layout = ipq_raw_page_layout_4ecc_4k
+};
+
 static struct ipq_config ipq_linux_config_4ecc_4k = {
 	.page_size = 4096,
 	.ecc_mode = ECC_REQ_4BIT,
@@ -293,6 +338,21 @@ static struct ipq_config ipq_linux_config_4ecc_4k = {
 	.main_per_cw = 516,
 	.ecc_per_cw = 10,
 	.spare_per_cw = 1,
+	.bb_in_spare = 0,
+	.bb_byte = 401,
+
+	.cw_per_page = 8,
+	.ecc_page_layout = ipq_linux_page_layout_4ecc_4k,
+	.raw_page_layout = ipq_raw_page_layout_4ecc_4k
+};
+
+static struct ipq_config qpic_linux_config_4ecc_4k = {
+	.page_size = 4096,
+	.ecc_mode = ECC_REQ_4BIT,
+
+	.main_per_cw = 516,
+	.ecc_per_cw = 7,
+	.spare_per_cw = 4,
 	.bb_in_spare = 0,
 	.bb_byte = 401,
 
@@ -381,6 +441,21 @@ static struct ipq_config *ipq_configs[IPQ_NAND_LAYOUT_MAX][IPQ_CONFIGS_MAX] = {
 		&ipq_linux_config_4ecc_2k,
 		&ipq_linux_config_8ecc_2k,
 		&ipq_linux_config_4ecc_4k,
+		&ipq_linux_config_8ecc_4k,
+	}
+};
+
+static struct ipq_config *qpic_configs[IPQ_NAND_LAYOUT_MAX][IPQ_CONFIGS_MAX] = {
+	{
+		&qpic_sbl_config_4ecc_2k,
+		&ipq_sbl_config_8ecc_2k,
+		&qpic_sbl_config_4ecc_4k,
+		&ipq_sbl_config_8ecc_4k,
+	},
+	{
+		&qpic_linux_config_4ecc_2k,
+		&ipq_linux_config_8ecc_2k,
+		&qpic_linux_config_4ecc_4k,
 		&ipq_linux_config_8ecc_4k,
 	}
 };
@@ -518,6 +593,10 @@ static void ipq_enter_raw_mode(struct mtd_info *mtd)
 
 	writel(dev->dev_cfg0_raw, &regs->dev0_cfg0);
 	writel(dev->dev_cfg1_raw, &regs->dev0_cfg1);
+
+	/* we use BCH ECC on QPIC for both 4 bit and 8 bit strength */
+	if (dev->variant == QCOM_NAND_QPIC)
+		writel(BCH_ECC_DISABLE(1), &regs->dev0_ecc_cfg);
 
 	dev->read_cmd = IPQ_CMD_PAGE_READ;
 	dev->write_cmd = IPQ_CMD_PAGE_PROG;
@@ -1614,7 +1693,10 @@ static void ipq_nand_hw_config(struct mtd_info *mtd, struct ipq_config *cfg)
 {
 	u_int i;
 	u_int enable_bch;
+	u_int bch_ecc_mode;
 	u_int raw_cw_size;
+	u_int busy_timeout, recovery_cycles;
+	u_int wr_rd_busy_gap, rs_ecc_parity_bytes;
 	uint32_t dev_cmd_vld;
 	struct ipq_nand_dev *dev = MTD_IPQ_NAND_DEV(mtd);
 	struct ebi2nd_regs *regs = dev->regs;
@@ -1632,25 +1714,50 @@ static void ipq_nand_hw_config(struct mtd_info *mtd, struct ipq_config *cfg)
 		mtd->oobavail += cw_layout->oob_size;
 	}
 
-	/*
-	 * We use Reed-Solom ECC engine for 4-bit ECC. And BCH ECC
-	 * engine for 8-bit ECC. Thats the way SBL and Linux kernel
-	 * does it.
-	 */
-	enable_bch = 0;
-	if (cfg->ecc_mode == ECC_REQ_8BIT)
+	if (dev->variant == QCOM_NAND_QPIC) {
+		/*
+		 * On QCA961x with the QPIC controller, we use BCH for both ECC
+		 * modes
+		 */
 		enable_bch = 1;
 
-	dev->dev_cfg0 = (BUSY_TIMEOUT_ERROR_SELECT_2_SEC
+		if (cfg->ecc_mode == ECC_REQ_8BIT)
+			bch_ecc_mode = 1;
+		else
+			bch_ecc_mode = 0;
+
+		busy_timeout = BUSY_TIMEOUT_ERROR_SELECT_16_MS;
+		rs_ecc_parity_bytes = RS_ECC_PARITY_SIZE_BYTES(0);
+		recovery_cycles = NAND_RECOVERY_CYCLES(7);
+		wr_rd_busy_gap = WR_RD_BSY_GAP(2);
+	} else {
+		bch_ecc_mode = 0;
+		/*
+		 * On IPQ806x, we use Reed-Solom ECC engine for 4-bit ECC and BCH ECC
+		 * engine for 8-bit ECC.
+		 */
+
+		if (cfg->ecc_mode == ECC_REQ_8BIT)
+			enable_bch = 1;
+		else
+			enable_bch = 0;
+
+		busy_timeout = BUSY_TIMEOUT_ERROR_SELECT_2_SEC;
+		rs_ecc_parity_bytes = RS_ECC_PARITY_SIZE_BYTES(cfg->ecc_per_cw);
+		recovery_cycles = NAND_RECOVERY_CYCLES(3);
+		wr_rd_busy_gap = WR_RD_BSY_GAP(6);
+	}
+
+	dev->dev_cfg0 = (busy_timeout
 			 | DISABLE_STATUS_AFTER_WRITE(0)
 			 | MSB_CW_PER_PAGE(0)
 			 | CW_PER_PAGE(cfg->cw_per_page - 1)
 			 | UD_SIZE_BYTES(cfg->main_per_cw)
-			 | RS_ECC_PARITY_SIZE_BYTES(cfg->ecc_per_cw)
+			 | rs_ecc_parity_bytes
 			 | SPARE_SIZE_BYTES(cfg->spare_per_cw)
 			 | NUM_ADDR_CYCLES(5));
 
-	dev->dev_cfg0_raw = (BUSY_TIMEOUT_ERROR_SELECT_2_SEC
+	dev->dev_cfg0_raw = (busy_timeout
 			     | DISABLE_STATUS_AFTER_WRITE(0)
 			     | MSB_CW_PER_PAGE(0)
 			     | CW_PER_PAGE(cfg->cw_per_page - 1)
@@ -1661,11 +1768,11 @@ static void ipq_nand_hw_config(struct mtd_info *mtd, struct ipq_config *cfg)
 
 	dev->dev_cfg1 = (ECC_DISABLE(0)
 			 | WIDE_FLASH_8_BIT_DATA_BUS
-			 | NAND_RECOVERY_CYCLES(3)
+			 | recovery_cycles
 			 | CS_ACTIVE_BSY_ASSERT_CS_DURING_BUSY
 			 | BAD_BLOCK_BYTE_NUM(cfg->bb_byte)
 			 | BAD_BLOCK_IN_SPARE_AREA(cfg->bb_in_spare)
-			 | WR_RD_BSY_GAP_6_CLOCK_CYCLES_GAP
+			 | wr_rd_busy_gap
 			 | ECC_ENCODER_CGC_EN(0)
 			 | ECC_DECODER_CGC_EN(0)
 			 | DISABLE_ECC_RESET_AFTER_OPDONE(0)
@@ -1674,11 +1781,11 @@ static void ipq_nand_hw_config(struct mtd_info *mtd, struct ipq_config *cfg)
 
 	dev->dev_cfg1_raw = (ECC_DISABLE(1)
 			     | WIDE_FLASH_8_BIT_DATA_BUS
-			     | NAND_RECOVERY_CYCLES(3)
+			     | recovery_cycles
 			     | CS_ACTIVE_BSY_ASSERT_CS_DURING_BUSY
 			     | BAD_BLOCK_BYTE_NUM(0x11)
 			     | BAD_BLOCK_IN_SPARE_AREA(1)
-			     | WR_RD_BSY_GAP_6_CLOCK_CYCLES_GAP
+			     | wr_rd_busy_gap
 			     | ECC_ENCODER_CGC_EN(0)
 			     | ECC_DECODER_CGC_EN(0)
 			     | DISABLE_ECC_RESET_AFTER_OPDONE(0)
@@ -1687,7 +1794,7 @@ static void ipq_nand_hw_config(struct mtd_info *mtd, struct ipq_config *cfg)
 
 	dev->dev_ecc_cfg = (BCH_ECC_DISABLE(0)
 			    | ECC_SW_RESET(0)
-			    | BCH_ECC_MODE_8_BIT_ECC_ERROR_DETECTION_CORRECTION
+			    | BCH_ECC_MODE(bch_ecc_mode)
 			    | BCH_ECC_PARITY_SIZE_BYTES(cfg->ecc_per_cw)
 			    | ECC_NUM_DATA_BYTES(cfg->main_per_cw)
 			    | ECC_FORCE_CLK_OPEN(1));
@@ -1751,7 +1858,10 @@ int ipq_nand_post_scan_init(struct mtd_info *mtd, enum ipq_nand_layout layout)
 	memset(dev->zero_page, 0x0, mtd->writesize);
 	memset(dev->zero_oob, 0x0, mtd->oobsize);
 
-	configs = ipq_configs[layout];
+	if (dev->variant == QCOM_NAND_QPIC)
+		configs = qpic_configs[layout];
+	else
+		configs = ipq_configs[layout];
 
 	for (i = 0; i < IPQ_CONFIGS_MAX; i++) {
 		if ((configs[i]->page_size == mtd->writesize)
@@ -1806,6 +1916,7 @@ int ipq_nand_init(enum ipq_nand_layout layout, int variant)
 	struct nand_chip *chip;
 	int ret;
 	struct mtd_info *mtd;
+	struct ebi2nd_regs *regs;
 
 	mtd = &nand_info[CONFIG_IPQ_NAND_NAND_INFO_IDX];
 	mtd->priv = &nand_chip[0];
@@ -1813,12 +1924,28 @@ int ipq_nand_init(enum ipq_nand_layout layout, int variant)
 	ipq_nand_dev.variant = variant;
 
 	if (variant == QCOM_NAND_IPQ)
-		ipq_nand_dev.regs = (struct ebi2nd_regs *) IPQ806x_EBI2ND_BASE;
+		regs = ipq_nand_dev.regs =
+				(struct ebi2nd_regs *) IPQ806x_EBI2ND_BASE;
 	else
-		ipq_nand_dev.regs = (struct ebi2nd_regs *) QCA961x_EBI2ND_BASE;
+		regs = ipq_nand_dev.regs =
+				(struct ebi2nd_regs *) QCA961x_EBI2ND_BASE;
 
 	chip = mtd->priv;
 	chip->priv = &ipq_nand_dev;
+
+	if (variant == QCOM_NAND_QPIC) {
+		/* bypass XPU */
+		writel(0x1, &regs->qpic_nand_mpu_bypass);
+
+		/* step register configuration */
+		writel(0x00E00080, &regs->xfr_step1);
+		writel(0x4DF04D99, &regs->xfr_step2);
+		writel(0x85E08580, &regs->xfr_step3);
+		writel(0xC400C400, &regs->xfr_step4);
+		writel(0xC000C000, &regs->xfr_step5);
+		writel(0xC000C000, &regs->xfr_step6);
+		writel(0xC000C000, &regs->xfr_step7);
+	}
 
 	/* Soft Reset */
 	ret = ipq_exec_cmd(mtd, IPQ_CMD_ABORT, &status);
