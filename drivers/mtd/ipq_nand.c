@@ -1808,7 +1808,7 @@ int ipq_nand_init(enum ipq_nand_layout layout)
 	mtd = &nand_info[CONFIG_IPQ_NAND_NAND_INFO_IDX];
 	mtd->priv = &nand_chip[0];
 
-	ipq_nand_dev.regs = (struct ebi2nd_regs *) EBI2ND_BASE;
+	ipq_nand_dev.regs = (struct ebi2nd_regs *) IPQ806x_EBI2ND_BASE;
 
 	chip = mtd->priv;
 	chip->priv = &ipq_nand_dev;
