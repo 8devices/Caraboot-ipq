@@ -6,6 +6,7 @@
 
 #define IPQ806x_EBI2ND_BASE				(0x1ac00000)
 #define QCA961x_EBI2ND_BASE				(0x079b0000)
+#define QCA961x_QPIC_BAM_CTRL				(0x07984000)
 
 struct ebi2nd_regs {
 	uint32_t flash_cmd;                               /* 0x00000000 */
@@ -427,5 +428,13 @@ struct ebi2nd_regs {
 #define READ_ADDR_MASK                           0x000000ff
 #define READ_ADDR(i)                             ((i) << 0)
 
+/* Register: NAND_DEBUG */
+#define BAM_MODE_BIT_RESET			(1 << 31)
+
+/* Register: NAND_CTRL */
+#define BAM_MODE_EN				0x1
+
+/* Register: BAM_CTRL */
+#define BAM_CTRL_CGC				0x00020000
 
 #endif
