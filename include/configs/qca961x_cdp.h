@@ -109,7 +109,7 @@ typedef struct {
 	uint8_t tz_apps[3 * 1024 * 1024];			/* 3 MB */
 	uint8_t smem[512 * 1024];				/* 512 KB */
 	uint8_t tz[1536 * 1024];				/* 1.5 MB */
-}
+} __attribute__ ((__packed__)) qca_mem_reserve_t;
 
 #define QCA_MEM_RESERVE_SIZE(x)		sizeof(((qca_mem_reserve_t *)0)->x)
 #define QCA_MEM_RESERVE_BASE(x)		\
