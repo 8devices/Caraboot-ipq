@@ -11,6 +11,7 @@
 #include <asm/io.h>
 #include <asm/errno.h>
 #include <asm/arch-qcom-common/nand.h>
+#include <asm/arch-qcom-common/ebi2.h>
 
 /*
  * MTD, NAND and the IPQ806x NAND controller uses various terms to
@@ -1907,6 +1908,43 @@ exit:
 
 static struct nand_chip nand_chip[CONFIG_SYS_MAX_NAND_DEVICE];
 
+void qca961x_bam_reset(struct ebi2nd_regs *regs)
+{
+	uint32_t count = 0;
+	uint32_t nand_debug;
+	uint32_t clkon_cfg;
+	uint32_t val, status;
+	struct ebi2cr_regs *regs_ebi2cr;
+	regs_ebi2cr = (struct ebi2cr_regs *) QCA961x_EBI2CR_BASE;
+
+	writel(0, &regs->qpic_nand_ctrl);
+	writel(BAM_MODE_EN, &regs->qpic_nand_ctrl);
+	writel(BAM_CTRL_CGC, QCA961x_QPIC_BAM_CTRL);
+
+	nand_debug = readl(&regs->qpic_nand_debug);
+	nand_debug |= BAM_MODE_BIT_RESET;
+	writel(nand_debug, &regs->qpic_nand_debug);
+
+	clkon_cfg = readl(&regs_ebi2cr->core_clkon_cfg);
+	clkon_cfg &= ~(GATE_NAND_ENA | GATE_LCD_ENA);
+	writel(clkon_cfg, &regs_ebi2cr->core_clkon_cfg);
+
+	writel(1, &regs_ebi2cr->qpic_qpic_ctrl);
+
+	clkon_cfg = readl(&regs_ebi2cr->core_clkon_cfg);
+	clkon_cfg |= GATE_NAND_ENA;
+	writel(clkon_cfg, &regs_ebi2cr->core_clkon_cfg);
+
+	do {
+		val = readl(QPIC_EBI2CR_QPIC_LCDC_STTS);
+		status = val & SW_RESET_DONE_SYNC;
+		count++;
+		if (count > NAND_READY_TIMEOUT)
+			return -ETIMEDOUT;
+		udelay(10);
+	} while (!status);
+}
+
 /*
  * Initialize controller and register as an MTD device.
  */
@@ -1923,12 +1961,15 @@ int ipq_nand_init(enum ipq_nand_layout layout, int variant)
 
 	ipq_nand_dev.variant = variant;
 
-	if (variant == QCOM_NAND_IPQ)
+	if (variant == QCOM_NAND_IPQ) {
 		regs = ipq_nand_dev.regs =
 				(struct ebi2nd_regs *) IPQ806x_EBI2ND_BASE;
-	else
+	} else {
 		regs = ipq_nand_dev.regs =
 				(struct ebi2nd_regs *) QCA961x_EBI2ND_BASE;
+		/* Reset QPIC BAM */
+		qca961x_bam_reset(regs);
+	}
 
 	chip = mtd->priv;
 	chip->priv = &ipq_nand_dev;
