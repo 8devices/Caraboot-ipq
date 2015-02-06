@@ -170,6 +170,19 @@ typedef struct {
 #define CONFIG_IPQ_SPI_NAND_INFO_IDX	1
 
 /*
+ * SPI Flash Configs
+ */
+
+#define CONFIG_QCA_SPI
+#define CONFIG_SPI_FLASH
+#define CONFIG_CMD_SF
+#define CONFIG_SPI_FLASH_STMICRO
+
+#define CONFIG_SF_DEFAULT_BUS 0
+#define CONFIG_SF_DEFAULT_CS 0
+#define CONFIG_SF_DEFAULT_MODE SPI_MODE_0
+
+/*
  * Expose SPI driver as a pseudo NAND driver to make use
  * of U-Boot's MTD framework.
  */
