@@ -19,6 +19,7 @@
 #include <phy.h>
 #include <asm/arch-ipq806x/clock.h>
 #include <asm/u-boot.h>
+#include "../common/qca_common.h"
 
 unsigned int smem_get_board_machtype(void);
 
@@ -181,15 +182,6 @@ void ipq_configure_gpio(gpio_func_data_t *gpio, uint count);
 
 #define MSM_SDC1_BASE      0x12400000
 
-typedef struct {
-	uint base;
-	uint clk_mode;
-	struct mmc *mmc;
-	int dev_num;
-} ipq_mmc;
-
-extern ipq_mmc mmc_host;
-int ipq_mmc_init(bd_t *, ipq_mmc *);
-void board_mmc_deinit(void);
+extern qca_mmc mmc_host;
 #endif
 #endif

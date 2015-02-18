@@ -33,6 +33,7 @@
 
 #include <configs/qca961x_cdp.h>
 #include <asm/u-boot.h>
+#include "../common/qca_common.h"
 
 #define NO_OF_DBG_UART_GPIOS	2
 
@@ -56,4 +57,8 @@ typedef struct {
 extern board_qca961x_params_t *gboard_param;
 unsigned int get_board_index(unsigned int machid);
 void qca_configure_gpio(gpio_func_data_t *gpio, uint count);
+
+
+#define MSM_SDC1_BASE      0x7824000
+
 #endif

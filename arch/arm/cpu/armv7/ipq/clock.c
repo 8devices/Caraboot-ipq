@@ -16,6 +16,7 @@
 #include <asm/arch-ipq806x/nss/clock.h>
 #include <asm/arch-ipq806x/iomap.h>
 #include <asm/io.h>
+#include <asm/arch-qcom-common/clk.h>
 
 /**
  * uart_pll_vote_clk_enable - enables PLL8

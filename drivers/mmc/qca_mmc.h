@@ -11,13 +11,14 @@
  * GNU General Public License for more details.
 */
 
-#ifndef ___IPQ_MMC_H_
-#define ___IPQ_MMC_H_
+#ifndef ___QCA_MMC_H_
+#define ___QCA_MMC_H_
 
 #define MMCIPOWER	0x000
 #define MCI_PWR_OFF	0x00
 #define MCI_PWR_UP	0x02
 #define MCI_PWR_ON	0x03
+#define MCI_SW_RST	(1 << 7)
 
 #define MMCICLOCK		0x004
 #define MCI_CLK_ENABLE		(1 << 8)
@@ -114,4 +115,4 @@
 #define MCI_FIFODEPTH		16
 #define MCI_HFIFO_COUNT		(MCI_FIFODEPTH / 2)
 
-#endif  /*  __IPQ_MMC_H_ */
+#endif  /*  __QCA_MMC_H_ */
