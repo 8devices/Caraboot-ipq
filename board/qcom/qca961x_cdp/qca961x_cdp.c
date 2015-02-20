@@ -38,6 +38,7 @@
 #include <environment.h>
 #include "qca961x_board_param.h"
 #include "qca961x_cdp.h"
+#include <asm/arch-qcom-common/clk.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -52,6 +53,9 @@ extern env_t *nand_env_ptr;
 extern int nand_env_init(void);
 extern int nand_saveenv(void);
 extern void nand_env_relocate_spec(void);
+#ifdef CONFIG_QCA_MMC
+qca_mmc mmc_host;
+#endif
 /*
  * Don't have this as a '.bss' variable. The '.bss' and '.rel.dyn'
  * sections seem to overlap.
@@ -168,3 +172,23 @@ void ft_board_setup(void *blob, bd_t *bd)
 	fdt_fixup_memory_banks(blob, &memory_start, &memory_size, 1);
 }
 #endif /* CONFIG_OF_BOARD_SETUP */
+
+#ifdef CONFIG_QCA_MMC
+int board_mmc_init(bd_t *bis)
+{
+	int ret = 0;
+
+	mmc_host.base = MSM_SDC1_BASE;
+	mmc_host.clk_mode = MMC_IDENTIFY_MODE;
+	emmc_clock_config(mmc_host.clk_mode);
+
+	ret = qca_mmc_init(bis, &mmc_host);
+
+	return ret;
+}
+
+void board_mmc_deinit(void)
+{
+	emmc_clock_disable();
+}
+#endif

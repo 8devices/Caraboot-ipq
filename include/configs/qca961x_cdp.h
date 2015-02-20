@@ -189,4 +189,14 @@ typedef struct {
 #define CONFIG_SYS_MAX_NAND_DEVICE	(CONFIG_IPQ_MAX_NAND_DEVICE + \
 					 CONFIG_IPQ_MAX_SPI_DEVICE)
 
+#define CONFIG_QCA_MMC
+
+#ifdef CONFIG_QCA_MMC
+#define CONFIG_CMD_MMC
+#define CONFIG_MMC
+#define CONFIG_EFI_PARTITION
+#define CONFIG_GENERIC_MMC
+#endif
+
+
 #endif /* _IPQCDP_H */

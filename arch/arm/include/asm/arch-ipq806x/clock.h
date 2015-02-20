@@ -241,9 +241,6 @@ void pcie_clock_shutdown(clk_offset_t *);
 #define SDC1_RESET                              REG(0x2830)
 #define emmc_clk_ns_mask (BM(BIT_POS_23, BIT_POS_16) | BM(BIT_POS_6, BIT_POS_0))
 #define emmc_en_mask  BIT(11)
-#define MMC_IDENTIFY_MODE	0
-#define MMC_DATA_TRANSFER_MODE	1
-
 #endif
 
 /* Uart specific clock settings */
@@ -260,8 +257,4 @@ void usb_ss_core_clock_config(unsigned int usb_port, unsigned int m,
 void usb_ss_utmi_clock_config(unsigned int usb_port, unsigned int m,
 		unsigned int n, unsigned int d, unsigned int clk_dummy);
 
-#ifdef CONFIG_IPQ_MMC
-void emmc_clock_config(int mode);
-void emmc_clock_disable(void);
-#endif
 #endif  /*  __PLATFORM_IPQ860X_CLOCK_H_ */

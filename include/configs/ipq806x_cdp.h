@@ -134,6 +134,7 @@
 #define CONFIG_IPQ_MMC
 
 #ifdef CONFIG_IPQ_MMC
+#define CONFIG_QCA_MMC
 #define CONFIG_CMD_MMC
 #define CONFIG_MMC
 #define CONFIG_EFI_PARTITION

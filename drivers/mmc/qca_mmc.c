@@ -18,24 +18,24 @@
 #include <part.h>
 #include <malloc.h>
 #include <asm/io.h>
-#include <asm/arch-ipq806x/clock.h>
-#include "../../board/qcom/ipq806x_cdp/ipq806x_cdp.h"
-#include "ipq_mmc.h"
+#include <asm/arch-qcom-common/clk.h>
+#include "../../board/qcom/common/qca_common.h"
+#include "qca_mmc.h"
 
-static inline void ipq_reg_wr_delay(ipq_mmc  *host)
+static inline void qca_reg_wr_delay(qca_mmc  *host)
 {
 	while (readl(host->base + MCI_STATUS2) & MCI_MCLK_REG_WR_ACTIVE);
 }
 
 static inline void
-ipq_start_command_exec(ipq_mmc  *host, struct mmc_cmd *cmd)
+qca_start_command_exec(qca_mmc  *host, struct mmc_cmd *cmd)
 {
 	unsigned int c = 0;
 	unsigned int arg = cmd->cmdarg;
 
 	writel(MCI_CLEAR_STATIC_MASK, host->base + MMCICLEAR);
 
-	ipq_reg_wr_delay(host);
+	qca_reg_wr_delay(host);
 
 	c |= (cmd->cmdidx | MCI_CPSM_ENABLE);
 
@@ -51,16 +51,16 @@ ipq_start_command_exec(ipq_mmc  *host, struct mmc_cmd *cmd)
 
 	writel(arg, host->base + MMCIARGUMENT);
 	writel(c, host->base + MMCICOMMAND);
-	ipq_reg_wr_delay(host);
+	qca_reg_wr_delay(host);
 }
 
 static int
-ipq_start_command(ipq_mmc *host, struct mmc_cmd *cmd)
+qca_start_command(qca_mmc *host, struct mmc_cmd *cmd)
 {
 	unsigned int status = 0;
 	int rc = 0;
 
-	ipq_start_command_exec(host, cmd);
+	qca_start_command_exec(host, cmd);
 
 	while (readl(host->base + MMCISTATUS) & MCI_CMDACTIVE);
 
@@ -88,14 +88,14 @@ ipq_start_command(ipq_mmc *host, struct mmc_cmd *cmd)
 	}
 
 	writel(MCI_CLEAR_STATIC_MASK, host->base + MMCICLEAR);
-	ipq_reg_wr_delay(host);
+	qca_reg_wr_delay(host);
 
 	return rc;
 }
 
 
 static int
-ipq_pio_read(ipq_mmc *host, char *buffer, unsigned int remain)
+qca_pio_read(qca_mmc *host, char *buffer, unsigned int remain)
 {
 	unsigned int *ptr = (unsigned int *) buffer;
 	unsigned int status = 0;
@@ -138,7 +138,7 @@ ipq_pio_read(ipq_mmc *host, char *buffer, unsigned int remain)
 }
 
 static int
-ipq_pio_write(ipq_mmc *host, const char *buffer,
+qca_pio_write(qca_mmc *host, const char *buffer,
 		  unsigned int remain)
 {
 	unsigned int *ptr = (unsigned int *) buffer;
@@ -184,10 +184,10 @@ ipq_pio_write(ipq_mmc *host, const char *buffer,
 }
 
 static int
-ipq_mmc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
+qca_mmc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
 {
 	unsigned int datactrl = 0;
-	ipq_mmc *host = mmc->priv;
+	qca_mmc *host = mmc->priv;
 	unsigned int xfer_size ;
 	int status = 0;
 
@@ -203,28 +203,28 @@ ipq_mmc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
 
 		writel(xfer_size, host->base + MMCIDATALENGTH);
 		writel(datactrl, host->base + MMCIDATACTRL);
-		ipq_reg_wr_delay(host);
+		qca_reg_wr_delay(host);
 
-		status = ipq_start_command(host, cmd);
+		status = qca_start_command(host, cmd);
 
 		if (data->flags & MMC_DATA_READ) {
-			ipq_pio_read(host, data->dest, xfer_size);
+			qca_pio_read(host, data->dest, xfer_size);
 		} else {
-			ipq_pio_write(host, data->src, xfer_size);
+			qca_pio_write(host, data->src, xfer_size);
 		}
 		writel(0, host->base + MMCIDATACTRL);
-		ipq_reg_wr_delay(host);
+		qca_reg_wr_delay(host);
 	} else if (cmd) {
-		status = ipq_start_command(host, cmd);
+		status = qca_start_command(host, cmd);
 	}
 
 	return status;
 }
 
 
-void ipq_set_ios(struct mmc *mmc)
+void qca_set_ios(struct mmc *mmc)
 {
-	ipq_mmc *host = mmc->priv;
+	qca_mmc *host = mmc->priv;
 	u32 clk = 0, pwr = 0;
 	int mode;
 
@@ -242,7 +242,7 @@ void ipq_set_ios(struct mmc *mmc)
 	pwr = MCI_PWR_UP | MCI_PWR_ON;
 
 	writel(pwr, host->base + MMCIPOWER);
-	ipq_reg_wr_delay(host);
+	qca_reg_wr_delay(host);
 	clk = readl(host->base + MMCICLOCK);
 
 	clk |= MCI_CLK_ENABLE;
@@ -264,30 +264,39 @@ void ipq_set_ios(struct mmc *mmc)
 
 	/* Don't write into registers if clocks are disabled */
 	writel(clk, host->base + MMCICLOCK);
-	ipq_reg_wr_delay(host);
+	qca_reg_wr_delay(host);
 
 	writel((readl(host->base + MMCICLOCK) | MCI_CLK_PWRSAVE), host->base + MMCICLOCK);
-	ipq_reg_wr_delay(host);
+	qca_reg_wr_delay(host);
 }
 
-int ipq_mmc_start (struct mmc *mmc)
+int qca_mmc_start (struct mmc *mmc)
 {
+	qca_mmc *host = mmc->priv;
+
+	writel(readl(host->base + MMCIPOWER) | MCI_SW_RST,
+			host->base + MMCIPOWER);
+	qca_reg_wr_delay(host);
+
+	while (readl(host->base + MMCIPOWER) & MCI_SW_RST) {
+		udelay(10);
+	}
 
 	return 0;
 }
 
-int ipq_mmc_init(bd_t *bis, ipq_mmc *host)
+int qca_mmc_init(bd_t *bis, qca_mmc *host)
 {
 	struct mmc *mmc;
 
 	mmc = malloc(sizeof(struct mmc));
 	memset(mmc, 0, sizeof(struct mmc));
 
-	sprintf(mmc->name, "ipq_mmc");
+	sprintf(mmc->name, "qca_mmc");
 	mmc->priv = host;
-	mmc->send_cmd = ipq_mmc_send_cmd;
-	mmc->set_ios = ipq_set_ios;
-	mmc->init = ipq_mmc_start;
+	mmc->send_cmd = qca_mmc_send_cmd;
+	mmc->set_ios = qca_set_ios;
+	mmc->init = qca_mmc_start;
 	mmc->getcd = NULL;
 
 	mmc->f_min = 400000;

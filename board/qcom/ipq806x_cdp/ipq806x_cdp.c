@@ -31,6 +31,7 @@
 #include <mmc.h>
 #include <environment.h>
 #include <watchdog.h>
+#include <asm/arch-qcom-common/clk.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -70,7 +71,7 @@ loff_t board_env_offset;
 loff_t board_env_range;
 extern int nand_env_device;
 #ifdef CONFIG_IPQ_MMC
-ipq_mmc mmc_host;
+qca_mmc mmc_host;
 #endif
 char *env_name_spec;
 extern char *mmc_env_name_spec;
@@ -659,6 +660,7 @@ int board_mmc_env_init(void)
 
 int board_mmc_init(bd_t *bis)
 {
+	int ret = 0;
 	gpio_func_data_t *gpio = gboard_param->emmc_gpio;
 
 	if (gpio) {
@@ -668,10 +670,13 @@ int board_mmc_init(bd_t *bis)
 		mmc_host.clk_mode = MMC_IDENTIFY_MODE;
 		emmc_clock_config(mmc_host.clk_mode);
 
-		ipq_mmc_init(bis, &mmc_host);
-		board_mmc_env_init();
+		ret = qca_mmc_init(bis, &mmc_host);
+		if (ret) {
+			return ret;
+                }
+		ret = board_mmc_env_init();
 	}
-	return 0;
+	return ret;
 }
 
 void board_mmc_deinit(void)

@@ -20,6 +20,7 @@
 #include <asm/arch-ipq806x/scm.h>
 #include <linux/mtd/ubi.h>
 #include <part.h>
+#include "../../../../../board/qcom/common/qca_common.h"
 
 #define img_addr		((void *)CONFIG_SYS_LOAD_ADDR)
 #define CE1_REG_USAGE		(0)
@@ -32,7 +33,7 @@ static ipq_smem_flash_info_t *sfi = &ipq_smem_flash_info;
 int ipq_fs_on_nand, rootfs_part_avail = 1;
 extern board_ipq806x_params_t *gboard_param;
 #ifdef CONFIG_IPQ_MMC
-static ipq_mmc *host = &mmc_host;
+static qca_mmc *host = &mmc_host;
 #endif
 
 typedef struct {
