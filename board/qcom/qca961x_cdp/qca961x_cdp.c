@@ -130,7 +130,9 @@ void clear_l2cache_err(void)
 
 void reset_cpu(ulong addr)
 {
-	return;
+	/* clear ps-hold bit to reset the soc */
+	writel(0, GCNT_PSHOLD);
+	while (1);
 }
 
 int dram_init(void)
