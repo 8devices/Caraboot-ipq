@@ -35,6 +35,7 @@
 #include <asm/errno.h>
 #include <linux/mtd/ipq_nand.h>
 #include <asm/arch-qcom-common/nand.h>
+#include <asm/arch-qca961x/ess/qca961x_edma.h>
 #include <environment.h>
 #include "qca961x_board_param.h"
 #include "qca961x_cdp.h"
@@ -53,6 +54,7 @@ extern env_t *nand_env_ptr;
 extern int nand_env_init(void);
 extern int nand_saveenv(void);
 extern void nand_env_relocate_spec(void);
+extern int qca961x_edma_init(qca961x_edma_board_cfg_t *edma_cfg);
 #ifdef CONFIG_QCA_MMC
 qca_mmc mmc_host;
 #endif
@@ -144,6 +146,20 @@ int dram_init(void)
 void board_nand_init(void)
 {
 	ipq_nand_init(IPQ_NAND_LAYOUT_LINUX, QCOM_NAND_QPIC);
+}
+
+int board_eth_init(bd_t *bis)
+{
+	u32 status;
+	switch (gboard_param->machid) {
+	case MACH_TYPE_QCA961X_RUMI:
+		qca961x_register_switch(NULL);
+		break;
+	default:
+		break;
+	}
+	status = qca961x_edma_init(gboard_param->edma_cfg);
+	return status;
 }
 
 void qca_configure_gpio(gpio_func_data_t *gpio, uint count)
