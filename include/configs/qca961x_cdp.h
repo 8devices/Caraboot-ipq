@@ -152,6 +152,9 @@ typedef struct {
  * size is configured to 64 */
 #define CONFIG_SYS_CACHELINE_SIZE	64
 
+/* CMDS */
+#define	CONFIG_CMD_RUN
+
 /*
  * NAND Flash Configs
  */
