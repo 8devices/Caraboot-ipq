@@ -1943,6 +1943,14 @@ void qca961x_bam_reset(struct ebi2nd_regs *regs)
 			return -ETIMEDOUT;
 		udelay(10);
 	} while (!status);
+
+	nand_debug = readl(&regs->qpic_nand_debug);
+	nand_debug &= (uint32_t)~BAM_MODE_BIT_RESET;
+	writel(nand_debug, &regs->qpic_nand_debug);
+
+	clkon_cfg = readl(&regs_ebi2cr->core_clkon_cfg);
+	clkon_cfg &= (uint32_t) ~GATE_NAND_ENA;
+	writel(clkon_cfg, &regs_ebi2cr->core_clkon_cfg);
 }
 
 /*
