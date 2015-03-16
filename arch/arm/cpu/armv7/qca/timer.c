@@ -111,8 +111,10 @@ ulong get_timer_masked(void)
 		/* normal mode */
 		timestamp += now - lastinc;
 		/* move stamp forward with absolute diff ticks */
+	} else {
+		/* we have overflow of the count down timer */
+		timestamp += now + (TIMER_LOAD_VAL - lastinc);
 	}
-
 	lastinc = now;
 
 	return timestamp;

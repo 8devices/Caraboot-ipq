@@ -36,5 +36,6 @@
 #define QTMR_CNTVCT_LO		0x8
 #define QTMR_CNTVCT_HI		0xC
 #define QTMR_CNTP_TVAL		0x28
+#define TIMER_LOAD_VAL		0x21
 
 #endif /* _PLATFORM_QCA961X_TIMER_H_ */

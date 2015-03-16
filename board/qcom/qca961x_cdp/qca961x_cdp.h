@@ -33,9 +33,25 @@
 
 #include <configs/qca961x_cdp.h>
 #include <asm/u-boot.h>
+#include <phy.h>
 #include "../common/qca_common.h"
 
 #define NO_OF_DBG_UART_GPIOS	2
+#define QCA961X_EDMA_DEV	1
+typedef struct {
+	uint count;
+	u8 addr[7];
+} qca961x_edma_phy_addr_t;
+
+/* qca961x edma Paramaters */
+typedef struct {
+	uint base;
+	int unit;
+	uint mac_conn_to_phy;
+	phy_interface_t phy;
+	qca961x_edma_phy_addr_t phy_addr;
+	const char phy_name[MDIO_NAME_LEN];
+} qca961x_edma_board_cfg_t;
 
 typedef struct {
 	int gpio;
@@ -52,6 +68,7 @@ typedef struct {
 	unsigned int ddr_size;
 	unsigned int uart_dm_base;
 	gpio_func_data_t dbg_uart_gpio[NO_OF_DBG_UART_GPIOS];
+	qca961x_edma_board_cfg_t edma_cfg[QCA961X_EDMA_DEV];
 } __attribute__ ((__packed__)) board_qca961x_params_t;
 
 extern board_qca961x_params_t *gboard_param;

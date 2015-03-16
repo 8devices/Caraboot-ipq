@@ -186,6 +186,17 @@ typedef struct {
 #define CONFIG_SF_DEFAULT_MODE SPI_MODE_0
 
 /*
+ * ESS Configs
+ */
+#define CONFIG_CMD_PING
+#define CONFIG_CMD_DHCP
+#define CONFIG_QCA961X_ESS	1
+#define CONFIG_QCA961X_EDMA	1
+#define CONFIG_NET_RETRY_COUNT		5
+#define CONFIG_SYS_RX_ETH_BUFFER	16
+#define CONFIG_IPADDR	192.168.1.11
+
+/*
  * Expose SPI driver as a pseudo NAND driver to make use
  * of U-Boot's MTD framework.
  */

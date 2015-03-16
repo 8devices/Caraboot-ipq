@@ -36,6 +36,17 @@
 #include <asm/sizes.h>
 #include "qca961x_cdp.h"
 
+
+#define QCA961X_EDMA_CFG_BASE		0xC080000
+
+#define qca961x_edma_cfg(_b, _pn, ...)                  \
+{                                                       \
+	.base		= QCA961X_EDMA_CFG_BASE,        \
+	.unit		= _b,                           \
+	.phy_addr	= {.count = _pn, {__VA_ARGS__}} \
+}
+
+#define qca961x_edma_cfg_invalid()	{ .unit = -1, }
 /* Board specific parameter Array */
 board_qca961x_params_t board_params[] = {
 	{
@@ -55,6 +66,9 @@ board_qca961x_params_t board_params[] = {
 				.pull = GPIO_NO_PULL,
 				.oe = GPIO_OE_ENABLE
 			},
+		},
+		.edma_cfg = {
+			qca961x_edma_cfg(0, 5, 0, 1, 2, 3, 4)
 		},
 	},
 	{
