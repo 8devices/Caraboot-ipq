@@ -54,6 +54,7 @@
 #define CONFIG_SYS_HZ			1000
 #define CONFIG_QCOM_UART
 #define CONFIG_CONS_INDEX		1
+#define CONFIG_QCOM_BAM			1
 
 #define CONFIG_ENV_OVERWRITE
 #define CONFIG_BAUDRATE			115200
@@ -160,6 +161,7 @@ typedef struct {
  */
 
 #define CONFIG_IPQ_NAND
+//#define CONFIG_QPIC_NAND
 #define CONFIG_CMD_NAND
 #define CONFIG_CMD_NAND_YAFFS
 #define CONFIG_CMD_MEMORY
@@ -170,6 +172,7 @@ typedef struct {
 #define CONFIG_IPQ_MAX_NAND_DEVICE	1
 
 #define CONFIG_IPQ_NAND_NAND_INFO_IDX	0
+#define CONFIG_QPIC_NAND_NAND_INFO_IDX	0
 #define CONFIG_IPQ_SPI_NAND_INFO_IDX	1
 
 /*

@@ -33,12 +33,16 @@
 #include <asm/io.h>
 #include <asm/arch-qcom-common/gpio.h>
 #include <asm/errno.h>
-#include <linux/mtd/ipq_nand.h>
 #include <asm/arch-qcom-common/nand.h>
 #include <asm/arch-qca961x/ess/qca961x_edma.h>
 #include <environment.h>
 #include "qca961x_board_param.h"
 #include "qca961x_cdp.h"
+#ifdef CONFIG_IPQ_NAND
+#include <linux/mtd/ipq_nand.h>
+#else
+#include <asm/arch-qcom-common/qpic_nand.h>
+#endif
 #include <asm/arch-qcom-common/clk.h>
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -96,8 +100,12 @@ int board_init(void)
 	/* Hardcoded board param for now. Need to retrieve from SMEM */
 	gboard_param = board_params;
 
-	/* Hardcode everything for NAND */
+#ifdef CONFIG_IPQ_NAND
 	nand_env_device = CONFIG_IPQ_NAND_NAND_INFO_IDX;
+#else
+	/* Hardcode everything for NAND */
+	nand_env_device = CONFIG_QPIC_NAND_NAND_INFO_IDX;
+#endif
 	board_env_offset = 0x40000;
 	board_env_range = CONFIG_ENV_SIZE_MAX;
 	saveenv = nand_saveenv;
@@ -145,7 +153,25 @@ int dram_init(void)
 
 void board_nand_init(void)
 {
+#ifdef CONFIG_IPQ_NAND
 	ipq_nand_init(IPQ_NAND_LAYOUT_LINUX, QCOM_NAND_QPIC);
+#else
+	struct qpic_nand_init_config config;
+	config.pipes.read_pipe = DATA_PRODUCER_PIPE;
+	config.pipes.write_pipe = DATA_CONSUMER_PIPE;
+	config.pipes.cmd_pipe = CMD_PIPE;
+
+	config.pipes.read_pipe_grp = DATA_PRODUCER_PIPE_GRP;
+	config.pipes.write_pipe_grp = DATA_CONSUMER_PIPE_GRP;
+	config.pipes.cmd_pipe_grp = CMD_PIPE_GRP;
+
+	config.bam_base = QCA961x_QPIC_BAM_CTRL;
+	config.nand_base = QCA961x_EBI2ND_BASE;
+	config.ee = QPIC_NAND_EE;
+	config.max_desc_len = QPIC_NAND_MAX_DESC_LEN;
+
+	qpic_nand_init(&config);
+#endif
 }
 
 int board_eth_init(bd_t *bis)
