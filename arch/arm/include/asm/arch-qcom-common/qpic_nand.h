@@ -30,191 +30,233 @@
 #ifndef __QPIC_NAND_H
 #define __QPIC_NAND_H
 
-#include <debug.h>
-#include <dev/flash.h>
-#include <platform/iomap.h>
+#define QCA961x_EBI2ND_BASE		(0x079b0000)
+#define QCA961x_QPIC_BAM_CTRL		(0x07984000)
 
-#define NAND_REG(off)                                      (nand_base + (off))
+#define NAND_REG(off)			(QCA961x_EBI2ND_BASE + (off))
 
-#define NAND_FLASH_CMD                                     NAND_REG(0x0000)
-#define NAND_ADDR0                                         NAND_REG(0x0004)
-#define NAND_ADDR1                                         NAND_REG(0x0008)
-#define NAND_FLASH_CHIP_SELECT                             NAND_REG(0x000C)
-#define NAND_EXEC_CMD                                      NAND_REG(0x0010)
-#define NAND_FLASH_STATUS                                  NAND_REG(0x0014)
-#define NAND_BUFFER_STATUS                                 NAND_REG(0x0018)
-#define NAND_DEV0_CFG0                                     NAND_REG(0x0020)
-#define NAND_DEV0_CFG1                                     NAND_REG(0x0024)
-#define NAND_DEV0_ECC_CFG                                  NAND_REG(0x0028)
-#define NAND_DEV1_CFG0                                     NAND_REG(0x0030)
-#define NAND_DEV1_CFG1                                     NAND_REG(0x0034)
-#define NAND_SFLASHC_CMD                                   NAND_REG(0x0038)
-#define NAND_SFLASHC_EXEC_CMD                              NAND_REG(0x003C)
-#define NAND_READ_ID                                       NAND_REG(0x0040)
-#define NAND_READ_STATUS                                   NAND_REG(0x0044)
-#define NAND_CONFIG_DATA                                   NAND_REG(0x0050)
-#define NAND_CONFIG                                        NAND_REG(0x0054)
-#define NAND_CONFIG_MODE                                   NAND_REG(0x0058)
-#define NAND_CONFIG_STATUS                                 NAND_REG(0x0060)
-#define NAND_MACRO1_REG                                    NAND_REG(0x0064)
-#define NAND_XFR_STEP1                                     NAND_REG(0x0070)
-#define NAND_XFR_STEP2                                     NAND_REG(0x0074)
-#define NAND_XFR_STEP3                                     NAND_REG(0x0078)
-#define NAND_XFR_STEP4                                     NAND_REG(0x007C)
-#define NAND_XFR_STEP5                                     NAND_REG(0x0080)
-#define NAND_XFR_STEP6                                     NAND_REG(0x0084)
-#define NAND_XFR_STEP7                                     NAND_REG(0x0088)
-#define NAND_GENP_REG0                                     NAND_REG(0x0090)
-#define NAND_GENP_REG1                                     NAND_REG(0x0094)
-#define NAND_GENP_REG2                                     NAND_REG(0x0098)
-#define NAND_GENP_REG3                                     NAND_REG(0x009C)
-#define NAND_SFLASHC_STATUS                                NAND_REG(0x001C)
-#define NAND_DEV_CMD0                                      NAND_REG(0x00A0)
-#define NAND_DEV_CMD1                                      NAND_REG(0x00A4)
-#define NAND_DEV_CMD2                                      NAND_REG(0x00A8)
-#define NAND_DEV_CMD_VLD                                   NAND_REG(0x00AC)
-#define NAND_EBI2_MISR_SIG_REG                             NAND_REG(0x00B0)
-#define NAND_ADDR2                                         NAND_REG(0x00C0)
-#define NAND_ADDR3                                         NAND_REG(0x00C4)
-#define NAND_ADDR4                                         NAND_REG(0x00C8)
-#define NAND_ADDR5                                         NAND_REG(0x00CC)
-#define NAND_DEV_CMD3                                      NAND_REG(0x00D0)
-#define NAND_DEV_CMD4                                      NAND_REG(0x00D4)
-#define NAND_DEV_CMD5                                      NAND_REG(0x00D8)
-#define NAND_DEV_CMD6                                      NAND_REG(0x00DC)
-#define NAND_SFLASHC_BURST_CFG                             NAND_REG(0x00E0)
-#define NAND_ADDR6                                         NAND_REG(0x00E4)
-#define NAND_ERASED_CW_DETECT_CFG                          NAND_REG(0x00E8)
-#define NAND_ERASED_CW_DETECT_STATUS                       NAND_REG(0x00EC)
-#define NAND_EBI2_ECC_BUF_CFG                              NAND_REG(0x00F0)
-#define NAND_HW_INFO                                       NAND_REG(0x00FC)
-#define NAND_FLASH_BUFFER                                  NAND_REG(0x0100)
+#define NAND_FLASH_CMD			NAND_REG(0x0000)
+#define NAND_ADDR0			NAND_REG(0x0004)
+#define NAND_ADDR1			NAND_REG(0x0008)
+#define NAND_FLASH_CHIP_SELECT		NAND_REG(0x000C)
+#define NAND_EXEC_CMD			NAND_REG(0x0010)
+#define NAND_FLASH_STATUS		NAND_REG(0x0014)
+#define NAND_BUFFER_STATUS		NAND_REG(0x0018)
+#define NAND_DEV0_CFG0			NAND_REG(0x0020)
+#define NAND_DEV0_CFG1			NAND_REG(0x0024)
+#define NAND_DEV0_ECC_CFG		NAND_REG(0x0028)
+#define NAND_DEV1_CFG0			NAND_REG(0x0030)
+#define NAND_DEV1_CFG1			NAND_REG(0x0034)
+#define NAND_SFLASHC_CMD		NAND_REG(0x0038)
+#define NAND_SFLASHC_EXEC_CMD		NAND_REG(0x003C)
+#define NAND_READ_ID			NAND_REG(0x0040)
+#define NAND_READ_STATUS		NAND_REG(0x0044)
+#define NAND_CONFIG_DATA		NAND_REG(0x0050)
+#define NAND_CONFIG			NAND_REG(0x0054)
+#define NAND_CONFIG_MODE		NAND_REG(0x0058)
+#define NAND_CONFIG_STATUS		NAND_REG(0x0060)
+#define NAND_MACRO1_REG			NAND_REG(0x0064)
+#define NAND_XFR_STEP1			NAND_REG(0x0070)
+#define NAND_XFR_STEP2			NAND_REG(0x0074)
+#define NAND_XFR_STEP3			NAND_REG(0x0078)
+#define NAND_XFR_STEP4			NAND_REG(0x007C)
+#define NAND_XFR_STEP5			NAND_REG(0x0080)
+#define NAND_XFR_STEP6			NAND_REG(0x0084)
+#define NAND_XFR_STEP7			NAND_REG(0x0088)
+#define NAND_GENP_REG0			NAND_REG(0x0090)
+#define NAND_GENP_REG1			NAND_REG(0x0094)
+#define NAND_GENP_REG2			NAND_REG(0x0098)
+#define NAND_GENP_REG3			NAND_REG(0x009C)
+#define NAND_SFLASHC_STATUS		NAND_REG(0x001C)
+#define NAND_DEV_CMD0			NAND_REG(0x00A0)
+#define NAND_DEV_CMD1			NAND_REG(0x00A4)
+#define NAND_DEV_CMD2			NAND_REG(0x00A8)
+#define NAND_DEV_CMD_VLD		NAND_REG(0x00AC)
+#define NAND_EBI2_MISR_SIG_REG		NAND_REG(0x00B0)
+#define NAND_ADDR2			NAND_REG(0x00C0)
+#define NAND_ADDR3			NAND_REG(0x00C4)
+#define NAND_ADDR4			NAND_REG(0x00C8)
+#define NAND_ADDR5			NAND_REG(0x00CC)
+#define NAND_DEV_CMD3			NAND_REG(0x00D0)
+#define NAND_DEV_CMD4			NAND_REG(0x00D4)
+#define NAND_DEV_CMD5			NAND_REG(0x00D8)
+#define NAND_DEV_CMD6			NAND_REG(0x00DC)
+#define NAND_SFLASHC_BURST_CFG		NAND_REG(0x00E0)
+#define NAND_ADDR6			NAND_REG(0x00E4)
+#define NAND_ERASED_CW_DETECT_CFG	NAND_REG(0x00E8)
+#define NAND_ERASED_CW_DETECT_STATUS	NAND_REG(0x00EC)
+#define NAND_EBI2_ECC_BUF_CFG		NAND_REG(0x00F0)
+#define NAND_HW_INFO			NAND_REG(0x00FC)
+#define NAND_FLASH_BUFFER		NAND_REG(0x0100)
+#define QPIC_NAND_CTRL			NAND_REG(0x0F00)
+#define QPIC_NAND_DEBUG			NAND_REG(0x0F0C)
 
 /* NANDc registers used during BAM transfer */
-#define NAND_READ_LOCATION_n(n)                            (NAND_REG(0xF20) + 4 * (n))
-#define NAND_RD_LOC_LAST_BIT(x)                            ((x) << 31)
-#define NAND_RD_LOC_SIZE(x)                                ((x) <<  16)
-#define NAND_RD_LOC_OFFSET(x)                              ((x) <<  0)
+#define NAND_READ_LOCATION_n(n)		(NAND_REG(0xF20) + 4 * (n))
+#define NAND_RD_LOC_LAST_BIT(x)		((x) << 31)
+#define NAND_RD_LOC_SIZE(x)		((x) <<  16)
+#define NAND_RD_LOC_OFFSET(x)		((x) <<  0)
 
 /* Shift Values */
-#define NAND_DEV0_CFG1_WIDE_BUS_SHIFT                      1
-#define NAND_DEV0_CFG0_DIS_STS_AFTER_WR_SHIFT              4
-#define NAND_DEV0_CFG0_CW_PER_PAGE_SHIFT                   6
-#define NAND_DEV0_CFG0_UD_SIZE_BYTES_SHIFT                 9
-#define NAND_DEV0_CFG0_ADDR_CYCLE_SHIFT                    27
-#define NAND_DEV0_CFG0_SPARE_SZ_BYTES_SHIFT                23
+#define NAND_DEV0_CFG1_WIDE_BUS_SHIFT		1
+#define NAND_DEV0_CFG0_DIS_STS_AFTER_WR_SHIFT	4
+#define NAND_DEV0_CFG0_CW_PER_PAGE_SHIFT	6
+#define NAND_DEV0_CFG0_UD_SIZE_BYTES_SHIFT	9
+#define NAND_DEV0_CFG0_ADDR_CYCLE_SHIFT		27
+#define NAND_DEV0_CFG0_SPARE_SZ_BYTES_SHIFT	23
 
-#define NAND_DEV0_CFG1_RECOVERY_CYCLES_SHIFT               2
-#define NAND_DEV0_CFG1_CS_ACTIVE_BSY_SHIFT                 5
-#define NAND_DEV0_CFG1_BAD_BLK_BYTE_NUM_SHIFT              6
-#define NAND_DEV0_CFG1_BAD_BLK_IN_SPARE_SHIFT              16
-#define NAND_DEV0_CFG1_WR_RD_BSY_GAP_SHIFT                 17
-#define NAND_DEV0_ECC_DISABLE_SHIFT                        0
-#define NAND_DEV0_ECC_SW_RESET_SHIFT                       1
-#define NAND_DEV0_ECC_MODE_SHIFT                           4
-#define NAND_DEV0_ECC_DISABLE_SHIFT                        0
-#define NAND_DEV0_ECC_PARITY_SZ_BYTES_SHIFT                8
-#define NAND_DEV0_ECC_NUM_DATA_BYTES                       16
-#define NAND_DEV0_ECC_FORCE_CLK_OPEN_SHIFT                 30
+#define NAND_DEV0_CFG1_RECOVERY_CYCLES_SHIFT	2
+#define NAND_DEV0_CFG1_CS_ACTIVE_BSY_SHIFT	5
+#define NAND_DEV0_CFG1_BAD_BLK_BYTE_NUM_SHIFT	6
+#define NAND_DEV0_CFG1_BAD_BLK_IN_SPARE_SHIFT	16
+#define NAND_DEV0_CFG1_WR_RD_BSY_GAP_SHIFT	17
+#define NAND_DEV0_ECC_DISABLE_SHIFT		0
+#define NAND_DEV0_ECC_SW_RESET_SHIFT		1
+#define NAND_DEV0_ECC_MODE_SHIFT		4
+#define NAND_DEV0_ECC_DISABLE_SHIFT		0
+#define NAND_DEV0_ECC_PARITY_SZ_BYTES_SHIFT	8
+#define NAND_DEV0_ECC_NUM_DATA_BYTES		16
+#define NAND_DEV0_ECC_FORCE_CLK_OPEN_SHIFT	30
 
-#define NAND_ERASED_CW_DETECT_STATUS_PAGE_ALL_ERASED       7
-#define NAND_ERASED_CW_DETECT_STATUS_CODEWORD_ALL_ERASED   6
-#define NAND_ERASED_CW_DETECT_STATUS_CODEWORD_ERASED       4
+#define NAND_ERASED_CW_DETECT_STATUS_PAGE_ALL_ERASED		7
+#define NAND_ERASED_CW_DETECT_STATUS_CODEWORD_ALL_ERASED	6
+#define NAND_ERASED_CW_DETECT_STATUS_CODEWORD_ERASED		4
 
-#define NAND_ERASED_CW_DETECT_CFG_RESET_CTRL               1
-#define NAND_ERASED_CW_DETECT_CFG_ACTIVATE_CTRL            0
-#define NAND_ERASED_CW_DETECT_ERASED_CW_ECC_MASK           (1 << 1)
-#define NAND_ERASED_CW_DETECT_ERASED_CW_ECC_NO_MASK        (0 << 1)
+#define NAND_ERASED_CW_DETECT_CFG_RESET_CTRL		1
+#define NAND_ERASED_CW_DETECT_CFG_ACTIVATE_CTRL		0
+#define NAND_ERASED_CW_DETECT_ERASED_CW_ECC_MASK	(1 << 1)
+#define NAND_ERASED_CW_DETECT_ERASED_CW_ECC_NO_MASK	(0 << 1)
 
 /* device commands */
-#define NAND_CMD_SOFT_RESET                                0x01
-#define NAND_CMD_PAGE_READ                                 0x32
-#define NAND_CMD_PAGE_READ_ECC                             0x33
-#define NAND_CMD_PAGE_READ_ALL                             0x34
-#define NAND_CMD_SEQ_PAGE_READ                             0x15
-#define NAND_CMD_PRG_PAGE                                  0x36
-#define NAND_CMD_PRG_PAGE_ECC                              0x37
-#define NAND_CMD_PRG_PAGE_ALL                              0x39
-#define NAND_CMD_BLOCK_ERASE                               0x3A
-#define NAND_CMD_FETCH_ID                                  0x0B
-#define NAND_CMD_STATUS                                    0x0C
-#define NAND_CMD_RESET                                     0x0D
-
+#define NAND_CMD_SOFT_RESET				0x01
+#define NAND_CMD_PAGE_READ				0x32
+#define NAND_CMD_PAGE_READ_ECC				0x33
+#define NAND_CMD_PAGE_READ_ALL				0x34
+#define NAND_CMD_SEQ_PAGE_READ				0x15
+#define NAND_CMD_PRG_PAGE				0x36
+#define NAND_CMD_PRG_PAGE_ECC				0x37
+#define NAND_CMD_PRG_PAGE_ALL				0x39
+#define NAND_CMD_BLOCK_ERASE				0x3A
+#define NAND_CMD_FETCH_ID				0x0B
 /* NAND Status errors */
-#define NAND_FLASH_MPU_ERR                                 (1 << 8)
-#define NAND_FLASH_TIMEOUT_ERR                             (1 << 6)
-#define NAND_FLASH_OP_ERR                                  (1 << 4)
+#define NAND_FLASH_MPU_ERR				(1 << 8)
+#define NAND_FLASH_TIMEOUT_ERR				(1 << 6)
+#define NAND_FLASH_OP_ERR				(1 << 4)
 
-#define NAND_FLASH_ERR                                     (NAND_FLASH_MPU_ERR | \
-                                                           NAND_FLASH_TIMEOUT_ERR | \
-                                                           NAND_FLASH_OP_ERR)
+#define NAND_FLASH_ERR				(NAND_FLASH_MPU_ERR | \
+						 NAND_FLASH_TIMEOUT_ERR | \
+						 NAND_FLASH_OP_ERR)
 
-#define PROG_ERASE_OP_RESULT                               (1 << 7)
+#define PROG_ERASE_OP_RESULT			(1 << 7)
 
-#define DATA_CONSUMER_PIPE_INDEX                           0
-#define DATA_PRODUCER_PIPE_INDEX                           1
-#define CMD_PIPE_INDEX                                     2
+#define DATA_CONSUMER_PIPE_INDEX		0
+#define DATA_PRODUCER_PIPE_INDEX		1
+#define CMD_PIPE_INDEX				2
 
 /* Define BAM pipe lock groups for NANDc*/
-#define P_LOCK_GROUP_0                                     0
+#define P_LOCK_GROUP_0				0
 
 /* Define BAM pipe lock super groups for NANDc
  * Note: This is configured by TZ.
  */
-#define P_LOCK_SUPERGROUP_0                                0
-#define P_LOCK_SUPERGROUP_1                                1
+#define P_LOCK_SUPERGROUP_0			0
+#define P_LOCK_SUPERGROUP_1			1
 
-#define ONFI_SIGNATURE                                     0x49464E4F
+#define ONFI_SIGNATURE				0x49464E4F
 
-#define ONFI_CRC_POLYNOMIAL                                0x8005
-#define ONFI_CRC_INIT_VALUE                                0x4F4E
+#define ONFI_CRC_POLYNOMIAL			0x8005
+#define ONFI_CRC_INIT_VALUE			0x4F4E
 
-#define ONFI_READ_PARAM_PAGE_ADDR_CYCLES                   1
-#define ONFI_READ_ID_ADDR_CYCLES                           1
+#define ONFI_READ_PARAM_PAGE_ADDR_CYCLES	1
+#define ONFI_READ_ID_ADDR_CYCLES		1
 
-#define ONFI_READ_ID_CMD                                   0x90
-#define ONFI_READ_PARAM_PAGE_CMD                           0xEC
-#define ONFI_READ_ID_ADDR                                  0x20
-#define ONFI_READ_PARAM_PAGE_ADDR                          0x00
+#define ONFI_READ_ID_CMD			0x90
+#define ONFI_READ_PARAM_PAGE_CMD		0xEC
+#define ONFI_READ_ID_ADDR			0x20
+#define ONFI_READ_PARAM_PAGE_ADDR		0x00
 
-#define NAND_CFG0_RAW_ONFI_ID                              0x88000800
-#define NAND_CFG0_RAW_ONFI_PARAM_PAGE                      0x88040000
-#define NAND_CFG1_RAW_ONFI_ID                              0x0005045D
-#define NAND_CFG1_RAW_ONFI_PARAM_PAGE                      0x0005045D
-#define NAND_CFG0                                          0x290409c0
-#define NAND_CFG1                                          0x08045d5c
-#define NAND_ECC_BCH_CFG                                   0x42040d10
-#define NAND_Bad_Block                                     0x00000175
-#define NAND_ECC_BUF_CFG                                   0x00000203
+#define NAND_CFG0_RAW_ONFI_ID			0x88000800
+#define NAND_CFG0_RAW_ONFI_PARAM_PAGE		0x88040000
+#define NAND_CFG1_RAW_ONFI_ID			0x0005045D
+#define NAND_CFG1_RAW_ONFI_PARAM_PAGE		0x0005045D
+#define NAND_CFG0				0x290409c0
+#define NAND_CFG1				0x08045d5c
+#define NAND_ECC_BCH_CFG			0x42040d10
+#define NAND_Bad_Block				0x00000175
+#define NAND_ECC_BUF_CFG			0x00000203
 
-#define ONFI_READ_ID_BUFFER_SIZE                           0x4
-#define ONFI_READ_PARAM_PAGE_BUFFER_SIZE                   0x200
-#define ONFI_PARAM_PAGE_SIZE                               0x100
+#define ONFI_READ_ID_BUFFER_SIZE		0x4
+#define ONFI_READ_PARAM_PAGE_BUFFER_SIZE	0x200
+#define ONFI_PARAM_PAGE_SIZE			0x100
 
-#define NAND_8BIT_DEVICE                                   0x01
-#define NAND_16BIT_DEVICE                                  0x02
+#define NAND_8BIT_DEVICE			0x01
+#define NAND_16BIT_DEVICE			0x02
 
-#define NAND_CW_SIZE_4_BIT_ECC                             528
-#define NAND_CW_SIZE_8_BIT_ECC                             532
+#define NAND_CW_SIZE_4_BIT_ECC			528
+#define NAND_CW_SIZE_8_BIT_ECC			532
 
 /* Indicates the data bytes in the user data portion of the code word. */
-#define USER_DATA_BYTES_PER_CW                             512
+#define USER_DATA_BYTES_PER_CW			512
 
 /* Indicates the number of bytes covered by BCH ECC logic when
  * a codeword is written to a NAND flash device.
  * This is also the number of bytes that are part of the image in  CW.
  * 516 bytes  = (512 bytes of user data and 4 bytes of spare data)
  */
-#define DATA_BYTES_IN_IMG_PER_CW                           516
+#define DATA_BYTES_IN_IMG_PER_CW		516
 
-#define NAND_CW_DIV_RIGHT_SHIFT                            9
+#define NAND_CW_DIV_RIGHT_SHIFT			9
 
 /* Number of max cw's the driver allows to flash. */
-#define QPIC_NAND_MAX_CWS_IN_PAGE                          10
+#define QPIC_NAND_MAX_CWS_IN_PAGE		10
 
 /* Reset Values for Status registers */
-#define NAND_FLASH_STATUS_RESET                            0x00000020
-#define NAND_READ_STATUS_RESET                             0x000000C0
+#define NAND_FLASH_STATUS_RESET			0x00000020
+#define NAND_READ_STATUS_RESET			0x000000C0
+
+/* NANDc BAM pipe numbers */
+#define DATA_CONSUMER_PIPE			0
+#define DATA_PRODUCER_PIPE			1
+#define CMD_PIPE				2
+
+/* NANDc BAM pipe groups */
+#define DATA_PRODUCER_PIPE_GRP			0
+#define DATA_CONSUMER_PIPE_GRP			0
+#define CMD_PIPE_GRP				1
+
+/* NANDc EE */
+#define QPIC_NAND_EE				0
+
+/* NANDc max desc length. */
+#define QPIC_NAND_MAX_DESC_LEN			0x7FFF
+
+/* Register: NAND_CTRL */
+#define BAM_MODE_EN				0x1
+
+/* Register: NAND_DEBUG */
+#define BAM_MODE_BIT_RESET			(1 << 31)
+
+/* CMD Valid */
+#define NAND_CMD_VALID_BASE			0x1D
+
+#define NAND_ID_MAN(id)				((id) & 0xFF)
+#define NAND_ID_DEV(id)				(((id) >> 8) & 0xFF)
+#define NAND_ID_CFG(id)				(((id) >> 24) & 0xFF)
+
+#define NAND_CFG_PAGE_SIZE(id)			(((id) >> 0) & 0x3)
+#define NAND_CFG_SPARE_SIZE(id)			(((id) >> 2) & 0x3)
+#define NAND_CFG_BLOCK_SIZE(id)			(((id) >> 4) & 0x3)
+
+#define CHUNK_SIZE				512
+
+#define MB_TO_BYTES(mb)				(((uint64_t)(mb)) << 20)
+#define KB_TO_BYTES(kb)				((kb) << 10)
+
+#define MTD_NAND_CHIP(mtd)			((struct nand_chip *)((mtd)->priv))
+#define MTD_QPIC_NAND_DEV(mtd)			(MTD_NAND_CHIP(mtd)->priv)
+
+#define QPIC_BAM_DATA_FIFO_SIZE			64
+#define QPIC_BAM_CMD_FIFO_SIZE			64
 
 /* result type */
 typedef enum {
@@ -282,7 +324,7 @@ struct onfi_param_page
 	uint16_t vendor_rev;
 	uint8_t vendor_specific[88];
 	uint16_t interity_crc;
-}__PACKED;
+}__packed;
 
 struct cfg_params
 {
@@ -340,20 +382,36 @@ struct qpic_nand_init_config
 	struct qpic_nand_bam_pipes pipes;
 };
 
-void
-qpic_nand_init(struct qpic_nand_init_config *config);
-unsigned flash_num_blocks(void);
-unsigned
-flash_block_size(void);
-void
-qpic_nand_uninit();
-/* Api to return the nand base */
-uint32_t nand_device_base();
-nand_result_t qpic_nand_read(uint32_t start_page, uint32_t num_pages,
-		unsigned char* buffer, unsigned char* spareaddr);
-nand_result_t qpic_nand_write(uint32_t start_page, uint32_t num_pages,
-		unsigned char* buffer, unsigned  write_extra_bytes);
-nand_result_t qpic_nand_block_isbad(unsigned page);
-nand_result_t qpic_nand_blk_erase(uint32_t page);
+enum nand_ecc_width
+{
+	NAND_WITH_4_BIT_ECC,
+	NAND_WITH_8_BIT_ECC,
+};
+
+struct qpic_nand_dev {
+	unsigned id;
+	unsigned type;
+	unsigned vendor;
+	unsigned device;
+	unsigned page_size;
+	unsigned block_size;
+	unsigned spare_size;
+	unsigned num_blocks;
+	enum nand_ecc_width ecc_width;
+	unsigned num_pages_per_blk;
+	unsigned num_pages_per_blk_mask;
+	unsigned widebus;
+	unsigned density;
+	unsigned cw_size;
+	unsigned cws_per_page;
+	unsigned bad_blk_loc;
+	unsigned blksize;
+	unsigned dev_cfg;
+	uint32_t cfg0;
+	uint32_t cfg1;
+	uint32_t cfg0_raw;
+	uint32_t cfg1_raw;
+	uint32_t ecc_bch_cfg;
+};
 
 #endif

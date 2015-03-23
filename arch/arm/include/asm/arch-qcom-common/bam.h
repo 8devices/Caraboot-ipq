@@ -26,12 +26,12 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __PLATFORM_MSM_SHARED_BAM_H
-#define __PLATFORM_MSM_SHARED_BAM_H
+#ifndef __BAM_H
+#define __BAM_H
 
-#include <stdint.h>
 #include <compiler.h>
 
+#define BAM_V170 1
 #if BAM_V170
 #define BAM_IRQ_SRCS(x, n)              (0x00003000 + 0x1000 * (n) + (x))
 #define BAM_IRQ_SRCS_MSK(x, n)          (0x00003004 + 0x1000 * (n) + (x))
@@ -78,6 +78,7 @@
 #define BAM_DESC_CNT_TRSHLD_REG(x)      (0x0008 + (x))
 #define COUNT_TRESHOLD_MASK             0xFF
 #define BAM_IRQ_MASK                    (1 << 31)
+#define BAM_IRQ_EN                      (1 << 31)
 #define P_IRQ_MASK                      (1)
 
 #define BAM_IRQ_STTS(x)                 (0x00000014 + (x))
@@ -113,6 +114,13 @@
 #define BAM_DESC_CMD_FLAG               (1 << 3)
 #define BAM_DESC_LOCK_FLAG              (1 << 2)
 #define BAM_DESC_UNLOCK_FLAG            (1 << 1)
+
+typedef unsigned long addr_t;
+
+static inline int ispow2(uint val)
+{
+	return ((val - 1) & val) == 0;
+}
 
 /* Pipe Interrupt masks */
 enum p_int_type
@@ -185,7 +193,7 @@ struct bam_desc {
 	uint16_t size;
 	uint8_t reserved;
 	uint8_t flags;
-} __PACKED;
+} __attribute__ ((packed));
 
 struct bam_desc_fifo {
 	struct bam_desc *head;
@@ -248,7 +256,7 @@ struct cmd_element {
 	uint32_t reg_data;
 	uint32_t reg_mask;
 	uint32_t reserve;
-} __PACKED;
+} __attribute__ ((packed));
 
 void bam_init(struct bam_instance *bam);
 void bam_sys_pipe_init(struct bam_instance *bam,

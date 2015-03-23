@@ -26,17 +26,10 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <bam.h>
-#include <reg.h>
-#include <debug.h>
-#include <stdlib.h>
-#include <arch/ops.h>
-#include <platform.h>
-#include <platform/interrupts.h>
-#include <platform/iomap.h>
-#include <platform/irqs.h>
-#include <pow2.h>
+#include <asm/io.h>
+#include <asm/errno.h>
 
+#include <asm/arch-qcom-common/bam.h>
 #define HLOS_EE_INDEX          0
 
 /* Reset BAM registers and pipes */
@@ -64,7 +57,7 @@ void bam_pipe_reset(struct bam_instance *bam,
 	writel(0, BAM_P_RSTn(bam->pipe[pipe_num].pipe_num, bam->base));
 }
 
-static enum handler_return bam_interrupt_handler(void* arg)
+static int bam_interrupt_handler(void* arg)
 {
 	return 0;
 }
@@ -109,7 +102,7 @@ int bam_wait_for_interrupt(struct bam_instance *bam,
 
 bam_wait_int_error:
 
-	dprintf(CRITICAL, "Unexpected interrupt : val %u\n", val);
+	printf("bam: Unexpected interrupt : val %u\n", val);
 	return BAM_RESULT_FAILURE;
 }
 
@@ -125,27 +118,14 @@ void bam_enable_interrupts(struct bam_instance *bam, uint8_t pipe_num)
 	/* Enable the interrupts for the pipe by enabling the relevant bits
 	 * in the BAM_PIPE_INTERRUPT_ENABLE register.
 	 */
+	writel(BAM_IRQ_EN, BAM_IRQ_SRCS_MSK(bam->base, bam->ee));
 	writel(int_mask,
 			BAM_P_IRQ_ENn(bam->pipe[pipe_num].pipe_num, bam->base));
-
 	/* Enable pipe interrups */
 	/* Do read-modify-write */
 	val = readl(BAM_IRQ_SRCS_MSK(bam->base, bam->ee));
 	writel((1 << bam->pipe[pipe_num].pipe_num) | val,
 			BAM_IRQ_SRCS_MSK(bam->base, bam->ee));
-
-	/* Unmask the QGIC interrupts only in the case of
-	 * interrupt based transfer.
-	 * Use polling othwerwise.
-	 */
-	if (bam->pipe[pipe_num].int_mode)
-	{
-		/* Register interrupt handler */
-		register_int_handler(bam->pipe[pipe_num].spi_num, bam_interrupt_handler, 0);
-
-		/* Unmask the interrupt */
-		unmask_interrupt(bam->pipe[pipe_num].spi_num);
-	}
 }
 
 /* Reset and initialize the bam module */
@@ -182,20 +162,23 @@ void bam_init(struct bam_instance *bam)
 int bam_pipe_fifo_init(struct bam_instance *bam,
                        uint8_t pipe_num)
 {
-	if (bam->pipe[pipe_num].fifo.size > 0x7FFF)
-	{
-		dprintf(CRITICAL,
-				"Size exceeds max size for a descriptor(0x7FFF)\n");
+	if (bam->pipe[pipe_num].fifo.size > 0x7FFF) {
+		printf("bam: Size exceeds max size for a descriptor(0x7FFF)\n");
 		return BAM_RESULT_FAILURE;
 	}
 
 	/* Check if fifo start is 8-byte alligned */
-	ASSERT(!((uint32_t)PA((addr_t)bam->pipe[pipe_num].fifo.head & 0x7)));
+	if ((addr_t)bam->pipe[pipe_num].fifo.head & 0x7) {
+		return BAM_RESULT_FAILURE;
+	}
 
 	/* Check if fifo size is a power of 2.
 	 * The circular fifo logic in lk expects this.
 	 */
-	ASSERT(ispow2(bam->pipe[pipe_num].fifo.size));
+
+	if (!(ispow2(bam->pipe[pipe_num].fifo.size))) {
+		return BAM_RESULT_FAILURE;
+	}
 
 	bam->pipe[pipe_num].fifo.current = bam->pipe[pipe_num].fifo.head;
 
@@ -207,7 +190,7 @@ int bam_pipe_fifo_init(struct bam_instance *bam,
 	/* Needs a physical address conversion as we are setting up
 	 * the base of the FIFO for the BAM state machine.
 	 */
-	writel((uint32_t)PA((addr_t)bam->pipe[pipe_num].fifo.head),
+	writel((uint32_t)((addr_t)bam->pipe[pipe_num].fifo.head),
 		BAM_P_DESC_FIFO_ADDRn(bam->pipe[pipe_num].pipe_num, bam->base));
 
 	/* Initialize FIFO offset for the first read */
@@ -232,7 +215,6 @@ void bam_sys_pipe_init(struct bam_instance *bam,
 
 	/* Enable minimal interrupts */
 	bam_enable_interrupts(bam, pipe_num);
-
 	/* Pipe event threshold register is not relevant in sys modes */
 
 	/* Enable pipe in system mode and set the direction */
@@ -257,8 +239,7 @@ void bam_sys_gen_event(struct bam_instance *bam,
 	uint32_t val = 0;
 
 	if (num_desc >= bam->pipe[pipe_num].fifo.size) {
-		dprintf(CRITICAL,
-				"Max allowed desc is one less than the fifo length\n");
+		printf("bam: Max allowed desc is one less than the fifo length\n");
 		return;
 	}
 
@@ -289,8 +270,6 @@ void bam_read_offset_update(struct bam_instance *bam, unsigned int pipe_num)
 
 	offset = readl(BAM_P_SW_OFSTSn(bam->pipe[pipe_num].pipe_num, bam->base));
 	offset &= 0xFFFF;
-
-	dprintf(SPEW, "Offset value is %d \n", offset);
 }
 
 /* Function to get the next desc address.
@@ -330,38 +309,29 @@ int bam_add_desc(struct bam_instance *bam,
 	unsigned int n = 0;
 	unsigned int desc_flags;
 
-	dprintf(SPEW, "Data length for BAM transfer is %u\n", data_len);
-
-	if (data_ptr == NULL || len == 0)
-	{
-		dprintf(CRITICAL, "Wrong params for BAM transfer \n");
+	if (data_ptr == NULL || len == 0) {
+		printf("bam: Wrong params for BAM transfer \n");
 		bam_ret = BAM_RESULT_FAILURE;
 		goto bam_add_desc_error;
 	}
 
 	/* Check if we have enough space in FIFO */
-	if (len > (unsigned)bam->pipe[pipe_num].fifo.size * bam->max_desc_len)
-	{
-		dprintf(CRITICAL, "Data transfer exceeds desc fifo length.\n");
+	if (len > (unsigned)bam->pipe[pipe_num].fifo.size * bam->max_desc_len) {
+		printf("bam: Data transfer exceeds desc fifo length.\n");
 		bam_ret = BAM_RESULT_FAILURE;
 		goto bam_add_desc_error;
 	}
 
-	while (len)
-	{
-
+	while (len) {
 		/* There are only 16 bits to write data length.
 		 * If more bits are needed, create more
 		 * descriptors.
 		 */
-		if (len > bam->max_desc_len)
-		{
+		if (len > bam->max_desc_len) {
 			desc_len = bam->max_desc_len;
 			len -= bam->max_desc_len;
 			desc_flags = 0;
-		}
-		else
-		{
+		} else {
 			desc_len = len;
 			len = 0;
 			/* Set correct flags on the last desc. */
@@ -402,41 +372,36 @@ int bam_add_one_desc(struct bam_instance *bam,
 	struct bam_desc *desc = bam->pipe[pipe_num].fifo.current;
 	int bam_ret = BAM_RESULT_SUCCESS;
 
-	if (data_ptr == NULL || len == 0)
-	{
-		dprintf(CRITICAL, "Wrong params for BAM transfer \n");
+	if (data_ptr == NULL || len == 0) {
+		printf("bam: Wrong params for BAM transfer \n");
 		bam_ret = BAM_RESULT_FAILURE;
 		goto bam_add_one_desc_error;
 	}
 
 	/* Check if the FIFO is allocated for the pipe */
-	if (!bam->pipe[pipe_num].initialized)
-	{
-		dprintf(CRITICAL, "Please allocate the FIFO for the BAM pipe %d\n",
+	if (!bam->pipe[pipe_num].initialized) {
+		printf("bam: Please allocate the FIFO for the BAM pipe %d\n",
 				bam->pipe[pipe_num].pipe_num);
 		bam_ret = BAM_RESULT_FAILURE;
 		goto bam_add_one_desc_error;
 	}
 
-	if ((flags & BAM_DESC_LOCK_FLAG) && (flags & BAM_DESC_UNLOCK_FLAG))
-	{
-		dprintf(CRITICAL, "Can't lock and unlock in the same desc\n");
+	if ((flags & BAM_DESC_LOCK_FLAG) && (flags & BAM_DESC_UNLOCK_FLAG)) {
+		printf("bam: Can't lock and unlock in the same desc\n");
 		bam_ret = BAM_RESULT_FAILURE;
 		goto bam_add_one_desc_error;
 	}
 
 	/* Setting EOT flag on a CMD desc is not valid */
-	if ((flags & BAM_DESC_EOT_FLAG) && (flags & BAM_DESC_CMD_FLAG))
-	{
-		dprintf(CRITICAL, "EOT flag set on the CMD desc\n");
+	if ((flags & BAM_DESC_EOT_FLAG) && (flags & BAM_DESC_CMD_FLAG)) {
+		printf("bam: EOT flag set on the CMD desc\n");
 		bam_ret = BAM_RESULT_FAILURE;
 		goto bam_add_one_desc_error;
 	}
 
 	/* Check for the length of the desc. */
-	if (len > bam->max_desc_len)
-	{
-		dprintf(CRITICAL, "len of the desc exceeds max length"
+	if (len > bam->max_desc_len) {
+		printf("bam: len of the desc exceeds max length"
 				" %d > %d\n", len, bam->max_desc_len);
 		bam_ret = BAM_RESULT_FAILURE;
 		goto bam_add_one_desc_error;
@@ -447,7 +412,9 @@ int bam_add_one_desc(struct bam_instance *bam,
 	desc->size     = (uint16_t)len;
 	desc->reserved = 0;
 
-	arch_clean_invalidate_cache_range((addr_t) desc, BAM_DESC_SIZE);
+#if !defined(CONFIG_SYS_DCACHE_OFF)
+	flush_dcache_range((addr_t)desc, ((addr_t)desc + BAM_DESC_SIZE));
+#endif
 
 	/* Update the FIFO to point to the head */
 	bam->pipe[pipe_num].fifo.current = fifo_getnext(&bam->pipe[pipe_num].fifo, desc);
