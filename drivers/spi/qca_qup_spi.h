@@ -134,6 +134,7 @@
 #define SPI_INPUT_BLOCK_SIZE			4
 #define SPI_OUTPUT_BLOCK_SIZE			4
 #define MSM_QUP_MAX_FREQ			51200000
+#define MAX_COUNT_SIZE				0xffff
 
 #define SPI_RESET_STATE				0
 #define SPI_RUN_STATE				1
