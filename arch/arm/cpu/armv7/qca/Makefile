@@ -1,10 +1,14 @@
 
 include $(TOPDIR)/config.mk
 
-SOBJS-y = timer.o gpio.o clock.o
+SOBJS-y = timer.o gpio.o clock.o scm.o
 
 LIB	=  $(obj)lib$(SOC).o
 
+COBJS-y += cmd_bootqca.o
+ifeq ($(CONFIG_QCA_APPSBL_DLOAD),y)
+COBJS-y	+= cmd_dumpqca_data.o
+endif
 SRCS	:= $(SOBJS-y:.o=.S) $(COBJS-y:.o=.c)
 OBJS	:= $(addprefix $(obj),$(COBJS-y) $(SOBJS-y))
 
