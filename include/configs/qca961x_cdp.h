@@ -162,7 +162,7 @@ typedef struct {
 
 /* CONFIG_QPIC_NAND: QPIC NAND in BAM mode
  * CONFIG_IPQ_NAND: QPIC NAND in FIFO/block mode.
- * BAM is enabled by default. 
+ * BAM is enabled by default.
  */
 #define CONFIG_QPIC_NAND
 #define CONFIG_CMD_NAND

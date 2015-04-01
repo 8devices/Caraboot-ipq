@@ -131,7 +131,7 @@ qpic_nand_erased_status_reset(struct cmd_element *cmd_list_ptr, uint8_t flags)
 }
 
 static nand_result_t
-qpic_nand_check_status(uint32_t status)
+qpic_nand_check_status(struct mtd_info *mtd, uint32_t status)
 {
 	uint32_t erase_sts;
 
@@ -156,8 +156,16 @@ qpic_nand_check_status(uint32_t status)
 
 		printf("Nand Flash error. Status = %d\n", status);
 
+		if (status & NAND_FLASH_OP_ERR) {
+			mtd->ecc_stats.failed++;
+			return -EBADMSG;
+		}
+
+		if (status & NAND_FLASH_MPU_ERR)
+			return -EPERM;
+
 		if (status & NAND_FLASH_TIMEOUT_ERR)
-			return NANDC_RESULT_TIMEOUT;
+			return -ETIMEDOUT;
 		else
 			return NANDC_RESULT_FAILURE;
 	}
@@ -212,7 +220,7 @@ qpic_nand_fetch_id(struct mtd_info *mtd)
 	status = qpic_nand_read_reg(NAND_FLASH_STATUS, 0);
 
 	/* Check for errors */
-	nand_ret = qpic_nand_check_status(status);
+	nand_ret = qpic_nand_check_status(mtd, status);
 	if (nand_ret) {
 		printf("Read ID cmd status failed\n");
 		goto qpic_nand_fetch_id_err;
@@ -376,7 +384,8 @@ qpic_nand_add_onfi_probe_ce(struct onfi_probe_params *params,
 }
 
 static int
-onfi_probe_cmd_exec(struct onfi_probe_params *params,
+onfi_probe_cmd_exec(struct mtd_info *mtd,
+				    struct onfi_probe_params *params,
 					unsigned char* data_ptr,
 					int data_len)
 {
@@ -418,8 +427,8 @@ onfi_probe_cmd_exec(struct onfi_probe_params *params,
 	/* Read buffer status and check for errors. */
 	status = qpic_nand_read_reg(NAND_FLASH_STATUS, 0);
 
-	if (qpic_nand_check_status(status)) {
-		nand_ret = NANDC_RESULT_FAILURE;
+	nand_ret = qpic_nand_check_status(mtd, status);
+	if (nand_ret) {
 		goto onfi_probe_exec_err;
 	}
 
@@ -427,7 +436,7 @@ onfi_probe_cmd_exec(struct onfi_probe_params *params,
 	qpic_nand_wait_for_data(DATA_PRODUCER_PIPE_INDEX);
 
 	/* Check for errors */
-	nand_ret = qpic_nand_check_status(status);
+	nand_ret = qpic_nand_check_status(mtd, status);
 
 onfi_probe_exec_err:
 	return nand_ret;
@@ -625,7 +634,8 @@ qpic_nand_onfi_probe(struct mtd_info *mtd)
 	params.cfg.addr1 = 0;
 
 	/* Lock the pipe and execute the cmd. */
-	onfi_ret = onfi_probe_cmd_exec(&params, onfi_str, ONFI_READ_ID_BUFFER_SIZE);
+	onfi_ret = onfi_probe_cmd_exec(mtd, &params, onfi_str,
+				       ONFI_READ_ID_BUFFER_SIZE);
 	if (onfi_ret) {
 		printf("ONFI Read id cmd failed\n");
 		goto qpic_nand_onfi_probe_err;
@@ -660,7 +670,8 @@ qpic_nand_onfi_probe(struct mtd_info *mtd)
 	params.cfg.addr1 = 0;
 
 	/* Lock the pipe and execute the cmd. */
-	onfi_ret = onfi_probe_cmd_exec(&params, buffer, ONFI_READ_PARAM_PAGE_BUFFER_SIZE);
+	onfi_ret = onfi_probe_cmd_exec(mtd, &params, buffer,
+				       ONFI_READ_PARAM_PAGE_BUFFER_SIZE);
 	if (onfi_ret) {
 		printf("ONFI Read param page failed\n");
 		goto qpic_nand_onfi_probe_err;
@@ -763,8 +774,9 @@ qpic_nand_add_isbad_cmd_ce(struct cfg_params *cfg,
 }
 
 static int
-qpic_nand_block_isbad_exec(struct cfg_params *params,
-                           uint8_t *bad_block)
+qpic_nand_block_isbad_exec(struct mtd_info *mtd,
+			   struct cfg_params *params,
+			   uint8_t *bad_block)
 {
 
 	struct cmd_element *cmd_list_ptr = ce_array;
@@ -797,13 +809,13 @@ qpic_nand_block_isbad_exec(struct cfg_params *params,
 
 	status = qpic_nand_read_reg(NAND_FLASH_STATUS, 0);
 
-	nand_ret = qpic_nand_check_status(status);
+	nand_ret = qpic_nand_check_status(mtd, status);
 
 	/* Dummy read to unlock pipe. */
 	status = qpic_nand_read_reg(NAND_FLASH_STATUS, BAM_DESC_UNLOCK_FLAG);
 
 	if (nand_ret)
-		return NANDC_RESULT_FAILURE;
+		return nand_ret;
 
 	qpic_nand_wait_for_data(DATA_PRODUCER_PIPE_INDEX);
 
@@ -858,7 +870,7 @@ nand_result_t qpic_nand_block_isbad(struct mtd_info *mtd, loff_t offs)
  		params.ecc_cfg = (dev->ecc_bch_cfg) | 0x1; /* Disable ECC */
 		params.exec = 1;
 
-		if (qpic_nand_block_isbad_exec(&params, bad_block)) {
+		if (qpic_nand_block_isbad_exec(mtd, &params, bad_block)) {
 			printf("Could not read bad block value\n");
 			return NANDC_RESULT_FAILURE;
 		}
@@ -961,7 +973,7 @@ qpic_nand_add_wr_page_cws_cmd_desc(struct mtd_info *mtd, struct cfg_params *cfg,
 
 		qpic_nand_wait_for_cmd_exec(num_desc);
 
-		status[i] = qpic_nand_check_status(status[i]);
+		status[i] = qpic_nand_check_status(mtd, status[i]);
 
 		num_desc = 0;
 	}
@@ -1050,7 +1062,7 @@ qpic_nand_write_page(struct mtd_info *mtd, uint32_t pg_addr,
 
 	/* Check for errors */
 	for(i = 0; i < (dev->cws_per_page); i++) {
-		nand_ret = qpic_nand_check_status(status[i]);
+		nand_ret = qpic_nand_check_status(mtd, status[i]);
 		if (nand_ret) {
 			printf(
 					"Failed to write CW %d for page: %d\n",
@@ -1259,6 +1271,7 @@ qpic_nand_read_page(struct mtd_info *mtd, uint32_t page, unsigned char* buffer, 
 	int nand_ret = NANDC_RESULT_SUCCESS;
 	uint8_t flags = 0;
 	uint32_t *cmd_list_temp = NULL;
+	uint32_t num_errors;
 
 	/* UD bytes in last CW is 512 - cws_per_page *4.
 	 * Since each of the CW read earlier reads 4 spare bytes.
@@ -1402,12 +1415,19 @@ qpic_nand_read_page(struct mtd_info *mtd, uint32_t page, unsigned char* buffer, 
 
 	/* Check status */
 	for (i = 0; i < (dev->cws_per_page) ; i ++) {
-		flash_sts[i] = qpic_nand_check_status(flash_sts[i]);
+		flash_sts[i] = qpic_nand_check_status(mtd, flash_sts[i]);
 		if (flash_sts[i]) {
-			nand_ret = NANDC_RESULT_BAD_PAGE;
-			printf("NAND page read failed. page: %x status %x\n", page, flash_sts[i]);
+			printf("NAND page read failed. page: %x status %x\n", page,
+								flash_sts[i]);
 			goto qpic_nand_read_page_error;
 		}
+	}
+
+	for (i = 0; i < (dev->cws_per_page); i++) {
+		num_errors = buffer_sts[i];
+		num_errors &= NUM_ERRORS_MASK;
+		if(num_errors)
+			mtd->ecc_stats.corrected++;
 	}
 qpic_nand_read_page_error:
 return nand_ret;
@@ -1424,6 +1444,21 @@ nand_result_t qpic_nand_read_oob(struct mtd_info *mtd, loff_t to,
 	uint32_t num_pages;
 	u_char *buf = (ops->datbuf);
 	loff_t offs;
+	uint32_t corrected;
+
+	/* We don't support MTD_OOB_PLACE as of yet. */
+	if (ops->mode == MTD_OOB_PLACE)
+		return -ENOSYS;
+
+	/* Check for reads past end of device */
+	if (ops->datbuf && (to + ops->len) > mtd->size)
+		return -EINVAL;
+
+	if (to & (mtd->writesize - 1))
+		return -EINVAL;
+
+	if (ops->ooboffs != 0)
+		return -EINVAL;
 
 	start_page = ((to >> chip->page_shift));
 	num_pages = ((ops->len) >> chip->page_shift);
@@ -1432,6 +1467,8 @@ nand_result_t qpic_nand_read_oob(struct mtd_info *mtd, loff_t to,
 		printf("qpic_nand_read: buffer = null\n");
 			return NANDC_RESULT_PARAM_INVALID;
 	}
+	corrected = mtd->ecc_stats.corrected;
+
 	while (i < num_pages) {
 		ret =qpic_nand_read_page(mtd, start_page + i, buf + (dev->page_size) * i,
 			spareaddr);
@@ -1447,6 +1484,12 @@ nand_result_t qpic_nand_read_oob(struct mtd_info *mtd, loff_t to,
 		}
 	ops->retlen += mtd->writesize;
 	}
+
+	if (mtd->ecc_stats.corrected != corrected) {
+		ret = -EUCLEAN;
+		return ret;
+	}
+
 	return NANDC_RESULT_SUCCESS;
 }
 
@@ -1503,6 +1546,27 @@ nand_result_t qpic_nand_write_oob(struct mtd_info *mtd, loff_t to,
 	start_page = (to >> chip->page_shift);
 	num_pages = ((ops->len) >> chip->page_shift);
 	spare_byte_count = (((dev->cw_size) * (dev->cws_per_page)) - (dev->page_size));
+
+
+	/* We don't support MTD_OOB_PLACE as of yet. */
+	if (ops->mode == MTD_OOB_PLACE)
+		return -ENOSYS;
+
+	/* Check for writes past end of device. */
+	if ((to + ops->len) > mtd->size)
+		return -EINVAL;
+
+	if (to & (mtd->writesize - 1))
+		return -EINVAL;
+
+	if (ops->len & (mtd->writesize - 1))
+		return -EINVAL;
+
+	if (ops->ooboffs != 0)
+		return -EINVAL;
+
+	if (ops->datbuf == NULL)
+		return -EINVAL;
 
 	ops->retlen = 0;
 	ops->oobretlen = 0;
@@ -1661,7 +1725,7 @@ nand_result_t qpic_nand_blk_erase(struct mtd_info *mtd, uint32_t page)
 	num_desc = 2;
 	qpic_nand_wait_for_cmd_exec(num_desc);
 
-	status = qpic_nand_check_status(status);
+	status = qpic_nand_check_status(mtd, status);
 
 	/* Dummy read to unlock pipe. */
 	qpic_nand_read_reg(NAND_FLASH_STATUS, BAM_DESC_UNLOCK_FLAG);
@@ -1671,7 +1735,7 @@ nand_result_t qpic_nand_blk_erase(struct mtd_info *mtd, uint32_t page)
 		printf("NAND Erase error: Block address belongs to "
 		       "bad block: %d\n", blk_addr);
 		qpic_nand_mark_badblock(mtd, (page << chip->page_shift));
-		return NANDC_RESULT_FAILURE;
+		return status;
 	}
 
 	/* Check for PROG_ERASE_OP_RESULT bit for the result of erase operation. */
@@ -1679,7 +1743,7 @@ nand_result_t qpic_nand_blk_erase(struct mtd_info *mtd, uint32_t page)
 		return NANDC_RESULT_SUCCESS;
 
 	qpic_nand_mark_badblock(mtd, (page << chip->page_shift));
-	return NANDC_RESULT_FAILURE;
+	return status;
 }
 
 

@@ -149,6 +149,9 @@
 
 #define PROG_ERASE_OP_RESULT			(1 << 7)
 
+#define NUM_ERRORS_MASK				0x0000001f
+#define NUM_ERRORS(i)				((i) << 0)
+
 #define DATA_CONSUMER_PIPE_INDEX		0
 #define DATA_PRODUCER_PIPE_INDEX		1
 #define CMD_PIPE_INDEX				2
