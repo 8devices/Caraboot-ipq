@@ -80,7 +80,8 @@ int bam_wait_for_interrupt(struct bam_instance *bam,
 			/* Determine the pipe causing the interrupt */
 			val = readl(BAM_IRQ_SRCS(bam->base, bam->ee));
 			/* Flush out the right most global interrupt bit */
-		} while (!((val & 0x7FFF) & (1 << bam->pipe[pipe_num].pipe_num)));
+		} while (!((val & BAM_IRQ_SRCS_PIPE_MASK) &
+				   (1 << bam->pipe[pipe_num].pipe_num)));
 
 		/* Check the interrupt type */
 		/* Read interrupt status register */
@@ -118,7 +119,6 @@ void bam_enable_interrupts(struct bam_instance *bam, uint8_t pipe_num)
 	/* Enable the interrupts for the pipe by enabling the relevant bits
 	 * in the BAM_PIPE_INTERRUPT_ENABLE register.
 	 */
-	writel(BAM_IRQ_EN, BAM_IRQ_SRCS_MSK(bam->base, bam->ee));
 	writel(int_mask,
 			BAM_P_IRQ_ENn(bam->pipe[pipe_num].pipe_num, bam->base));
 	/* Enable pipe interrups */
@@ -150,8 +150,10 @@ void bam_init(struct bam_instance *bam)
 	val = 0xffffffff & ~(1 << 11);
 	writel(val, BAM_CNFG_BITS(bam->base));
 
+	val = readl(BAM_CTRL_REG(bam->base));
+	val = val | BAM_ENABLE_BIT_MASK;
 	/* Enable the BAM */
-	writel(BAM_ENABLE_BIT_MASK, BAM_CTRL_REG(bam->base));
+	writel(val, BAM_CTRL_REG(bam->base));
 }
 
 /* Funtion to setup a simple fifo structure.
@@ -431,10 +433,11 @@ struct cmd_element* bam_add_cmd_element(struct cmd_element *ptr,
 	/* Write cmd type.
 	 * Also, write the register address.
 	 */
-	 ptr->addr_n_cmd = (reg_addr & ~(0xFF000000)) | (cmd_type << 24);
+	ptr->addr_n_cmd = (reg_addr & ~(BAM_CE_REG_ADDR_MASK)) |
+				(cmd_type << (BAM_CE_CMD_TYPE_SHIFT));
 
 	/* Do not mask any of the addr bits by default */
-	ptr->reg_mask = 0xFFFFFFFF;
+	ptr->reg_mask = BAM_CE_REG_MASK;
 
 	/* Write the value to be written */
 	ptr->reg_data = value;

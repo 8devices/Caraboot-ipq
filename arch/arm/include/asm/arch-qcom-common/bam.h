@@ -80,6 +80,7 @@
 #define BAM_IRQ_MASK                    (1 << 31)
 #define BAM_IRQ_EN                      (1 << 31)
 #define P_IRQ_MASK                      (1)
+#define BAM_IRQ_SRCS_PIPE_MASK          0x7FFF
 
 #define BAM_IRQ_STTS(x)                 (0x00000014 + (x))
 
@@ -115,6 +116,9 @@
 #define BAM_DESC_LOCK_FLAG              (1 << 2)
 #define BAM_DESC_UNLOCK_FLAG            (1 << 1)
 
+#define BAM_CE_REG_ADDR_MASK            0xFF000000
+#define BAM_CE_REG_MASK                 0xFFFFFFFF
+#define BAM_CE_CMD_TYPE_SHIFT           24
 typedef unsigned long addr_t;
 
 static inline int ispow2(uint val)
