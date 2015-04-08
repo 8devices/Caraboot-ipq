@@ -201,6 +201,17 @@ typedef struct {
 #define CONFIG_NET_RETRY_COUNT		5
 #define CONFIG_SYS_RX_ETH_BUFFER	16
 #define CONFIG_IPADDR	192.168.1.11
+/*
+ * CRASH DUMP ENABLE
+ */
+#define CONFIG_QCA_APPSBL_DLOAD	1
+
+#ifdef CONFIG_QCA_APPSBL_DLOAD
+#define CONFIG_CMD_TFTPPUT
+/* We will be uploading very big files */
+#define CONFIG_NET_RETRY_COUNT 500
+#endif
+#define CONFIG_CMD_ECHO
 
 /*
  * Expose SPI driver as a pseudo NAND driver to make use
