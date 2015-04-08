@@ -268,7 +268,7 @@ static int spi_hw_init(struct ipq_spi_slave *ds)
 	 * MX_CS_MODE = 0
 	 * NO_TRI_STATE = 1
 	 */
-	writel((CLK_ALWAYS_ON | MX_CS_MODE | NO_TRI_STATE),
+	writel((CLK_ALWAYS_ON | NO_TRI_STATE),
 				ds->regs->io_control);
 
 	/*
@@ -318,31 +318,19 @@ void spi_release_bus(struct spi_slave *slave)
 	ds->initialized = 0;
 }
 
-/* Drain input fifo
- * If input fifo is not empty drain the input FIFO. When the
- * input fifo is drained make sure that the output fifo is also
- * empty and break when the input fifo is completely drained.
- */
-static void flush_fifos(struct ipq_spi_slave *ds)
+static void write_force_cs(struct spi_slave *slave, int assert)
 {
-	unsigned int fifo_data;
+	struct ipq_spi_slave *ds = to_ipq_spi(slave);
 
-	while (1) {
-		if (readl(ds->regs->qup_operational) &
-			QUP_DATA_AVAILABLE_FOR_READ) {
-			fifo_data = readl(ds->regs->qup_input_fifo);
-		} else {
-			if (!(readl(ds->regs->qup_operational) &
-				QUP_OUTPUT_FIFO_NOT_EMPTY)) {
-				if (!(readl(ds->regs->qup_operational) &
-					QUP_DATA_AVAILABLE_FOR_READ))
-					break;
-			}
-		}
-		WATCHDOG_RESET();
-	}
+	if (assert)
+		clrsetbits_le32(ds->regs->io_control,
+			FORCE_CS_MSK, FORCE_CS_EN);
+	else
+		clrsetbits_le32(ds->regs->io_control,
+			FORCE_CS_MSK, FORCE_CS_DIS);
 
-	(void)fifo_data;
+	return;
+
 }
 
 /*
@@ -423,8 +411,8 @@ static void enable_io_config(struct ipq_spi_slave *ds,
 /*
  * Function to read bytes number of data from the Input FIFO
  */
-static int blsp_spi_read(struct ipq_spi_slave *ds, u8 *data_buffer,
-				unsigned int bytes, unsigned long flags)
+static int __blsp_spi_read(struct ipq_spi_slave *ds, u8 *data_buffer,
+				unsigned int bytes)
 {
 	uint32_t val;
 	unsigned int i;
@@ -472,15 +460,6 @@ static int blsp_spi_read(struct ipq_spi_slave *ds, u8 *data_buffer,
 		}
 	}
 
-	if (flags & SPI_XFER_END) {
-		flush_fifos(ds);
-		clrsetbits_le32(ds->regs->io_control,
-				FORCE_CS_MSK, FORCE_CS_DIS);
-		goto out;
-	}
-
-	return ret;
-
 out:
 	/*
 	 * Put the SPI Core back in the Reset State
@@ -492,11 +471,30 @@ out:
 
 }
 
+static int blsp_spi_read(struct ipq_spi_slave *ds, u8 *data_buffer,
+				unsigned int bytes)
+{
+	int length, ret;
+
+	while (bytes) {
+		length = (bytes < MAX_COUNT_SIZE) ? bytes : MAX_COUNT_SIZE;
+
+		ret = __blsp_spi_read(ds, data_buffer, length);
+		if (ret != SUCCESS)
+			return ret;
+
+		data_buffer += length;
+		bytes -= length;
+	}
+
+	return 0;
+}
+
 /*
  * Function to write data to the Output FIFO
  */
-static int blsp_spi_write(struct ipq_spi_slave *ds, const u8 *cmd_buffer,
-				unsigned int bytes, unsigned long flags)
+static int __blsp_spi_write(struct ipq_spi_slave *ds, const u8 *cmd_buffer,
+				unsigned int bytes)
 {
 	uint32_t val;
 	unsigned int i;
@@ -516,11 +514,6 @@ static int blsp_spi_write(struct ipq_spi_slave *ds, const u8 *cmd_buffer,
 	state_config = config_spi_state(ds, SPI_RUN_STATE);
 	if (state_config)
 		return state_config;
-
-	if (flags & SPI_XFER_BEGIN) {
-		clrsetbits_le32(ds->regs->io_control,
-				FORCE_CS_MSK, FORCE_CS_EN);
-	}
 
 	/* Configure input and output enable */
 	enable_io_config(ds, write_len, read_len);
@@ -583,15 +576,6 @@ static int blsp_spi_write(struct ipq_spi_slave *ds, const u8 *cmd_buffer,
 		}
 	}
 
-	if (flags & SPI_XFER_END) {
-		flush_fifos(ds);
-		clrsetbits_le32(ds->regs->io_control,
-				FORCE_CS_MSK, FORCE_CS_DIS);
-		goto out;
-	}
-
-	return ret;
-
 out:
 	/*
 	 * Put the SPI Core back in the Reset State
@@ -602,6 +586,24 @@ out:
 	return ret;
 }
 
+static int blsp_spi_write(struct ipq_spi_slave *ds, u8 *cmd_buffer,
+                                unsigned int bytes)
+{
+	int length, ret;
+
+	while (bytes) {
+		length = (bytes < MAX_COUNT_SIZE) ? bytes : MAX_COUNT_SIZE;
+
+		ret = __blsp_spi_write(ds, cmd_buffer, length);
+		if (ret != SUCCESS)
+			return ret;
+
+		cmd_buffer += length;
+		bytes -= length;
+	}
+
+	return 0;
+}
 /*
  * This function is invoked with either tx_buf or rx_buf.
  * Calling this function with both null does a chip select change.
@@ -622,18 +624,29 @@ int spi_xfer(struct spi_slave *slave, unsigned int bitlen,
 
 	len = bitlen >> 3;
 
+	if (flags & SPI_XFER_BEGIN) {
+		ret = spi_hw_init(ds);
+		if (ret != SUCCESS)
+			return ret;
+		write_force_cs(ds, 1);
+	}
+
 	if (dout != NULL) {
-		ret = blsp_spi_write(ds, txp, len, flags);
+		ret = blsp_spi_write(ds, txp, len);
 		if (ret != SUCCESS)
 			return ret;
 	}
 
-	if (din != NULL)
-		return blsp_spi_read(ds, rxp, len, flags);
+	if (din != NULL) {
+		ret = blsp_spi_read(ds, rxp, len);
+		if (ret != SUCCESS)
+		return ret;
+	}
 
-	if ((din == NULL) && (dout == NULL))
+	if (flags & SPI_XFER_END) {
 		/* To handle only when chip select change is needed */
-		ret = blsp_spi_write(ds, NULL, 0, flags);
+		write_force_cs(ds, 0);
+	}
 
 	return ret;
 }
