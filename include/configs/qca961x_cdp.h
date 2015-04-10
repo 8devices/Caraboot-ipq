@@ -191,6 +191,7 @@ typedef struct {
 #define CONFIG_SF_DEFAULT_CS 0
 #define CONFIG_SF_DEFAULT_MODE SPI_MODE_0
 
+#define CONFIG_QUP_SPI_USE_DMA 1
 /*
  * ESS Configs
  */
