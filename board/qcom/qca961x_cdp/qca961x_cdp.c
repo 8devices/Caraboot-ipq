@@ -33,13 +33,13 @@
 #include <asm/io.h>
 #include <asm/arch-qcom-common/gpio.h>
 #include <asm/errno.h>
-#include <asm/arch-qcom-common/nand.h>
 #include <asm/arch-qca961x/ess/qca961x_edma.h>
 #include <environment.h>
 #include "qca961x_board_param.h"
 #include "qca961x_cdp.h"
 #ifdef CONFIG_IPQ_NAND
 #include <linux/mtd/ipq_nand.h>
+#include <asm/arch-qcom-common/nand.h>
 #else
 #include <asm/arch-qcom-common/qpic_nand.h>
 #endif

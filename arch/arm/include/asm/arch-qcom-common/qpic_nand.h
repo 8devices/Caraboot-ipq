@@ -415,6 +415,12 @@ struct qpic_nand_dev {
 	uint32_t cfg0_raw;
 	uint32_t cfg1_raw;
 	uint32_t ecc_bch_cfg;
+	unsigned oob_per_page;
+	unsigned char *buffers;
+	unsigned char *pad_dat;
+	unsigned char *pad_oob;
+	unsigned char *zero_page;
+	unsigned char *zero_oob;
 };
 
 #endif
