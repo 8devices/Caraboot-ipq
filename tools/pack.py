@@ -1,7 +1,16 @@
-#!/usr/bin/env python
 #
-# Copyright (c) 2013-2014 The Linux Foundation. All rights reserved.
+# Copyright (c) 2015 The Linux Foundation. All rights reserved.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2 and
+# only version 2 as published by the Free Software Foundation.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
+
 """
 Script to create a U-Boot flashable multi-image blob.
 
@@ -212,7 +221,7 @@ class MIBIB(object):
     TABLE_FMT = "<LLLL"
     TABLE_MAGIC1 = 0x55EE73AA
     TABLE_MAGIC2 = 0xE35EBDDB
-    TABLE_VERSION = 3
+    TABLE_VERSION = 4
 
     Entry = namedtuple("Entry", "name offset length"
                         " attr1 attr2 attr3 which_flash")
@@ -493,7 +502,6 @@ class NorScript(FlashScript):
         """Generate code, to write to a partition."""
 
         if size > 0:
-            size = roundup(size, self.pagesize)
             self.append("sf write $fileaddr 0x%08x 0x%08x" % (offset, size))
 
     def nand_write(self, offset, size):
@@ -664,7 +672,7 @@ class Pack(object):
         except KeyError, e:
             return None
 
-    def __gen_flash_script(self, info, script):
+    def __gen_flash_script(self, info, script, flinfo):
         """Generate the script to flash the images.
 
         info -- ConfigParser object, containing image flashing info
@@ -690,6 +698,28 @@ class Pack(object):
             img_size = self.__get_img_size(filename)
             part_info = self.__get_part_info(partition)
 
+            if self.flinfo.type == 'nand':
+                size = roundup(img_size, flinfo.pagesize)
+                tr = ' | tr \"\\000\" \"\\377\"'
+
+            if self.flinfo.type == 'emmc':
+                size = roundup(img_size, flinfo.blocksize)
+                tr = ''
+
+            if ((self.flinfo.type == 'nand' or self.flinfo.type == 'emmc') and (size != img_size)):
+                pad_size = size - img_size
+                filename_abs = os.path.join(self.images_dname, filename)
+                filename_abs_pad = filename_abs + ".padded"
+                cmd = 'cat %s > %s' % (filename_abs, filename_abs_pad)
+                ret = subprocess.call(cmd, shell=True)
+                if ret != 0:
+                    error("failed to copy image")
+                cmd = 'dd if=/dev/zero count=1 bs=%s %s >> %s' % (pad_size, tr, filename_abs_pad)
+                cmd = '(' + cmd + ') 1>/dev/null 2>/dev/null'
+                ret = subprocess.call(cmd, shell=True)
+                if ret != 0:
+                    error("failed to create padded image from script")
+
             if self.flinfo.type != "emmc":
                if part_info == None:
                    if self.flinfo.type != 'norplusnand':
@@ -709,7 +739,11 @@ class Pack(object):
             script.start_activity("Flashing %s:" % section)
             if self.ipq_nand: script.switch_layout(layout)
             if img_size > 0:
-               script.imxtract(section + "-" + sha1(filename))
+                if ((self.flinfo.type == 'nand' or self.flinfo.type == 'emmc') and (size != img_size)):
+                    filename_pad = filename + ".padded"
+                    script.imxtract(section + "-" + sha1(filename_pad))
+                else:
+                    script.imxtract(section + "-" + sha1(filename))
 
             if part_info == None:
                 offset = count * Pack.norplusnand_rootfs_img_size
@@ -727,7 +761,7 @@ class Pack(object):
 
         script.end()
 
-    def __gen_script(self, script_fp, info_fp, script, images):
+    def __gen_script(self, script_fp, info_fp, script, images, flinfo):
         """Generate the script to flash the multi-image blob.
 
         script_fp -- file object, to write script to
@@ -741,13 +775,23 @@ class Pack(object):
         except ConfigParserError, e:
             error("error parsing info file '%s'" % self.fconf_fname, e)
 
-        self.__gen_flash_script(info, script)
+        self.__gen_flash_script(info, script, flinfo)
 
         for section in info.sections():
             if info.get(section, "include").lower() in ["0", "no"]:
                 continue
 
             filename = info.get(section, "filename")
+            if self.flinfo.type == 'nand':
+                img_size = self.__get_img_size(filename)
+                size = roundup(img_size, flinfo.pagesize)
+                if ( size != img_size ):
+                    filename = filename + ".padded"
+            if self.flinfo.type == 'emmc':
+                img_size = self.__get_img_size(filename)
+                size = roundup(img_size, flinfo.blocksize)
+                if ( size != img_size ):
+                    filename = filename + ".padded"
             image_info = ImageInfo(section + "-" + sha1(filename),
                                    filename, "firmware")
             if filename.lower() != "none":
@@ -832,7 +876,7 @@ class Pack(object):
 
         self.flinfo = flinfo
         if flinfo.type == "nand":
-            self.ipq_nand = True
+            self.ipq_nand = False
             script = NandScript(flinfo, self.ipq_nand)
         elif flinfo.type == "nor" or flinfo.type == "norplusnand":
             self.ipq_nand = False
@@ -844,7 +888,7 @@ class Pack(object):
             error("error, flash type unspecified.")
 
         script.start_if("machid", machid)
-        self.__gen_script(script_fp, fconf_fp, script, images)
+        self.__gen_script(script_fp, fconf_fp, script, images, flinfo)
         script.end_if()
 
         try:
