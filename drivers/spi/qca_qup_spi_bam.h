@@ -120,7 +120,7 @@
 #define SLAVE_OPERATION_MSK			(1 << 5)
 #define SLAVE_OPERATION				(0 << 5)
 #define CLK_ALWAYS_ON				(0 << 9)
-#define MX_CS_MODE					(0 << 8)
+#define MX_CS_MODE					(1 << 8)
 #define NO_TRI_STATE				(1 << 0)
 #define FORCE_CS_MSK				(1 << 11)
 #define FORCE_CS_EN					(1 << 11)
@@ -155,6 +155,7 @@
 #define SPI_INPUT_BLOCK_SIZE			4
 #define SPI_OUTPUT_BLOCK_SIZE			4
 #define MSM_QUP_MAX_FREQ			51200000
+#define MAX_COUNT_SIZE				0xffff
 
 #define SPI_RESET_STATE				0
 #define SPI_RUN_STATE				1
@@ -185,8 +186,6 @@ struct blsp_spi {
 	unsigned int	qup_mx_read_count;
 	unsigned int	qup_mx_write_count;
 	unsigned int	qup_sw_reset;
-	unsigned int	qup_ns_reg;
-	unsigned int	qup_md_reg;
 	unsigned int	qup_op_mask;
 	unsigned int	qup_deassert_wait;
 };

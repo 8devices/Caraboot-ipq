@@ -352,7 +352,7 @@ static int spi_hw_init(struct ipq_spi_slave *ds)
 	 * MX_CS_MODE = 0
 	 * NO_TRI_STATE = 1
 	 */
-	writel((CLK_ALWAYS_ON | MX_CS_MODE | NO_TRI_STATE),
+	writel((CLK_ALWAYS_ON | NO_TRI_STATE),
 				ds->regs->io_control);
 
 	/*
@@ -425,31 +425,19 @@ void spi_release_bus(struct spi_slave *slave)
 	ds->initialized = 0;
 }
 
-/* Drain input fifo
- * If input fifo is not empty drain the input FIFO. When the
- * input fifo is drained make sure that the output fifo is also
- * empty and break when the input fifo is completely drained.
- */
-static void flush_fifos(struct ipq_spi_slave *ds)
+static void write_force_cs(struct spi_slave *slave, int assert)
 {
-	unsigned int fifo_data;
+	struct ipq_spi_slave *ds = to_ipq_spi(slave);
 
-	while (1) {
-		if (readl(ds->regs->qup_operational) &
-			QUP_DATA_AVAILABLE_FOR_READ) {
-			fifo_data = readl(ds->regs->qup_input_fifo);
-		} else {
-			if (!(readl(ds->regs->qup_operational) &
-				QUP_OUTPUT_FIFO_NOT_EMPTY)) {
-				if (!(readl(ds->regs->qup_operational) &
-					QUP_DATA_AVAILABLE_FOR_READ))
-					break;
-			}
-		}
-		WATCHDOG_RESET();
-	}
+	if (assert)
+		clrsetbits_le32(ds->regs->io_control,
+			FORCE_CS_MSK, FORCE_CS_EN);
+	else
+		clrsetbits_le32(ds->regs->io_control,
+			FORCE_CS_MSK, FORCE_CS_DIS);
 
-	(void)fifo_data;
+	return;
+
 }
 
 /*
@@ -538,7 +526,7 @@ blsp_spi_wait_for_data(uint32_t pipe_num)
 
 
 static int blsp_spi_bam_begin_xfer(struct ipq_spi_slave *ds, const u8 *buffer,
-                unsigned int bytes, unsigned long flags, unsigned int type)
+                unsigned int bytes, unsigned int type)
 {
 	u32 tx_bytes_to_send = 0, rx_bytes_to_recv = 0;
 	u32 n_words_xfr;
@@ -645,8 +633,8 @@ static int blsp_spi_bam_begin_xfer(struct ipq_spi_slave *ds, const u8 *buffer,
 /*
  * Function to read bytes number of data from the Input FIFO
  */
-static int blsp_spi_read(struct ipq_spi_slave *ds, u8 *data_buffer,
-				unsigned int bytes, unsigned long flags)
+static int __blsp_spi_read(struct ipq_spi_slave *ds, u8 *data_buffer,
+				unsigned int bytes)
 {
 	uint32_t val;
 	unsigned int i;
@@ -655,8 +643,6 @@ static int blsp_spi_read(struct ipq_spi_slave *ds, u8 *data_buffer,
 	int ret = SUCCESS;
 	int state_config;
 
-	clrsetbits_le32(ds->regs->io_control,
-                FORCE_CS_MSK, FORCE_CS_EN);
 
 	/* Configure no of bytes to read */
 	state_config = config_spi_state(ds, SPI_RESET_STATE);
@@ -669,49 +655,38 @@ static int blsp_spi_read(struct ipq_spi_slave *ds, u8 *data_buffer,
 	if (!(ds->use_dma))
 		writel(bytes, ds->regs->qup_mx_input_count);
 
-
 	if (ds->use_dma && read_bytes)
 		blsp_spi_bam_begin_xfer(ds, data_buffer,
-			bytes, flags, READ);
-
+			bytes, READ);
 	else {
-	state_config = config_spi_state(ds, SPI_RUN_STATE);
-	if (state_config)
-		return state_config;
+		state_config = config_spi_state(ds, SPI_RUN_STATE);
+		if (state_config)
+			return state_config;
 
-	while (read_bytes) {
-		ret = check_fifo_status(ds->regs->qup_operational);
-		if (ret != SUCCESS)
-			goto out;
+		while (read_bytes) {
+			ret = check_fifo_status(ds->regs->qup_operational);
+			if (ret != SUCCESS)
+				goto out;
 
-		val = readl(ds->regs->qup_operational);
-		if (val & INPUT_SERVICE_FLAG) {
-			/*
-			 * acknowledge to hw that software will
-			 * read input data
-			 */
-			val &= INPUT_SERVICE_FLAG;
-			writel(val, ds->regs->qup_operational);
+			val = readl(ds->regs->qup_operational);
+			if (val & INPUT_SERVICE_FLAG) {
+				/*
+				 * acknowledge to hw that software will
+				 * read input data
+				 */
+				val &= INPUT_SERVICE_FLAG;
+				writel(val, ds->regs->qup_operational);
 
-			fifo_count = ((read_bytes > SPI_INPUT_BLOCK_SIZE) ?
-					SPI_INPUT_BLOCK_SIZE : read_bytes);
+				fifo_count = ((read_bytes > SPI_INPUT_BLOCK_SIZE) ?
+						SPI_INPUT_BLOCK_SIZE : read_bytes);
 
-			for (i = 0; i < fifo_count; i++) {
-				*data_buffer = spi_read_byte(ds);
-				data_buffer++;
-				read_bytes--;
+				for (i = 0; i < fifo_count; i++) {
+					*data_buffer = spi_read_byte(ds);
+					data_buffer++;
+					read_bytes--;
+				}
 			}
 		}
-	}
-
-	if (flags & SPI_XFER_END) {
-		flush_fifos(ds);
-		clrsetbits_le32(ds->regs->io_control,
-				FORCE_CS_MSK, FORCE_CS_DIS);
-		goto out;
-	}
-
-	return ret;
 	}
 out:
 	/*
@@ -724,11 +699,35 @@ out:
 
 }
 
+static int blsp_spi_read(struct ipq_spi_slave *ds, u8 *data_buffer,
+				unsigned int bytes)
+{
+	int length, ret;
+
+	if (!(ds->use_dma)) {
+		while (bytes) {
+			length = (bytes < MAX_COUNT_SIZE) ? bytes : MAX_COUNT_SIZE;
+
+			ret = __blsp_spi_read(ds, data_buffer, length);
+			if (ret != SUCCESS)
+				return ret;
+
+			data_buffer += length;
+			bytes -= length;
+		}
+	} else {
+		ret = __blsp_spi_read(ds, data_buffer, bytes);
+		if (ret != SUCCESS)
+			return ret;
+	}
+	return 0;
+}
+
 /*
  * Function to write data to the Output FIFO
  */
-static int blsp_spi_write(struct ipq_spi_slave *ds, const u8 *cmd_buffer,
-				unsigned int bytes, unsigned long flags)
+static int __blsp_spi_write(struct ipq_spi_slave *ds, const u8 *cmd_buffer,
+				unsigned int bytes)
 {
 	uint32_t val;
 	unsigned int i;
@@ -737,11 +736,6 @@ static int blsp_spi_write(struct ipq_spi_slave *ds, const u8 *cmd_buffer,
 	unsigned int fifo_count;
 	int ret = SUCCESS;
 	int state_config;
-
-	/* Write Force cs */
-	clrsetbits_le32(ds->regs->io_control,
-               FORCE_CS_MSK, FORCE_CS_EN);
-
 
 	state_config = config_spi_state(ds, SPI_RESET_STATE);
 	if (state_config)
@@ -755,8 +749,11 @@ static int blsp_spi_write(struct ipq_spi_slave *ds, const u8 *cmd_buffer,
 		writel(0, ds->regs->qup_mx_input_count);
 	}
 	else {
-		 writel(bytes, ds->regs->qup_mx_output_count);
-		 writel(bytes, ds->regs->qup_mx_input_count);
+		writel(bytes, ds->regs->qup_mx_output_count);
+		writel(bytes, ds->regs->qup_mx_input_count);
+		state_config = config_spi_state(ds, SPI_RUN_STATE);
+		if (state_config)
+			return state_config;
 	}
 
 	/* Configure input and output enable */
@@ -767,76 +764,68 @@ static int blsp_spi_write(struct ipq_spi_slave *ds, const u8 *cmd_buffer,
 	}
 
 	if (ds->use_dma && write_len)
-	blsp_spi_bam_begin_xfer(ds, cmd_buffer,
-						    bytes, flags, WRITE);
+		blsp_spi_bam_begin_xfer(ds, cmd_buffer,
+							    bytes, WRITE);
 
 	else {
-	/*
-	 * read_len considered to ensure that we read the dummy data for the
-	 * write we performed. This is needed to ensure with WR-RD transaction
-	 * to get the actual data on the subsequent read cycle that happens
-	 */
-	while (write_len || read_len) {
-		ret = check_fifo_status(ds->regs->qup_operational);
-		if (ret != SUCCESS)
-			goto out;
+		/*
+		 * read_len considered to ensure that we read the dummy data for the
+		 * write we performed. This is needed to ensure with WR-RD transaction
+		 * to get the actual data on the subsequent read cycle that happens
+		 */
+		while (write_len || read_len) {
+			ret = check_fifo_status(ds->regs->qup_operational);
+			if (ret != SUCCESS)
+				goto out;
 
-		val = readl(ds->regs->qup_operational);
-		if (val & OUTPUT_SERVICE_FLAG) {
-			/*
-			 * acknowledge to hw that software will write
-			 * expected output data
-			 */
-			val &= OUTPUT_SERVICE_FLAG;
-			writel(val, ds->regs->qup_operational);
-
-			if (write_len > SPI_OUTPUT_BLOCK_SIZE)
-				fifo_count = SPI_OUTPUT_BLOCK_SIZE;
-			else
-				fifo_count = write_len;
-
-			for (i = 0; i < fifo_count; i++) {
-				/* Write actual data to output FIFO */
-				spi_write_byte(ds, *cmd_buffer);
-				cmd_buffer++;
-				write_len--;
-			}
-		}
-		if (val & INPUT_SERVICE_FLAG) {
-			/*
-			 * acknowledge to hw that software
-			 * will read input data
-			 */
-			val &= INPUT_SERVICE_FLAG;
-			writel(val, ds->regs->qup_operational);
-
-			if (read_len > SPI_INPUT_BLOCK_SIZE)
-				fifo_count = SPI_INPUT_BLOCK_SIZE;
-			else
-				fifo_count = read_len;
-
-			for (i = 0; i < fifo_count; i++) {
-				/* Read dummy data for the data written */
-				(void)spi_read_byte(ds);
-
-				/* Decrement the write count after reading the
-				 * dummy data from the device. This is to make
-				 * sure we read dummy data before we write the
-				 * data to fifo
+			val = readl(ds->regs->qup_operational);
+			if (val & OUTPUT_SERVICE_FLAG) {
+				/*
+				 * acknowledge to hw that software will write
+				 * expected output data
 				 */
-				read_len--;
+				val &= OUTPUT_SERVICE_FLAG;
+				writel(val, ds->regs->qup_operational);
+
+				if (write_len > SPI_OUTPUT_BLOCK_SIZE)
+					fifo_count = SPI_OUTPUT_BLOCK_SIZE;
+				else
+					fifo_count = write_len;
+
+				for (i = 0; i < fifo_count; i++) {
+					/* Write actual data to output FIFO */
+					spi_write_byte(ds, *cmd_buffer);
+					cmd_buffer++;
+					write_len--;
+				}
+			}
+			if (val & INPUT_SERVICE_FLAG) {
+				/*
+				 * acknowledge to hw that software
+				 * will read input data
+				 */
+				val &= INPUT_SERVICE_FLAG;
+				writel(val, ds->regs->qup_operational);
+
+				if (read_len > SPI_INPUT_BLOCK_SIZE)
+					fifo_count = SPI_INPUT_BLOCK_SIZE;
+				else
+					fifo_count = read_len;
+
+				for (i = 0; i < fifo_count; i++) {
+					/* Read dummy data for the data written */
+					(void)spi_read_byte(ds);
+
+					/* Decrement the write count after reading the
+					 * dummy data from the device. This is to make
+					 * sure we read dummy data before we write the
+					 * data to fifo
+					 */
+					read_len--;
+				}
 			}
 		}
-	}
 
-	if (flags & SPI_XFER_END) {
-		flush_fifos(ds);
-		clrsetbits_le32(ds->regs->io_control,
-				FORCE_CS_MSK, FORCE_CS_DIS);
-		goto out;
-	}
-
-	return ret;
 	}
 out:
 	/*
@@ -848,6 +837,30 @@ out:
 	return ret;
 }
 
+static int blsp_spi_write(struct ipq_spi_slave *ds, u8 *cmd_buffer,
+                                unsigned int bytes)
+{
+	int length, ret;
+
+	if (!(ds->use_dma)) {
+		while (bytes) {
+			length = (bytes < MAX_COUNT_SIZE) ? bytes : MAX_COUNT_SIZE;
+
+			ret = __blsp_spi_write(ds, cmd_buffer, length);
+			if (ret != SUCCESS)
+				return ret;
+
+			cmd_buffer += length;
+			bytes -= length;
+		}
+	} else {
+		ret = __blsp_spi_write(ds, cmd_buffer, bytes);
+		if (ret != SUCCESS)
+			return ret;
+	}
+
+	return 0;
+}
 /*
  * This function is invoked with either tx_buf or rx_buf.
  * Calling this function with both null does a chip select change.
@@ -869,25 +882,29 @@ int spi_xfer(struct spi_slave *slave, unsigned int bitlen,
 	len = bitlen >> 3;
 
 	if (flags & SPI_XFER_BEGIN) {
-		clrsetbits_le32(ds->regs->io_control,
-			FORCE_CS_MSK, FORCE_CS_DIS);
+		if (!(ds->use_dma)) {
+			ret = spi_hw_init(ds);
+			if (ret != SUCCESS)
+				return ret;
+		}
+		write_force_cs(ds, 1);
 	}
 
 	if (dout != NULL) {
-		ret = blsp_spi_write(ds, txp, len, flags);
+		ret = blsp_spi_write(ds, txp, len);
 		if (ret != SUCCESS)
 			return ret;
 	}
 
 	if (din != NULL) {
-		ret = blsp_spi_read(ds, rxp, len, flags);
+		ret = blsp_spi_read(ds, rxp, len);
 		if (ret != SUCCESS)
 		return ret;
 	}
 
 	if (flags & SPI_XFER_END) {
-		clrsetbits_le32(ds->regs->io_control,
-			FORCE_CS_MSK, FORCE_CS_DIS);
+		/* To handle only when chip select change is needed */
+		write_force_cs(ds, 0);
 	}
 
 	return ret;
