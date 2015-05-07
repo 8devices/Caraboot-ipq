@@ -173,7 +173,7 @@ typedef struct {
 #define CONFIG_SYS_NAND_SELF_INIT
 #define CONFIG_SYS_NAND_ONFI_DETECTION
 
-#define CONFIG_IPQ_MAX_SPI_DEVICE	1
+#define CONFIG_IPQ_MAX_SPI_DEVICE	2
 #define CONFIG_IPQ_MAX_NAND_DEVICE	1
 
 #define CONFIG_IPQ_NAND_NAND_INFO_IDX	0
@@ -196,6 +196,8 @@ typedef struct {
 #define CONFIG_IPQ40XX_XIP	1
 
 #define CONFIG_QUP_SPI_USE_DMA 1
+
+#define CONFIG_SPI_NAND_GIGA 1
 /*
  * ESS Configs
  */

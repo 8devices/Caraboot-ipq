@@ -33,6 +33,22 @@
 /* Common status */
 #define STATUS_WIP			0x01
 
+/* SPI Nand commands */
+#ifdef CONFIG_SPI_NAND
+#define SPI_NAND_CMD_WRITE_ENABLE	0x06
+#define SPI_NAND_CMD_WRITE_DISABLE	0x04
+#define SPI_NAND_CMD_GET_FEATURE	0x0f
+#define SPI_NAND_CMD_SET_FEATURE	0x1f
+#define SPI_NAND_CMD_PAGE_READ_TO_CACHE	0x13
+#define SPI_NAND_CMD_READ_FROM_CACHE	0x03
+#define SPI_NAND_CMD_READ_ID		0x9f
+#define SPI_NAND_CMD_BLOCK_ERASE	0xd8
+#define SPI_NAND_CMD_RESET		0xff
+#define SPI_NAND_CMD_PROGRAM_LOAD	0x02
+#define SPI_NAND_CMD_PROGRAM_EXECUTE	0x10
+#define ATH_SPI_NAND_BLK_PROT		0xa0
+#endif
+
 /* Send a single-byte command to the device and read the response */
 int spi_flash_cmd(struct spi_slave *spi, u8 cmd, void *response, size_t len);
 
@@ -110,3 +126,4 @@ struct spi_flash *spi_flash_probe_sst(struct spi_slave *spi, u8 *idcode);
 struct spi_flash *spi_flash_probe_stmicro(struct spi_slave *spi, u8 *idcode);
 struct spi_flash *spi_flash_probe_winbond(struct spi_slave *spi, u8 *idcode);
 struct spi_flash *spi_fram_probe_ramtron(struct spi_slave *spi, u8 *idcode);
+struct spi_flash *spi_nand_flash_probe(struct spi_slave *spi, u8 *idcode);

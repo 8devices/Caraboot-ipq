@@ -206,6 +206,43 @@ int spi_flash_cmd_wait_ready(struct spi_flash *flash, unsigned long timeout)
 		CMD_READ_STATUS, STATUS_WIP);
 }
 
+int spi_nand_flash_cmd_poll_bit(struct spi_flash *flash, unsigned long timeout,
+                           u8 cmd, u8 poll_bit, u8 *status)
+{
+	struct spi_slave *spi = flash->spi;
+	unsigned long timebase;
+	int ret;
+	u8 cmd_buf[2];
+
+	cmd_buf[0] = 0x0F;
+	cmd_buf[1] = cmd;
+
+	timebase = get_timer(0);
+	do {
+		WATCHDOG_RESET();
+
+		ret = spi_flash_cmd_read(spi, cmd_buf, 2, status, 1);
+		if ((*status & poll_bit) == 0)
+			break;
+
+	} while (get_timer(timebase) < timeout);
+
+	if ((*status & poll_bit) == 0)
+		return 0;
+
+	/* Timed out */
+	debug("SF: time out!\n");
+	return -1;
+}
+
+int spi_nand_flash_cmd_wait_ready(struct spi_flash *flash, u8 status_bit, u8 *status,
+                                  unsigned long timeout)
+{
+	return spi_nand_flash_cmd_poll_bit(flash, timeout,
+					   0xC0, status_bit, status);
+}
+
+
 static int spi_flash_cmd_erase_block_or_sector(struct spi_flash *flash, u8 erase_cmd,
 					u32 erase_size, u32 offset, size_t len)
 {
@@ -357,6 +394,9 @@ static const struct {
 #endif
 #ifdef CONFIG_SPI_FRAM_RAMTRON_NON_JEDEC
 	{ 0, 0xff, spi_fram_probe_ramtron, },
+#endif
+#ifdef CONFIG_SPI_NAND_GIGA
+	{ 0, 0xc8, spi_nand_flash_probe, },
 #endif
 };
 #define IDCODE_LEN (IDCODE_CONT_LEN + IDCODE_PART_LEN)

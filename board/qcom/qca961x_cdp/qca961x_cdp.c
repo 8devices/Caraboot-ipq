@@ -63,6 +63,9 @@ extern int qca961x_edma_init(qca961x_edma_board_cfg_t *edma_cfg);
 #ifdef CONFIG_QCA_MMC
 qca_mmc mmc_host;
 #endif
+
+extern int spi_nand_init(void);
+
 /*
  * Don't have this as a '.bss' variable. The '.bss' and '.rel.dyn'
  * sections seem to overlap.
@@ -314,6 +317,7 @@ void board_nand_init(void)
 
 	qpic_nand_init(&config);
 #endif
+	spi_nand_init();
 }
 
 int board_eth_init(bd_t *bis)
