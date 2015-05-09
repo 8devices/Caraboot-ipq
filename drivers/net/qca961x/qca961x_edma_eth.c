@@ -852,6 +852,10 @@ int qca961x_edma_init(qca961x_edma_board_cfg_t *edma_cfg)
 		c_info[i]->q_cinfo[i].rx_status = 0;
 		c_info[i]->q_cinfo[i].c_info = c_info[i];
 
+		ret = ipq40xx_sw_mdio_init(edma_cfg->phy_name);
+		if (ret)
+			goto failed;
+
 		eth_register(dev[i]);
 		/*
 		 * Configure EDMA This should

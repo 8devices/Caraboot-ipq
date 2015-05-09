@@ -87,6 +87,7 @@ COBJS-$(CONFIG_IPQ_SWITCH_ATHRS17) += ../../board/qcom/common/athrs17_phy.o
 COBJS-$(CONFIG_IPQ_SWITCH_QCA8511) += ../../board/qcom/common/qca8511.o
 COBJS-$(CONFIG_QCA961X_EDMA) += qca961x/qca961x_edma_eth.o
 COBJS-$(CONFIG_QCA961X_ESS) += qca961x/qca961x_ess_sw.o
+COBJS-$(CONFIG_IPQ40XX_MDIO) += qca961x/ipq40xx_mdio.o
 
 COBJS	:= $(sort $(COBJS-y))
 SRCS	:= $(COBJS:.o=.c)
