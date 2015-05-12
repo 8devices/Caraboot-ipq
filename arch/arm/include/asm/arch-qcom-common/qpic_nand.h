@@ -408,7 +408,6 @@ struct qpic_nand_dev {
 	unsigned cw_size;
 	unsigned cws_per_page;
 	unsigned bad_blk_loc;
-	unsigned blksize;
 	unsigned dev_cfg;
 	uint32_t cfg0;
 	uint32_t cfg1;
