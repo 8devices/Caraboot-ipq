@@ -76,7 +76,7 @@ struct queue_per_cpu_info {
 	u32 rx_status; /* rx interrupt status */
 	u32 tx_start; /* tx queue start */
 	u32 rx_start; /* rx queue start */
-	struct edma_common_info *c_info; /* edma common info */
+	struct qca961x_edma_common_info *c_info; /* edma common info */
 };
 
 /* edma hw specific data */
@@ -151,7 +151,7 @@ static inline void* qca961x_alloc_mem(u32 size)
 
 static inline void qca961x_free_mem(void *ptr)
 {
-	if(ptr)
+	if (ptr)
 		free(ptr);
 }
 #endif	/* _QCA961X_EDMA_H */

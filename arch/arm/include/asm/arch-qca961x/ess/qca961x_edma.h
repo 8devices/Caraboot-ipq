@@ -326,5 +326,47 @@
 #define PATTERN_PART_REG_OFFSET		0x40
 
 #define NETDEV_TX_BUSY	1
+#define PHY_MAX		5
+
+/* Phy preferred medium type */
+typedef enum {
+	QCA8075_PHY_MEDIUM_COPPER = 0,
+	QCA8075_PHY_MEDIUM_FIBER = 1, /**< Fiber */
+} qca8075_phy_medium_t;
+
+/* Phy pages */
+typedef enum {
+	QCA8075_PHY_SGBX_PAGES = 0, /* sgbx pages */
+	QCA8075_PHY_COPPER_PAGES = 1 /* copper pages */
+} qca8075_phy_reg_pages_t;
+typedef enum {
+	FAL_HALF_DUPLEX = 0,
+	FAL_FULL_DUPLEX,
+	FAL_DUPLEX_BUTT = 0xffff
+} fal_port_duplex_t;
+
+typedef enum {
+	FAL_SPEED_10 = 10,
+	FAL_SPEED_100 = 100,
+	FAL_SPEED_1000 = 1000,
+	FAL_SPEED_10000 = 10000,
+	FAL_SPEED_BUTT = 0xffff,
+} fal_port_speed_t;
+
+typedef enum {
+	FAL_CABLE_STATUS_NORMAL = 0,
+	FAL_CABLE_STATUS_SHORT = 1,
+	FAL_CABLE_STATUS_OPENED = 2,
+	FAL_CABLE_STATUS_INVALID = 3,
+	FAL_CABLE_STATUS_BUTT = 0xffff,
+} fal_cable_status_t;
+
 void qca961x_register_switch(int(*sw_init)(qca961x_edma_board_cfg_t *cfg));
+int ipq40xx_qca8075_phy_init(qca961x_edma_board_cfg_t *cfg);
+u8  qca8075_phy_get_link_status(u32 dev_id, u32 phy_id);
+u32 qca8075_phy_get_duplex(u32 dev_id, u32 phy_id,
+			fal_port_duplex_t * duplex);
+u32 qca8075_phy_get_speed(u32 dev_id, u32 phy_id,
+			fal_port_speed_t * speed);
+int ipq40xx_sw_mdio_init(char *name);
 #endif	/* _QCA961X_EDMA_H */

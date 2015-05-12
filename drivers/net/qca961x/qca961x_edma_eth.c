@@ -482,9 +482,10 @@ static int qca961x_edma_rx_complete(
 	struct qca961x_edma_desc_ring *erdr = c_info->rfd_ring[queue_id];
 	struct edma_sw_desc *sw_desc;
 	uchar *skb;
+	int rx = CONFIG_SYS_RX_ETH_BUFFER;
 	sw_next_to_clean = erdr->sw_next_to_clean;
 
-	while (1) {
+	while (rx) {
 		sw_desc = &erdr->sw_desc[sw_next_to_clean];
 		qca961x_edma_read_reg(EDMA_REG_RFD_IDX_Q(queue_id), &data);
 		hw_next_to_clean = (data >> RFD_CONS_IDX_SHIFT) &
@@ -511,6 +512,7 @@ static int qca961x_edma_rx_complete(
 		}
 		skb = (u32 *)skb + 4;
 		NetReceive(skb, length);
+		rx--;
 	}
 	erdr->sw_next_to_clean = sw_next_to_clean;
 	/* alloc_rx_buf */
@@ -551,7 +553,13 @@ static int qca961x_eth_init(struct eth_device *eth_dev, bd_t *this)
 	struct qca961x_edma_common_info *c_info = priv->c_info;
 	struct qca961x_edma_desc_ring *ring;
 	struct qca961x_edma_hw *hw;
+	static int linkup = 0;
 	int i;
+	u8 status;
+	fal_port_speed_t speed;
+	fal_port_duplex_t duplex;
+	char *lstatus[] = {"up", "Down"};
+	char *dp[] = {"Half", "Full"};
 	hw = &c_info->hw;
 	/*
 	 * Allocate the RX buffer
@@ -560,7 +568,38 @@ static int qca961x_eth_init(struct eth_device *eth_dev, bd_t *this)
 	ring = c_info->rfd_ring[priv->mac_unit];
 	qca961x_edma_alloc_rx_buf(c_info, ring, ring->count,
 					priv->mac_unit);
+	/*
+	 * Check PHY link, speed, Duplex on all phys.
+	 * we will proceed even if single link is up
+	 * else we will return with -1;
+	 */
+	for (i =  0; i < PHY_MAX; i++) {
+		status = qca8075_phy_get_link_status(priv->mac_unit, i);
+		if (status == 0)
+			linkup++;
+		qca8075_phy_get_speed(priv->mac_unit, i, &speed);
+		qca8075_phy_get_duplex(priv->mac_unit, i, &duplex);
+		switch (speed) {
+		case FAL_SPEED_10:
+		case FAL_SPEED_100:
+		case FAL_SPEED_1000:
+			printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
+				priv->mac_unit, i, lstatus[status], speed,
+				dp[duplex]);
+			break;
+		default:
+			printf("Unknown speed\n");
+			break;
+		}
+	}
 
+	if (linkup < 0) {
+		/* No PHY link is alive */
+		return -1;
+	} else {
+		/* reset the flag */
+		linkup = 0;
+	}
 	/* Configure RSS indirection table.
 	 * 128 hash will be configured in the following
 	 * pattern: hash{0,1,2,3} = {Q0,Q2,Q4,Q6} respectively
@@ -577,7 +616,7 @@ static int qca961x_eth_init(struct eth_device *eth_dev, bd_t *this)
 
 static int qca961x_eth_snd(struct eth_device *dev, void *packet, int length)
 {
-	int ret, num_tpds_needed;
+	int num_tpds_needed;
 	struct qca961x_eth_dev *priv = dev->priv;
 	struct qca961x_edma_common_info *c_info = priv->c_info;
 	struct queue_per_cpu_info *q_cinfo = c_info->q_cinfo;
@@ -762,6 +801,7 @@ int qca961x_edma_init(qca961x_edma_board_cfg_t *edma_cfg)
 {
 	static int qca961x_ess_init_done = 0;
 	static int cfg_edma  = 0;
+	static int sw_init_done = 0;
 	struct eth_device *dev[QCA961X_EDMA_DEV];
 	struct qca961x_edma_common_info *c_info[QCA961X_EDMA_DEV];
 	struct qca961x_edma_hw *hw[QCA961X_EDMA_DEV];
@@ -878,6 +918,15 @@ int qca961x_edma_init(qca961x_edma_board_cfg_t *edma_cfg)
 		if (!qca961x_ess_init_done) {
 			qca961x_ess_sw_init(edma_cfg);
 			qca961x_ess_init_done = 1;
+		}
+
+		if (!sw_init_done) {
+			if (qca961x_switch_init(edma_cfg) == 0) {
+				sw_init_done = 1;
+			} else {
+				printf ("SW inits failed\n");
+				goto failed;
+			}
 		}
 	}
 	return 0;

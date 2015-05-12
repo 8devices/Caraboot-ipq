@@ -179,7 +179,7 @@ int board_eth_init(bd_t *bis)
 	u32 status;
 	switch (gboard_param->machid) {
 	case MACH_TYPE_QCA961X_RUMI:
-		qca961x_register_switch(NULL);
+		qca961x_register_switch(ipq40xx_qca8075_phy_init);
 		break;
 	default:
 		break;
