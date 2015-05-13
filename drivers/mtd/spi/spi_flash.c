@@ -398,8 +398,12 @@ static const struct {
 #ifdef CONFIG_SPI_NAND_GIGA
 	{ 0, 0xc8, spi_nand_flash_probe, },
 #endif
+#ifdef CONFIG_SPI_NAND_ATO
+	{ 0, 0x9b, spi_nand_flash_probe, },
+#endif
 };
 #define IDCODE_LEN (IDCODE_CONT_LEN + IDCODE_PART_LEN)
+#define MFID_ATO	0x9b
 
 struct spi_flash *spi_flash_probe(unsigned int bus, unsigned int cs,
 		unsigned int max_hz, unsigned int spi_mode)
@@ -436,6 +440,11 @@ struct spi_flash *spi_flash_probe(unsigned int bus, unsigned int cs,
 	     shift < IDCODE_CONT_LEN && *idp == 0x7f;
 	     ++shift, ++idp)
 		continue;
+
+#ifdef CONFIG_SPI_NAND_ATO
+	if (idcode[1] == MFID_ATO)
+		++idp;
+#endif
 
 	/* search the table for matches in shift and id */
 	for (i = 0; i < ARRAY_SIZE(flashes); ++i)

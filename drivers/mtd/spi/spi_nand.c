@@ -21,6 +21,7 @@
 
 #define CONFIG_SF_DEFAULT_SPEED		(48 * 1000 * 1000)
 #define TIMEOUT		5000
+#define MFID_ATO	0x9b
 
 #define spi_print(...)  printf("spi_nand: " __VA_ARGS__)
 
@@ -36,6 +37,16 @@ static const struct spi_nand_flash_params spi_nand_flash_tbl[] = {
 		.nr_sectors = 1024,
 		.oob_size = 64,
 		.name = "GIGA_DEVICE",
+	},
+	{
+		.mid = 0x9b,
+		.devid = 0x12,
+		.page_size = 2048,
+		.erase_size = 0x00020000,
+		.pages_per_sector = 64,
+		.nr_sectors = 1024,
+		.oob_size = 64,
+		.name = "ATO_DEVICE",
 	},
 };
 
@@ -306,7 +317,11 @@ struct spi_flash *spi_nand_flash_probe(struct spi_slave *spi,
 	u32 mfid;
 
 	mfid = idcode[0];
-	devid = (idcode[1] << 8 | idcode[2]);
+
+	if (mfid == MFID_ATO)
+		devid = idcode[1];
+	else
+		devid = (idcode[1] << 8 | idcode[2]);
 
 	for (i = 0; i < ARRAY_SIZE(spi_nand_flash_tbl); i++) {
 		params = &spi_nand_flash_tbl[i];
