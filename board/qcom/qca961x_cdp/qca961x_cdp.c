@@ -44,6 +44,7 @@
 #include <asm/arch-qcom-common/qpic_nand.h>
 #endif
 #include <asm/arch-qcom-common/clk.h>
+#include <asm/arch-qca961x/smem.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -85,20 +86,63 @@ qca_mmc mmc_host;
  */
 board_qca961x_params_t *gboard_param = (board_qca961x_params_t *)0xbadb0ad;
 
+/*******************************************************
+ Function description: Board specific initialization.
+ I/P : None
+ O/P : integer, 0 - no error.
+
+********************************************************/
+static board_qca961x_params_t *get_board_param(unsigned int machid)
+{
+	unsigned int index;
+
+	printf("machid : %d\n",machid);
+	for (index = 0; index < NUM_QCA961X_BOARDS; index++) {
+		if (machid == board_params[index].machid)
+			return &board_params[index];
+	}
+	BUG_ON(index == NUM_QCA961X_BOARDS);
+	printf("cdp: Invalid machine id 0x%x\n", machid);
+	for (;;);
+}
+
+
 int env_init(void)
 {
-	return nand_env_init();
+	qca_smem_flash_info_t sfi;
+
+	smem_get_boot_flash(&sfi.flash_type,
+				&sfi.flash_index,
+				&sfi.flash_chip_select,
+				&sfi.flash_block_size);
+
+	if (sfi.flash_type != SMEM_BOOT_MMC_FLASH) {
+		nand_env_init();
+	}
 }
 
 void env_relocate_spec(void)
 {
-	nand_env_relocate_spec();
+	qca_smem_flash_info_t sfi;
+
+	smem_get_boot_flash(&sfi.flash_type,
+				&sfi.flash_index,
+				&sfi.flash_chip_select,
+				&sfi.flash_block_size);
+
+	if (sfi.flash_type != SMEM_BOOT_MMC_FLASH) {
+		nand_env_relocate_spec();
+	}
+
 };
 
 int board_init(void)
 {
-	/* Hardcoded board param for now. Need to retrieve from SMEM */
-	gboard_param = board_params;
+	int ret;
+	uint32_t start_blocks;
+	uint32_t size_blocks;
+	loff_t board_env_size;
+	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 
 #ifdef CONFIG_IPQ_NAND
 	nand_env_device = CONFIG_IPQ_NAND_NAND_INFO_IDX;
@@ -106,17 +150,115 @@ int board_init(void)
 	/* Hardcode everything for NAND */
 	nand_env_device = CONFIG_QPIC_NAND_NAND_INFO_IDX;
 #endif
-	board_env_offset = 0x40000;
-	board_env_range = CONFIG_ENV_SIZE_MAX;
-	saveenv = nand_saveenv;
-	env_ptr = nand_env_ptr;
-	env_name_spec = nand_env_name_spec;
 
+	gd->bd->bi_boot_params = QCA_BOOT_PARAMS_ADDR;
+	gd->bd->bi_arch_number = smem_get_board_machtype();
+	gboard_param = get_board_param(gd->bd->bi_arch_number);
+
+	ret = smem_get_boot_flash(&sfi->flash_type,
+					&sfi->flash_index,
+					&sfi->flash_chip_select,
+					&sfi->flash_block_size);
+	if (ret < 0) {
+		printf("cdp: get boot flash failed\n");
+		return ret;
+	}
+
+	/*
+	 * Should be inited, before env_relocate() is called,
+	 * since env. offset is obtained from SMEM.
+	 */
+	if (sfi->flash_type != SMEM_BOOT_MMC_FLASH) {
+		ret = smem_ptable_init();
+		if (ret < 0) {
+			printf("cdp: SMEM init failed\n");
+			return ret;
+		}
+	}
+
+	if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
+		nand_env_device = CONFIG_QPIC_NAND_NAND_INFO_IDX;
+	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
+		nand_env_device = CONFIG_IPQ_SPI_NAND_INFO_IDX;
+	} else {
+		printf("BUG: unsupported flash type : %d\n", sfi->flash_type);
+		BUG();
+	}
+
+	if (sfi->flash_type != SMEM_BOOT_MMC_FLASH) {
+		ret = smem_getpart("0:APPSBLENV", &start_blocks, &size_blocks);
+		if (ret < 0) {
+			printf("cdp: get environment part failed\n");
+			return ret;
+		}
+
+		board_env_offset = ((loff_t) sfi->flash_block_size) * start_blocks;
+		board_env_size = ((loff_t) sfi->flash_block_size) * size_blocks;
+	}
+
+	if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
+		board_env_range = CONFIG_ENV_SIZE_MAX;
+		BUG_ON(board_env_size < CONFIG_ENV_SIZE_MAX);
+	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
+		board_env_range = board_env_size;
+		BUG_ON(board_env_size > CONFIG_ENV_SIZE_MAX);
+	} else {
+		printf("BUG: unsupported flash type : %d\n", sfi->flash_type);
+		BUG();
+	}
+
+	if (sfi->flash_type != SMEM_BOOT_MMC_FLASH) {
+		saveenv = nand_saveenv;
+		env_ptr = nand_env_ptr;
+		env_name_spec = nand_env_name_spec;
+	}
 	return 0;
+}
+
+void qca_get_part_details(void)
+{
+	int ret, i;
+	uint32_t start;         /* block number */
+	uint32_t size;          /* no. of blocks */
+
+	qca_smem_flash_info_t *smem = &qca_smem_flash_info;
+
+	struct { char *name; qca_part_entry_t *part; } entries[] = {
+		{ "0:HLOS", &smem->hlos },
+		{ "rootfs", &smem->rootfs },
+	};
+
+	for (i = 0; i < ARRAY_SIZE(entries); i++) {
+		ret = smem_getpart(entries[i].name, &start, &size);
+		if (ret < 0) {
+			qca_part_entry_t *part = entries[i].part;
+			printf("cdp: get part failed for %s\n", entries[i].name);
+			part->offset = 0xBAD0FF5E;
+			part->size = 0xBAD0FF5E;
+		} else {
+			qca_set_part_entry(smem, entries[i].part, start, size);
+		}
+	}
+
+	return;
 }
 
 int board_late_init(void)
 {
+	unsigned int machid;
+	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
+
+	if (sfi->flash_type != SMEM_BOOT_MMC_FLASH) {
+		qca_get_part_details();
+	}
+
+	/* get machine type from SMEM and set in env */
+	machid = gd->bd->bi_arch_number;
+	if (machid != 0) {
+		setenv_addr("machid", (void *)machid);
+		gd->bd->bi_arch_number = machid;
+	}
+
 	return 0;
 }
 

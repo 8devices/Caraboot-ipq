@@ -114,7 +114,7 @@ typedef struct {
 
 #define QCA_MEM_RESERVE_SIZE(x)		sizeof(((qca_mem_reserve_t *)0)->x)
 #define QCA_MEM_RESERVE_BASE(x)		\
-	(CONFIG_SYS_SDRAM_BASE + \
+	(CONFIG_SYS_TEXT_BASE + \
 	 ((uint32_t)&(((qca_mem_reserve_t *)0)->x)))
 #endif
 
@@ -124,6 +124,8 @@ typedef struct {
 
 #define QCA_DRAM_KERNEL_SIZE	\
 	(CONFIG_SYS_SDRAM_SIZE - GENERATED_QCA_RESERVE_SIZE)
+
+#define QCA_BOOT_PARAMS_ADDR	(QCA_KERNEL_START_ADDR + 0x100)
 #endif
 
 /* Environment */

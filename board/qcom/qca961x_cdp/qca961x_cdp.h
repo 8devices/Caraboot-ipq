@@ -37,6 +37,9 @@
 #include "../common/qca_common.h"
 
 #define NO_OF_DBG_UART_GPIOS	2
+
+unsigned int smem_get_board_machtype(void);
+
 #define QCA961X_EDMA_DEV	1
 typedef struct {
 	uint count;
