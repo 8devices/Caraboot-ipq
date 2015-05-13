@@ -424,7 +424,7 @@ int spi_nand_init(void)
 	}
 
 	flash = spi_flash_probe(CONFIG_SF_DEFAULT_BUS,
-				CONFIG_SF_DEFAULT_CS,
+				CONFIG_SF_SPI_NAND_CS,
 				CONFIG_SF_DEFAULT_SPEED,
 				CONFIG_SF_DEFAULT_MODE);
 	if (!flash) {

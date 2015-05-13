@@ -121,6 +121,7 @@
 #define SLAVE_OPERATION				(0 << 5)
 #define CLK_ALWAYS_ON				(0 << 9)
 #define MX_CS_MODE					(1 << 8)
+#define CS_POLARITY_MASK			(1 << 4)
 #define NO_TRI_STATE				(1 << 0)
 #define FORCE_CS_MSK				(1 << 11)
 #define FORCE_CS_EN					(1 << 11)
@@ -298,6 +299,22 @@ struct bam_desc qup_spi_data_desc_fifo[QUP_BAM_DATA_FIFO_SIZE] __attribute__ ((a
 
 #define min_t(type, x, y) \
     ({ type __x = (x); type __y = (y); __x < __y ? __x : __y; })
+
+#define NUM_PORTS				1
+#define NUM_CS					2
+
+#define FUNC_SEL_GPIO				0
+#define GPIO_DRV_STR_10MA			0x4
+#define GPIO_OUT				1
+
+#define FUNC_SEL_GPIO				0
+#define GPIO_FUNC_ENABLE			1
+/* QUP0 CS GPIO mapping*/
+#define QUP0_SPI_CS_0				54
+#define QUP0_SPI_CS_1				59
+#define GPIO_OUT				1
+#define CS_ASSERT				1
+#define CS_DEASSERT				0
 
 #endif /* _QCA961X_SPI_H_ */
 
