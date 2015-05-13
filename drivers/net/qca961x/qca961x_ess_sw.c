@@ -32,7 +32,7 @@ static inline qca961x_ess_sw_wr(u32 addr, u32 data)
 int qca961x_ess_sw_init(qca961x_edma_board_cfg_t *cfg)
 {
 	switch(gboard_param->machid) {
-	case MACH_TYPE_QCA961X_RUMI:
+	case MACH_TYPE_IPQ40XX_AP_DK01_1_C1:
 		qca961x_ess_sw_wr(S17_P0STATUS_REG, 0x4e);
 		qca961x_ess_sw_wr(S17_P1STATUS_REG, 0x4e);
 		qca961x_ess_sw_wr(S17_P2STATUS_REG, 0x4e);

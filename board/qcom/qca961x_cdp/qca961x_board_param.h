@@ -50,7 +50,7 @@
 /* Board specific parameter Array */
 board_qca961x_params_t board_params[] = {
 	{
-		.machid = MACH_TYPE_QCA961X_RUMI,
+		.machid = MACH_TYPE_IPQ40XX_AP_DK01_1_C1,
 		.ddr_size = (256 << 20),
 		.uart_dm_base = UART1_DM_BASE,
 		.dbg_uart_gpio = {
@@ -72,7 +72,7 @@ board_qca961x_params_t board_params[] = {
 		},
 	},
 	{
-		.machid = MACH_TYPE_QCA961X_VIRTIO,
+		.machid = MACH_TYPE_IPQ40XX_AP_DK01_1_C2,
 		.ddr_size = (256 << 20),
 		.uart_dm_base = UART1_DM_BASE,
 		.dbg_uart_gpio = {
@@ -89,9 +89,143 @@ board_qca961x_params_t board_params[] = {
 				.oe = GPIO_OE_ENABLE
 			},
 		},
-
+		.edma_cfg = {
+			qca961x_edma_cfg(0, 5, 0, 1, 2, 3, 4)
+		},
+	},
+	{
+		.machid = MACH_TYPE_IPQ40XX_AP_DK04_1_C1,
+		.ddr_size = (256 << 20),
+		.uart_dm_base = UART1_DM_BASE,
+		.dbg_uart_gpio = {
+			{
+				.gpio = 16,
+				.func = 1,
+				.pull = GPIO_NO_PULL,
+				.oe = GPIO_OE_ENABLE
+			},
+			{
+				.gpio = 17,
+				.func = 1,
+				.pull = GPIO_NO_PULL,
+				.oe = GPIO_OE_ENABLE
+			},
+		},
+		.edma_cfg = {
+			qca961x_edma_cfg(0, 5, 0, 1, 2, 3, 4)
+		},
+	},
+	{
+		.machid = MACH_TYPE_IPQ40XX_AP_DK04_1_C2,
+		.ddr_size = (256 << 20),
+		.uart_dm_base = UART1_DM_BASE,
+		.dbg_uart_gpio = {
+			{
+				.gpio = 16,
+				.func = 1,
+				.pull = GPIO_NO_PULL,
+				.oe = GPIO_OE_ENABLE
+			},
+			{
+				.gpio = 17,
+				.func = 1,
+				.pull = GPIO_NO_PULL,
+				.oe = GPIO_OE_ENABLE
+			},
+		},
+		.edma_cfg = {
+			qca961x_edma_cfg(0, 5, 0, 1, 2, 3, 4)
+		},
+	},
+	{
+		.machid = MACH_TYPE_IPQ40XX_AP_DK04_1_C3,
+		.ddr_size = (256 << 20),
+		.uart_dm_base = UART1_DM_BASE,
+		.dbg_uart_gpio = {
+			{
+				.gpio = 16,
+				.func = 1,
+				.pull = GPIO_NO_PULL,
+				.oe = GPIO_OE_ENABLE
+			},
+			{
+				.gpio = 17,
+				.func = 1,
+				.pull = GPIO_NO_PULL,
+				.oe = GPIO_OE_ENABLE
+			},
+		},
+		.edma_cfg = {
+			qca961x_edma_cfg(0, 5, 0, 1, 2, 3, 4)
+		},
+	},
+	{
+		.machid = MACH_TYPE_IPQ40XX_DB152,
+		.ddr_size = (256 << 20),
+		.uart_dm_base = UART1_DM_BASE,
+		.dbg_uart_gpio = {
+			{
+				.gpio = 16,
+				.func = 1,
+				.pull = GPIO_NO_PULL,
+				.oe = GPIO_OE_ENABLE
+			},
+			{
+				.gpio = 17,
+				.func = 1,
+				.pull = GPIO_NO_PULL,
+				.oe = GPIO_OE_ENABLE
+			},
+		},
+		.edma_cfg = {
+			qca961x_edma_cfg(0, 5, 0, 1, 2, 3, 4)
+		},
+	},
+	{
+		.machid = MACH_TYPE_IPQ40XX_DB153,
+		.ddr_size = (256 << 20),
+		.uart_dm_base = UART1_DM_BASE,
+		.dbg_uart_gpio = {
+			{
+				.gpio = 16,
+				.func = 1,
+				.pull = GPIO_NO_PULL,
+				.oe = GPIO_OE_ENABLE
+			},
+			{
+				.gpio = 17,
+				.func = 1,
+				.pull = GPIO_NO_PULL,
+				.oe = GPIO_OE_ENABLE
+			},
+		},
+		.edma_cfg = {
+			qca961x_edma_cfg(0, 5, 0, 1, 2, 3, 4)
+		},
+	},
+	{
+		.machid = MACH_TYPE_IPQ40XX_TB832,
+		.ddr_size = (256 << 20),
+		.uart_dm_base = UART1_DM_BASE,
+		.dbg_uart_gpio = {
+			{
+				.gpio = 16,
+				.func = 1,
+				.pull = GPIO_NO_PULL,
+				.oe = GPIO_OE_ENABLE
+			},
+			{
+				.gpio = 17,
+				.func = 1,
+				.pull = GPIO_NO_PULL,
+				.oe = GPIO_OE_ENABLE
+			},
+		},
+		.edma_cfg = {
+			qca961x_edma_cfg(0, 5, 0, 1, 2, 3, 4)
+		},
 	},
 };
 
-#define NUM_QCA961X_BOARDS	ARRAY_SIZE(board_params)
+#define NUM_IPQ40XX_BOARDS	ARRAY_SIZE(board_params)
 #endif /* _QCA961X_BOARD_PARAM_H_ */

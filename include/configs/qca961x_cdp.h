@@ -118,7 +118,7 @@ typedef struct {
 	 ((uint32_t)&(((qca_mem_reserve_t *)0)->x)))
 #endif
 
-#define CONFIG_QCA_SMEM_BASE		QCA_MEM_RESERVE_BASE(smem)
+#define CONFIG_QCA_SMEM_BASE		0x87e00000
 #define QCA_KERNEL_START_ADDR	\
 	(CONFIG_SYS_SDRAM_BASE + GENERATED_QCA_RESERVE_SIZE)
 

@@ -37,9 +37,33 @@
 
 extern int nand_env_device;
 
+#define BUILD_ID_LEN 32
+
+typedef struct smem_pmic_type
+{
+	unsigned pmic_model;
+	unsigned pmic_die_revision;
+}pmic_type;
+
+struct qca_platfrom {
+	unsigned  format;
+	unsigned id;
+	unsigned version;
+	char     build_id[BUILD_ID_LEN];
+	unsigned raw_id;
+	unsigned raw_version;
+	unsigned hw_platform;
+	unsigned platform_version;
+	unsigned accessory_chip;
+	unsigned hw_platform_subtype;
+	pmic_type pmic_info[3];
+	unsigned foundry_id;
+};
+
 typedef enum {
 	SMEM_SPINLOCK_ARRAY = 7,
 	SMEM_AARM_PARTITION_TABLE = 9,
+	SMEM_HW_SW_BUILD_ID = 137,
 	SMEM_USABLE_RAM_PARTITION_TABLE = 402,
 	SMEM_POWER_ON_STATUS_INFO = 403,
 	SMEM_BOOT_FLASH_TYPE = 478,
@@ -339,6 +363,22 @@ unsigned int smem_get_board_machtype(void)
 	} else {
 		printf("smem: get machine type from smem failed\n");
 	}
+
+	return machid;
+}
+
+unsigned int smem_get_board_platform_type()
+{
+	int smem_status;
+	struct qca_platfrom platform_type;
+	unsigned int machid = 0;
+	smem_read_alloc_entry(SMEM_HW_SW_BUILD_ID, &platform_type,
+		sizeof(struct qca_platfrom));
+
+	machid = ((platform_type.hw_platform << 24) |
+		((SOCINFO_VERSION_MAJOR(platform_type.version)) << 16) |
+		((SOCINFO_VERSION_MINOR(platform_type.version)) << 8) |
+		(platform_type.hw_platform_subtype));
 
 	return machid;
 }

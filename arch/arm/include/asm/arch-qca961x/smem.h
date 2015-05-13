@@ -18,6 +18,9 @@
 #define RAM_PARTITION_SYS_MEMORY 1
 #define IPQ_NAND_ROOTFS_SIZE (64 << 20)
 
+#define SOCINFO_VERSION_MAJOR(ver) ((ver & 0xffff0000) >> 16)
+#define SOCINFO_VERSION_MINOR(ver) (ver & 0x0000ffff)
+
 enum {
 	SMEM_BOOT_NO_FLASH        = 0,
 	SMEM_BOOT_NOR_FLASH       = 1,
@@ -60,6 +63,7 @@ struct smem_ram_ptable {
 	unsigned buf;
 } __attribute__ ((__packed__));
 
+unsigned int smem_get_board_platform_type();
 int smem_ptable_init(void);
 int smem_get_boot_flash(uint32_t *flash_type,
 			uint32_t *flash_index,
@@ -80,9 +84,6 @@ typedef struct {
 	uint32_t		flash_chip_select;
 	uint32_t		flash_block_size;
 	qca_part_entry_t	hlos;
-#ifdef CONFIG_IPQ_LOAD_NSS_FW
-	qca_part_entry_t	nss[2];
-#endif
 	qca_part_entry_t	rootfs;
 } qca_smem_flash_info_t;
 
