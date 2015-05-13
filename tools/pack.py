@@ -722,16 +722,19 @@ class Pack(object):
 
             if self.flinfo.type != "emmc":
                if part_info == None:
-                   if self.flinfo.type != 'norplusnand':
-                       error("Invalid partition '%s'" % partition)
-                   if count > 2:
-                       error("More than 2 NAND images for NOR+NAND is not allowed")
+                   if self.flinfo.type == 'norplusnand':
+                       if count > 2:
+                           error("More than 2 NAND images for NOR+NAND is not allowed")
                elif img_size > part_info.length:
                    error("img size is larger than part. len in '%s'" % section)
             else:
-                if (img_size > 0):
-                    if img_size > (part_info.length * self.flinfo.blocksize):
-                        error("img size is larger than part. len in '%s'" % section)
+                if part_info != None:
+                    if (img_size > 0):
+                        if img_size > (part_info.length * self.flinfo.blocksize):
+                            error("img size is larger than part. len in '%s'" % section)
+
+            if part_info == None and self.flinfo.type != 'norplusnand':
+                continue
 
             if machid:
                 script.start_if("machid", machid)
@@ -746,10 +749,11 @@ class Pack(object):
                     script.imxtract(section + "-" + sha1(filename))
 
             if part_info == None:
-                offset = count * Pack.norplusnand_rootfs_img_size
-                img_size = Pack.norplusnand_rootfs_img_size
-                script.nand_write(offset, img_size)
-                count = count + 1
+                if self.flinfo.type == 'norplusnand':
+                    offset = count * Pack.norplusnand_rootfs_img_size
+                    img_size = Pack.norplusnand_rootfs_img_size
+                    script.nand_write(offset, img_size)
+                    count = count + 1
             else:
                 offset = part_info.offset
                 script.erase(offset, part_info.length)
@@ -759,7 +763,10 @@ class Pack(object):
             if machid:
                 script.end_if()
 
-        script.end()
+        if part_info == None and self.flinfo.type != 'norplusnand':
+            print "Flash type is norplusemmc"
+        else:
+            script.end()
 
     def __gen_script(self, script_fp, info_fp, script, images, flinfo):
         """Generate the script to flash the multi-image blob.
@@ -779,6 +786,12 @@ class Pack(object):
 
         for section in info.sections():
             if info.get(section, "include").lower() in ["0", "no"]:
+                continue
+
+            partition = info.get(section, "partition")
+            part_info = self.__get_part_info(partition)
+
+            if part_info == None and self.flinfo.type != 'norplusnand':
                 continue
 
             filename = info.get(section, "filename")
@@ -908,10 +921,13 @@ class Pack(object):
         """
 
         pagesize_param = "%s_pagesize" % ftype
-        blocksize_param = "%s_blocksize" % ftype
-        blocks_per_chip_param = "%s_total_blocks" % ftype
+        blocksize_param = "%s_blocksize" % "emmc"
+        blocks_per_chip_param = "%s_total_blocks" % "emmc"
         part_fname_param = "%s_partition_mbn" % ftype
         fconf_fname_param = "%s_flash_conf" % ftype
+
+        if ftype == "norplusemmc":
+            part_fname_param = "%s_gpt_bin" % ftype
 
         try:
             pagesize = int(self.bconf.get(board_section, pagesize_param))
@@ -922,6 +938,9 @@ class Pack(object):
             error("missing flash info in section '%s'" % board_section, e)
         except ValueError, e:
             error("invalid flash info in section '%s'" % board_section, e)
+
+        if ftype == "norplusemmc":
+            ftype = "emmc"
 
         flinfo = FlashInfo(ftype, pagesize, blocksize, chipsize)
 
@@ -957,7 +976,7 @@ class Pack(object):
         part_fname_param = "%s_partition_mbn" % ftype
         fconf_fname_param = "%s_flash_conf" % ftype
 
-        if ftype == "norplusnand":
+        if ftype == "norplusnand" or ftype == "norplusemmc":
             pagesize_param = "%s_pagesize" % "nor"
             pages_per_block_param = "%s_pages_per_block" % "nor"
             blocks_per_chip_param = "%s_total_blocks" % "nor"
@@ -975,6 +994,9 @@ class Pack(object):
 
         blocksize = pages_per_block * pagesize
         chipsize = blocks_per_chip * blocksize
+        if ftype == "norplusemmc":
+            ftype = "nor"
+
         flinfo = FlashInfo(ftype, pagesize, blocksize, chipsize)
 
         try:
@@ -1030,6 +1052,16 @@ class Pack(object):
                 self.__process_board_flash("norplusnand", board_section, machid, images)
         except ConfigParserError, e:
             error("error getting board info in section '%s'" % board_section, e)
+
+        try:
+            available = self.bconf.get(board_section, "norplusemmc_available")
+            if available == "true" and self.flash_type == "norplusemmc":
+                self.__process_board_flash("norplusemmc", board_section, machid, images)
+                self.__process_board_flash_emmc("norplusemmc", board_section, machid, images)
+        except ConfigParserError, e:
+            error("error getting board info in section '%s'" % board_section, e)
+
+
 
     def main_bconf(self, flash_type, images_dname, out_fname, brdconfig):
         """Start the packing process, using board config.
@@ -1225,7 +1257,7 @@ class ArgParser(object):
 
         if flash_type == None:
             self.__flash_type = ArgParser.DEFAULT_TYPE
-        elif flash_type in [ "nand", "nor", "emmc", "norplusnand" ]:
+        elif flash_type in [ "nand", "nor", "emmc", "norplusnand", "norplusemmc" ]:
             self.__flash_type = flash_type
         else:
             raise UsageError("invalid flash type '%s'" % flash_type)
