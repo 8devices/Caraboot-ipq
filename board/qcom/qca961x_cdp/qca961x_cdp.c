@@ -66,6 +66,9 @@ extern int ipq40xx_qca8075_phy_init(qca961x_edma_board_cfg_t *cfg);
 extern int mmc_env_init(void);
 extern int mmc_saveenv(void);
 extern void mmc_env_relocate_spec(void);
+#ifdef CONFIG_IPQ40XX_SPI
+extern int ipq_spi_init(u16 idx);
+#endif
 #ifdef CONFIG_QCA_MMC
 qca_mmc mmc_host;
 #endif
@@ -164,13 +167,6 @@ int board_init(void)
 	loff_t board_env_size;
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 
-#ifdef CONFIG_IPQ_NAND
-	nand_env_device = CONFIG_IPQ_NAND_NAND_INFO_IDX;
-#else
-	/* Hardcode everything for NAND */
-	nand_env_device = CONFIG_QPIC_NAND_NAND_INFO_IDX;
-#endif
-
 	gd->bd->bi_boot_params = QCA_BOOT_PARAMS_ADDR;
 	gd->bd->bi_arch_number = smem_get_board_platform_type();
 	gboard_param = get_board_param(gd->bd->bi_arch_number);
@@ -199,7 +195,7 @@ int board_init(void)
 	if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
 		nand_env_device = CONFIG_QPIC_NAND_NAND_INFO_IDX;
 	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
-		nand_env_device = CONFIG_IPQ_SPI_NAND_INFO_IDX;
+		nand_env_device = CONFIG_IPQ_SPI_NOR_INFO_IDX;
 	} else {
 		printf("BUG: unsupported flash type : %d\n", sfi->flash_type);
 		BUG();
@@ -346,6 +342,9 @@ void board_nand_init(void)
 	qpic_nand_init(&config);
 #endif
 	spi_nand_init();
+#ifdef CONFIG_IPQ40XX_SPI
+	ipq_spi_init(CONFIG_IPQ_SPI_NOR_INFO_IDX);
+#endif
 }
 
 int board_eth_init(bd_t *bis)

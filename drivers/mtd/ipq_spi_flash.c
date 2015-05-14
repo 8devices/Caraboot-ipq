@@ -119,7 +119,7 @@ static int ipq_spi_block_markbad(struct mtd_info *mtd, loff_t offs)
 /*
  * Initialize controller and register as an MTD device.
  */
-int ipq_spi_init(void)
+int ipq_spi_init(u16 idx)
 {
 	struct spi_flash *flash;
 	int ret;
@@ -140,7 +140,7 @@ int ipq_spi_init(void)
 		return 1;
 	}
 
-	mtd = &nand_info[CONFIG_IPQ_SPI_NAND_INFO_IDX];
+	mtd = &nand_info[idx];
 	mtd->priv = flash;
 	mtd->writesize = flash->page_size;
 	mtd->erasesize = flash->sector_size;
@@ -160,7 +160,7 @@ int ipq_spi_init(void)
 	mtd->block_isbad = ipq_spi_block_isbad;
 	mtd->block_markbad = ipq_spi_block_markbad;
 
-	if ((ret = nand_register(CONFIG_IPQ_SPI_NAND_INFO_IDX)) < 0) {
+	if ((ret = nand_register(idx)) < 0) {
 		spi_print("Failed to register with MTD subsystem\n");
 		return ret;
 	}

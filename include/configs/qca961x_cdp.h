@@ -177,6 +177,13 @@ typedef struct {
 #define CONFIG_SYS_NAND_SELF_INIT
 #define CONFIG_SYS_NAND_ONFI_DETECTION
 
+/*
+ * Expose SPI driver as a pseudo NAND driver to make use
+ * of U-Boot's MTD framework.
+ */
+#define CONFIG_SYS_MAX_NAND_DEVICE	(CONFIG_IPQ_MAX_NAND_DEVICE + \
+					CONFIG_IPQ_MAX_SPI_DEVICE)
+
 #define CONFIG_IPQ_MAX_SPI_DEVICE	2
 #define CONFIG_IPQ_MAX_NAND_DEVICE	1
 
@@ -194,6 +201,7 @@ typedef struct {
 #define CONFIG_CMD_SF
 #define CONFIG_SPI_FLASH_STMICRO
 #define CONFIG_SPI_FLASH_WINBOND
+#define CONFIG_IPQ40XX_SPI
 
 #define CONFIG_SF_DEFAULT_BUS 0
 #define CONFIG_SF_DEFAULT_CS 0
