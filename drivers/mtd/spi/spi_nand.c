@@ -60,16 +60,142 @@ static int spinand_waitfunc(struct mtd_info *mtd, u8 val, u8 *status)
 
 	ret = spi_nand_flash_cmd_wait_ready(flash, val, status, TIMEOUT);
 	if (ret) {
-		printf("%s Operation Timeout\n",__func__);
+		printf("%s Operation Timeout\n", __func__);
 		return -1;
 	}
 
 	return 0;
 }
 
+static int check_offset(struct mtd_info *mtd, loff_t offs)
+{
+	struct ipq40xx_spinand_info *info = mtd->priv;
+	struct spi_flash *flash = info->flash;
+	struct nand_chip *chip = info->chip;
+	int ret = 0;
+
+	/* Start address must align on block boundary */
+	if (offs & ((1 << chip->phys_erase_shift) - 1)) {
+		printf("%s: unaligned address\n", __func__);
+		ret = -EINVAL;
+	}
+
+	return ret;
+}
+
+static int spi_nand_erase(struct mtd_info *mtd, struct erase_info *instr)
+{
+	u8 cmd[8], len;
+	u8 status;
+	u32 ret;
+	u32 row_addr;
+	struct ipq40xx_spinand_info *info = mtd->priv;
+	struct spi_flash *flash = info->flash;
+	struct nand_chip *chip = info->chip;
+	u32 page = (int)(instr->addr >> chip->page_shift);
+
+	if (check_offset(mtd, instr->addr))
+		return -1;
+
+	ret = spi_claim_bus(flash->spi);
+	if (ret) {
+		printf("SF: Unable to claim SPI bus\n");
+		return ret;
+	}
+
+	ret = spi_flash_cmd(flash->spi, IPQ40XX_SPINAND_CMD_WREN, NULL, 0);
+	if (ret) {
+		printf ("Write enable failed %s\n", __func__);
+		goto out;
+	}
+	ret = spinand_waitfunc(mtd, 0x01, &status);
+	if (ret) {
+		goto out;
+	}
+
+	cmd[0] = IPQ40XX_SPINAND_CMD_ERASE;
+	cmd[1] = (u8)(page >> 16);
+	cmd[2] = (u8)(page >> 8);
+	cmd[3] = (u8)(page);
+	len = 4;
+	ret = spi_flash_cmd_write(flash->spi, cmd, 4, NULL, 0);
+	if (ret) {
+		printf("%s  failed for offset:%x \n", __func__, instr->addr);
+		goto out;
+	}
+	ret = spinand_waitfunc(mtd, 0x01, &status);
+	if (ret) {
+		if (status & STATUS_E_FAIL)
+			printf("Erase operation failed for 0x%x\n", page);
+		printf("Operation timeout\n");
+		goto out;
+	}
+
+	ret = spi_flash_cmd(flash->spi, IPQ40XX_SPINAND_CMD_WRDI, NULL, 0);
+
+	ret = spinand_waitfunc(mtd, 0x01, &status);
+	if (ret) {
+		printf("%s: Write disable failed\n");
+	}
+
+out:
+	spi_release_bus(flash->spi);
+
+	return ret;
+}
+
 static int spi_nand_block_isbad(struct mtd_info *mtd, loff_t offs)
 {
-	return 0;
+	struct ipq40xx_spinand_info *info = mtd->priv;
+	struct spi_flash *flash = info->flash;
+	struct nand_chip *chip = info->chip;
+	u8 cmd[8];
+	u8 status;
+	u32 value = 0xff;
+	int page, column, ret;
+
+	page = (int)(offs >> chip->page_shift) & chip->pagemask;
+	column = mtd->writesize + chip->badblockpos;
+
+	ret = spi_claim_bus(flash->spi);
+	if (ret) {
+		printf ("Claim bus failed. %s\n", __func__);
+		return -1;
+	}
+
+	cmd[0] = IPQ40XX_SPINAND_CMD_READ;
+	cmd[1] = (u8)(page >> 16);
+	cmd[2] = (u8)(page >> 8);
+	cmd[3] = (u8)(page);
+	ret = spi_flash_cmd_write(flash->spi, cmd, 4, NULL, 0);
+	if (ret) {
+		printf("%s: write command failed\n", __func__);
+		goto out;
+	}
+	ret = spinand_waitfunc(mtd, 0x01, &status);
+	if (ret) {
+		printf("Operation timeout\n");
+		goto out;
+	}
+
+	cmd[0] = IPQ40XX_SPINAND_CMD_NORM_READ;
+	cmd[1] = 0;
+	cmd[2] = (u8)(column >> 8);
+	cmd[3] = (u8)(column);
+	ret = spi_flash_cmd_read(flash->spi, cmd, 4, &value, 1);
+	if (ret) {
+		printf("%s: read data failed\n", __func__);
+		goto out;
+	}
+
+	if (value != 0xFF) {
+		ret = 1;
+		goto out;
+	}
+
+out:
+	spi_release_bus(flash->spi);
+	return ret;
 }
 
 static int spi_nand_read_oob(struct mtd_info *mtd, loff_t from,
@@ -78,15 +204,130 @@ static int spi_nand_read_oob(struct mtd_info *mtd, loff_t from,
 	return -EINVAL;
 }
 
+static int spinand_write_oob_std(struct mtd_info *mtd, struct nand_chip *chip,  int page)
+{
+	int column, len, status, ret = 0, bytes;
+	u_char *wbuf;
+	u8 cmd[8];
+	struct ipq40xx_spinand_info *info = mtd->priv;
+	struct spi_flash *flash = info->flash;
+
+	wbuf = chip->oob_poi;
+	column = mtd->writesize;
+
+	cmd[0] = IPQ40XX_SPINAND_CMD_PLOAD;
+	cmd[1] = (u8)(column >> 8);
+	cmd[2] = (u8)(column);
+
+	ret = spi_flash_cmd_write(flash->spi, cmd, 3, wbuf, 2);
+	if (ret) {
+		printf("%s: write command failed\n", __func__);
+		ret = 1;
+		goto out;
+	}
+
+	ret = spi_flash_cmd(flash->spi, IPQ40XX_SPINAND_CMD_WREN, NULL, 0);
+	if (ret) {
+		printf("Write enable failed in %s\n", __func__);
+		goto out;
+	}
+
+	cmd[0] = IPQ40XX_SPINAND_CMD_PROG;
+	cmd[1] = (u8)(page >> 16);
+	cmd[2] = (u8)(page >> 8);
+	cmd[3] = (u8)(page);
+
+	ret = spi_flash_cmd_write(flash->spi, cmd, 4, NULL, 0);
+	if (ret) {
+		printf("PLOG failed\n");
+		goto out;
+	}
+
+	ret = spinand_waitfunc(mtd, 0x01, &status);
+	if (ret) {
+		if (status)
+			printf("Program failed\n");
+	}
+
+	ret = spi_flash_cmd(flash->spi, IPQ40XX_SPINAND_CMD_WRDI, NULL, 0);
+	if (ret)
+		printf("Write disable failed in %s\n", __func__);
+
+out:
+	spi_release_bus(flash->spi);
+	return ret;
+}
+
+static void fill_oob_data(struct mtd_info *mtd, uint8_t *oob,
+        size_t len, struct mtd_oob_ops *ops)
+{
+	struct ipq40xx_spinand_info *info = mtd->priv;
+	struct nand_chip *chip = info->chip;
+
+	memset(chip->oob_poi, 0xff, mtd->oobsize);
+	memcpy(chip->oob_poi + ops->ooboffs, oob, len);
+
+	return;
+}
+
 static int spi_nand_write_oob(struct mtd_info *mtd, loff_t to,
 			      struct mtd_oob_ops *ops)
 {
-	return -EINVAL;
+	int page, ret;
+	struct ipq40xx_spinand_info *info = mtd->priv;
+	struct spi_flash *flash = info->flash;
+	struct nand_chip *chip = info->chip;
+
+	/* Shift to get page */
+	page = (int)(to >> chip->page_shift);
+
+	fill_oob_data(mtd, ops->oobbuf, ops->ooblen, ops);
+
+	return spinand_write_oob_std(mtd, chip, page & chip->pagemask);
 }
 
 static int spi_nand_block_markbad(struct mtd_info *mtd, loff_t offs)
 {
-	return -EINVAL;
+	uint8_t buf[2]= { 0, 0 };
+	int block, ret;
+	struct ipq40xx_spinand_info *info = mtd->priv;
+	struct spi_flash *flash = info->flash;
+	struct nand_chip *chip = info->chip;
+	struct mtd_oob_ops ops;
+	struct erase_info einfo;
+
+	ret = spi_nand_block_isbad(mtd, offs);
+	if (ret) {
+		if (ret > 0)
+			return 0;
+		return ret;
+	}
+
+	/* Attempt erase before marking OOB */
+	memset(&einfo, 0, sizeof(einfo));
+	einfo.mtd = mtd;
+	einfo.addr = offs;
+	einfo.len = 1 << chip->phys_erase_shift;
+	spi_nand_erase(mtd, &einfo);
+
+	ret = spi_claim_bus(flash->spi);
+	if (ret) {
+		printf ("Claim bus failed. %s\n", __func__);
+		return -1;
+	}
+
+	ops.datbuf = NULL;
+	ops.oobbuf = buf;
+	ops.ooboffs = chip->badblockpos;
+	ops.len = ops.ooblen = 1;
+
+	ret = spi_nand_write_oob(mtd, offs,&ops);
+	if (ret)
+		goto out;
+
+out:
+	spi_release_bus(flash->spi);
+	return ret;
 }
 
 static int spi_nand_read(struct mtd_info *mtd, loff_t from, size_t len,
@@ -130,8 +371,20 @@ static int spi_nand_read(struct mtd_info *mtd, loff_t from, size_t len,
 		ret = spi_flash_cmd_read(flash->spi, cmd, 4, buf, bytes);
 		if (ret) {
 			printf("%s: read data failed\n", __func__);
+			return -1;
+		}
+
+		ret = spinand_waitfunc(mtd, SPINAND_VERC_STATUS_ECCMASK, &status);
+		if (ret) {
 			goto out;
 		}
+
+		if (status == SPINAND_VERC_STATUS_ECCMASK) {
+			mtd->ecc_stats.failed++;
+			printf("ecc err for page read\n");
+			return -EBADMSG;
+		} else if (status)
+			mtd->ecc_stats.corrected++;
 
 		readlen -= bytes;
 		if (!readlen)
@@ -142,7 +395,6 @@ static int spi_nand_read(struct mtd_info *mtd, loff_t from, size_t len,
 	}
 out:
 	spi_release_bus(flash->spi);
-
 	return ret;
 }
 
@@ -227,86 +479,9 @@ static int spi_nand_write(struct mtd_info *mtd, loff_t to, size_t len,
 
 out:
 	spi_release_bus(flash->spi);
-
 	return ret;
 }
 
-static int check_offset(struct mtd_info *mtd, loff_t offs)
-{
-	struct ipq40xx_spinand_info *info = mtd->priv;
-	struct spi_flash *flash = info->flash;
-	struct nand_chip *chip = info->chip;
-	int ret = 0;
-
-	/* Start address must align on block boundary */
-	if (offs & ((1 << chip->phys_erase_shift) - 1)) {
-		printf("%s: unaligned address\n", __func__);
-		ret = -EINVAL;
-	}
-
-	return ret;
-}
-
-static int spi_nand_erase(struct mtd_info *mtd, struct erase_info *instr)
-{
-	u8 cmd[8], len;
-	u8 status;
-	u32 ret;
-	u32 row_addr;
-	struct ipq40xx_spinand_info *info = mtd->priv;
-	struct spi_flash *flash = info->flash;
-	struct nand_chip *chip = info->chip;
-	u32 page = (int)(instr->addr >> chip->page_shift);
-
-	if (check_offset(mtd, instr->addr))
-		return -1;
-
-	ret = spi_claim_bus(flash->spi);
-        if (ret) {
-		printf("SF: Unable to claim SPI bus\n");
-		return ret;
-        }
-
-	ret = spi_flash_cmd(flash->spi, IPQ40XX_SPINAND_CMD_WREN, NULL, 0);
-	if (ret) {
-		printf ("Write enable failed %s\n", __func__);
-		goto out;
-	}
-	ret = spinand_waitfunc(mtd, 0x01, &status);
-	if (ret) {
-		goto out;
-	}
-
-	cmd[0] = IPQ40XX_SPINAND_CMD_ERASE;
-	cmd[1] = (u8)(page >> 16);
-	cmd[2] = (u8)(page >> 8);
-	cmd[3] = (u8)(page);
-	len = 4;
-	ret = spi_flash_cmd_write(flash->spi, cmd, 4, NULL, 0);
-        if (ret) {
-		printf("%s  failed for offset:%x \n", __func__, instr->addr);
-		goto out;
-	}
-	ret = spinand_waitfunc(mtd, 0x01, &status);
-	if (ret) {
-		if (status & STATUS_E_FAIL)
-			printf("Erase operation failed for 0x%x\n",page);
-		printf("Operation timeout\n");
-		goto out;
-	}
-
-	ret = spi_flash_cmd(flash->spi, IPQ40XX_SPINAND_CMD_WRDI, NULL, 0);
-
-	ret = spinand_waitfunc(mtd, 0x01, &status);
-	if (ret) {
-		printf("%s: Write disable failed\n");
-	}
-
-out:
-	spi_release_bus(flash->spi);
-
-	return ret;
-}
 
 struct spi_flash *spi_nand_flash_probe(struct spi_slave *spi,
                                                 u8 *idcode)
@@ -469,6 +644,10 @@ int spi_nand_init(void)
 
 	chip->page_shift = ffs(mtd->writesize) - 1;
 	chip->phys_erase_shift = ffs(mtd->erasesize) - 1;
+	chip->chipsize = flash->size;
+	chip->pagemask = (chip->chipsize >> chip->page_shift) - 1;
+	chip->badblockpos = 0;
+	chip->oob_poi = mtd->writesize;
 
 	info->flash = flash;
 	info->mtd = mtd;
