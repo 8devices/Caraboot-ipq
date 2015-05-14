@@ -60,6 +60,7 @@ extern int nand_env_init(void);
 extern int nand_saveenv(void);
 extern void nand_env_relocate_spec(void);
 extern int qca961x_edma_init(qca961x_edma_board_cfg_t *edma_cfg);
+extern int ipq40xx_qca8075_phy_init(qca961x_edma_board_cfg_t *cfg);
 #ifdef CONFIG_QCA_MMC
 qca_mmc mmc_host;
 #endif
@@ -99,12 +100,12 @@ static board_qca961x_params_t *get_board_param(unsigned int machid)
 {
 	unsigned int index;
 
-	printf("machid : %d\n",machid);
-	for (index = 0; index < NUM_QCA961X_BOARDS; index++) {
+	printf("machid : 0x%0x\n", machid);
+	for (index = 0; index < NUM_IPQ40XX_BOARDS; index++) {
 		if (machid == board_params[index].machid)
 			return &board_params[index];
 	}
-	BUG_ON(index == NUM_QCA961X_BOARDS);
+	BUG_ON(index == NUM_IPQ40XX_BOARDS);
 	printf("cdp: Invalid machine id 0x%x\n", machid);
 	for (;;);
 }
@@ -155,7 +156,7 @@ int board_init(void)
 #endif
 
 	gd->bd->bi_boot_params = QCA_BOOT_PARAMS_ADDR;
-	gd->bd->bi_arch_number = smem_get_board_machtype();
+	gd->bd->bi_arch_number = smem_get_board_platform_type();
 	gboard_param = get_board_param(gd->bd->bi_arch_number);
 
 	ret = smem_get_boot_flash(&sfi->flash_type,
@@ -324,7 +325,11 @@ int board_eth_init(bd_t *bis)
 {
 	u32 status;
 	switch (gboard_param->machid) {
-	case MACH_TYPE_QCA961X_RUMI:
+	case MACH_TYPE_IPQ40XX_AP_DK01_1_C1:
+	case MACH_TYPE_IPQ40XX_AP_DK01_1_C2:
+	case MACH_TYPE_IPQ40XX_AP_DK04_1_C1:
+	case MACH_TYPE_IPQ40XX_AP_DK04_1_C2:
+	case MACH_TYPE_IPQ40XX_AP_DK04_1_C3:
 		qca961x_register_switch(ipq40xx_qca8075_phy_init);
 		break;
 	default:
