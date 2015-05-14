@@ -196,7 +196,7 @@ int board_init(void)
 		nand_env_device = CONFIG_QPIC_NAND_NAND_INFO_IDX;
 	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
 		nand_env_device = CONFIG_IPQ_SPI_NOR_INFO_IDX;
-	} else {
+	} else if (sfi->flash_type != SMEM_BOOT_MMC_FLASH) {
 		printf("BUG: unsupported flash type : %d\n", sfi->flash_type);
 		BUG();
 	}
