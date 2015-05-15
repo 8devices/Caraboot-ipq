@@ -39,6 +39,16 @@
 #include <asm/arch-qca961x/iomap.h>
 #include "qca_qup_spi_bam.h"
 
+/*
+ * CS GPIO number array cs_gpio_array[port_num][cs_num]
+ * cs_gpio_array[0][x] -- QUP0
+ */
+static unsigned int cs_gpio_array[NUM_PORTS][NUM_CS] = {
+	{
+		QUP0_SPI_CS_0, QUP0_SPI_CS_1,
+	},
+};
+
 static int check_bit_state(uint32_t reg_addr, int bit_num, int val,
 							int us_delay)
 {
@@ -164,6 +174,31 @@ void spi_init()
 	/* do nothing */
 }
 
+/*
+ * Function to assert and De-assert chip select
+ */
+static void CS_change(int port_num, int cs_num, int enable)
+{
+	unsigned int cs_gpio = cs_gpio_array[port_num][cs_num];
+	uint32_t addr = GPIO_IN_OUT_ADDR(cs_gpio);
+	uint32_t val = readl(addr);
+
+	val &= (~(1 << GPIO_OUT));
+	if (!enable)
+		val |= (1 << GPIO_OUT);
+	writel(val, addr);
+}
+
+static void blsp_pin_config(unsigned int port_num, int cs_num)
+{
+        unsigned int gpio;
+        unsigned int i;
+	gpio = cs_gpio_array[port_num][cs_num];
+	/* configure CS */
+	gpio_tlmm_config(gpio, FUNC_SEL_GPIO, GPIO_OUTPUT, GPIO_PULL_UP,
+			GPIO_DRV_STR_10MA, GPIO_FUNC_ENABLE);
+}
+
 int qup_bam_init(struct ipq_spi_slave *ds)
 {
 	unsigned int read_pipe, write_pipe;
@@ -285,6 +320,13 @@ struct spi_slave *spi_setup_slave(unsigned int bus, unsigned int cs,
 
 	/* DMA mode */
 	ds->use_dma = CONFIG_QUP_SPI_USE_DMA;
+
+	if (ds->slave.cs == CONFIG_SF_SPI_NAND_CS) {
+		/* GPIO Configuration for SPI port */
+		blsp_pin_config(ds->slave.bus, ds->slave.cs);
+		CS_change(ds->slave.bus, ds->slave.cs, CS_DEASSERT);
+	}
+
 	return &ds->slave;
 err:
 	free(ds);
@@ -887,7 +929,13 @@ int spi_xfer(struct spi_slave *slave, unsigned int bitlen,
 			if (ret != SUCCESS)
 				return ret;
 		}
-		write_force_cs(ds, 1);
+
+		if (ds->slave.cs == CONFIG_SF_SPI_NAND_CS) {
+			setbits_le32(ds->regs->io_control, CS_POLARITY_MASK);
+			CS_change(ds->slave.bus, ds->slave.cs, CS_ASSERT);
+		} else {
+			write_force_cs(slave, 1);
+		}
 	}
 
 	if (dout != NULL) {
@@ -904,7 +952,12 @@ int spi_xfer(struct spi_slave *slave, unsigned int bitlen,
 
 	if (flags & SPI_XFER_END) {
 		/* To handle only when chip select change is needed */
-		write_force_cs(ds, 0);
+		if (ds->slave.cs == CONFIG_SF_SPI_NAND_CS) {
+			clrbits_le32(ds->regs->io_control, CS_POLARITY_MASK);
+			CS_change(ds->slave.bus, ds->slave.cs, CS_DEASSERT);
+		} else {
+			write_force_cs(slave, 0);
+		}
 	}
 
 	return ret;
