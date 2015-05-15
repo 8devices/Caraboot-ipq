@@ -136,6 +136,7 @@ typedef struct {
 #define CONFIG_ARCH_CPU_INIT
 #define CONFIG_ENV_IS_IN_NAND
 #define CONFIG_CMD_SAVEENV
+#define CONFIG_BOARD_LATE_INIT
 #define CONFIG_ENV_OFFSET		board_env_offset
 #define CONFIG_ENV_SIZE_MAX		(256 << 10) /* 256 KB */
 #define CONFIG_ENV_RANGE		board_env_range
@@ -245,6 +246,8 @@ typedef struct {
 #define CONFIG_MMC
 #define CONFIG_EFI_PARTITION
 #define CONFIG_GENERIC_MMC
+#define CONFIG_ENV_IS_IN_MMC
+#define CONFIG_SYS_MMC_ENV_DEV  0
 #endif
 
 

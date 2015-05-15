@@ -52,15 +52,20 @@ loff_t board_env_offset;
 loff_t board_env_range;
 extern int nand_env_device;
 char *env_name_spec;
+extern char *mmc_env_name_spec;
 extern char *nand_env_name_spec;
 int (*saveenv)(void);
 env_t *env_ptr;
+extern env_t *mmc_env_ptr;
 extern env_t *nand_env_ptr;
 extern int nand_env_init(void);
 extern int nand_saveenv(void);
 extern void nand_env_relocate_spec(void);
 extern int qca961x_edma_init(qca961x_edma_board_cfg_t *edma_cfg);
 extern int ipq40xx_qca8075_phy_init(qca961x_edma_board_cfg_t *cfg);
+extern int mmc_env_init(void);
+extern int mmc_saveenv(void);
+extern void mmc_env_relocate_spec(void);
 #ifdef CONFIG_QCA_MMC
 qca_mmc mmc_host;
 #endif
@@ -113,6 +118,7 @@ static board_qca961x_params_t *get_board_param(unsigned int machid)
 
 int env_init(void)
 {
+	int ret;
 	qca_smem_flash_info_t sfi;
 
 	smem_get_boot_flash(&sfi.flash_type,
@@ -121,8 +127,14 @@ int env_init(void)
 				&sfi.flash_block_size);
 
 	if (sfi.flash_type != SMEM_BOOT_MMC_FLASH) {
-		nand_env_init();
+		ret = nand_env_init();
+#ifdef CONFIG_QCA_MMC
+	} else {
+		ret = mmc_env_init();
+#endif
 	}
+
+	return ret;
 }
 
 void env_relocate_spec(void)
@@ -136,6 +148,10 @@ void env_relocate_spec(void)
 
 	if (sfi.flash_type != SMEM_BOOT_MMC_FLASH) {
 		nand_env_relocate_spec();
+#ifdef CONFIG_QCA_MMC
+	} else {
+		mmc_env_relocate_spec();
+#endif
 	}
 
 };
@@ -206,6 +222,10 @@ int board_init(void)
 	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
 		board_env_range = board_env_size;
 		BUG_ON(board_env_size > CONFIG_ENV_SIZE_MAX);
+#ifdef CONFIG_QCA_MMC
+	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
+		board_env_range = CONFIG_ENV_SIZE_MAX;
+#endif
 	} else {
 		printf("BUG: unsupported flash type : %d\n", sfi->flash_type);
 		BUG();
@@ -215,6 +235,12 @@ int board_init(void)
 		saveenv = nand_saveenv;
 		env_ptr = nand_env_ptr;
 		env_name_spec = nand_env_name_spec;
+#ifdef CONFIG_QCA_MMC
+	} else {
+		saveenv = mmc_saveenv;
+		env_ptr = mmc_env_ptr;
+		env_name_spec = mmc_env_name_spec;
+#endif
 	}
 	return 0;
 }
@@ -370,15 +396,51 @@ void ft_board_setup(void *blob, bd_t *bd)
 #endif /* CONFIG_OF_BOARD_SETUP */
 
 #ifdef CONFIG_QCA_MMC
+int board_mmc_env_init(void)
+{
+	block_dev_desc_t *blk_dev;
+	disk_partition_t disk_info;
+	loff_t board_env_size;
+	int ret;
+
+	if (mmc_init(mmc_host.mmc)) {
+		/* The HS mode command(cmd6) is getting timed out. So mmc card is
+		 * not getting initialized properly. Since the env partition is not
+		 * visible, the env default values are writing into the default
+		 * partition (start of the mmc device). So do a reset again.
+		 */
+		if (mmc_init(mmc_host.mmc)) {
+			printf("MMC init failed \n");
+			return -1;
+		}
+	}
+	blk_dev = mmc_get_dev(mmc_host.dev_num);
+	ret = find_part_efi(blk_dev, "0:APPSBLENV", &disk_info);
+
+	if (ret > 0) {
+		board_env_offset = disk_info.start * disk_info.blksz;
+		board_env_size = disk_info.size * disk_info.blksz;
+		board_env_range = board_env_size;
+		BUG_ON(board_env_size > CONFIG_ENV_SIZE_MAX);
+	}
+	return ret;
+}
+
 int board_mmc_init(bd_t *bis)
 {
 	int ret = 0;
+	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
+
 
 	mmc_host.base = MSM_SDC1_BASE;
 	mmc_host.clk_mode = MMC_IDENTIFY_MODE;
 	emmc_clock_config(mmc_host.clk_mode);
 
 	ret = qca_mmc_init(bis, &mmc_host);
+
+	if (!ret && sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
+		ret = board_mmc_env_init();
+	}
 
 	return ret;
 }
