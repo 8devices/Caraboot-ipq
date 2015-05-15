@@ -199,6 +199,7 @@ typedef struct {
 #define CONFIG_QUP_SPI_USE_DMA 1
 
 #define CONFIG_SPI_NAND_GIGA 1
+#define CONFIG_SPI_NAND_ATO
 /*
  * ESS Configs
  */
