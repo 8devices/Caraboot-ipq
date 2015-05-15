@@ -73,6 +73,7 @@
 #define CONFIG_SYS_INIT_SP_ADDR		(CONFIG_SYS_SDRAM_BASE + 0x9000000 - GENERATED_GBL_DATA_SIZE)
 #define CONFIG_MAX_RAM_BANK_SIZE	CONFIG_SYS_SDRAM_SIZE
 #define CONFIG_SYS_LOAD_ADDR		(CONFIG_SYS_SDRAM_BASE + (64 << 20))
+#define CONFIG_DTB_LOAD_ADDR		(CONFIG_SYS_SDRAM_BASE + (96 << 20))
 #define CONFIG_NR_DRAM_BANKS		1
 #define CONFIG_OF_LIBFDT		1
 #define CONFIG_OF_BOARD_SETUP		1
@@ -128,6 +129,8 @@ typedef struct {
 #define QCA_BOOT_PARAMS_ADDR	(QCA_KERNEL_START_ADDR + 0x100)
 #endif
 
+#define IPQ_ROOT_FS_PART_NAME		"rootfs"
+
 /* Environment */
 #define CONFIG_QCA961X_ENV
 #define CONFIG_ARCH_CPU_INIT
@@ -179,6 +182,7 @@ typedef struct {
 #define CONFIG_IPQ_NAND_NAND_INFO_IDX	0
 #define CONFIG_QPIC_NAND_NAND_INFO_IDX	0
 #define CONFIG_IPQ_SPI_NAND_INFO_IDX	1
+#define CONFIG_IPQ_SPI_NOR_INFO_IDX	2
 
 /*
  * SPI Flash Configs
@@ -217,7 +221,8 @@ typedef struct {
 /*
  * CRASH DUMP ENABLE
  */
-#define CONFIG_QCA_APPSBL_DLOAD	1
+
+/* #define CONFIG_QCA_APPSBL_DLOAD	1 */
 
 #ifdef CONFIG_QCA_APPSBL_DLOAD
 #define CONFIG_CMD_TFTPPUT
@@ -242,5 +247,12 @@ typedef struct {
 #define CONFIG_GENERIC_MMC
 #endif
 
+
+#define CONFIG_MTD_DEVICE
+#define CONFIG_MTD_PARTITIONS
+#define CONFIG_CMD_MTDPARTS
+
+#define CONFIG_RBTREE		/* for ubi */
+#define CONFIG_CMD_UBI
 
 #endif /* _IPQCDP_H */

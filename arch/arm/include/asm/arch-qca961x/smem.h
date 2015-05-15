@@ -85,6 +85,7 @@ typedef struct {
 	uint32_t		flash_block_size;
 	qca_part_entry_t	hlos;
 	qca_part_entry_t	rootfs;
+	qca_part_entry_t	dtb;
 } qca_smem_flash_info_t;
 
 extern qca_smem_flash_info_t qca_smem_flash_info;

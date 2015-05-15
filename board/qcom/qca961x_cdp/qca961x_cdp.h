@@ -80,5 +80,5 @@ void qca_configure_gpio(gpio_func_data_t *gpio, uint count);
 
 
 #define MSM_SDC1_BASE      0x7824000
-
+extern qca_mmc mmc_host;
 #endif
