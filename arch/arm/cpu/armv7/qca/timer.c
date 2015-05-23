@@ -34,11 +34,11 @@
 #include <asm/types.h>
 #include <asm/arch-qca961x/timer.h>
 
-static ulong timestamp;
-static ulong lastinc;
+static unsigned long long timestamp;
+static unsigned long long lastinc;
 
-#define GPT_FREQ_KHZ	20833
-#define GPT_FREQ	(GPT_FREQ_KHZ * 1000)	/* 20.833 MHz */
+#define GPT_FREQ_KHZ	48000
+#define GPT_FREQ	(GPT_FREQ_KHZ * 1000)	/* 48 MHz */
 
 /**
  * timer_init - initialize timer
@@ -69,17 +69,24 @@ ulong get_timer(ulong base)
  */
 void __udelay(unsigned long usec)
 {
-	unsigned int val;
-	ulong now, last;
-	ulong runcount;
+	unsigned long long val;
+	unsigned long long now_high, now_low;
+	unsigned long long now;
+	unsigned long long last_high, last_low;
+	unsigned long long last;
+	unsigned long long runcount;
 
 	usec = (usec + GPT_FREQ_KHZ - 1) / GPT_FREQ_KHZ;
-	last = readl(TIMER_BASE + QTMR_CNTP_TVAL);
+	last_high = readl(GCNT_CNTCV_HI);
+	last_low = readl(GCNT_CNTCV_LO);
+	last = last_high << 32 | last_low;
 	runcount = last;
 	val = usec + last;
 
 	do {
-		now = readl(TIMER_BASE + QTMR_CNTP_TVAL);
+		now_high = readl(GCNT_CNTCV_HI);
+		now_low = readl(GCNT_CNTCV_LO);
+		now = now_high << 32 | now_low;
 		if (last > now)
 			runcount += ((GPT_FREQ - last) + now);
 		else
@@ -88,14 +95,14 @@ void __udelay(unsigned long usec)
 	} while (runcount < val);
 }
 
-inline ulong gpt_to_sys_freq(unsigned int gpt)
+inline unsigned long long gpt_to_sys_freq(unsigned long long gpt)
 {
 	/*
 	 * get_timer() expects the timer increments to be in terms
 	 * of CONFIG_SYS_HZ. Convert GPT timer values to CONFIG_SYS_HZ
 	 * units.
 	 */
-	return ((ulong)gpt) / (GPT_FREQ / CONFIG_SYS_HZ);
+	return (gpt) / (GPT_FREQ / CONFIG_SYS_HZ);
 }
 
 /**
@@ -105,7 +112,12 @@ inline ulong gpt_to_sys_freq(unsigned int gpt)
  */
 ulong get_timer_masked(void)
 {
-	ulong now = gpt_to_sys_freq(readl(TIMER_BASE + QTMR_CNTP_TVAL));
+	unsigned long long vect_hi, vect_low;
+	unsigned long long now;
+	vect_low = readl(GCNT_CNTCV_LO);
+	vect_hi = readl(GCNT_CNTCV_HI);
+
+	now = gpt_to_sys_freq(vect_hi << 32 | vect_low);
 
 	if (lastinc <= now) {	/* normal mode (non roll) */
 		/* normal mode */
@@ -117,5 +129,5 @@ ulong get_timer_masked(void)
 	}
 	lastinc = now;
 
-	return timestamp;
+	return (ulong)timestamp;
 }
