@@ -359,6 +359,7 @@ static void uart_dm_init(void)
 		GSBI_CTRL_REG(gsbi_base));
 #elif defined CONFIG_QCA961X
 	qca_configure_gpio(gboard_param->dbg_uart_gpio, NO_OF_DBG_UART_GPIOS);
+	writel(1, GCC_BLSP1_UART1_APPS_CBCR);
 #endif
         writel(UART_DM_CLK_RX_TX_BIT_RATE, MSM_BOOT_UART_DM_CSR(dm_base));
 

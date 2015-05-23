@@ -36,7 +36,6 @@
 #include <asm/sizes.h>
 #include "qca961x_cdp.h"
 
-
 #define QCA961X_EDMA_CFG_BASE		0xC080000
 
 #define qca961x_edma_cfg(_b, _pn, ...)                  \
@@ -55,14 +54,14 @@ board_qca961x_params_t board_params[] = {
 		.uart_dm_base = UART1_DM_BASE,
 		.dbg_uart_gpio = {
 			{
-				.gpio = 16,
-				.func = 1,
+				.gpio = 60,
+				.func = 2,
 				.pull = GPIO_NO_PULL,
 				.oe = GPIO_OE_ENABLE
 			},
 			{
-				.gpio = 17,
-				.func = 1,
+				.gpio = 61,
+				.func = 2,
 				.pull = GPIO_NO_PULL,
 				.oe = GPIO_OE_ENABLE
 			},
@@ -77,14 +76,14 @@ board_qca961x_params_t board_params[] = {
 		.uart_dm_base = UART1_DM_BASE,
 		.dbg_uart_gpio = {
 			{
-				.gpio = 16,
-				.func = 1,
+				.gpio = 60,
+				.func = 2,
 				.pull = GPIO_NO_PULL,
 				.oe = GPIO_OE_ENABLE
 			},
 			{
-				.gpio = 17,
-				.func = 1,
+				.gpio = 61,
+				.func = 2,
 				.pull = GPIO_NO_PULL,
 				.oe = GPIO_OE_ENABLE
 			},
