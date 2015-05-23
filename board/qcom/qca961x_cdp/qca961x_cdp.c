@@ -281,6 +281,7 @@ int board_late_init(void)
 
 	/* get machine type from SMEM and set in env */
 	machid = gd->bd->bi_arch_number;
+	printf("machid: %x\n", machid);
 	if (machid != 0) {
 		setenv_addr("machid", (void *)machid);
 		gd->bd->bi_arch_number = machid;
@@ -297,8 +298,8 @@ int board_late_init(void)
  */
 int board_early_init_f(void)
 {
-	/* Hardcoded board param for now. Need to retrieve from SMEM */
-	gboard_param = board_params;
+	/* Retrieve from SMEM */
+	gboard_param = get_board_param(smem_get_board_platform_type());
 	return 0;
 }
 
