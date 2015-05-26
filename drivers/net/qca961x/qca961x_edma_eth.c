@@ -896,6 +896,20 @@ int qca961x_edma_init(qca961x_edma_board_cfg_t *edma_cfg)
 		if (ret)
 			goto failed;
 
+		switch (edma_cfg->phy) {
+		case PHY_INTERFACE_MODE_PSGMII:
+			writel(PSGMIIPHY_PLL_VCO_VAL,
+				PSGMIIPHY_PLL_VCO_RELATED_CTRL);
+			writel(PSGMIIPHY_VCO_VAL,
+				PSGMIIPHY_VCO_CALIBRATION_CTRL);
+			/* wait for 1 sec */
+			mdelay(1000);
+			writel(PSGMIIPHY_VCO_RST_VAL, PSGMIIPHY_VCO_CALIBRATION_CTRL);
+			break;
+		default:
+			printf("unknown MII interface\n");
+			goto failed;
+		}
 		eth_register(dev[i]);
 		/*
 		 * Configure EDMA This should

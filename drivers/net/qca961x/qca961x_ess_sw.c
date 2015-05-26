@@ -33,12 +33,11 @@ int qca961x_ess_sw_init(qca961x_edma_board_cfg_t *cfg)
 {
 	switch(gboard_param->machid) {
 	case MACH_TYPE_IPQ40XX_AP_DK01_1_C1:
+	case MACH_TYPE_IPQ40XX_AP_DK01_1_C2:
+	case MACH_TYPE_IPQ40XX_AP_DK04_1_C1:
+	case MACH_TYPE_IPQ40XX_AP_DK04_1_C2:
+	case MACH_TYPE_IPQ40XX_AP_DK04_1_C3:
 		qca961x_ess_sw_wr(S17_P0STATUS_REG, 0x4e);
-		qca961x_ess_sw_wr(S17_P1STATUS_REG, 0x4e);
-		qca961x_ess_sw_wr(S17_P2STATUS_REG, 0x4e);
-		qca961x_ess_sw_wr(S17_P3STATUS_REG, 0x4e);
-		qca961x_ess_sw_wr(S17_P4STATUS_REG, 0x4e);
-		qca961x_ess_sw_wr(S17_P5STATUS_REG, 0x4e);
 
 		qca961x_ess_sw_wr(S17_GLOFW_CTRL1_REG, 0x7f7f7f);
 		qca961x_ess_sw_wr(S17_P0LOOKUP_CTRL_REG, 0x14003e);

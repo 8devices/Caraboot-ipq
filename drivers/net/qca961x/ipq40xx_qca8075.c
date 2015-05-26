@@ -276,7 +276,6 @@ int ipq40xx_qca8075_phy_init(qca961x_edma_board_cfg_t *cfg)
 {
 	u16 phy_data;
 
-	printf ("%s %d\n", __func__, __LINE__);
 	phy_data = qca8075_phy_reg_read(0x0, 0x0, QCA8075_PHY_ID1);
 	printf ("PHY ID1: 0x%x\n", phy_data);
 	phy_data = qca8075_phy_reg_read(0x0, 0x0, QCA8075_PHY_ID2);

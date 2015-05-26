@@ -36,6 +36,13 @@
 #define QCA961X_EDMA_TX_CPU_START_SHIFT		0x2
 #define QCA961X_EDMA_RX_CPU_START_SHIFT		0x1
 
+#define PSGMIIPHY_PLL_VCO_RELATED_CTRL	0x0009878c
+#define PSGMIIPHY_PLL_VCO_VAL		0x2803
+
+#define PSGMIIPHY_VCO_CALIBRATION_CTRL	0x0009809c
+#define PSGMIIPHY_VCO_VAL	0x4ADA
+#define PSGMIIPHY_VCO_RST_VAL	0xADA
+
 /* edma transmit descriptor */
 struct edma_tx_desc {
 	__le16  len; /* full packet including CRC */

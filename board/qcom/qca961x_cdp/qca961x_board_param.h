@@ -36,13 +36,80 @@
 #include <asm/sizes.h>
 #include "qca961x_cdp.h"
 
+gpio_func_data_t sw_gpio_bga[] = {
+	{
+		.gpio = 6,
+		.func = 1,
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+	{
+		.gpio = 7,
+		.func = 1,
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+	{
+		.gpio = 47,
+		.func = 0,
+		.pull = GPIO_PULL_DOWN,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_ENABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+};
+
+gpio_func_data_t sw_gpio_qfn[] = {
+	{
+		.gpio = 52,
+		.func = 2,
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+	{
+		.gpio = 53,
+		.func = 2,
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+	{
+		.gpio = 59,
+		.func = 0,
+		.pull = GPIO_NO_PULL,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_ENABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+};
+
 #define QCA961X_EDMA_CFG_BASE		0xC080000
 
-#define qca961x_edma_cfg(_b, _pn, ...)                  \
-{                                                       \
-	.base		= QCA961X_EDMA_CFG_BASE,        \
-	.unit		= _b,                           \
-	.phy_addr	= {.count = _pn, {__VA_ARGS__}} \
+#define qca961x_edma_cfg(_b, _pn, _p, ...)		\
+{							\
+	.base		= QCA961X_EDMA_CFG_BASE,	\
+	.unit		= _b,				\
+	.phy		= PHY_INTERFACE_MODE_##_p,	\
+	.phy_addr	= {.count = _pn, {__VA_ARGS__}}	\
 }
 
 #define qca961x_edma_cfg_invalid()	{ .unit = -1, }
@@ -66,8 +133,11 @@ board_qca961x_params_t board_params[] = {
 				.oe = GPIO_OE_ENABLE
 			},
 		},
+		.sw_gpio = sw_gpio_qfn,
+		.sw_gpio_count = ARRAY_SIZE(sw_gpio_qfn),
 		.edma_cfg = {
-			qca961x_edma_cfg(0, 5, 0, 1, 2, 3, 4)
+			qca961x_edma_cfg(0, 5, PSGMII,
+					0, 1, 2, 3, 4)
 		},
 	},
 	{
@@ -88,8 +158,11 @@ board_qca961x_params_t board_params[] = {
 				.oe = GPIO_OE_ENABLE
 			},
 		},
+		.sw_gpio = sw_gpio_qfn,
+		.sw_gpio_count = ARRAY_SIZE(sw_gpio_qfn),
 		.edma_cfg = {
-			qca961x_edma_cfg(0, 5, 0, 1, 2, 3, 4)
+			qca961x_edma_cfg(0, 5, PSGMII,
+					0, 1, 2, 3, 4)
 		},
 	},
 	{
@@ -110,8 +183,11 @@ board_qca961x_params_t board_params[] = {
 				.oe = GPIO_OE_ENABLE
 			},
 		},
+		.sw_gpio = sw_gpio_bga,
+		.sw_gpio_count = ARRAY_SIZE(sw_gpio_bga),
 		.edma_cfg = {
-			qca961x_edma_cfg(0, 5, 0, 1, 2, 3, 4)
+			qca961x_edma_cfg(0, 5, PSGMII,
+					0, 1, 2, 3, 4)
 		},
 	},
 	{
@@ -132,8 +208,11 @@ board_qca961x_params_t board_params[] = {
 				.oe = GPIO_OE_ENABLE
 			},
 		},
+		.sw_gpio = sw_gpio_bga,
+		.sw_gpio_count = ARRAY_SIZE(sw_gpio_bga),
 		.edma_cfg = {
-			qca961x_edma_cfg(0, 5, 0, 1, 2, 3, 4)
+			qca961x_edma_cfg(0, 5, PSGMII,
+					0, 1, 2, 3, 4)
 		},
 	},
 	{
@@ -154,8 +233,11 @@ board_qca961x_params_t board_params[] = {
 				.oe = GPIO_OE_ENABLE
 			},
 		},
+		.sw_gpio = sw_gpio_bga,
+		.sw_gpio_count = ARRAY_SIZE(sw_gpio_bga),
 		.edma_cfg = {
-			qca961x_edma_cfg(0, 5, 0, 1, 2, 3, 4)
+			qca961x_edma_cfg(0, 5, PSGMII,
+					0, 1, 2, 3, 4)
 		},
 	},
 	{
@@ -176,8 +258,11 @@ board_qca961x_params_t board_params[] = {
 				.oe = GPIO_OE_ENABLE
 			},
 		},
+		.sw_gpio = sw_gpio_bga,
+		.sw_gpio_count = ARRAY_SIZE(sw_gpio_bga),
 		.edma_cfg = {
-			qca961x_edma_cfg(0, 5, 0, 1, 2, 3, 4)
+			qca961x_edma_cfg(0, 5, PSGMII,
+					0, 1, 2, 3, 4)
 		},
 	},
 	{
@@ -198,8 +283,11 @@ board_qca961x_params_t board_params[] = {
 				.oe = GPIO_OE_ENABLE
 			},
 		},
+		.sw_gpio = sw_gpio_bga,
+		.sw_gpio_count = ARRAY_SIZE(sw_gpio_bga),
 		.edma_cfg = {
-			qca961x_edma_cfg(0, 5, 0, 1, 2, 3, 4)
+			qca961x_edma_cfg(0, 5, PSGMII,
+					0, 1, 2, 3, 4)
 		},
 	},
 	{
@@ -220,8 +308,11 @@ board_qca961x_params_t board_params[] = {
 				.oe = GPIO_OE_ENABLE
 			},
 		},
+		.sw_gpio = sw_gpio_bga,
+		.sw_gpio_count = ARRAY_SIZE(sw_gpio_bga),
 		.edma_cfg = {
-			qca961x_edma_cfg(0, 5, 0, 1, 2, 3, 4)
+			qca961x_edma_cfg(0, 5, PSGMII,
+					0, 1, 2, 3, 4)
 		},
 	},
 };

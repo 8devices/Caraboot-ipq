@@ -328,6 +328,15 @@
 #define NETDEV_TX_BUSY	1
 #define PHY_MAX		5
 
+#define GCC_MDIO_AHB_CBCR	0x1826000
+#define MDIO_CTRL_0_REG		0x00090040
+#define MDIO_CTRL_0_DIV(x)	(x << 0)
+#define MDIO_CTRL_0_MODE	(1 << 8)
+#define MDIO_CTRL_0_RES(x)	(x << 9)
+#define MDIO_CTRL_0_MDC_MODE	(1 << 12)
+#define MDIO_CTRL_0_GPHY(x)	(x << 13)
+#define MDIO_CTRL_0_RES1(x)	(x << 17)
+
 /* Phy preferred medium type */
 typedef enum {
 	QCA8075_PHY_MEDIUM_COPPER = 0,

@@ -348,15 +348,33 @@ void board_nand_init(void)
 #endif
 }
 
+static void ipq40xx_edma_common_init()
+{
+	writel(1, GCC_MDIO_AHB_CBCR);
+	writel(MDIO_CTRL_0_DIV(0xff) |
+		MDIO_CTRL_0_MDC_MODE |
+		MDIO_CTRL_0_GPHY(0xa), MDIO_CTRL_0_REG);
+}
+
 int board_eth_init(bd_t *bis)
 {
 	u32 status;
+	gpio_func_data_t *gpio;
+	ipq40xx_edma_common_init();
+	gpio = gboard_param->sw_gpio;
+	if (gpio) {
+		qca_configure_gpio(gpio, gboard_param->sw_gpio_count);
+	}
 	switch (gboard_param->machid) {
 	case MACH_TYPE_IPQ40XX_AP_DK01_1_C1:
 	case MACH_TYPE_IPQ40XX_AP_DK01_1_C2:
+		writel(GPIO_OUT, GPIO_IN_OUT_ADDR(59));
+		qca961x_register_switch(ipq40xx_qca8075_phy_init);
+		break;
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C1:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C2:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C3:
+		writel(GPIO_OUT, GPIO_IN_OUT_ADDR(47));
 		qca961x_register_switch(ipq40xx_qca8075_phy_init);
 		break;
 	default:
@@ -372,7 +390,8 @@ void qca_configure_gpio(gpio_func_data_t *gpio, uint count)
 
 	for (i = 0; i < count; i++) {
 		gpio_tlmm_config(gpio->gpio, gpio->func, gpio->out,
-				 gpio->pull, gpio->drvstr, gpio->oe);
+			gpio->pull, gpio->drvstr, gpio->oe,
+			gpio->gpio_vm, gpio->gpio_od_en, gpio->gpio_pu_res);
 		gpio++;
 	}
 }
