@@ -196,7 +196,7 @@ static void blsp_pin_config(unsigned int port_num, int cs_num)
 	gpio = cs_gpio_array[port_num][cs_num];
 	/* configure CS */
 	gpio_tlmm_config(gpio, FUNC_SEL_GPIO, GPIO_OUTPUT, GPIO_PULL_UP,
-			GPIO_DRV_STR_10MA, GPIO_FUNC_ENABLE);
+			GPIO_DRV_STR_10MA, GPIO_FUNC_ENABLE, 0, 0, 0);
 }
 
 int qup_bam_init(struct ipq_spi_slave *ds)

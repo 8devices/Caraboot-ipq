@@ -63,6 +63,9 @@ typedef struct {
 	unsigned int pull;
 	unsigned int drvstr;
 	unsigned int oe;
+	unsigned int gpio_vm;
+	unsigned int gpio_od_en;
+	unsigned int gpio_pu_res;
 } gpio_func_data_t;
 
 /* Board specific parameters */
@@ -70,6 +73,8 @@ typedef struct {
 	unsigned int machid;
 	unsigned int ddr_size;
 	unsigned int uart_dm_base;
+	gpio_func_data_t *sw_gpio;
+	unsigned int sw_gpio_count;
 	gpio_func_data_t dbg_uart_gpio[NO_OF_DBG_UART_GPIOS];
 	qca961x_edma_board_cfg_t edma_cfg[QCA961X_EDMA_DEV];
 } __attribute__ ((__packed__)) board_qca961x_params_t;

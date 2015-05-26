@@ -47,14 +47,20 @@ Return : None
 
 
 void gpio_tlmm_config(unsigned int gpio, unsigned int func,
-		      unsigned int out, unsigned int pull,
-		      unsigned int drvstr, unsigned int oe)
+		unsigned int out, unsigned int pull,
+		unsigned int drvstr, unsigned int oe,
+		unsigned int gpio_vm, unsigned int gpio_od_en,
+		unsigned int gpio_pu_res)
 {
 	unsigned int val = 0;
 	val |= pull;
 	val |= func << 2;
 	val |= drvstr << 6;
 	val |= oe << 9;
+	val |= gpio_vm << 11;
+	val |= gpio_od_en << 12;
+	val |= gpio_pu_res << 13;
+
 	unsigned int *addr = (unsigned int *)GPIO_CONFIG_ADDR(gpio);
 	writel(val, addr);
 
