@@ -323,26 +323,38 @@ int dram_init(void)
 
 void board_nand_init(void)
 {
+	gpio_func_data_t *gpio;
 #ifdef CONFIG_IPQ_NAND
 	ipq_nand_init(IPQ_NAND_LAYOUT_LINUX, QCOM_NAND_QPIC);
 #else
-	struct qpic_nand_init_config config;
-	config.pipes.read_pipe = DATA_PRODUCER_PIPE;
-	config.pipes.write_pipe = DATA_CONSUMER_PIPE;
-	config.pipes.cmd_pipe = CMD_PIPE;
+	if ((gboard_param->machid == MACH_TYPE_IPQ40XX_AP_DK04_1_C1) ||
+		(gboard_param->machid == MACH_TYPE_IPQ40XX_AP_DK04_1_C2) ||
+		(gboard_param->machid == MACH_TYPE_IPQ40XX_AP_DK04_1_C3)) {
 
-	config.pipes.read_pipe_grp = DATA_PRODUCER_PIPE_GRP;
-	config.pipes.write_pipe_grp = DATA_CONSUMER_PIPE_GRP;
-	config.pipes.cmd_pipe_grp = CMD_PIPE_GRP;
+		struct qpic_nand_init_config config;
+		config.pipes.read_pipe = DATA_PRODUCER_PIPE;
+		config.pipes.write_pipe = DATA_CONSUMER_PIPE;
+		config.pipes.cmd_pipe = CMD_PIPE;
 
-	config.bam_base = QCA961x_QPIC_BAM_CTRL;
-	config.nand_base = QCA961x_EBI2ND_BASE;
-	config.ee = QPIC_NAND_EE;
-	config.max_desc_len = QPIC_NAND_MAX_DESC_LEN;
+		config.pipes.read_pipe_grp = DATA_PRODUCER_PIPE_GRP;
+		config.pipes.write_pipe_grp = DATA_CONSUMER_PIPE_GRP;
+		config.pipes.cmd_pipe_grp = CMD_PIPE_GRP;
 
-	qpic_nand_init(&config);
+		config.bam_base = QCA961x_QPIC_BAM_CTRL;
+		config.nand_base = QCA961x_EBI2ND_BASE;
+		config.ee = QPIC_NAND_EE;
+		config.max_desc_len = QPIC_NAND_MAX_DESC_LEN;
+		gpio = gboard_param->nand_gpio;
+		if (gpio) {
+			qca_configure_gpio(gpio,
+				gboard_param->nand_gpio_count);
+		}
+		qpic_nand_init(&config);
+	}
 #endif
-	spi_nand_init();
+	if ((gboard_param->machid == MACH_TYPE_IPQ40XX_AP_DK01_1_C2)) {
+		spi_nand_init();
+	}
 #ifdef CONFIG_IPQ40XX_SPI
 	ipq_spi_init(CONFIG_IPQ_SPI_NOR_INFO_IDX);
 #endif
