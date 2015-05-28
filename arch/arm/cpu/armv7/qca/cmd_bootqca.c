@@ -83,7 +83,7 @@ static int set_fs_bootargs(int *fs_on_nand)
 		pos = find_part_efi(blk_dev, IPQ_ROOT_FS_PART_NAME, &disk_info);
 		if (pos > 0) {
 			snprintf(emmc_rootfs, sizeof(emmc_rootfs),
-				"root=/dev/mmcblk0p%d", pos);
+				"root=/dev/mmcblk0p%d rootwait", pos);
 			bootargs = emmc_rootfs;
 			*fs_on_nand = 0;
 		}
