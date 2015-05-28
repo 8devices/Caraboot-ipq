@@ -37,8 +37,9 @@
 static unsigned long long timestamp;
 static unsigned long long lastinc;
 
-#define GPT_FREQ_KHZ	48000
-#define GPT_FREQ	(GPT_FREQ_KHZ * 1000)	/* 48 MHz */
+#define GPT_FREQ	48
+#define GPT_FREQ_KHZ	(GPT_FREQ * 1000)
+#define GPT_FREQ_HZ	(GPT_FREQ_KHZ * 1000)	/* 48 MHz */
 
 /**
  * timer_init - initialize timer
@@ -76,22 +77,18 @@ void __udelay(unsigned long usec)
 	unsigned long long last;
 	unsigned long long runcount;
 
-	usec = (usec + GPT_FREQ_KHZ - 1) / GPT_FREQ_KHZ;
+	val = (usec * GPT_FREQ);
 	last_high = readl(GCNT_CNTCV_HI);
 	last_low = readl(GCNT_CNTCV_LO);
 	last = last_high << 32 | last_low;
-	runcount = last;
-	val = usec + last;
-
 	do {
 		now_high = readl(GCNT_CNTCV_HI);
 		now_low = readl(GCNT_CNTCV_LO);
 		now = now_high << 32 | now_low;
 		if (last > now)
-			runcount += ((GPT_FREQ - last) + now);
+			runcount = (GPT_FREQ - last) + now;
 		else
-			runcount += (now - last);
-		last = now;
+			runcount = now - last;
 	} while (runcount < val);
 }
 
@@ -102,7 +99,7 @@ inline unsigned long long gpt_to_sys_freq(unsigned long long gpt)
 	 * of CONFIG_SYS_HZ. Convert GPT timer values to CONFIG_SYS_HZ
 	 * units.
 	 */
-	return (gpt) / (GPT_FREQ / CONFIG_SYS_HZ);
+	return (gpt) / (GPT_FREQ_HZ / CONFIG_SYS_HZ);
 }
 
 /**

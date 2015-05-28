@@ -265,5 +265,7 @@ typedef struct {
 
 #define CONFIG_RBTREE		/* for ubi */
 #define CONFIG_CMD_UBI
+#define CONFIG_BOOTCOMMAND	"bootipq"
+#define CONFIG_BOOTDELAY	2
 
 #endif /* _IPQCDP_H */
