@@ -73,6 +73,8 @@ typedef struct {
 	unsigned int machid;
 	unsigned int ddr_size;
 	unsigned int uart_dm_base;
+	gpio_func_data_t *spi_nor_gpio;
+	unsigned int spi_nor_gpio_count;
 	gpio_func_data_t *nand_gpio;
 	unsigned int nand_gpio_count;
 	gpio_func_data_t *sw_gpio;

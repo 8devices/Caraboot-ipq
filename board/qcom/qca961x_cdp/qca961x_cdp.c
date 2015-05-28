@@ -349,6 +349,11 @@ void board_nand_init(void)
 			qca_configure_gpio(gpio,
 				gboard_param->nand_gpio_count);
 		}
+		gpio = gboard_param->spi_nor_gpio;
+		if (gpio) {
+			qca_configure_gpio(gpio,
+				gboard_param->spi_nor_gpio_count);
+		}
 		qpic_nand_init(&config);
 	}
 #endif

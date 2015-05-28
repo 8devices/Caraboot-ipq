@@ -36,6 +36,49 @@
 #include <asm/sizes.h>
 #include "qca961x_cdp.h"
 
+gpio_func_data_t spi_nor_bga[] = {
+	{
+		.gpio = 12,
+		.func = 1,
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+	{
+		.gpio = 13,
+		.func = 1,
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+	{
+		.gpio = 14,
+		.func = 1,
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+	{
+		.gpio = 15,
+		.func = 1,
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+};
+
 gpio_func_data_t nand_gpio_bga[] = {
 	{
 		.gpio = 52,
@@ -367,6 +410,8 @@ board_qca961x_params_t board_params[] = {
 				.oe = GPIO_OE_ENABLE
 			},
 		},
+		.spi_nor_gpio = spi_nor_bga,
+		.spi_nor_gpio_count = ARRAY_SIZE(spi_nor_bga),
 		.nand_gpio = nand_gpio_bga,
 		.nand_gpio_count = ARRAY_SIZE(nand_gpio_bga),
 		.sw_gpio = sw_gpio_bga,
@@ -394,6 +439,8 @@ board_qca961x_params_t board_params[] = {
 				.oe = GPIO_OE_ENABLE
 			},
 		},
+		.spi_nor_gpio = spi_nor_bga,
+		.spi_nor_gpio_count = ARRAY_SIZE(spi_nor_bga),
 		.nand_gpio = nand_gpio_bga,
 		.nand_gpio_count = ARRAY_SIZE(nand_gpio_bga),
 		.sw_gpio = sw_gpio_bga,
@@ -421,6 +468,8 @@ board_qca961x_params_t board_params[] = {
 				.oe = GPIO_OE_ENABLE
 			},
 		},
+		.spi_nor_gpio = spi_nor_bga,
+		.spi_nor_gpio_count = ARRAY_SIZE(spi_nor_bga),
 		.nand_gpio = nand_gpio_bga,
 		.nand_gpio_count = ARRAY_SIZE(nand_gpio_bga),
 		.sw_gpio = sw_gpio_bga,
