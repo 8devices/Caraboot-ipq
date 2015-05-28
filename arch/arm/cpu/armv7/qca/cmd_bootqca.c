@@ -35,6 +35,26 @@ extern int nand_env_device;
 static qca_mmc *host = &mmc_host;
 #endif
 
+typedef struct {
+	unsigned int image_type;
+	unsigned int header_vsn_num;
+	unsigned int image_src;
+	unsigned char *image_dest_ptr;
+	unsigned int image_size;
+	unsigned int code_size;
+	unsigned char *signature_ptr;
+	unsigned int signature_size;
+	unsigned char *cert_chain_ptr;
+	unsigned int cert_chain_size;
+} mbn_header_t;
+
+typedef struct {
+	unsigned int kernel_load_addr;
+	unsigned int kernel_load_size;
+} kernel_img_info_t;
+
+kernel_img_info_t kernel_img_info;
+
 /**
  * Inovke the dump routine and in case of failure, do not stop unless the user
  * requested to stop
@@ -99,7 +119,183 @@ static int set_fs_bootargs(int *fs_on_nand)
 	return run_command("setenv bootargs ${bootargs} ${fsbootargs}", 0);
 }
 
+static int do_bootmbn(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+{
+#ifdef CONFIG_QCA_APPSBL_DLOAD
+	uint64_t etime;
+	volatile u32 val;
+#endif
+	char runcmd[256];
+	int ret;
+	unsigned int request;
+#ifdef CONFIG_QCA_MMC
+	block_dev_desc_t *blk_dev = mmc_get_dev(host->dev_num);
+	disk_partition_t disk_info;
+	unsigned int active_part = 0;
+#endif
 
+	if (argc == 2 && strncmp(argv[1], "debug", 5) == 0)
+		debug = 1;
+
+#ifdef CONFIG_QCA_APPSBL_DLOAD
+
+	ret = scm_call(SCM_SVC_BOOT, SCM_SVC_RD, NULL,
+			0, &val, sizeof(val));
+	/* check if we are in download mode */
+	if (val == DLOAD_MAGIC_COOKIE) {
+		/* clear the magic and run the dump command */
+		val = 0x0;
+		ret = scm_call(SCM_SVC_BOOT, SCM_SVC_WR,
+			&val, sizeof(val), NULL, 0);
+		if (ret)
+			printf ("Error in reseting the Magic cookie\n");
+
+		etime = get_timer_masked() + (10 * CONFIG_SYS_HZ);
+
+		printf("\nCrashdump magic found."
+			"\nHit any key within 10s to stop dump activity...");
+		while (!tstc()) {       /* while no incoming data */
+			if (get_timer_masked() >= etime) {
+				if (do_dumpipq_data() == CMD_RET_FAILURE)
+					return CMD_RET_FAILURE;
+				break;
+			}
+		}
+
+		/* reset the system, some images might not be loaded
+		 * when crashmagic is found
+		 */
+		run_command("reset", 0);
+	}
+#endif
+	if ((ret = set_fs_bootargs(&ipq_fs_on_nand)))
+		return ret;
+
+	/* check the smem info to see which flash used for booting */
+	if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
+		if (debug) {
+			printf("Using nand device 2\n");
+		}
+		run_command("nand device 2", 0);
+	} else if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
+		if (debug) {
+			printf("Using nand device 0\n");
+		}
+	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
+		if (debug) {
+			printf("Using MMC device\n");
+		}
+	} else {
+		printf("Unsupported BOOT flash type\n");
+		return -1;
+	}
+	if (debug) {
+		run_command("printenv bootargs", 0);
+		printf("Booting from flash\n");
+	}
+
+	request = CONFIG_SYS_LOAD_ADDR;
+	kernel_img_info.kernel_load_addr = request;
+
+	if (ipq_fs_on_nand) {
+
+		/*
+		 * The kernel will be available inside a UBI volume
+		 */
+		snprintf(runcmd, sizeof(runcmd),
+			"set mtdids nand0=nand0 && "
+			"set mtdparts mtdparts=nand0:0x%llx@0x%llx(fs),${msmparts} && "
+			"ubi part fs && "
+			"ubi read 0x%x kernel && ", sfi->rootfs.size, sfi->rootfs.offset,
+			request);
+
+
+		if (debug)
+			printf(runcmd);
+
+		if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
+			return CMD_RET_FAILURE;
+
+		kernel_img_info.kernel_load_size =
+			(unsigned int)ubi_get_volume_size("kernel");
+#ifdef CONFIG_QCA_MMC
+	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
+		if (smem_bootconfig_info() == 0) {
+			active_part = get_rootfs_active_partition();
+			if (active_part) {
+				ret = find_part_efi(blk_dev, "kernel_1", &disk_info);
+			} else {
+				ret = find_part_efi(blk_dev, "kernel", &disk_info);
+			}
+		} else {
+			ret = find_part_efi(blk_dev, "kernel", &disk_info);
+		}
+
+		if (ret > 0) {
+			snprintf(runcmd, sizeof(runcmd), "mmc read 0x%x 0x%X 0x%X",
+					CONFIG_SYS_LOAD_ADDR,
+					(uint)disk_info.start, (uint)disk_info.size);
+
+			if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
+				return CMD_RET_FAILURE;
+
+			kernel_img_info.kernel_load_size = disk_info.size * disk_info.blksz;
+		}
+#endif
+	} else {
+		/*
+		 * Kernel is in a separate partition
+		 */
+		snprintf(runcmd, sizeof(runcmd),
+			/* NOR is treated as psuedo NAND */
+			"set mtdids nand1=nand1 && "
+			"set mtdparts mtdparts=nand1:${msmparts} && "
+			"nand read 0x%x 0x%llx 0x%llx && "
+			"nand read 0x%x 0x%llx 0x%llx && ",
+			request, sfi->hlos.offset, sfi->hlos.size,
+			CONFIG_DTB_LOAD_ADDR, sfi->dtb.offset, sfi->dtb.size);
+
+		if (debug)
+			printf(runcmd);
+
+		if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
+			return CMD_RET_FAILURE;
+
+		kernel_img_info.kernel_load_size =  sfi->hlos.size;
+	}
+
+	request += sizeof(mbn_header_t);
+
+	ret = scm_call(SCM_SVC_BOOT, KERNEL_AUTH_CMD, &kernel_img_info,
+		sizeof(kernel_img_info_t), NULL, 0);
+
+	if (ret) {
+		printf("Kernel image authentication failed \n");
+		BUG();
+	}
+
+	snprintf(runcmd, sizeof(runcmd), "bootm 0x%x - 0x%x\n", request,CONFIG_DTB_LOAD_ADDR);
+
+	if (debug)
+		printf(runcmd);
+
+#ifdef CONFIG_QCA_MMC
+	board_mmc_deinit();
+#endif
+
+	if (run_command(runcmd, 0) != CMD_RET_SUCCESS) {
+#ifdef CONFIG_QCA_MMC
+	mmc_initialize(gd->bd);
+#endif
+		return CMD_RET_FAILURE;
+	}
+
+	return CMD_RET_SUCCESS;
+}
+
+U_BOOT_CMD(bootmbn, 2, 0, do_bootmbn,
+	   "bootmbn from flash device",
+	   "bootmbn [debug] - Load image(s) and boots the kernel\n");
 
 static int do_bootqca(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
