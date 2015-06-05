@@ -32,6 +32,7 @@
 #include <common.h>
 #include <asm/io.h>
 #include <asm/errno.h>
+#include <asm/sizes.h>
 #include <asm/arch-qca961x/smem.h>
 #include <nand.h>
 
@@ -418,6 +419,55 @@ void qca_set_part_entry(qca_smem_flash_info_t *smem, qca_part_entry_t *part,
 uint32_t qca_smem_get_flash_block_size(void)
 {
 	return qca_smem_flash_info.flash_block_size;
+}
+
+static char parts[4096];
+
+char *qca_smem_part_to_mtdparts(char *mtdid)
+{
+	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
+	int i, l;
+	char *part = parts, *unit;
+
+	part += sprintf(part, "%s:", mtdid);
+
+	for (i = 0; i < smem_ptable.len; i++) {
+		struct smem_ptn *p = &smem_ptable.parts[i];
+		loff_t psize;
+
+		if (p->size == (~0u)) {
+			/*
+			 * Partition size is 'till end of device', calculate
+			 * appropriately
+			 */
+			psize = nand_info[nand_env_device].size - (((loff_t)
+					p->start) * sfi->flash_block_size);
+		} else {
+			psize = ((loff_t)p->size) * sfi->flash_block_size;
+		}
+
+		if ((psize > SZ_1M) && (((psize & (SZ_1M - 1)) == 0))) {
+			psize /= SZ_1M;
+			unit = "M@";
+		} else if ((psize > SZ_1K) && (((psize & (SZ_1K - 1)) == 0))) {
+			psize /= SZ_1K;
+			unit = "K@";
+		} else {
+			unit = "@";
+		}
+
+		l = sprintf(part, "%lld%s0x%llx(%s),", psize, unit,
+				((loff_t)p->start) * sfi->flash_block_size,
+				p->name);
+		part += l;
+	}
+
+	if (i == 0)
+		return NULL;
+
+	*part = 0;	/* Remove the trailing comma */
+
+	return parts;
 }
 
 int do_smeminfo(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])

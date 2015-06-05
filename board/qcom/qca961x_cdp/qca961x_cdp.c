@@ -43,6 +43,8 @@
 #else
 #include <asm/arch-qcom-common/qpic_nand.h>
 #endif
+#include <mtd_node.h>
+#include <jffs2/load_kernel.h>
 #include <asm/arch-qcom-common/clk.h>
 #include <asm/arch-qca961x/smem.h>
 
@@ -414,6 +416,40 @@ void qca_configure_gpio(gpio_func_data_t *gpio, uint count)
 }
 
 #ifdef CONFIG_OF_BOARD_SETUP
+struct flash_node_info {
+	const char *compat;	/* compatible string */
+	int type;		/* mtd flash type */
+	int idx;		/* flash index */
+};
+
+void ipq_fdt_fixup_mtdparts(void *blob, struct flash_node_info *ni)
+{
+	struct mtd_device *dev;
+	char *parts;
+	int noff;
+
+	parts = getenv("mtdparts");
+	if (!parts)
+		return;
+
+	if (mtdparts_init() != 0)
+		return;
+
+	for (; ni->compat; ni++) {
+		noff = fdt_node_offset_by_compatible(blob, -1, ni->compat);
+		while (noff != -FDT_ERR_NOTFOUND) {
+			dev = device_find(ni->type, ni->idx);
+			if (dev) {
+				if (fdt_node_set_part_info(blob, noff, dev))
+					return; /* return on error */
+			}
+
+			/* Jump to next flash node */
+			noff = fdt_node_offset_by_compatible(blob, noff,
+							     ni->compat);
+		}
+	}
+}
 /*
  * For newer kernel that boot with device tree (3.14+), all of memory is
  * described in the /memory node, including areas that the kernel should not be
@@ -426,9 +462,32 @@ void ft_board_setup(void *blob, bd_t *bd)
 {
 	u64 memory_start = CONFIG_SYS_SDRAM_BASE;
 	u64 memory_size = gboard_param->ddr_size;
+	char *mtdparts = NULL;
+	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
+	struct flash_node_info nodes[] = {
+		{ "qcom,msm-nand", MTD_DEV_TYPE_NAND, 0 },
+		{ "n25q128a11", MTD_DEV_TYPE_NAND, 2 },
+		{ NULL, 0, -1 },	/* Terminator */
+	};
 
 	fdt_fixup_memory_banks(blob, &memory_start, &memory_size, 1);
+
+	if (sfi->flash_type == SMEM_BOOT_NAND_FLASH)
+		mtdparts = "mtdparts=nand0";
+	else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH)
+		mtdparts = "mtdparts=spi0.0";
+
+	if (mtdparts) {
+		mtdparts = qca_smem_part_to_mtdparts(mtdparts);
+		debug("mtdparts = %s\n", mtdparts);
+
+		setenv("mtdids", "nand0=nand0,nand2=spi0.0");
+		setenv("mtdparts", mtdparts);
+
+		ipq_fdt_fixup_mtdparts(blob, nodes);
+	}
 }
+
 #endif /* CONFIG_OF_BOARD_SETUP */
 
 #ifdef CONFIG_QCA_MMC

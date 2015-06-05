@@ -192,6 +192,8 @@ typedef struct {
 #define CONFIG_IPQ_SPI_NAND_INFO_IDX	1
 #define CONFIG_IPQ_SPI_NOR_INFO_IDX	2
 
+#define CONFIG_FDT_FIXUP_PARTITIONS
+
 /*
  * SPI Flash Configs
  */
