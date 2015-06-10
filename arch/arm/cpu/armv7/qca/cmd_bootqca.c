@@ -89,7 +89,7 @@ static int set_fs_bootargs(int *fs_on_nand)
 	char *bootargs;
 #ifdef CONFIG_QCA_MMC
 	char emmc_rootfs[30];
-	block_dev_desc_t *blk_dev = mmc_get_dev(host->dev_num);
+	block_dev_desc_t *blk_dev;
 	disk_partition_t disk_info;
 	int pos;
 #endif
@@ -100,6 +100,7 @@ static int set_fs_bootargs(int *fs_on_nand)
 		*fs_on_nand = 1;
 #ifdef CONFIG_QCA_MMC
 	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
+		blk_dev =  mmc_get_dev(host->dev_num);
 		pos = find_part_efi(blk_dev, IPQ_ROOT_FS_PART_NAME, &disk_info);
 		if (pos > 0) {
 			snprintf(emmc_rootfs, sizeof(emmc_rootfs),
@@ -129,7 +130,7 @@ static int do_bootmbn(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	int ret;
 	unsigned int request;
 #ifdef CONFIG_QCA_MMC
-	block_dev_desc_t *blk_dev = mmc_get_dev(host->dev_num);
+	block_dev_desc_t *blk_dev;
 	disk_partition_t disk_info;
 	unsigned int active_part = 0;
 #endif
@@ -220,6 +221,7 @@ static int do_bootmbn(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 			(unsigned int)ubi_get_volume_size("kernel");
 #ifdef CONFIG_QCA_MMC
 	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
+		blk_dev = mmc_get_dev(host->dev_num);
 		if (smem_bootconfig_info() == 0) {
 			active_part = get_rootfs_active_partition();
 			if (active_part) {
@@ -306,7 +308,7 @@ static int do_bootqca(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	int ret;
 	char runcmd[256];
 #ifdef CONFIG_QCA_MMC
-	block_dev_desc_t *blk_dev = mmc_get_dev(host->dev_num);
+	block_dev_desc_t *blk_dev;
 	disk_partition_t disk_info;
 #endif
 
@@ -396,6 +398,7 @@ static int do_bootqca(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 		if (debug) {
 			printf("Using MMC device\n");
 		}
+		blk_dev = mmc_get_dev(host->dev_num);
 		ret = find_part_efi(blk_dev, "0:HLOS", &disk_info);
 
 		if (ret > 0) {

@@ -523,13 +523,14 @@ int board_mmc_env_init(void)
 
 int board_mmc_init(bd_t *bis)
 {
-	int ret = 0;
+	int ret;
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 
-	if(gboard_param->mmc_gpio_count) {
-		qca_configure_gpio(gboard_param->mmc_gpio,
-				gboard_param->mmc_gpio_count);
-	}
+	if (!gboard_param->mmc_gpio_count)
+		return 0;
+
+	qca_configure_gpio(gboard_param->mmc_gpio,
+			gboard_param->mmc_gpio_count);
 
 	mmc_host.base = MSM_SDC1_BASE;
 	mmc_host.clk_mode = MMC_IDENTIFY_MODE;
