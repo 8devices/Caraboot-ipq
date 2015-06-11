@@ -37,6 +37,7 @@
 
 /* MX25xx-specific commands */
 #define CMD_MX25XX_SE		0x20	/* Sector Erase */
+#define CMD_MX25XX_4SE		0x21	/* Sector Erase 4-Byte address */
 #define CMD_MX25XX_BE		0xD8	/* Block Erase */
 #define CMD_MX25XX_4BE		0xDC	/* Block Erase 4-byte address */
 #define CMD_MX25XX_CE		0xc7	/* Chip Erase */
@@ -195,7 +196,12 @@ static int macronix_erase(struct spi_flash *flash, u32 offset, size_t len)
 		ret = spi_flash_cmd_erase_block(flash, erase_opcode, offset, len);
 	} else {
 		/* Sector Erase */
-		erase_opcode = CMD_MX25XX_SE;
+
+		if (flash->addr_width == 4)
+			erase_opcode = CMD_MX25XX_4SE;
+		else
+			erase_opcode = CMD_MX25XX_SE;
+
 		ret = spi_flash_cmd_erase(flash, erase_opcode, offset, len);
 	}
 
