@@ -481,7 +481,7 @@ void ft_board_setup(void *blob, bd_t *bd)
 		mtdparts = qca_smem_part_to_mtdparts(mtdparts);
 		debug("mtdparts = %s\n", mtdparts);
 
-		setenv("mtdids", "nand0=nand0,nand2=spi0.0");
+		setenv("mtdids", gboard_param->mtdids);
 		setenv("mtdparts", mtdparts);
 
 		ipq_fdt_fixup_mtdparts(blob, nodes);
