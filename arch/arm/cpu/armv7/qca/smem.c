@@ -377,8 +377,8 @@ unsigned int smem_get_board_platform_type()
 		sizeof(struct qca_platfrom));
 
 	machid = ((platform_type.hw_platform << 24) |
-		((SOCINFO_VERSION_MAJOR(platform_type.version)) << 16) |
-		((SOCINFO_VERSION_MINOR(platform_type.version)) << 8) |
+		((SOCINFO_VERSION_MAJOR(platform_type.platform_version)) << 16) |
+		((SOCINFO_VERSION_MINOR(platform_type.platform_version)) << 8) |
 		(platform_type.hw_platform_subtype));
 
 	return machid;
