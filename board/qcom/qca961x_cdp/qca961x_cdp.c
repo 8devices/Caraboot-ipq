@@ -37,6 +37,7 @@
 #include <environment.h>
 #include "qca961x_board_param.h"
 #include "qca961x_cdp.h"
+#include <asm/arch-qca961x/scm.h>
 #ifdef CONFIG_IPQ_NAND
 #include <linux/mtd/ipq_nand.h>
 #include <asm/arch-qcom-common/nand.h>
@@ -99,6 +100,11 @@ extern int spi_nand_init(void);
  * relocate_code() gets executed cannot be in '.bss'
  */
 board_qca961x_params_t *gboard_param = (board_qca961x_params_t *)0xbadb0ad;
+
+#define SET_MAGIC 0x1
+#define CLEAR_MAGIC 0x0
+#define SCM_CMD_TZ_CONFIG_HW_FOR_RAM_DUMP_ID 0x9
+#define SCM_CMD_TZ_FORCE_DLOAD_ID 0x10
 
 /*******************************************************
  Function description: Board specific initialization.
@@ -310,8 +316,20 @@ void clear_l2cache_err(void)
 	return;
 }
 
+static void reset_crashdump()
+{
+	unsigned int magic_cookie = CLEAR_MAGIC;
+	unsigned int clear_info[] =
+		{ 1 /* Disable wdog debug */, 0 /* SDI enable*/, };
+	scm_call(SCM_SVC_BOOT, SCM_CMD_TZ_CONFIG_HW_FOR_RAM_DUMP_ID,
+		&clear_info, sizeof(clear_info), NULL, 0);
+	scm_call(SCM_SVC_BOOT, SCM_CMD_TZ_FORCE_DLOAD_ID, &magic_cookie,
+			sizeof(magic_cookie), NULL, 0);
+}
 void reset_cpu(ulong addr)
 {
+	/* Clear Debug sw entry register */
+	reset_crashdump();
 	/* clear ps-hold bit to reset the soc */
 	writel(0, GCNT_PSHOLD);
 	while (1);

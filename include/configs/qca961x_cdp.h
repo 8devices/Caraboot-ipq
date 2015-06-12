@@ -233,7 +233,7 @@ typedef struct {
  * CRASH DUMP ENABLE
  */
 
-/* #define CONFIG_QCA_APPSBL_DLOAD	1 */
+#define CONFIG_QCA_APPSBL_DLOAD	1
 
 #ifdef CONFIG_QCA_APPSBL_DLOAD
 #define CONFIG_CMD_TFTPPUT
