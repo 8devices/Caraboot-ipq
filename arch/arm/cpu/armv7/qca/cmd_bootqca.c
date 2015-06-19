@@ -86,13 +86,6 @@ static int inline do_dumpipq_data()
  */
 static int set_fs_bootargs(int *fs_on_nand)
 {
-	char *bootargs;
-#ifdef CONFIG_QCA_MMC
-	char emmc_rootfs[30];
-	block_dev_desc_t *blk_dev;
-	disk_partition_t disk_info;
-	int pos;
-#endif
 
 	if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
 		*fs_on_nand = 0;
@@ -100,24 +93,14 @@ static int set_fs_bootargs(int *fs_on_nand)
 		*fs_on_nand = 1;
 #ifdef CONFIG_QCA_MMC
 	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
-		blk_dev =  mmc_get_dev(host->dev_num);
-		pos = find_part_efi(blk_dev, IPQ_ROOT_FS_PART_NAME, &disk_info);
-		if (pos > 0) {
-			snprintf(emmc_rootfs, sizeof(emmc_rootfs),
-				"root=/dev/mmcblk0p%d rootwait", pos);
-			bootargs = emmc_rootfs;
-			*fs_on_nand = 0;
-		}
+		*fs_on_nand = 0;
 #endif
 	} else {
 		printf("bootipq: unsupported boot flash type\n");
 		return -EINVAL;
 	}
 
-	if (getenv("fsbootargs") == NULL)
-		setenv("fsbootargs", bootargs);
-
-	return run_command("setenv bootargs ${bootargs} ${fsbootargs}", 0);
+	return run_command("setenv bootargs ${bootargs} ${fsbootargs} rootwait", 0);
 }
 
 static int do_bootmbn(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
