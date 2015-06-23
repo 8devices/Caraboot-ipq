@@ -31,6 +31,7 @@ DECLARE_GLOBAL_DATA_PTR;
 static qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 int ipq_fs_on_nand ;
 extern int nand_env_device;
+extern board_qca961x_params_t *gboard_param;
 #ifdef CONFIG_QCA_MMC
 static qca_mmc *host = &mmc_host;
 #endif
@@ -233,12 +234,8 @@ static int do_bootmbn(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 		 */
 		snprintf(runcmd, sizeof(runcmd),
 			/* NOR is treated as psuedo NAND */
-			"set mtdids nand1=nand1 && "
-			"set mtdparts mtdparts=nand1:${msmparts} && "
-			"nand read 0x%x 0x%llx 0x%llx && "
 			"nand read 0x%x 0x%llx 0x%llx && ",
-			request, sfi->hlos.offset, sfi->hlos.size,
-			CONFIG_DTB_LOAD_ADDR, sfi->dtb.offset, sfi->dtb.size);
+			request, sfi->hlos.offset, sfi->hlos.size);
 
 		if (debug)
 			printf(runcmd);
@@ -259,7 +256,7 @@ static int do_bootmbn(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 		BUG();
 	}
 
-	snprintf(runcmd, sizeof(runcmd), "bootm 0x%x - 0x%x\n", request,CONFIG_DTB_LOAD_ADDR);
+	snprintf(runcmd, sizeof(runcmd), "bootm 0x%x%s\n", request, gboard_param->dtb_config_name);
 
 	if (debug)
 		printf(runcmd);
@@ -343,39 +340,31 @@ static int do_bootqca(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 		/*
 		 * The kernel is in seperate partition
 		 */
-		if (sfi->dtb.offset == 0xBAD0FF5E || sfi->hlos.offset == 0xBAD0FF5E) {
-			printf(" bad offset of dtb/hlos");
+		if (sfi->hlos.offset == 0xBAD0FF5E) {
+			printf(" bad offset of hlos");
 			return -1;
 		}
 
 		snprintf(runcmd, sizeof(runcmd),
-			"set mtdids nand0=nand0 && "
-			"set mtdparts mtdparts=nand0:${msmparts} && "
 			"nand read 0x%x 0x%x 0x%x && "
-			"nand read 0x%x 0x%x 0x%x && "
-			"bootm 0x%x - 0x%x\n",
+			"bootm 0x%x%s\n",
 			CONFIG_SYS_LOAD_ADDR, (uint)sfi->hlos.offset, (uint)sfi->hlos.size,
-			CONFIG_DTB_LOAD_ADDR, (uint)sfi->dtb.offset, (uint)sfi->dtb.size,
-			CONFIG_SYS_LOAD_ADDR, CONFIG_DTB_LOAD_ADDR);
+			CONFIG_SYS_LOAD_ADDR, gboard_param->dtb_config_name);
 
 	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
-		if (sfi->dtb.offset == 0xBAD0FF5E || sfi->hlos.offset == 0xBAD0FF5E) {
-			printf(" bad offset of dtb/hlos\n");
+		if (sfi->hlos.offset == 0xBAD0FF5E) {
+			printf(" bad offset of hlos\n");
 			return -1;
 		}
 		/*
 		 * Kernel is in a separate partition
 		 */
 		snprintf(runcmd, sizeof(runcmd),
-			"set mtdids nand1=nand1 && "
-			"set mtdparts mtdparts=nand1:${msmparts} && "
 			"sf probe &&"
 			"sf read 0x%x 0x%x 0x%x && "
-			"sf read 0x%x 0x%x 0x%x && "
-			"bootm 0x%x - 0x%x\n",
+			"bootm 0x%x%s\n",
 			CONFIG_SYS_LOAD_ADDR, (uint)sfi->hlos.offset, (uint)sfi->hlos.size,
-			CONFIG_DTB_LOAD_ADDR, (uint)sfi->dtb.offset, (uint)sfi->dtb.size,
-			CONFIG_SYS_LOAD_ADDR, CONFIG_DTB_LOAD_ADDR);
+			CONFIG_SYS_LOAD_ADDR, gboard_param->dtb_config_name);
 #ifdef CONFIG_QCA_MMC
 	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
 		if (debug) {
@@ -391,21 +380,11 @@ static int do_bootqca(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 
 			if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
 				return CMD_RET_FAILURE;
+
+			snprintf(runcmd, sizeof(runcmd),"bootm 0x%x%s\n",
+						CONFIG_SYS_LOAD_ADDR, gboard_param->dtb_config_name);
 		}
 
-		ret = find_part_efi(blk_dev, "0:DTB", &disk_info);
-
-		if (ret > 0) {
-			snprintf(runcmd, sizeof(runcmd), "mmc read 0x%x 0x%x 0x%x",
-					CONFIG_DTB_LOAD_ADDR,
-					(uint)disk_info.start, (uint)disk_info.size);
-
-			if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
-				return CMD_RET_FAILURE;
-
-			snprintf(runcmd, sizeof(runcmd),"bootm 0x%x - 0x%x",
-						CONFIG_SYS_LOAD_ADDR, CONFIG_DTB_LOAD_ADDR);
-		}
 #endif   	/* CONFIG_QCA_MMC   */
 	} else {
 		printf("Unsupported BOOT flash type\n");
