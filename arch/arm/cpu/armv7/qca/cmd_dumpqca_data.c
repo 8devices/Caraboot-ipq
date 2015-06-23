@@ -23,7 +23,7 @@ static int do_dumpqca_data(cmd_tbl_t *cmdtp, int flag, int argc,
 	char runcmd[128];
 	char *serverip = NULL;
 	/* dump to root of TFTP server if none specified */
-	char *dumpdir = "";
+	char *dumpdir;
 	int indx;
 	uint32_t memaddr;
 
@@ -41,10 +41,12 @@ static int do_dumpqca_data(cmd_tbl_t *cmdtp, int flag, int argc,
 		}
 	}
 
-	if ((dumpdir = getenv("dumpdir")) != NULL)
+	if ((dumpdir = getenv("dumpdir")) != NULL) {
 		printf("Using directory %s in TFTP server\n", dumpdir);
-	else
+	} else {
+		dumpdir = "";
 		printf("Env 'dumpdir' not set. Using / dir in TFTP server\n");
+	}
 	/*
 	 * Dumps CONFIG_SYS_SDRAM_BASE to gd->ram_size.
 	 */
