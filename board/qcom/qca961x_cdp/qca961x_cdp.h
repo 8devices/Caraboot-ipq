@@ -84,6 +84,7 @@ typedef struct {
 	qca961x_edma_board_cfg_t edma_cfg[QCA961X_EDMA_DEV];
 	gpio_func_data_t *mmc_gpio;
 	unsigned int mmc_gpio_count;
+	unsigned char *dtb_config_name;
 } __attribute__ ((__packed__)) board_qca961x_params_t;
 
 extern board_qca961x_params_t *gboard_param;

@@ -471,6 +471,7 @@ board_qca961x_params_t board_params[] = {
 			qca961x_edma_cfg(0, 5, PSGMII,
 					0, 1, 2, 3, 4)
 		},
+		.dtb_config_name = "#config@4",
 	},
 	{
 		.machid = MACH_TYPE_IPQ40XX_AP_DK01_1_C2,
@@ -497,6 +498,7 @@ board_qca961x_params_t board_params[] = {
 			qca961x_edma_cfg(0, 5, PSGMII,
 					0, 1, 2, 3, 4)
 		},
+		.dtb_config_name = "#config@5",
 	},
 	{
 		.machid = MACH_TYPE_IPQ40XX_AP_DK04_1_C1,
@@ -529,6 +531,7 @@ board_qca961x_params_t board_params[] = {
 		},
 		.mmc_gpio = mmc_ap_dk04,
 		.mmc_gpio_count = ARRAY_SIZE(mmc_ap_dk04),
+		.dtb_config_name = "#config@1",
 	},
 	{
 		.machid = MACH_TYPE_IPQ40XX_AP_DK04_1_C2,
@@ -561,6 +564,7 @@ board_qca961x_params_t board_params[] = {
 		},
 		.mmc_gpio = mmc_ap_dk04,
 		.mmc_gpio_count = ARRAY_SIZE(mmc_ap_dk04),
+		.dtb_config_name = "#config@2",
 	},
 	{
 		.machid = MACH_TYPE_IPQ40XX_AP_DK04_1_C3,
@@ -593,6 +597,7 @@ board_qca961x_params_t board_params[] = {
 		},
 		.mmc_gpio = mmc_ap_dk04,
 		.mmc_gpio_count = ARRAY_SIZE(mmc_ap_dk04),
+		.dtb_config_name = "#config@3",
 	},
 	{
 		.machid = MACH_TYPE_IPQ40XX_DB152,
@@ -618,6 +623,7 @@ board_qca961x_params_t board_params[] = {
 			qca961x_edma_cfg(0, 5, PSGMII,
 					0, 1, 2, 3, 4)
 		},
+		.dtb_config_name = "",
 	},
 	{
 		.machid = MACH_TYPE_IPQ40XX_DB153,
@@ -643,6 +649,7 @@ board_qca961x_params_t board_params[] = {
 			qca961x_edma_cfg(0, 5, PSGMII,
 					0, 1, 2, 3, 4)
 		},
+		.dtb_config_name = "",
 	},
 	{
 		.machid = MACH_TYPE_IPQ40XX_TB832,
@@ -668,6 +675,7 @@ board_qca961x_params_t board_params[] = {
 			qca961x_edma_cfg(0, 5, PSGMII,
 					0, 1, 2, 3, 4)
 		},
+		.dtb_config_name = "",
 	},
 };
 
