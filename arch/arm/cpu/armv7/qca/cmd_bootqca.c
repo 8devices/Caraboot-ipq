@@ -87,10 +87,16 @@ static int inline do_dumpipq_data()
  */
 static int set_fs_bootargs(int *fs_on_nand)
 {
+	char *bootargs;
+
+#define nand_rootfs	"ubi.mtd=" IPQ_ROOT_FS_PART_NAME " root=mtd:ubi_rootfs rootfstype=squashfs"
 
 	if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
 		*fs_on_nand = 0;
 	} else if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
+		bootargs = nand_rootfs;
+		if (getenv("fsbootargs") == NULL)
+			setenv("fsbootargs", bootargs);
 		*fs_on_nand = 1;
 #ifdef CONFIG_QCA_MMC
 	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
@@ -340,16 +346,19 @@ static int do_bootqca(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 		/*
 		 * The kernel is in seperate partition
 		 */
-		if (sfi->hlos.offset == 0xBAD0FF5E) {
+		if (sfi->rootfs.offset == 0xBAD0FF5E) {
 			printf(" bad offset of hlos");
 			return -1;
 		}
 
 		snprintf(runcmd, sizeof(runcmd),
-			"nand read 0x%x 0x%x 0x%x && "
-			"bootm 0x%x%s\n",
-			CONFIG_SYS_LOAD_ADDR, (uint)sfi->hlos.offset, (uint)sfi->hlos.size,
-			CONFIG_SYS_LOAD_ADDR, gboard_param->dtb_config_name);
+			"set mtdids nand0=nand0 && "
+			"set mtdparts mtdparts=nand0:0x%llx@0x%llx(fs),${msmparts} && "
+			"ubi part fs && "
+			"ubi read 0x%x kernel && "
+			"bootm 0x%x%s\n", sfi->rootfs.size, sfi->rootfs.offset,
+			CONFIG_SYS_LOAD_ADDR, CONFIG_SYS_LOAD_ADDR,
+			gboard_param->dtb_config_name);
 
 	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
 		if (sfi->hlos.offset == 0xBAD0FF5E) {
