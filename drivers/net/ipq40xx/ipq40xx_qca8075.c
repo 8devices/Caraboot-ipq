@@ -14,7 +14,7 @@
 #include <net.h>
 #include <asm-generic/errno.h>
 #include <asm/io.h>
-#include <asm/arch-qca961x/ess/qca961x_edma.h>
+#include <asm/arch-ipq40xx/ess/ipq40xx_edma.h>
 #include "ipq40xx_qca8075.h"
 
 extern int ipq40xx_mdio_write(int mii_id,
@@ -272,7 +272,7 @@ static u16 qca8075_phy_mmd_read(u32 dev_id, u32 phy_id,
 			QCA8075_MMD_DATA_REG);
 }
 
-int ipq40xx_qca8075_phy_init(qca961x_edma_board_cfg_t *cfg)
+int ipq40xx_qca8075_phy_init(ipq40xx_edma_board_cfg_t *cfg)
 {
 	u16 phy_data;
 

@@ -16,20 +16,20 @@
 #include <asm-generic/errno.h>
 #include <asm/io.h>
 
-#include "qca961x_ess_sw.h"
+#include "ipq40xx_ess_sw.h"
 
-extern board_qca961x_params_t *gboard_param;
-static inline qca961x_ess_sw_rd(u32 addr, u32 * data)
+extern board_ipq40xx_params_t *gboard_param;
+static inline ipq40xx_ess_sw_rd(u32 addr, u32 * data)
 {
-	*data = readl((void __iomem *)(QCA961X_NSS_BASE + addr));
+	*data = readl((void __iomem *)(IPQ40XX_NSS_BASE + addr));
 }
 
-static inline qca961x_ess_sw_wr(u32 addr, u32 data)
+static inline ipq40xx_ess_sw_wr(u32 addr, u32 data)
 {
-	writel(data, ((void __iomem *)(QCA961X_NSS_BASE + addr)));
+	writel(data, ((void __iomem *)(IPQ40XX_NSS_BASE + addr)));
 }
 
-int qca961x_ess_sw_init(qca961x_edma_board_cfg_t *cfg)
+int ipq40xx_ess_sw_init(ipq40xx_edma_board_cfg_t *cfg)
 {
 	switch(gboard_param->machid) {
 	case MACH_TYPE_IPQ40XX_AP_DK01_1_C1:
@@ -37,15 +37,15 @@ int qca961x_ess_sw_init(qca961x_edma_board_cfg_t *cfg)
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C1:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C2:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C3:
-		qca961x_ess_sw_wr(S17_P0STATUS_REG, 0x4e);
+		ipq40xx_ess_sw_wr(S17_P0STATUS_REG, 0x4e);
 
-		qca961x_ess_sw_wr(S17_GLOFW_CTRL1_REG, 0x7f7f7f);
-		qca961x_ess_sw_wr(S17_P0LOOKUP_CTRL_REG, 0x14003e);
-		qca961x_ess_sw_wr(S17_P1LOOKUP_CTRL_REG, 0x14001d);
-		qca961x_ess_sw_wr(S17_P2LOOKUP_CTRL_REG, 0x14001b);
-		qca961x_ess_sw_wr(S17_P3LOOKUP_CTRL_REG, 0x140017);
-		qca961x_ess_sw_wr(S17_P4LOOKUP_CTRL_REG, 0x14000f);
-		qca961x_ess_sw_wr(S17_P5LOOKUP_CTRL_REG, 0x140001);
+		ipq40xx_ess_sw_wr(S17_GLOFW_CTRL1_REG, 0x7f7f7f);
+		ipq40xx_ess_sw_wr(S17_P0LOOKUP_CTRL_REG, 0x14003e);
+		ipq40xx_ess_sw_wr(S17_P1LOOKUP_CTRL_REG, 0x14001d);
+		ipq40xx_ess_sw_wr(S17_P2LOOKUP_CTRL_REG, 0x14001b);
+		ipq40xx_ess_sw_wr(S17_P3LOOKUP_CTRL_REG, 0x140017);
+		ipq40xx_ess_sw_wr(S17_P4LOOKUP_CTRL_REG, 0x14000f);
+		ipq40xx_ess_sw_wr(S17_P5LOOKUP_CTRL_REG, 0x140001);
 		printf ("%s done\n", __func__);
 		break;
 	default:

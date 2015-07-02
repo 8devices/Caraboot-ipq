@@ -11,13 +11,13 @@
  * GNU General Public License for more details.
 */
 
-#ifndef _QCA961X_EDMA_H
-#define _QCA961X_EDMA_H
+#ifndef _IPQ40XX_EDMA_H
+#define _IPQ40XX_EDMA_H
 #include <common.h>
 #include <net.h>
-#include <configs/qca961x_cdp.h>
+#include <configs/ipq40xx_cdp.h>
 
-#define QCA961X_EDMA_CFG_BASE	0xc080000
+#define IPQ40XX_EDMA_CFG_BASE	0xc080000
 
 #define EDMA_FIFO_THRESH_TYPE	0
 #define REG_SW_CTRL0	0x100
@@ -370,12 +370,12 @@ typedef enum {
 	FAL_CABLE_STATUS_BUTT = 0xffff,
 } fal_cable_status_t;
 
-void qca961x_register_switch(int(*sw_init)(qca961x_edma_board_cfg_t *cfg));
-int ipq40xx_qca8075_phy_init(qca961x_edma_board_cfg_t *cfg);
+void ipq40xx_register_switch(int(*sw_init)(ipq40xx_edma_board_cfg_t *cfg));
+int ipq40xx_qca8075_phy_init(ipq40xx_edma_board_cfg_t *cfg);
 u8  qca8075_phy_get_link_status(u32 dev_id, u32 phy_id);
 u32 qca8075_phy_get_duplex(u32 dev_id, u32 phy_id,
 			fal_port_duplex_t * duplex);
 u32 qca8075_phy_get_speed(u32 dev_id, u32 phy_id,
 			fal_port_speed_t * speed);
 int ipq40xx_sw_mdio_init(char *name);
-#endif	/* _QCA961X_EDMA_H */
+#endif	/* _IPQ40XX_EDMA_H */

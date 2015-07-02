@@ -28,8 +28,8 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _QCA961X_CDP_H
-#define _QCA961X_CDP_H
+#ifndef _IPQ40XX_CDP_H
+#define _IPQ40XX_CDP_H
 
 #if !defined(DO_DEPS_ONLY) || defined(DO_SOC_DEPS_ONLY)
 /*
@@ -46,7 +46,7 @@
 #endif
 #endif /* !DO_DEPS_ONLY */
 
-#define CONFIG_QCA961X
+#define CONFIG_IPQ40XX
 #define CONFIG_BOARD_EARLY_INIT_F
 #define CONFIG_SYS_NO_FLASH
 #define CONFIG_SYS_CACHELINE_SIZE	64
@@ -60,7 +60,7 @@
 #define CONFIG_BAUDRATE			115200
 #define CONFIG_SYS_BAUDRATE_TABLE	{4800, 9600, 19200, 38400, 57600,\
 								115200}
-#define V_PROMPT			"(QCA961x) # "
+#define V_PROMPT			"(IPQ40xx) # "
 #define CONFIG_SYS_PROMPT		V_PROMPT
 #define CONFIG_SYS_CBSIZE		(256 * 2) /* Console I/O Buffer Size */
 #define CONFIG_SYS_MAXARGS		16
@@ -80,7 +80,7 @@
 
 #ifndef __ASSEMBLY__
 #include <compiler.h>
-#include "../../board/qcom/qca961x_cdp/qca961x_cdp.h"
+#include "../../board/qcom/ipq40xx_cdp/ipq40xx_cdp.h"
 extern loff_t board_env_offset;
 extern loff_t board_env_range;
 
@@ -95,11 +95,11 @@ extern loff_t board_env_range;
  * For new reservations just adding a member to the structure should
  * suffice.
  * Ensure that the size of this structure matches with the definition
- * of the following QCA961x compile time definitions
+ * of the following IPQ40xx compile time definitions
  *      PHYS_OFFSET     (linux-sources/arch/arm/mach-msm/Kconfig)
  *      zreladdr        (linux-sources/arch/arm/mach-msm/Makefile.boot)
  *      CONFIG_SYS_INIT_SP_ADDR defined above should point to the bottom.
- *      MSM_SHARED_RAM_PHYS (linux-sources/arch/arm/mach-msm/board-qca961x.c)
+ *      MSM_SHARED_RAM_PHYS (linux-sources/arch/arm/mach-msm/board-ipq40xx.c)
  *
  */
 #if !defined(DO_DEPS_ONLY) || defined(DO_SOC_DEPS_ONLY)
@@ -132,7 +132,7 @@ typedef struct {
 #define IPQ_ROOT_FS_PART_NAME		"rootfs"
 
 /* Environment */
-#define CONFIG_QCA961X_ENV
+#define CONFIG_IPQ40XX_ENV
 #define CONFIG_ARCH_CPU_INIT
 #define CONFIG_ENV_IS_IN_NAND
 #define CONFIG_CMD_SAVEENV
@@ -220,8 +220,8 @@ typedef struct {
  */
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_DHCP
-#define CONFIG_QCA961X_ESS	1
-#define CONFIG_QCA961X_EDMA	1
+#define CONFIG_IPQ40XX_ESS	1
+#define CONFIG_IPQ40XX_EDMA	1
 #define CONFIG_NET_RETRY_COUNT		5
 #define CONFIG_SYS_RX_ETH_BUFFER	16
 #define CONFIG_IPQ40XX_MDIO	1

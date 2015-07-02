@@ -33,7 +33,7 @@
 #include <asm/io.h>
 #include <asm/errno.h>
 #include <asm/sizes.h>
-#include <asm/arch-qca961x/smem.h>
+#include <asm/arch-ipq40xx/smem.h>
 #include <nand.h>
 
 extern int nand_env_device;

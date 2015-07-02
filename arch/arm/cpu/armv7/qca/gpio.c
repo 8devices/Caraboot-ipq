@@ -28,7 +28,7 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <asm/arch-qca961x/iomap.h>
+#include <asm/arch-ipq40xx/iomap.h>
 #include <asm/arch-qcom-common/gpio.h>
 #include <asm/io.h>
 

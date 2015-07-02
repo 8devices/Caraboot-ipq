@@ -11,30 +11,30 @@
  * GNU General Public License for more details.
 */
 
-#ifndef _QCA961X_EDMA_ETH_H
-#define _QCA961X_EDMA_ETH_H
+#ifndef _IPQ40XX_EDMA_ETH_H
+#define _IPQ40XX_EDMA_ETH_H
 #include <common.h>
 #include <net.h>
-#include <configs/qca961x_cdp.h>
+#include <configs/ipq40xx_cdp.h>
 
-#define QCA961X_EDMA_DEV		1
-#define QCA961X_EDMA_TX_QUEUE		1
-#define QCA961X_EDMA_RX_QUEUE		1
-#define QCA961X_EDMA_TX_RING_SIZE	8
-#define QCA961X_EDMA_RX_RING_SIZE	16
-#define QCA961X_EDMA_TX_IMR_NORMAL_MASK	1
-#define QCA961X_EDMA_RX_IMR_NORMAL_MASK	1
-#define QCA961X_EDMA_RX_BUFF_SIZE	1540
-#define QCA961X_EDMA_INTR_CLEAR_TYPE	0
-#define QCA961X_EDMA_INTR_SW_IDX_W_TYPE	0
-#define QCA961X_EDMA_RSS_TYPE_NONE	0x1
+#define IPQ40XX_EDMA_DEV		1
+#define IPQ40XX_EDMA_TX_QUEUE		1
+#define IPQ40XX_EDMA_RX_QUEUE		1
+#define IPQ40XX_EDMA_TX_RING_SIZE	8
+#define IPQ40XX_EDMA_RX_RING_SIZE	16
+#define IPQ40XX_EDMA_TX_IMR_NORMAL_MASK	1
+#define IPQ40XX_EDMA_RX_IMR_NORMAL_MASK	1
+#define IPQ40XX_EDMA_RX_BUFF_SIZE	1540
+#define IPQ40XX_EDMA_INTR_CLEAR_TYPE	0
+#define IPQ40XX_EDMA_INTR_SW_IDX_W_TYPE	0
+#define IPQ40XX_EDMA_RSS_TYPE_NONE	0x1
 
-#define QCA961X_EDMA_TX_PER_CPU_MASK		0xF
-#define QCA961X_EDMA_TX_PER_CPU_MASK_SHIFT	0x2
-#define QCA961X_EDMA_RX_PER_CPU_MASK		0x3
-#define QCA961X_EDMA_RX_PER_CPU_MASK_SHIFT	0x1
-#define QCA961X_EDMA_TX_CPU_START_SHIFT		0x2
-#define QCA961X_EDMA_RX_CPU_START_SHIFT		0x1
+#define IPQ40XX_EDMA_TX_PER_CPU_MASK		0xF
+#define IPQ40XX_EDMA_TX_PER_CPU_MASK_SHIFT	0x2
+#define IPQ40XX_EDMA_RX_PER_CPU_MASK		0x3
+#define IPQ40XX_EDMA_RX_PER_CPU_MASK_SHIFT	0x1
+#define IPQ40XX_EDMA_TX_CPU_START_SHIFT		0x2
+#define IPQ40XX_EDMA_RX_CPU_START_SHIFT		0x1
 
 #define PSGMIIPHY_PLL_VCO_RELATED_CTRL	0x0009878c
 #define PSGMIIPHY_PLL_VCO_VAL		0x2803
@@ -83,11 +83,11 @@ struct queue_per_cpu_info {
 	u32 rx_status; /* rx interrupt status */
 	u32 tx_start; /* tx queue start */
 	u32 rx_start; /* rx queue start */
-	struct qca961x_edma_common_info *c_info; /* edma common info */
+	struct ipq40xx_edma_common_info *c_info; /* edma common info */
 };
 
 /* edma hw specific data */
-struct qca961x_edma_hw {
+struct ipq40xx_edma_hw {
 	unsigned long  __iomem *hw_addr; /* inner register address */
 	struct edma_adapter *adapter; /* netdevice adapter */
 	u32 rx_intr_mask; /*rx interrupt mask */
@@ -101,7 +101,7 @@ struct qca961x_edma_hw {
 };
 
 /* transimit packet descriptor (tpd) ring */
-struct qca961x_edma_desc_ring {
+struct ipq40xx_edma_desc_ring {
 	u8 queue_index; /* queue index */
 	u16 size; /* descriptor ring length in bytes */
 	u16 count; /* number of descriptors in the ring */
@@ -112,19 +112,19 @@ struct qca961x_edma_desc_ring {
 	struct edma_sw_desc *sw_desc; /* buffer associated with ring */
 };
 
-struct qca961x_edma_common_info {
-	struct qca961x_edma_desc_ring *tpd_ring[QCA961X_EDMA_TX_QUEUE];
-	struct qca961x_edma_desc_ring *rfd_ring[QCA961X_EDMA_RX_QUEUE];
+struct ipq40xx_edma_common_info {
+	struct ipq40xx_edma_desc_ring *tpd_ring[IPQ40XX_EDMA_TX_QUEUE];
+	struct ipq40xx_edma_desc_ring *rfd_ring[IPQ40XX_EDMA_RX_QUEUE];
 	int num_rx_queues; /* number of rx queue */
 	int num_tx_queues; /* number of tx queue */
 	u16 tx_ring_count;
 	u16 rx_ring_count;
 	u16 rx_buffer_len;
-	struct qca961x_edma_hw hw;
-	struct queue_per_cpu_info q_cinfo[QCA961X_EDMA_DEV];
+	struct ipq40xx_edma_hw hw;
+	struct queue_per_cpu_info q_cinfo[IPQ40XX_EDMA_DEV];
 };
 
-struct qca961x_eth_dev {
+struct ipq40xx_eth_dev {
 	u8 *phy_address;
 	uint no_of_phys;
 	uint interface;
@@ -136,29 +136,29 @@ struct qca961x_eth_dev {
 	int link_printed;
 	u32 padding;
 	struct eth_device *dev;
-	struct qca961x_edma_common_info *c_info;
+	struct ipq40xx_edma_common_info *c_info;
 	const char phy_name[MDIO_NAME_LEN];
 } __attribute__ ((aligned(8)));
 
 static int edma_hw_addr;
 
-static inline void qca961x_edma_write_reg(u16 reg_addr, u32 reg_value)
+static inline void ipq40xx_edma_write_reg(u16 reg_addr, u32 reg_value)
 {
 	writel(reg_value, ((void __iomem *)(edma_hw_addr + reg_addr)));
 }
-static inline void qca961x_edma_read_reg(u16 reg_addr, volatile u32 *reg_value)
+static inline void ipq40xx_edma_read_reg(u16 reg_addr, volatile u32 *reg_value)
 {
 	*reg_value = readl((void __iomem *)(edma_hw_addr + reg_addr));
 }
 
-static inline void* qca961x_alloc_mem(u32 size)
+static inline void* ipq40xx_alloc_mem(u32 size)
 {
 	return malloc(size);
 }
 
-static inline void qca961x_free_mem(void *ptr)
+static inline void ipq40xx_free_mem(void *ptr)
 {
 	if (ptr)
 		free(ptr);
 }
-#endif	/* _QCA961X_EDMA_H */
+#endif	/* _IPQ40XX_EDMA_H */

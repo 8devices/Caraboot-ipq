@@ -28,10 +28,10 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _PLATFORM_QCA961X_IOMAP_H_
-#define _PLATFORM_QCA961X_IOMAP_H_
+#ifndef _PLATFORM_IPQ40XX_IOMAP_H_
+#define _PLATFORM_IPQ40XX_IOMAP_H_
 
-#include <configs/qca961x_cdp.h>
+#include <configs/ipq40xx_cdp.h>
 #define CLK_CTL_BASE		0x01800000
 #define GCNT_BASE		0x004a1000
 #define TIMER_BASE		0x0B021000
@@ -43,4 +43,4 @@
 
 #define GCNT_PSHOLD		0x004AB000
 
-#endif /* _PLATFORM_QCA961X_IOMAP_H_ */
+#endif /* _PLATFORM_IPQ40XX_IOMAP_H_ */

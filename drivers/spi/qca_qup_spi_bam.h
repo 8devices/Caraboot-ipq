@@ -1,5 +1,5 @@
 /*
- * Register definitions for the QCA961X QUP-SPI Controller
+ * Register definitions for the IPQ40XX QUP-SPI Controller
  * Copyright (c) 2015, The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,8 +28,8 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _QCA961X_SPI_H_
-#define _QCA961X_SPI_H_
+#ifndef _IPQ40XX_SPI_H_
+#define _IPQ40XX_SPI_H_
 
 #define QUP0_BASE	0x78b5000
 #define QUP1_BASE	0x78b6000
@@ -316,5 +316,5 @@ struct bam_desc qup_spi_data_desc_fifo[QUP_BAM_DATA_FIFO_SIZE] __attribute__ ((a
 #define CS_ASSERT				1
 #define CS_DEASSERT				0
 
-#endif /* _QCA961X_SPI_H_ */
+#endif /* _IPQ40XX_SPI_H_ */
 

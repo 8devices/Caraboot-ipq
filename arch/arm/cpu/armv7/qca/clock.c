@@ -13,7 +13,7 @@
 
 #include <common.h>
 #include <asm/arch-qcom-common/clk.h>
-#include <asm/arch-qca961x/iomap.h>
+#include <asm/arch-ipq40xx/iomap.h>
 #include <asm/io.h>
 
 #define GCC_SDCC1_MISC  0x1818014

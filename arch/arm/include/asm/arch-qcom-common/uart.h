@@ -77,7 +77,7 @@ enum MSM_BOOT_UART_DM_BITS_PER_CHAR {
 /* UART clock @ 7.3728 MHz */
 #ifdef CONFIG_IPQ806X
 #define UART_DM_CLK_RX_TX_BIT_RATE 0xCC
-#elif defined CONFIG_QCA961X
+#elif defined CONFIG_IPQ40XX
 #define UART_DM_CLK_RX_TX_BIT_RATE	0xff
 #endif
 

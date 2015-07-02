@@ -30,10 +30,10 @@
 #ifndef __QPIC_NAND_H
 #define __QPIC_NAND_H
 
-#define QCA961x_EBI2ND_BASE		(0x079b0000)
-#define QCA961x_QPIC_BAM_CTRL		(0x07984000)
+#define IPQ40xx_EBI2ND_BASE		(0x079b0000)
+#define IPQ40xx_QPIC_BAM_CTRL		(0x07984000)
 
-#define NAND_REG(off)			(QCA961x_EBI2ND_BASE + (off))
+#define NAND_REG(off)			(IPQ40xx_EBI2ND_BASE + (off))
 
 #define NAND_FLASH_CMD			NAND_REG(0x0000)
 #define NAND_ADDR0			NAND_REG(0x0004)

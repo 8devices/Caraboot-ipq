@@ -28,13 +28,13 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _QCA961X_BOARD_PARAM_H_
-#define _QCA961X_BOARD_PARAM_H_
+#ifndef _IPQ40XX_BOARD_PARAM_H_
+#define _IPQ40XX_BOARD_PARAM_H_
 
-#include <asm/arch-qca961x/iomap.h>
+#include <asm/arch-ipq40xx/iomap.h>
 #include <asm/arch-qcom-common/gpio.h>
 #include <asm/sizes.h>
-#include "qca961x_cdp.h"
+#include "ipq40xx_cdp.h"
 
 gpio_func_data_t mmc_ap_dk04[] = {
 	{
@@ -433,19 +433,19 @@ gpio_func_data_t sw_gpio_qfn[] = {
 	},
 };
 
-#define QCA961X_EDMA_CFG_BASE		0xC080000
+#define IPQ40XX_EDMA_CFG_BASE		0xC080000
 
-#define qca961x_edma_cfg(_b, _pn, _p, ...)		\
+#define ipq40xx_edma_cfg(_b, _pn, _p, ...)		\
 {							\
-	.base		= QCA961X_EDMA_CFG_BASE,	\
+	.base		= IPQ40XX_EDMA_CFG_BASE,	\
 	.unit		= _b,				\
 	.phy		= PHY_INTERFACE_MODE_##_p,	\
 	.phy_addr	= {.count = _pn, {__VA_ARGS__}}	\
 }
 
-#define qca961x_edma_cfg_invalid()	{ .unit = -1, }
+#define ipq40xx_edma_cfg_invalid()	{ .unit = -1, }
 /* Board specific parameter Array */
-board_qca961x_params_t board_params[] = {
+board_ipq40xx_params_t board_params[] = {
 	{
 		.machid = MACH_TYPE_IPQ40XX_AP_DK01_1_C1,
 		.ddr_size = (256 << 20),
@@ -468,7 +468,7 @@ board_qca961x_params_t board_params[] = {
 		.sw_gpio = sw_gpio_qfn,
 		.sw_gpio_count = ARRAY_SIZE(sw_gpio_qfn),
 		.edma_cfg = {
-			qca961x_edma_cfg(0, 5, PSGMII,
+			ipq40xx_edma_cfg(0, 5, PSGMII,
 					0, 1, 2, 3, 4)
 		},
 		.dtb_config_name = "#config@4",
@@ -495,7 +495,7 @@ board_qca961x_params_t board_params[] = {
 		.sw_gpio = sw_gpio_qfn,
 		.sw_gpio_count = ARRAY_SIZE(sw_gpio_qfn),
 		.edma_cfg = {
-			qca961x_edma_cfg(0, 5, PSGMII,
+			ipq40xx_edma_cfg(0, 5, PSGMII,
 					0, 1, 2, 3, 4)
 		},
 		.dtb_config_name = "#config@5",
@@ -526,7 +526,7 @@ board_qca961x_params_t board_params[] = {
 		.sw_gpio = sw_gpio_bga,
 		.sw_gpio_count = ARRAY_SIZE(sw_gpio_bga),
 		.edma_cfg = {
-			qca961x_edma_cfg(0, 5, PSGMII,
+			ipq40xx_edma_cfg(0, 5, PSGMII,
 					0, 1, 2, 3, 4)
 		},
 		.mmc_gpio = mmc_ap_dk04,
@@ -559,7 +559,7 @@ board_qca961x_params_t board_params[] = {
 		.sw_gpio = sw_gpio_bga,
 		.sw_gpio_count = ARRAY_SIZE(sw_gpio_bga),
 		.edma_cfg = {
-			qca961x_edma_cfg(0, 5, PSGMII,
+			ipq40xx_edma_cfg(0, 5, PSGMII,
 					0, 1, 2, 3, 4)
 		},
 		.mmc_gpio = mmc_ap_dk04,
@@ -592,7 +592,7 @@ board_qca961x_params_t board_params[] = {
 		.sw_gpio = sw_gpio_bga,
 		.sw_gpio_count = ARRAY_SIZE(sw_gpio_bga),
 		.edma_cfg = {
-			qca961x_edma_cfg(0, 5, PSGMII,
+			ipq40xx_edma_cfg(0, 5, PSGMII,
 					0, 1, 2, 3, 4)
 		},
 		.mmc_gpio = mmc_ap_dk04,
@@ -620,7 +620,7 @@ board_qca961x_params_t board_params[] = {
 		.sw_gpio = sw_gpio_bga,
 		.sw_gpio_count = ARRAY_SIZE(sw_gpio_bga),
 		.edma_cfg = {
-			qca961x_edma_cfg(0, 5, PSGMII,
+			ipq40xx_edma_cfg(0, 5, PSGMII,
 					0, 1, 2, 3, 4)
 		},
 		.dtb_config_name = "",
@@ -646,7 +646,7 @@ board_qca961x_params_t board_params[] = {
 		.sw_gpio = sw_gpio_bga,
 		.sw_gpio_count = ARRAY_SIZE(sw_gpio_bga),
 		.edma_cfg = {
-			qca961x_edma_cfg(0, 5, PSGMII,
+			ipq40xx_edma_cfg(0, 5, PSGMII,
 					0, 1, 2, 3, 4)
 		},
 		.dtb_config_name = "",
@@ -672,7 +672,7 @@ board_qca961x_params_t board_params[] = {
 		.sw_gpio = sw_gpio_bga,
 		.sw_gpio_count = ARRAY_SIZE(sw_gpio_bga),
 		.edma_cfg = {
-			qca961x_edma_cfg(0, 5, PSGMII,
+			ipq40xx_edma_cfg(0, 5, PSGMII,
 					0, 1, 2, 3, 4)
 		},
 		.dtb_config_name = "",
@@ -680,4 +680,4 @@ board_qca961x_params_t board_params[] = {
 };
 
 #define NUM_IPQ40XX_BOARDS	ARRAY_SIZE(board_params)
-#endif /* _QCA961X_BOARD_PARAM_H_ */
+#endif /* _IPQ40XX_BOARD_PARAM_H_ */

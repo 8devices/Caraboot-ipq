@@ -11,17 +11,17 @@
  * GNU General Public License for more details.
 */
 
-#include <configs/qca961x_cdp.h>
+#include <configs/ipq40xx_cdp.h>
 #include <common.h>
 #include <command.h>
 #include <image.h>
 #include <nand.h>
 #include <errno.h>
-#include <asm/arch-qca961x/scm.h>
+#include <asm/arch-ipq40xx/scm.h>
 #include <part.h>
 #include "../../../../../board/qcom/common/qca_common.h"
 #include <linux/mtd/ubi.h>
-#include <asm/arch-qca961x/smem.h>
+#include <asm/arch-ipq40xx/smem.h>
 #include <mmc.h>
 
 #define DLOAD_MAGIC_COOKIE	0x10
@@ -31,7 +31,7 @@ DECLARE_GLOBAL_DATA_PTR;
 static qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 int ipq_fs_on_nand ;
 extern int nand_env_device;
-extern board_qca961x_params_t *gboard_param;
+extern board_ipq40xx_params_t *gboard_param;
 #ifdef CONFIG_QCA_MMC
 static qca_mmc *host = &mmc_host;
 #endif

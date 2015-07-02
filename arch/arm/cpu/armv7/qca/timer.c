@@ -28,11 +28,11 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <asm/arch-qca961x/iomap.h>
+#include <asm/arch-ipq40xx/iomap.h>
 #include <asm/io.h>
 #include <common.h>
 #include <asm/types.h>
-#include <asm/arch-qca961x/timer.h>
+#include <asm/arch-ipq40xx/timer.h>
 
 static unsigned long long timestamp;
 static unsigned long long lastinc;

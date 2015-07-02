@@ -40,8 +40,8 @@
 
 #if defined CONFIG_IPQ806X
 extern board_ipq806x_params_t *gboard_param;
-#elif defined CONFIG_QCA961X
-extern board_qca961x_params_t *gboard_param;
+#elif defined CONFIG_IPQ40XX
+extern board_ipq40xx_params_t *gboard_param;
 #endif
 
 static unsigned int msm_boot_uart_dm_init(unsigned int  uart_dm_base);
@@ -357,7 +357,7 @@ static void uart_dm_init(void)
 	writel(GSBI_PROTOCOL_CODE_I2C_UART <<
 		GSBI_CTRL_REG_PROTOCOL_CODE_S,
 		GSBI_CTRL_REG(gsbi_base));
-#elif defined CONFIG_QCA961X
+#elif defined CONFIG_IPQ40XX
 	qca_configure_gpio(gboard_param->dbg_uart_gpio, NO_OF_DBG_UART_GPIOS);
 	writel(1, GCC_BLSP1_UART1_APPS_CBCR);
 #endif

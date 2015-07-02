@@ -341,7 +341,7 @@ int	getenv_f     (const char *name, char *buf, unsigned len);
 ulong getenv_ulong(const char *name, int base, ulong default_val);
 #ifdef CONFIG_IPQ806X_ENV
 extern int	(*saveenv)   (void);
-#elif defined CONFIG_QCA961X_ENV
+#elif defined CONFIG_IPQ40XX_ENV
 extern int	(*saveenv)(void);
 #else
 int	saveenv	     (void);

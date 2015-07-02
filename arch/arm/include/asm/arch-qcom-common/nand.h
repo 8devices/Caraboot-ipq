@@ -5,8 +5,8 @@
 #define QCOM_NAND_H
 
 #define IPQ806x_EBI2ND_BASE				(0x1ac00000)
-#define QCA961x_EBI2ND_BASE				(0x079b0000)
-#define QCA961x_QPIC_BAM_CTRL				(0x07984000)
+#define IPQ40xx_EBI2ND_BASE				(0x079b0000)
+#define IPQ40xx_QPIC_BAM_CTRL				(0x07984000)
 
 struct ebi2nd_regs {
 	uint32_t flash_cmd;                               /* 0x00000000 */

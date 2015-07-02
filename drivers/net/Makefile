@@ -85,10 +85,10 @@ COBJS-$(CONFIG_IPQ_SNPS_GMAC) += ipq/ipq_gmac_eth.o
 COBJS-$(CONFIG_IPQ_MDIO) += ipq/ipq_mdio.o
 COBJS-$(CONFIG_IPQ_SWITCH_ATHRS17) += ../../board/qcom/common/athrs17_phy.o
 COBJS-$(CONFIG_IPQ_SWITCH_QCA8511) += ../../board/qcom/common/qca8511.o
-COBJS-$(CONFIG_QCA961X_EDMA) += qca961x/qca961x_edma_eth.o
-COBJS-$(CONFIG_QCA961X_ESS) += qca961x/qca961x_ess_sw.o
-COBJS-$(CONFIG_QCA8075_PHY) += qca961x/ipq40xx_qca8075.o
-COBJS-$(CONFIG_IPQ40XX_MDIO) += qca961x/ipq40xx_mdio.o
+COBJS-$(CONFIG_IPQ40XX_EDMA) += ipq40xx/ipq40xx_edma_eth.o
+COBJS-$(CONFIG_IPQ40XX_ESS) += ipq40xx/ipq40xx_ess_sw.o
+COBJS-$(CONFIG_QCA8075_PHY) += ipq40xx/ipq40xx_qca8075.o
+COBJS-$(CONFIG_IPQ40XX_MDIO) += ipq40xx/ipq40xx_mdio.o
 
 COBJS	:= $(sort $(COBJS-y))
 SRCS	:= $(COBJS:.o=.c)

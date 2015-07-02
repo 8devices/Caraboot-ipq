@@ -36,7 +36,7 @@
 #include <asm/errno.h>
 #include <asm/arch-qcom-common/gpio.h>
 #include <asm/arch-qcom-common/bam.h>
-#include <asm/arch-qca961x/iomap.h>
+#include <asm/arch-ipq40xx/iomap.h>
 #include "qca_qup_spi_bam.h"
 
 /*

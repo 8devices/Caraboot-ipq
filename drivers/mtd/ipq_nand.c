@@ -1717,7 +1717,7 @@ static void ipq_nand_hw_config(struct mtd_info *mtd, struct ipq_config *cfg)
 
 	if (dev->variant == QCOM_NAND_QPIC) {
 		/*
-		 * On QCA961x with the QPIC controller, we use BCH for both ECC
+		 * On IPQ40xx with the QPIC controller, we use BCH for both ECC
 		 * modes
 		 */
 		enable_bch = 1;
@@ -1908,18 +1908,18 @@ exit:
 
 static struct nand_chip nand_chip[CONFIG_SYS_MAX_NAND_DEVICE];
 
-void qca961x_bam_reset(struct ebi2nd_regs *regs)
+void ipq40xx_bam_reset(struct ebi2nd_regs *regs)
 {
 	uint32_t count = 0;
 	uint32_t nand_debug;
 	uint32_t clkon_cfg;
 	uint32_t val, status;
 	struct ebi2cr_regs *regs_ebi2cr;
-	regs_ebi2cr = (struct ebi2cr_regs *) QCA961x_EBI2CR_BASE;
+	regs_ebi2cr = (struct ebi2cr_regs *) IPQ40xx_EBI2CR_BASE;
 
 	writel(0, &regs->qpic_nand_ctrl);
 	writel(BAM_MODE_EN, &regs->qpic_nand_ctrl);
-	writel(BAM_CTRL_CGC, QCA961x_QPIC_BAM_CTRL);
+	writel(BAM_CTRL_CGC, IPQ40xx_QPIC_BAM_CTRL);
 
 	nand_debug = readl(&regs->qpic_nand_debug);
 	nand_debug |= BAM_MODE_BIT_RESET;
@@ -1974,9 +1974,9 @@ int ipq_nand_init(enum ipq_nand_layout layout, int variant)
 				(struct ebi2nd_regs *) IPQ806x_EBI2ND_BASE;
 	} else {
 		regs = ipq_nand_dev.regs =
-				(struct ebi2nd_regs *) QCA961x_EBI2ND_BASE;
+				(struct ebi2nd_regs *) IPQ40xx_EBI2ND_BASE;
 		/* Reset QPIC BAM */
-		qca961x_bam_reset(regs);
+		ipq40xx_bam_reset(regs);
 	}
 
 	chip = mtd->priv;
@@ -2077,7 +2077,7 @@ static int do_ipq_nand_cmd(cmd_tbl_t *cmdtp, int flag,
 
 #if defined CONFIG_IPQ806X
 	ret = ipq_nand_init(layout, QCOM_NAND_IPQ);
-#elif defined CONFIG_QCA961X
+#elif defined CONFIG_IPQ40XX
 	ret = ipq_nand_init(layout, QCOM_NAND_QPIC);
 #endif
 	if (ret < 0)

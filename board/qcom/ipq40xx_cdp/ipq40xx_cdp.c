@@ -33,11 +33,11 @@
 #include <asm/io.h>
 #include <asm/arch-qcom-common/gpio.h>
 #include <asm/errno.h>
-#include <asm/arch-qca961x/ess/qca961x_edma.h>
+#include <asm/arch-ipq40xx/ess/ipq40xx_edma.h>
 #include <environment.h>
-#include "qca961x_board_param.h"
-#include "qca961x_cdp.h"
-#include <asm/arch-qca961x/scm.h>
+#include "ipq40xx_board_param.h"
+#include "ipq40xx_cdp.h"
+#include <asm/arch-ipq40xx/scm.h>
 #ifdef CONFIG_IPQ_NAND
 #include <linux/mtd/ipq_nand.h>
 #include <asm/arch-qcom-common/nand.h>
@@ -47,7 +47,7 @@
 #include <mtd_node.h>
 #include <jffs2/load_kernel.h>
 #include <asm/arch-qcom-common/clk.h>
-#include <asm/arch-qca961x/smem.h>
+#include <asm/arch-ipq40xx/smem.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -64,8 +64,8 @@ extern env_t *nand_env_ptr;
 extern int nand_env_init(void);
 extern int nand_saveenv(void);
 extern void nand_env_relocate_spec(void);
-extern int qca961x_edma_init(qca961x_edma_board_cfg_t *edma_cfg);
-extern int ipq40xx_qca8075_phy_init(qca961x_edma_board_cfg_t *cfg);
+extern int ipq40xx_edma_init(ipq40xx_edma_board_cfg_t *edma_cfg);
+extern int ipq40xx_qca8075_phy_init(ipq40xx_edma_board_cfg_t *cfg);
 extern int mmc_env_init(void);
 extern int mmc_saveenv(void);
 extern void mmc_env_relocate_spec(void);
@@ -99,7 +99,7 @@ extern int spi_nand_init(void);
  * Moral of the story: Global variables that are written before
  * relocate_code() gets executed cannot be in '.bss'
  */
-board_qca961x_params_t *gboard_param = (board_qca961x_params_t *)0xbadb0ad;
+board_ipq40xx_params_t *gboard_param = (board_ipq40xx_params_t *)0xbadb0ad;
 
 #define SET_MAGIC 0x1
 #define CLEAR_MAGIC 0x0
@@ -112,7 +112,7 @@ board_qca961x_params_t *gboard_param = (board_qca961x_params_t *)0xbadb0ad;
  O/P : integer, 0 - no error.
 
 ********************************************************/
-static board_qca961x_params_t *get_board_param(unsigned int machid)
+static board_ipq40xx_params_t *get_board_param(unsigned int machid)
 {
 	unsigned int index;
 
@@ -360,8 +360,8 @@ void board_nand_init(void)
 		config.pipes.write_pipe_grp = DATA_CONSUMER_PIPE_GRP;
 		config.pipes.cmd_pipe_grp = CMD_PIPE_GRP;
 
-		config.bam_base = QCA961x_QPIC_BAM_CTRL;
-		config.nand_base = QCA961x_EBI2ND_BASE;
+		config.bam_base = IPQ40xx_QPIC_BAM_CTRL;
+		config.nand_base = IPQ40xx_EBI2ND_BASE;
 		config.ee = QPIC_NAND_EE;
 		config.max_desc_len = QPIC_NAND_MAX_DESC_LEN;
 		gpio = gboard_param->nand_gpio;
@@ -406,18 +406,18 @@ int board_eth_init(bd_t *bis)
 	case MACH_TYPE_IPQ40XX_AP_DK01_1_C1:
 	case MACH_TYPE_IPQ40XX_AP_DK01_1_C2:
 		writel(GPIO_OUT, GPIO_IN_OUT_ADDR(59));
-		qca961x_register_switch(ipq40xx_qca8075_phy_init);
+		ipq40xx_register_switch(ipq40xx_qca8075_phy_init);
 		break;
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C1:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C2:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C3:
 		writel(GPIO_OUT, GPIO_IN_OUT_ADDR(47));
-		qca961x_register_switch(ipq40xx_qca8075_phy_init);
+		ipq40xx_register_switch(ipq40xx_qca8075_phy_init);
 		break;
 	default:
 		break;
 	}
-	status = qca961x_edma_init(gboard_param->edma_cfg);
+	status = ipq40xx_edma_init(gboard_param->edma_cfg);
 	return status;
 }
 
