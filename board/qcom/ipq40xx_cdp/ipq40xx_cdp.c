@@ -387,6 +387,10 @@ void board_nand_init(void)
 
 static void ipq40xx_edma_common_init()
 {
+	writel(1, GCC_ESS_BCR);
+	mdelay(1);
+	writel(0, GCC_ESS_BCR);
+
 	writel(1, GCC_MDIO_AHB_CBCR);
 	writel(MDIO_CTRL_0_DIV(0xff) |
 		MDIO_CTRL_0_MDC_MODE |
@@ -405,12 +409,32 @@ int board_eth_init(bd_t *bis)
 	switch (gboard_param->machid) {
 	case MACH_TYPE_IPQ40XX_AP_DK01_1_C1:
 	case MACH_TYPE_IPQ40XX_AP_DK01_1_C2:
+		/*
+		 * PHY in reset.
+		 */
+		writel(0x0, GPIO_CONFIG_ADDR(59));
+		writel(0x0, GPIO_IN_OUT_ADDR(59));
+		mdelay(100);
+		/*
+		 * PHY out of reset.
+		 */
+		writel(QCA8075_RST_VAL, GPIO_CONFIG_ADDR(59));
 		writel(GPIO_OUT, GPIO_IN_OUT_ADDR(59));
 		ipq40xx_register_switch(ipq40xx_qca8075_phy_init);
 		break;
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C1:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C2:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C3:
+		/*
+		 * PHY in reset.
+		 */
+		writel(0x0, GPIO_CONFIG_ADDR(47));
+		writel(0x0, GPIO_IN_OUT_ADDR(47));
+		mdelay(100);
+		/*
+		 * PHY out of reset.
+		 */
+		writel(QCA8075_RST_VAL, GPIO_CONFIG_ADDR(47));
 		writel(GPIO_OUT, GPIO_IN_OUT_ADDR(47));
 		ipq40xx_register_switch(ipq40xx_qca8075_phy_init);
 		break;

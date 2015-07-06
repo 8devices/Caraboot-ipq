@@ -902,9 +902,10 @@ int ipq40xx_edma_init(ipq40xx_edma_board_cfg_t *edma_cfg)
 				PSGMIIPHY_PLL_VCO_RELATED_CTRL);
 			writel(PSGMIIPHY_VCO_VAL,
 				PSGMIIPHY_VCO_CALIBRATION_CTRL);
-			/* wait for 1 sec */
-			mdelay(1000);
+			/* wait for 10ms */
+			mdelay(10);
 			writel(PSGMIIPHY_VCO_RST_VAL, PSGMIIPHY_VCO_CALIBRATION_CTRL);
+			mdelay(10);
 			break;
 		default:
 			printf("unknown MII interface\n");

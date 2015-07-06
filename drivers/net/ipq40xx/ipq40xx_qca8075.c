@@ -58,19 +58,36 @@ static qca8075_phy_medium_t __phy_active_medium_get(u32 dev_id,
                                                    u32 phy_id)
 {
 	u16 phy_data = 0;
+	u32 phy_mode;
 
-	phy_data = qca8075_phy_reg_read(dev_id,
-		phy_id, QCA8075_PHY_SGMII_STATUS);
+	phy_mode = qca8075_phy_reg_read(dev_id, phy_id,
+				QCA8075_PHY_CHIP_CONFIG);
+	phy_mode &= 0x000f;
 
-	if ((phy_data & QCA8075_PHY4_AUTO_COPPER_SELECT)) {
+	if (phy_mode == QCA8075_PHY_PSGMII_AMDET) {
+		phy_data = qca8075_phy_reg_read(dev_id,
+			phy_id, QCA8075_PHY_SGMII_STATUS);
+
+		if ((phy_data & QCA8075_PHY4_AUTO_COPPER_SELECT)) {
+			return QCA8075_PHY_MEDIUM_COPPER;
+		} else if ((phy_data & QCA8075_PHY4_AUTO_BX1000_SELECT)) {
+			/* PHY_MEDIUM_FIBER_BX1000 */
+			return QCA8075_PHY_MEDIUM_FIBER;
+		} else if ((phy_data & QCA8075_PHY4_AUTO_FX100_SELECT)) {
+			 /* PHY_MEDIUM_FIBER_FX100 */
+			return QCA8075_PHY_MEDIUM_FIBER;
+		}
+		/* link down */
+		return __phy_prefer_medium_get(dev_id, phy_id);
+	} else if ((phy_mode == QCA8075_PHY_PSGMII_BASET) ||
+			(phy_mode == QCA8075_PHY_SGMII_BASET)) {
 		return QCA8075_PHY_MEDIUM_COPPER;
-	} else if ((phy_data & QCA8075_PHY4_AUTO_BX1000_SELECT)) {
-		return QCA8075_PHY_MEDIUM_FIBER; /*PHY_MEDIUM_FIBER_BX1000 */
-	} else if ((phy_data & QCA8075_PHY4_AUTO_FX100_SELECT)) {
-		return QCA8075_PHY_MEDIUM_FIBER; /*PHY_MEDIUM_FIBER_FX100 */
+	} else if ((phy_mode == QCA8075_PHY_PSGMII_BX1000) ||
+			(phy_mode == QCA8075_PHY_PSGMII_FX100)) {
+		return QCA8075_PHY_MEDIUM_FIBER;
+	} else {
+		return QCA8075_PHY_MEDIUM_COPPER;
 	}
-	/* link down */
-	return __phy_prefer_medium_get(dev_id, phy_id);
 }
 
 /*

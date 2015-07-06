@@ -327,7 +327,7 @@
 
 #define NETDEV_TX_BUSY	1
 #define PHY_MAX		5
-
+#define GCC_ESS_BCR		0x01812008
 #define GCC_MDIO_AHB_CBCR	0x1826000
 #define MDIO_CTRL_0_REG		0x00090040
 #define MDIO_CTRL_0_DIV(x)	(x << 0)
@@ -336,6 +336,13 @@
 #define MDIO_CTRL_0_MDC_MODE	(1 << 12)
 #define MDIO_CTRL_0_GPHY(x)	(x << 13)
 #define MDIO_CTRL_0_RES1(x)	(x << 17)
+
+#define GP_PULL_DOWN		1
+#define GP_OE_EN		(1 << 9)
+#define GP_VM_EN		(1 << 11)
+#define GP_PU_RES(x)		(x << 13)
+#define QCA8075_RST_VAL		(GP_PULL_DOWN | GP_OE_EN | \
+				GP_VM_EN | GP_PU_RES(2))
 
 /* Phy preferred medium type */
 typedef enum {
