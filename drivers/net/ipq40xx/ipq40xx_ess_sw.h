@@ -72,4 +72,109 @@
 #define S17_PORT4_HOL_CTRL1		0x0994
 #define S17_PORT5_HOL_CTRL0		0x0998
 #define S17_PORT5_HOL_CTRL1		0x099c
+
+#ifdef CONFIG_ESS_MIB_EN
+#define ess_mib(x)	((0x1000 | (x * 0x100)))
+#define ESS_MIB_OFFSET	0x30
+#define ESS_MIB_EN	(1 << 0)
+/*
+ * Tx Mib counter offset
+ */
+#define ESS_PHY_TX_BROAD_REG		0x54
+#define ESS_PHY_TX_PAUSE_REG		0x58
+#define ESS_PHY_TX_MULTI_REG		0x5c
+#define ESS_PHY_TX_UNDERRN_REG		0x60
+#define ESS_PHY_TX_64B_REG		0x64
+#define ESS_PHY_TX_128B_REG		0x68
+#define ESS_PHY_TX_256B_REG		0x6c
+#define ESS_PHY_TX_512B_REG		0x70
+#define ESS_PHY_TX_1024B_REG		0x74
+#define ESS_PHY_TX_1518B_REG		0x78
+#define ESS_PHY_TX_MAXB_REG		0x7c
+#define ESS_PHY_TX_OVSIZE_REG		0x80
+#define ESS_PHY_TX_TXBYTEL_REG		0x88
+#define ESS_PHY_TX_TXBYTEU_REG		0x84
+#define ESS_PHY_TX_COLL_REG		0x8c
+#define ESS_PHY_TX_ABTCOLL_REG		0x90
+#define ESS_PHY_TX_MLTCOL_REG		0x94
+#define ESS_PHY_TX_SINGCOL_REG		0x98
+#define ESS_PHY_TX_EXDF_REG		0x9c
+#define ESS_PHY_TX_DEF_REG		0xA0
+#define ESS_PHY_TX_LATECOL_REG		0xA4
+#define ESS_PHY_TX_UNICAST		0xAc
+/*
+ * Rx Mib counter offset
+ */
+#define ESS_PHY_RX_BROAD_REG		0x00
+#define ESS_PHY_RX_PAUSE_REG		0x04
+#define ESS_PHY_RX_MULTI_REG		0x08
+#define ESS_PHY_RX_FCSERR_REG		0x0c
+#define ESS_PHY_RX_ALIGNERR_REG		0x10
+#define ESS_PHY_RX_RUNT_REG		0x14
+#define ESS_PHY_RX_FRAGMENT_REG		0x18
+#define ESS_PHY_RX_64B_REG		0x1c
+#define ESS_PHY_RX_128B_REG		0x20
+#define ESS_phy_RX_256B_REG		0x24
+#define ESS_PHY_RX_512B_REG		0x28
+#define ESS_PHY_RX_1024B_REG		0x2c
+#define ESS_PHY_RX_1518B_REG		0x30
+#define ESS_PHY_RX_MAXB_REG		0x34
+#define ESS_PHY_RX_TOLO_REG		0x38
+#define ESS_PHY_RX_GOODBL_REG		0x40
+#define ESS_PHY_RX_GOODBU_REG		0x3c
+#define ESS_PHY_RX_BADBL_REG		0x48
+#define ESS_PHY_RX_BADBU_REG		0x44
+#define ESS_PHY_RX_OVERFLW_REG		0x4c
+#define ESS_PHY_RX_FILTERD_REG		0x50
+#define ESS_PHY_RX_UNICAST		0xA8
+
+struct ess_rx_stats {
+	u32 rx_broad;
+	u32 rx_pause;
+	u32 rx_multi;
+	u32 rx_fcserr;
+	u32 rx_allignerr;
+	u32 rx_runt;
+	u32 rx_frag;
+	u32 rx_64b;
+	u32 rx_128b;
+	u32 rx_256b;
+	u32 rx_512b;
+	u32 rx_1024b;
+	u32 rx_1518b;
+	u32 rx_maxb;
+	u32 rx_tool;
+	u32 rx_goodbl;
+	u32 rx_goodbh;
+	u32 rx_overflow;
+	u32 rx_badbl;
+	u32 rx_badbu;
+	u32 rx_unicast;
+};
+
+struct ess_tx_stats{
+	u32 tx_broad;
+	u32 tx_pause;
+	u32 tx_multi;
+	u32 tx_underrun;
+	u32 tx_64b;
+	u32 tx_128b;
+	u32 tx_256b;
+	u32 tx_512b;
+	u32 tx_1024b;
+	u32 tx_1518b;
+	u32 tx_maxb;
+	u32 tx_oversiz;
+	u32 tx_bytel;
+	u32 tx_byteh;
+	u32 tx_collision;
+	u32 tx_abortcol;
+	u32 tx_multicol;
+	u32 tx_singalcol;
+	u32 tx_execdefer;
+	u32 tx_defer;
+	u32 tx_latecol;
+	u32 tx_unicast;
+};
+#endif
 #endif
