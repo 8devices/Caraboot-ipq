@@ -84,11 +84,6 @@ int ipq40xx_ess_sw_init(ipq40xx_edma_board_cfg_t *cfg)
 		ipq40xx_ess_sw_wr(S17_PORT5_HOL_CTRL0, 0x1e444444);
 		ipq40xx_ess_sw_wr(S17_PORT5_HOL_CTRL1, 0x1c6);
 
-		ipq40xx_ess_sw_wr(S17_P1STATUS_REG, 0x1280);
-		ipq40xx_ess_sw_wr(S17_P2STATUS_REG, 0x1280);
-		ipq40xx_ess_sw_wr(S17_P3STATUS_REG, 0x1280);
-		ipq40xx_ess_sw_wr(S17_P4STATUS_REG, 0x1280);
-		ipq40xx_ess_sw_wr(S17_P5STATUS_REG, 0x1280);
 
 		mdelay(1);
 		/*
@@ -98,12 +93,10 @@ int ipq40xx_ess_sw_init(ipq40xx_edma_board_cfg_t *cfg)
 		ipq40xx_ess_sw_wr(S17_P0STATUS_REG, data |
 		                        S17_PORT_TX_MAC_EN |
 		                        S17_PORT_RX_MAC_EN);
-		ipq40xx_ess_sw_wr(S17_GLOFW_CTRL1_REG, 0x7f7f7f);
-#ifdef CONFIG_ESS_MIB_EN
 		ipq40xx_ess_sw_rd(ESS_MIB_OFFSET, &data);
 		ipq40xx_ess_sw_wr(ESS_MIB_OFFSET, data |
 						ESS_MIB_EN);
-#endif
+		ipq40xx_ess_sw_wr(S17_GLOFW_CTRL1_REG, 0x7f7f7f);
 		printf ("%s done\n", __func__);
 		break;
 	default:

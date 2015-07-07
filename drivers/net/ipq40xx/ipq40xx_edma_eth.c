@@ -906,6 +906,7 @@ int ipq40xx_edma_init(ipq40xx_edma_board_cfg_t *edma_cfg)
 			mdelay(10);
 			writel(PSGMIIPHY_VCO_RST_VAL, PSGMIIPHY_VCO_CALIBRATION_CTRL);
 			mdelay(10);
+			psgmii_self_test();
 			break;
 		default:
 			printf("unknown MII interface\n");
@@ -943,6 +944,8 @@ int ipq40xx_edma_init(ipq40xx_edma_board_cfg_t *edma_cfg)
 				goto failed;
 			}
 		}
+		if(edma_cfg->phy == PHY_INTERFACE_MODE_PSGMII)
+			clear_self_test_config();
 	}
 	return 0;
 

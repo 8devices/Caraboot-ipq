@@ -289,6 +289,242 @@ static u16 qca8075_phy_mmd_read(u32 dev_id, u32 phy_id,
 			QCA8075_MMD_DATA_REG);
 }
 
+void psgmii_self_test()
+{
+	int i, phy, j;
+	u32 value;
+	u32 phy_t_status;
+	u16 status;
+	u32 tx_counter_ok, tx_counter_error;
+	u32 rx_counter_ok, rx_counter_error;
+	u32 tx_counter_ok_high16;
+	u32 rx_counter_ok_high16;
+	u32 tx_ok, rx_ok;
+
+	/*
+	 * Switch to access MII reg for copper
+	 */
+	qca8075_phy_reg_write(0, 4, 0x1f, 0x8500);
+	for (phy = 0; phy < 5; phy++) {
+		/*
+		 * Enable phy mdio broadcast write
+		 */
+		qca8075_phy_mmd_write(0, phy, 7, 0x8028, 0x801f);
+	}
+	/*
+	 * Force no link by power down
+	 */
+	qca8075_phy_reg_write(0, 0x1f, 0x0, 0x1840);
+	/*
+	 * Packet number
+	 */
+	qca8075_phy_mmd_write(0, 0x1f, 7, 0x8021, 0x3000);
+	qca8075_phy_mmd_write(0, 0x1f, 7, 0x8062, 0x05e0);
+	/*
+	 * Fix mdi status
+	 */
+	qca8075_phy_reg_write(0, 0x1f, 0x10, 0x6800);
+
+	for (i = 0; i < 100; i++) {
+		phy_t_status = 0;
+		for (phy = 0; phy < 5; phy++) {
+			value = readl(0xc00066c + (phy * 0xc));
+			/*
+			 * Enable mac loop back
+			 */
+			writel((value | (1 << 21)), (0xc00066c + (phy * 0xc)));
+		}
+		/*
+		 * Phy single test
+		 */
+		for (phy = 0; phy < 5; phy++) {
+			/*
+			 * Enable loopback
+			 */
+			qca8075_phy_reg_write(0, phy, 0x0, 0x9000);
+			qca8075_phy_reg_write(0, phy, 0x0, 0x4140);
+			/*
+			 * Check link
+			 */
+			j = 0;
+			while (j < 100) {
+				status = qca8075_phy_reg_read(0, phy, 0x11);
+				if (status & (1 << 10))
+					break;
+				mdelay(10);
+				j++;
+			}
+			/*
+			 * Enable check
+			 */
+			qca8075_phy_mmd_write(0, phy, 7, 0x8029, 0x0000);
+			qca8075_phy_mmd_write(0, phy, 7, 0x8029, 0x0003);
+			/*
+			 * Start traffic
+			 */
+			qca8075_phy_mmd_write(0, phy, 7, 0x8020, 0xa000);
+			mdelay(200);
+			/*
+			 * check counter
+			 */
+			tx_counter_ok = qca8075_phy_mmd_read(0, phy, 7, 0x802e);
+			tx_counter_ok_high16 = qca8075_phy_mmd_read(0, phy, 7, 0x802d);
+			tx_counter_error = qca8075_phy_mmd_read(0, phy, 7, 0x802f);
+			rx_counter_ok = qca8075_phy_mmd_read(0, phy, 7, 0x802b);
+			rx_counter_ok_high16 = qca8075_phy_mmd_read(0, phy, 7, 0x802a);
+			rx_counter_error = qca8075_phy_mmd_read(0, phy, 7, 0x802c);
+			tx_ok = tx_counter_ok + (tx_counter_ok_high16 << 16);
+			rx_ok = rx_counter_ok + (rx_counter_ok_high16 << 16);
+			/*
+			 * Success
+			 */
+			if((tx_ok == 0x3000) && (tx_counter_error == 0)) {
+				phy_t_status &= (~(1 << phy));
+			} else {
+				phy_t_status |= (1 << phy);
+			}
+			/*
+			 * Power down
+			 */
+			qca8075_phy_reg_write(0, phy, 0x0, 0x1840);
+		}
+		/*
+		 * Reset 5-phy
+		 */
+		qca8075_phy_reg_write(0, 0x1f, 0x0, 0x9000);
+		/*
+		 * Enable 5-phy loopback
+		 */
+		qca8075_phy_reg_write(0, 0x1f, 0x0, 0x4140);
+		/*
+		 * check link
+		 */
+		j = 0;
+		while (j < 100) {
+			for (phy = 0; phy < 5; phy++) {
+				status = qca8075_phy_reg_read(0, phy, 0x11);
+				if (!(status & (1 << 10)))
+					break;
+			}
+			if (phy >= 5)
+				break;
+			mdelay(10);
+			j++;
+		}
+		/*
+		 * Enable check
+		 */
+		qca8075_phy_mmd_write(0, 0x1f, 7, 0x8029, 0x0000);
+		qca8075_phy_mmd_write(0, 0x1f, 7, 0x8029, 0x0003);
+		/*
+		 * Start traffic
+		 */
+		qca8075_phy_mmd_write(0, 0x1f, 7, 0x8020, 0xa000);
+		mdelay(200);
+		for (phy = 0; phy < 5; phy++) {
+			/*
+			 * Check counter
+			 */
+			tx_counter_ok = qca8075_phy_mmd_read(0, phy, 7, 0x802e);
+			tx_counter_ok_high16 = qca8075_phy_mmd_read(0, phy, 7, 0x802d);
+			tx_counter_error = qca8075_phy_mmd_read(0, phy, 7, 0x802f);
+			rx_counter_ok = qca8075_phy_mmd_read(0, phy, 7, 0x802b);
+			rx_counter_ok_high16 = qca8075_phy_mmd_read(0, phy, 7, 0x802a);
+			rx_counter_error = qca8075_phy_mmd_read(0, phy, 7, 0x802c);
+			tx_ok = tx_counter_ok + (tx_counter_ok_high16 << 16);
+			rx_ok = rx_counter_ok + (rx_counter_ok_high16 << 16);
+			/*
+			 * Success
+			 */
+			if ((tx_ok == 0x3000) && (tx_counter_error == 0)) {
+				phy_t_status &= (~(1 << (phy + 8)));
+			} else {
+				phy_t_status |= (1 << (phy + 8));
+			}
+		}
+		if (phy_t_status) {
+			/*
+			 * Fix phy psgmii RX 20bit
+			 */
+			qca8075_phy_reg_write(0, 5, 0x0, 0x005b);
+			/*
+			 * Reset phy psgmii
+			 */
+			qca8075_phy_reg_write(0, 5, 0x0, 0x001b);
+			/*
+			 * Release reset phy psgmii
+			 */
+			qca8075_phy_reg_write(0, 5, 0x0, 0x005b);
+			mdelay(100);
+			/*
+			 * Freeze phy psgmii RX CDR
+			 */
+			qca8075_phy_reg_write(0, 5, 0x1a, 0x2230);
+			writel(0x1, 0x1812008);
+			mdelay(10);
+			writel(0x0, 0x1812008);
+			mdelay(100);
+			/*
+			 * Relesae phy psgmii RX CDR
+			 */
+			qca8075_phy_reg_write(0, 5, 0x1a, 0x3230);
+			/*
+			 * Release phy psgmii RX 20bit
+			 */
+			qca8075_phy_reg_write(0, 5, 0x0, 0x005f);
+			mdelay(200);
+		} else {
+			break;
+		}
+	}
+	/*
+	 * Configuration recover
+	 */
+	/*
+	 * Packet number
+	 */
+	qca8075_phy_mmd_write(0, 0x1f, 7, 0x8021, 0x0);
+	/*
+	 * Disable check
+	 */
+	qca8075_phy_mmd_write(0, 0x1f, 7, 0x8029, 0x0);
+	/*
+	 * Disable traffic
+	 */
+	qca8075_phy_mmd_write(0, 0x1f, 7, 0x8020, 0x0);
+}
+
+void clear_self_test_config()
+{
+	int i = 0, phy = 0;
+	u32 value = 0;
+
+	/*
+	 * Disable EEE
+	 */
+	qca8075_phy_mmd_write(0, 0x1f, 0x7,  0x3c, 0x0);
+
+	/*
+	 * Disable phy internal loopback
+	 */
+	qca8075_phy_reg_write(0, 0x1f, 0x10, 0x6860);
+	qca8075_phy_reg_write(0, 0x1f, 0x0, 0x9040);
+
+	for (phy = 0; phy < 5; phy++) {
+		value = readl(0xc00066c + (phy * 0xc));
+		/*
+		 * Disable mac loop back
+		 */
+		writel((value&(~(1 << 21))), (0xc00066c + (phy * 0xc)));
+		/*
+		 * Disable phy mdio broadcast writei
+		 */
+		qca8075_phy_mmd_write(0, phy, 7, 0x8028, 0x001f);
+	}
+
+}
+
+
 int ipq40xx_qca8075_phy_init(ipq40xx_edma_board_cfg_t *cfg)
 {
 	u16 phy_data;
@@ -303,5 +539,10 @@ int ipq40xx_qca8075_phy_init(ipq40xx_edma_board_cfg_t *cfg)
 	phy_data &= 0xbfff;
 	qca8075_phy_mmd_write(0, PSGMII_ID, QCA8075_PHY_MMD1_NUM,
 			QCA8075_PSGMII_FIFI_CTRL, phy_data);
+
+	phy_data = qca8075_phy_mmd_read(0, 4, QCA8075_PHY_MMD3_NUM, 0x805a);
+	phy_data &= (~(1 << 1));
+	qca8075_phy_mmd_write(0, 4, QCA8075_PHY_MMD3_NUM, 0x805a, phy_data);
+
 	return 0;
 }
