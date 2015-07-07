@@ -593,7 +593,7 @@ static int ipq40xx_eth_init(struct eth_device *eth_dev, bd_t *this)
 		}
 	}
 
-	if (linkup < 0) {
+	if (linkup <= 0) {
 		/* No PHY link is alive */
 		return -1;
 	} else {
