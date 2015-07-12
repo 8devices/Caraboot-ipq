@@ -110,7 +110,7 @@ static int set_fs_bootargs(int *fs_on_nand)
 	return run_command("setenv bootargs ${bootargs} ${fsbootargs} rootwait", 0);
 }
 
-static int do_bootmbn(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
 #ifdef CONFIG_QCA_APPSBL_DLOAD
 	uint64_t etime;
@@ -212,16 +212,7 @@ static int do_bootmbn(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 #ifdef CONFIG_QCA_MMC
 	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
 		blk_dev = mmc_get_dev(host->dev_num);
-		if (smem_bootconfig_info() == 0) {
-			active_part = get_rootfs_active_partition();
-			if (active_part) {
-				ret = find_part_efi(blk_dev, "kernel_1", &disk_info);
-			} else {
-				ret = find_part_efi(blk_dev, "kernel", &disk_info);
-			}
-		} else {
-			ret = find_part_efi(blk_dev, "kernel", &disk_info);
-		}
+		ret = find_part_efi(blk_dev, "0:HLOS", &disk_info);
 
 		if (ret > 0) {
 			snprintf(runcmd, sizeof(runcmd), "mmc read 0x%x 0x%X 0x%X",
@@ -281,11 +272,7 @@ static int do_bootmbn(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	return CMD_RET_SUCCESS;
 }
 
-U_BOOT_CMD(bootmbn, 2, 0, do_bootmbn,
-	   "bootmbn from flash device",
-	   "bootmbn [debug] - Load image(s) and boots the kernel\n");
-
-static int do_bootqca(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
 #ifdef CONFIG_QCA_APPSBL_DLOAD
 	uint64_t etime;
@@ -414,6 +401,23 @@ static int do_bootqca(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	return CMD_RET_SUCCESS;
 }
 
-U_BOOT_CMD(bootipq, 2, 0, do_bootqca,
+static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+{
+	int ret;
+	char buf;
+
+	ret = scm_call(SCM_SVC_FUSE, QFPROM_IS_AUTHENTICATE_CMD,
+				NULL, 0, &buf, sizeof(char));
+
+	if (ret == 0 && buf == 1) {
+		return do_boot_signedimg(cmdtp, flag, argc, argv);
+	} else if (ret == 0 || ret == -EOPNOTSUPP) {
+		return do_boot_unsignedimg(cmdtp, flag, argc, argv);
+	}
+
+	return CMD_RET_FAILURE;
+}
+
+U_BOOT_CMD(bootipq, 2, 0, do_bootipq,
 	   "bootipq from flash device",
 	   "bootipq [debug] - Load image(s) and boots the kernel\n");

@@ -28,7 +28,7 @@
 #define SCM_SVC_TZSCHEDULER		0xFC
 #define SCM_SVC_WR			0x10
 #define SCM_SVC_RD			0x12
-
+#define QFPROM_IS_AUTHENTICATE_CMD	0x7
 
 #define KERNEL_AUTH_CMD			0x13
 #define CE_CHN_SWITCH_CMD		0x2
