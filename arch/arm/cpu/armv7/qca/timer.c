@@ -61,6 +61,25 @@ ulong get_timer(ulong base)
 	return get_timer_masked() - base;
 }
 
+/*
+ * read_counter - returns 64-bit counter value
+ * Reads Timer HI and Timer LO value register
+ */
+static unsigned long long read_counter(void)
+{
+	unsigned long vect_hi1, vect_hi2;
+	unsigned long vect_low;
+
+repeat:
+	vect_hi1 = readl(GCNT_CNTCV_HI);
+	vect_low = readl(GCNT_CNTCV_LO);
+	vect_hi2 = readl(GCNT_CNTCV_HI);
+
+	if (vect_hi1 != vect_hi2)
+		goto repeat;
+
+	return ((unsigned long long)vect_hi1 << 32 | vect_low);
+}
 /**
  * __udelay -  generates micro second delay.
  * @usec: delay duration in microseconds
@@ -71,20 +90,14 @@ ulong get_timer(ulong base)
 void __udelay(unsigned long usec)
 {
 	unsigned long long val;
-	unsigned long long now_high, now_low;
 	unsigned long long now;
-	unsigned long long last_high, last_low;
 	unsigned long long last;
 	unsigned long long runcount;
 
 	val = (usec * GPT_FREQ);
-	last_high = readl(GCNT_CNTCV_HI);
-	last_low = readl(GCNT_CNTCV_LO);
-	last = last_high << 32 | last_low;
+	last = read_counter();
 	do {
-		now_high = readl(GCNT_CNTCV_HI);
-		now_low = readl(GCNT_CNTCV_LO);
-		now = now_high << 32 | now_low;
+		now = read_counter();
 		if (last > now)
 			runcount = (GPT_FREQ - last) + now;
 		else
@@ -109,12 +122,11 @@ inline unsigned long long gpt_to_sys_freq(unsigned long long gpt)
  */
 ulong get_timer_masked(void)
 {
-	unsigned long long vect_hi, vect_low;
 	unsigned long long now;
-	vect_low = readl(GCNT_CNTCV_LO);
-	vect_hi = readl(GCNT_CNTCV_HI);
+	unsigned long long counter_val;
 
-	now = gpt_to_sys_freq(vect_hi << 32 | vect_low);
+	counter_val = read_counter();
+	now = gpt_to_sys_freq(counter_val);
 
 	if (lastinc <= now) {	/* normal mode (non roll) */
 		/* normal mode */
