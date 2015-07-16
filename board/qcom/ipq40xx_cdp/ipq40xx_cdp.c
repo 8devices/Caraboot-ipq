@@ -348,7 +348,6 @@ void board_nand_init(void)
 	ipq_nand_init(IPQ_NAND_LAYOUT_LINUX, QCOM_NAND_QPIC);
 #else
 	if ((gboard_param->machid == MACH_TYPE_IPQ40XX_AP_DK04_1_C1) ||
-		(gboard_param->machid == MACH_TYPE_IPQ40XX_AP_DK04_1_C2) ||
 		(gboard_param->machid == MACH_TYPE_IPQ40XX_AP_DK04_1_C3)) {
 
 		struct qpic_nand_init_config config;
