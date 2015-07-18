@@ -87,10 +87,16 @@ static int inline do_dumpipq_data()
  */
 static int set_fs_bootargs(int *fs_on_nand)
 {
+	char *bootargs;
+
+#define nand_rootfs	"ubi.mtd=" IPQ_ROOT_FS_PART_NAME " root=mtd:ubi_rootfs rootfstype=squashfs"
 
 	if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
 		*fs_on_nand = 0;
 	} else if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
+		bootargs = nand_rootfs;
+		if (getenv("fsbootargs") == NULL)
+			setenv("fsbootargs", bootargs);
 		*fs_on_nand = 1;
 #ifdef CONFIG_QCA_MMC
 	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
@@ -104,7 +110,7 @@ static int set_fs_bootargs(int *fs_on_nand)
 	return run_command("setenv bootargs ${bootargs} ${fsbootargs} rootwait", 0);
 }
 
-static int do_bootmbn(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
 #ifdef CONFIG_QCA_APPSBL_DLOAD
 	uint64_t etime;
@@ -206,16 +212,7 @@ static int do_bootmbn(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 #ifdef CONFIG_QCA_MMC
 	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
 		blk_dev = mmc_get_dev(host->dev_num);
-		if (smem_bootconfig_info() == 0) {
-			active_part = get_rootfs_active_partition();
-			if (active_part) {
-				ret = find_part_efi(blk_dev, "kernel_1", &disk_info);
-			} else {
-				ret = find_part_efi(blk_dev, "kernel", &disk_info);
-			}
-		} else {
-			ret = find_part_efi(blk_dev, "kernel", &disk_info);
-		}
+		ret = find_part_efi(blk_dev, "0:HLOS", &disk_info);
 
 		if (ret > 0) {
 			snprintf(runcmd, sizeof(runcmd), "mmc read 0x%x 0x%X 0x%X",
@@ -275,11 +272,7 @@ static int do_bootmbn(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	return CMD_RET_SUCCESS;
 }
 
-U_BOOT_CMD(bootmbn, 2, 0, do_bootmbn,
-	   "bootmbn from flash device",
-	   "bootmbn [debug] - Load image(s) and boots the kernel\n");
-
-static int do_bootqca(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
 #ifdef CONFIG_QCA_APPSBL_DLOAD
 	uint64_t etime;
@@ -340,16 +333,19 @@ static int do_bootqca(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 		/*
 		 * The kernel is in seperate partition
 		 */
-		if (sfi->hlos.offset == 0xBAD0FF5E) {
+		if (sfi->rootfs.offset == 0xBAD0FF5E) {
 			printf(" bad offset of hlos");
 			return -1;
 		}
 
 		snprintf(runcmd, sizeof(runcmd),
-			"nand read 0x%x 0x%x 0x%x && "
-			"bootm 0x%x%s\n",
-			CONFIG_SYS_LOAD_ADDR, (uint)sfi->hlos.offset, (uint)sfi->hlos.size,
-			CONFIG_SYS_LOAD_ADDR, gboard_param->dtb_config_name);
+			"set mtdids nand0=nand0 && "
+			"set mtdparts mtdparts=nand0:0x%llx@0x%llx(fs),${msmparts} && "
+			"ubi part fs && "
+			"ubi read 0x%x kernel && "
+			"bootm 0x%x%s\n", sfi->rootfs.size, sfi->rootfs.offset,
+			CONFIG_SYS_LOAD_ADDR, CONFIG_SYS_LOAD_ADDR,
+			gboard_param->dtb_config_name);
 
 	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
 		if (sfi->hlos.offset == 0xBAD0FF5E) {
@@ -405,6 +401,23 @@ static int do_bootqca(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	return CMD_RET_SUCCESS;
 }
 
-U_BOOT_CMD(bootipq, 2, 0, do_bootqca,
+static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+{
+	int ret;
+	char buf;
+
+	ret = scm_call(SCM_SVC_FUSE, QFPROM_IS_AUTHENTICATE_CMD,
+				NULL, 0, &buf, sizeof(char));
+
+	if (ret == 0 && buf == 1) {
+		return do_boot_signedimg(cmdtp, flag, argc, argv);
+	} else if (ret == 0 || ret == -EOPNOTSUPP) {
+		return do_boot_unsignedimg(cmdtp, flag, argc, argv);
+	}
+
+	return CMD_RET_FAILURE;
+}
+
+U_BOOT_CMD(bootipq, 2, 0, do_bootipq,
 	   "bootipq from flash device",
 	   "bootipq [debug] - Load image(s) and boots the kernel\n");
