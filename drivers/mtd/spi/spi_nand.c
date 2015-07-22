@@ -102,7 +102,6 @@ static int spi_nand_read(struct mtd_info *mtd, loff_t from, size_t len,
 	realpage = (int)(from >> 0xB);
 	page = realpage & 0xffff;
 	readlen = len;
-	bytes = mtd->writesize;
 
 	ret = spi_claim_bus(flash->spi);
 	if (ret) {
@@ -124,6 +123,7 @@ static int spi_nand_read(struct mtd_info *mtd, loff_t from, size_t len,
 			goto out;
 		}
 
+		bytes = ((readlen < mtd->writesize) ? readlen : mtd->writesize);
 		cmd[0] = IPQ40XX_SPINAND_CMD_NORM_READ;
 		cmd[2] = 0;
 		cmd[3] = 0;
@@ -134,7 +134,7 @@ static int spi_nand_read(struct mtd_info *mtd, loff_t from, size_t len,
 		}
 
 		readlen -= bytes;
-		if (!readlen)
+		if (readlen <= 0)
 			break;
 		buf += bytes;
 		realpage++;
