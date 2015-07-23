@@ -490,16 +490,21 @@ void ft_board_setup(void *blob, bd_t *bd)
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 	struct flash_node_info nodes[] = {
 		{ "qcom,msm-nand", MTD_DEV_TYPE_NAND, 0 },
+		{ "spinand,mt29f", MTD_DEV_TYPE_NAND, 1 },
 		{ "n25q128a11", MTD_DEV_TYPE_NAND, 2 },
 		{ NULL, 0, -1 },	/* Terminator */
 	};
 
 	fdt_fixup_memory_banks(blob, &memory_start, &memory_size, 1);
 
-	if (sfi->flash_type == SMEM_BOOT_NAND_FLASH)
+	if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
 		mtdparts = "mtdparts=nand0";
-	else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH)
-		mtdparts = "mtdparts=spi0.0";
+	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
+		if (gboard_param->spi_nand_available)
+			mtdparts = "mtdparts=nand1:-@0(rootfs);spi0.0";
+		else
+			mtdparts = "mtdparts=spi0.0";
+	}
 
 	if (mtdparts) {
 		mtdparts = qca_smem_part_to_mtdparts(mtdparts);

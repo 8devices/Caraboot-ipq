@@ -478,7 +478,7 @@ board_ipq40xx_params_t board_params[] = {
 		.machid = MACH_TYPE_IPQ40XX_AP_DK01_1_C2,
 		.ddr_size = (256 << 20),
 		.uart_dm_base = UART1_DM_BASE,
-		.mtdids = "nand2=spi0.0",
+		.mtdids = "nand1=nand1,nand2=spi0.0",
 		.dbg_uart_gpio = {
 			{
 				.gpio = 60,
