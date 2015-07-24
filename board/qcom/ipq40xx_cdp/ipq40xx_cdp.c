@@ -260,7 +260,6 @@ void qca_get_part_details(void)
 	struct { char *name; qca_part_entry_t *part; } entries[] = {
 		{ "0:HLOS", &smem->hlos },
 		{ "rootfs", &smem->rootfs },
-		{ "0:DTB", &smem->dtb },
 	};
 
 	for (i = 0; i < ARRAY_SIZE(entries); i++) {
