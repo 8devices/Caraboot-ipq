@@ -92,7 +92,14 @@ static int set_fs_bootargs(int *fs_on_nand)
 #define nand_rootfs	"ubi.mtd=" IPQ_ROOT_FS_PART_NAME " root=mtd:ubi_rootfs rootfstype=squashfs"
 
 	if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
-		*fs_on_nand = 0;
+		if (sfi->rootfs.offset == 0xBAD0FF5E) {
+			bootargs = nand_rootfs;
+			*fs_on_nand = 1;
+			if (getenv("fsbootargs") == NULL)
+				setenv("fsbootargs", bootargs);
+		} else {
+			*fs_on_nand = 0;
+		}
 	} else if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
 		bootargs = nand_rootfs;
 		if (getenv("fsbootargs") == NULL)
@@ -194,10 +201,15 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 		 * The kernel will be available inside a UBI volume
 		 */
 		snprintf(runcmd, sizeof(runcmd),
-			"set mtdids nand0=nand0 && "
-			"set mtdparts mtdparts=nand0:0x%llx@0x%llx(fs),${msmparts} && "
+			"nand device %d && "
+			"set mtdids nand%d=nand%d && "
+			"set mtdparts mtdparts=nand%d:0x%llx@0x%llx(fs),${msmparts} && "
 			"ubi part fs && "
-			"ubi read 0x%x kernel && ", sfi->rootfs.size, sfi->rootfs.offset,
+			"ubi read 0x%x kernel && ", gboard_param->spi_nand_available,
+			gboard_param->spi_nand_available,
+			gboard_param->spi_nand_available,
+			gboard_param->spi_nand_available,
+			sfi->rootfs.size, sfi->rootfs.offset,
 			request);
 
 
@@ -348,19 +360,34 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 			gboard_param->dtb_config_name);
 
 	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
-		if (sfi->hlos.offset == 0xBAD0FF5E) {
-			printf(" bad offset of hlos\n");
-			return -1;
+		if (sfi->rootfs.offset == 0xBAD0FF5E) {
+			sfi->rootfs.offset = 0;
+			sfi->rootfs.size = IPQ_NAND_ROOTFS_SIZE;
+
+			snprintf(runcmd, sizeof(runcmd),
+				"nand device %d && "
+				"set mtdids nand%d=nand%d && "
+				"set mtdparts mtdparts=nand%d:0x%llx@0x%llx(fs),${msmparts} && "
+				"ubi part fs && "
+				"ubi read 0x%x kernel && "
+				"bootm 0x%x%s\n",gboard_param->spi_nand_available,
+				gboard_param->spi_nand_available,
+				gboard_param->spi_nand_available,
+				gboard_param->spi_nand_available,
+				sfi->rootfs.size, sfi->rootfs.offset,
+				CONFIG_SYS_LOAD_ADDR, CONFIG_SYS_LOAD_ADDR,
+				gboard_param->dtb_config_name);
+		} else {
+			/*
+			 * Kernel is in a separate partition
+			 */
+			snprintf(runcmd, sizeof(runcmd),
+				"sf probe &&"
+				"sf read 0x%x 0x%x 0x%x && "
+				"bootm 0x%x%s\n",
+				CONFIG_SYS_LOAD_ADDR, (uint)sfi->hlos.offset, (uint)sfi->hlos.size,
+				CONFIG_SYS_LOAD_ADDR, gboard_param->dtb_config_name);
 		}
-		/*
-		 * Kernel is in a separate partition
-		 */
-		snprintf(runcmd, sizeof(runcmd),
-			"sf probe &&"
-			"sf read 0x%x 0x%x 0x%x && "
-			"bootm 0x%x%s\n",
-			CONFIG_SYS_LOAD_ADDR, (uint)sfi->hlos.offset, (uint)sfi->hlos.size,
-			CONFIG_SYS_LOAD_ADDR, gboard_param->dtb_config_name);
 #ifdef CONFIG_QCA_MMC
 	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
 		if (debug) {

@@ -84,6 +84,7 @@ typedef struct {
 	ipq40xx_edma_board_cfg_t edma_cfg[IPQ40XX_EDMA_DEV];
 	gpio_func_data_t *mmc_gpio;
 	unsigned int mmc_gpio_count;
+	unsigned int spi_nand_available;
 	unsigned char *dtb_config_name;
 } __attribute__ ((__packed__)) board_ipq40xx_params_t;
 
