@@ -33,8 +33,8 @@ enum {
 
 struct smem_ram_ptn {
 	char name[16];
-	unsigned start;
-	unsigned size;
+	unsigned long long start;
+	unsigned long long size;
 
 	/* RAM Partition attribute: READ_ONLY, READWRITE etc.  */
 	unsigned attr;
@@ -59,8 +59,8 @@ struct smem_ram_ptable {
 	unsigned version;
 	unsigned reserved1;
 	unsigned len;
-	struct smem_ram_ptn parts[32];
 	unsigned buf;
+	struct smem_ram_ptn parts[32];
 } __attribute__ ((__packed__));
 
 unsigned int smem_get_board_platform_type();
