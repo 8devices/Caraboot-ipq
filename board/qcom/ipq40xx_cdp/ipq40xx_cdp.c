@@ -362,6 +362,7 @@ void board_nand_init(void)
 	ipq_nand_init(IPQ_NAND_LAYOUT_LINUX, QCOM_NAND_QPIC);
 #else
 	if ((gboard_param->machid == MACH_TYPE_IPQ40XX_AP_DK04_1_C1) ||
+		(gboard_param->machid == MACH_TYPE_IPQ40XX_DB_DK02_1_C1) ||
 		(gboard_param->machid == MACH_TYPE_IPQ40XX_AP_DK04_1_C3)) {
 
 		struct qpic_nand_init_config config;
@@ -430,6 +431,8 @@ int board_eth_init(bd_t *bis)
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C1:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C2:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C3:
+	case MACH_TYPE_IPQ40XX_DB_DK01_1_C1:
+	case MACH_TYPE_IPQ40XX_DB_DK02_1_C1:
 		mdelay(100);
 		writel(GPIO_OUT, GPIO_IN_OUT_ADDR(47));
 		ipq40xx_register_switch(ipq40xx_qca8075_phy_init);

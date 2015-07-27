@@ -605,36 +605,38 @@ board_ipq40xx_params_t board_params[] = {
 		.dtb_config_name = "#config@3",
 	},
 	{
-		.machid = MACH_TYPE_IPQ40XX_DB152,
+		.machid = MACH_TYPE_IPQ40XX_DB_DK01_1_C1,
 		.ddr_size = (256 << 20),
 		.uart_dm_base = UART1_DM_BASE,
+		.mtdids = "nand2=spi0.0",
 		.dbg_uart_gpio = {
 			{
-				.gpio = 16,
-				.func = 1,
+				.gpio = 60,
+				.func = 2,
 				.pull = GPIO_NO_PULL,
 				.oe = GPIO_OE_ENABLE
 			},
 			{
-				.gpio = 17,
-				.func = 1,
+				.gpio = 61,
+				.func = 2,
 				.pull = GPIO_NO_PULL,
 				.oe = GPIO_OE_ENABLE
 			},
 		},
-		.sw_gpio = sw_gpio_bga,
-		.sw_gpio_count = ARRAY_SIZE(sw_gpio_bga),
+		.sw_gpio = sw_gpio_qfn,
+		.sw_gpio_count = ARRAY_SIZE(sw_gpio_qfn),
 		.edma_cfg = {
-			ipq40xx_edma_cfg(0, 5, PSGMII,
+			ipq40xx_edma_cfg(0, 5, RGMII,
 					0, 1, 2, 3, 4)
 		},
 		.spi_nand_available = 0,
-		.dtb_config_name = "",
+		.dtb_config_name = "#config@6",
 	},
 	{
-		.machid = MACH_TYPE_IPQ40XX_DB153,
+		.machid = MACH_TYPE_IPQ40XX_DB_DK02_1_C1,
 		.ddr_size = (256 << 20),
 		.uart_dm_base = UART1_DM_BASE,
+		.mtdids = "nand0=nand0,nand2=spi0.0",
 		.dbg_uart_gpio = {
 			{
 				.gpio = 16,
@@ -649,14 +651,20 @@ board_ipq40xx_params_t board_params[] = {
 				.oe = GPIO_OE_ENABLE
 			},
 		},
+		.spi_nor_gpio = spi_nor_bga,
+		.spi_nor_gpio_count = ARRAY_SIZE(spi_nor_bga),
+		.nand_gpio = nand_gpio_bga,
+		.nand_gpio_count = ARRAY_SIZE(nand_gpio_bga),
 		.sw_gpio = sw_gpio_bga,
 		.sw_gpio_count = ARRAY_SIZE(sw_gpio_bga),
 		.edma_cfg = {
-			ipq40xx_edma_cfg(0, 5, PSGMII,
+			ipq40xx_edma_cfg(0, 5, RGMII,
 					0, 1, 2, 3, 4)
 		},
+		.mmc_gpio = mmc_ap_dk04,
+		.mmc_gpio_count = ARRAY_SIZE(mmc_ap_dk04),
 		.spi_nand_available = 0,
-		.dtb_config_name = "",
+		.dtb_config_name = "#config@7",
 	},
 	{
 		.machid = MACH_TYPE_IPQ40XX_TB832,

@@ -908,6 +908,8 @@ int ipq40xx_edma_init(ipq40xx_edma_board_cfg_t *edma_cfg)
 			mdelay(10);
 			psgmii_self_test();
 			break;
+		case PHY_INTERFACE_MODE_RGMII:
+			break;
 		default:
 			printf("unknown MII interface\n");
 			goto failed;

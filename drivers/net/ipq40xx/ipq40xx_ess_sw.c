@@ -38,6 +38,8 @@ int ipq40xx_ess_sw_init(ipq40xx_edma_board_cfg_t *cfg)
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C1:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C2:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C3:
+	case MACH_TYPE_IPQ40XX_DB_DK02_1_C1:
+	case MACH_TYPE_IPQ40XX_DB_DK01_1_C1:
 		ipq40xx_ess_sw_wr(S17_GLOFW_CTRL1_REG, 0x3e3e3e);
 		/*
 		 * configure Speed, Duplex.
