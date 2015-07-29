@@ -266,7 +266,7 @@ void qca_get_part_details(void)
 		ret = smem_getpart(entries[i].name, &start, &size);
 		if (ret < 0) {
 			qca_part_entry_t *part = entries[i].part;
-			printf("cdp: get part failed for %s\n", entries[i].name);
+			debug("cdp: get part failed for %s\n", entries[i].name);
 			part->offset = 0xBAD0FF5E;
 			part->size = 0xBAD0FF5E;
 		} else {
