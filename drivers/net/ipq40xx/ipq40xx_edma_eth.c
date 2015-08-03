@@ -805,15 +805,18 @@ int ipq40xx_edma_init(ipq40xx_edma_board_cfg_t *edma_cfg)
 	struct eth_device *dev[IPQ40XX_EDMA_DEV];
 	struct ipq40xx_edma_common_info *c_info[IPQ40XX_EDMA_DEV];
 	struct ipq40xx_edma_hw *hw[IPQ40XX_EDMA_DEV];
+	uchar enet_addr[IPQ40XX_EDMA_DEV * 6];
 	int i;
 	int ret;
+	char ethaddr[16] = "ethaddr";
+	char mac[64];
 
+	memset(enet_addr, 0, sizeof(enet_addr));
+	/* Getting the MAC address from ART partition */
+	ret = get_eth_mac_address(enet_addr, IPQ40XX_EDMA_DEV);
 	/*
 	 * Register EDMA as single ethernet
 	 * interface.
-	 * To-do: To register as two ethernet
-	 * device once we have a LAN/WAN cfg for
-	 * switch core.
 	 */
 	for (i = 0; i < IPQ40XX_EDMA_DEV; edma_cfg++, i++) {
 		dev[i] = ipq40xx_alloc_mem(sizeof(struct eth_device));
@@ -862,7 +865,33 @@ int ipq40xx_edma_init(ipq40xx_edma_board_cfg_t *edma_cfg)
 		dev[i]->write_hwaddr = ipq40xx_edma_wr_macaddr;
 		dev[i]->priv = (void *)ipq40xx_edma_dev[i];
 
-		memcpy(&dev[i]->enetaddr[0], ipq40xx_def_enetaddr, 6);
+		if ((ret < 0) ||
+			(!is_valid_ether_addr(&enet_addr[edma_cfg->unit * 6]))) {
+			memcpy(&dev[i]->enetaddr[0], ipq40xx_def_enetaddr, 6);
+		} else {
+			memcpy(&dev[i]->enetaddr[0],
+				&enet_addr[edma_cfg->unit * 6],
+				6);
+		}
+		printf("MAC%x addr:%x:%x:%x:%x:%x:%x\n",
+			edma_cfg->unit, dev[i]->enetaddr[0],
+			dev[i]->enetaddr[1],
+			dev[i]->enetaddr[2],
+			dev[i]->enetaddr[3],
+			dev[i]->enetaddr[4],
+			dev[i]->enetaddr[5]);
+		/*
+		 * Populate the environment with these MAC addresses.
+		 * U-Boot uses these to patch the 'local-mac-address'
+		 * dts entry for the ethernet entries, which in turn
+		 * will be picked up by the HLOS driver
+		 */
+		sprintf(mac, "%x:%x:%x:%x:%x:%x",
+			dev[i]->enetaddr[0], dev[i]->enetaddr[1],
+			dev[i]->enetaddr[2], dev[i]->enetaddr[3],
+			dev[i]->enetaddr[4], dev[i]->enetaddr[5]);
+		setenv(ethaddr, mac);
+		sprintf(ethaddr, "eth%daddr", (i + 1));
 
 		sprintf(dev[i]->name, "eth%d", i);
 		ipq40xx_edma_dev[i]->dev  = dev[i];

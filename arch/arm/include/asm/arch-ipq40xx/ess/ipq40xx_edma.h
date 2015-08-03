@@ -377,6 +377,7 @@ typedef enum {
 	FAL_CABLE_STATUS_BUTT = 0xffff,
 } fal_cable_status_t;
 
+int get_eth_mac_address(uchar *enetaddr, uint no_of_macs);
 void ipq40xx_register_switch(int(*sw_init)(ipq40xx_edma_board_cfg_t *cfg));
 int ipq40xx_qca8075_phy_init(ipq40xx_edma_board_cfg_t *cfg);
 u8  qca8075_phy_get_link_status(u32 dev_id, u32 phy_id);

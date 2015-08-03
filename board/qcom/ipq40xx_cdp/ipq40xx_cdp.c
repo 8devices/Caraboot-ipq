@@ -38,6 +38,10 @@
 #include "ipq40xx_board_param.h"
 #include "ipq40xx_cdp.h"
 #include <asm/arch-ipq40xx/scm.h>
+#include <nand.h>
+#include <phy.h>
+#include <part.h>
+#include <mmc.h>
 #ifdef CONFIG_IPQ_NAND
 #include <linux/mtd/ipq_nand.h>
 #include <asm/arch-qcom-common/nand.h>
@@ -397,6 +401,72 @@ void board_nand_init(void)
 #ifdef CONFIG_IPQ40XX_SPI
 	ipq_spi_init(CONFIG_IPQ_SPI_NOR_INFO_IDX);
 #endif
+}
+
+/*
+ * Gets the ethernet address from the ART partition table and return the value
+ */
+int get_eth_mac_address(uchar *enetaddr, uint no_of_macs)
+{
+	s32 ret = 0 ;
+	u32 start_blocks;
+	u32 size_blocks;
+	u32 length = (6 * no_of_macs);
+	u32 flash_type;
+	loff_t art_offset;
+	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
+#ifdef CONFIG_QCA_MMC
+	block_dev_desc_t *blk_dev;
+	disk_partition_t disk_info;
+	struct mmc *mmc;
+	char mmc_blks[512];
+#endif
+	if (sfi->flash_type != SMEM_BOOT_MMC_FLASH) {
+		if (qca_smem_flash_info.flash_type == SMEM_BOOT_SPI_FLASH)
+			flash_type = CONFIG_IPQ_SPI_NOR_INFO_IDX;
+		else if (qca_smem_flash_info.flash_type == SMEM_BOOT_NAND_FLASH)
+			flash_type = CONFIG_IPQ_NAND_NAND_INFO_IDX;
+		else {
+			printf("Unknown flash type\n");
+			return -EINVAL;
+		}
+
+		ret = smem_getpart("0:ART", &start_blocks, &size_blocks);
+		if (ret < 0) {
+			printf("No ART partition found\n");
+			return ret;
+		}
+
+		/*
+		 * ART partition 0th position will contain Mac address.
+		 */
+		art_offset =
+		((loff_t) qca_smem_flash_info.flash_block_size * start_blocks);
+
+		ret = nand_read(&nand_info[flash_type],
+				art_offset, &length, enetaddr);
+		if (ret < 0)
+			printf("ART partition read failed..\n");
+#ifdef CONFIG_QCA_MMC
+	} else {
+		blk_dev = mmc_get_dev(mmc_host.dev_num);
+		ret = find_part_efi(blk_dev, "0:ART", &disk_info);
+		/*
+		 * ART partition 0th position will contain MAC address.
+		 * Read 1 block.
+		 */
+		if (ret > 0) {
+			mmc = mmc_host.mmc;
+			ret = mmc->block_dev.block_read
+				(mmc_host.dev_num, disk_info.start,
+						1, mmc_blks);
+			memcpy(enetaddr, mmc_blks, length);
+                }
+		if (ret < 0)
+			printf("ART partition read failed..\n");
+#endif
+	}
+	return ret;
 }
 
 static void ipq40xx_edma_common_init()
