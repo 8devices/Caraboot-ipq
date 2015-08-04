@@ -354,10 +354,9 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 			"set mtdids nand0=nand0 && "
 			"set mtdparts mtdparts=nand0:0x%llx@0x%llx(fs),${msmparts} && "
 			"ubi part fs && "
-			"ubi read 0x%x kernel && "
-			"bootm 0x%x%s\n", sfi->rootfs.size, sfi->rootfs.offset,
-			CONFIG_SYS_LOAD_ADDR, CONFIG_SYS_LOAD_ADDR,
-			gboard_param->dtb_config_name);
+			"ubi read 0x%x kernel && ",
+			sfi->rootfs.size, sfi->rootfs.offset,
+			CONFIG_SYS_LOAD_ADDR);
 
 	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
 		if (sfi->rootfs.offset == 0xBAD0FF5E) {
@@ -369,24 +368,21 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 				"set mtdids nand%d=nand%d && "
 				"set mtdparts mtdparts=nand%d:0x%llx@0x%llx(fs),${msmparts} && "
 				"ubi part fs && "
-				"ubi read 0x%x kernel && "
-				"bootm 0x%x%s\n",gboard_param->spi_nand_available,
+				"ubi read 0x%x kernel && ", 
+				gboard_param->spi_nand_available,
 				gboard_param->spi_nand_available,
 				gboard_param->spi_nand_available,
 				gboard_param->spi_nand_available,
 				sfi->rootfs.size, sfi->rootfs.offset,
-				CONFIG_SYS_LOAD_ADDR, CONFIG_SYS_LOAD_ADDR,
-				gboard_param->dtb_config_name);
+				CONFIG_SYS_LOAD_ADDR);
 		} else {
 			/*
 			 * Kernel is in a separate partition
 			 */
 			snprintf(runcmd, sizeof(runcmd),
 				"sf probe &&"
-				"sf read 0x%x 0x%x 0x%x && "
-				"bootm 0x%x%s\n",
-				CONFIG_SYS_LOAD_ADDR, (uint)sfi->hlos.offset, (uint)sfi->hlos.size,
-				CONFIG_SYS_LOAD_ADDR, gboard_param->dtb_config_name);
+				"sf read 0x%x 0x%x 0x%x && ",
+				CONFIG_SYS_LOAD_ADDR, (uint)sfi->hlos.offset, (uint)sfi->hlos.size);
 		}
 #ifdef CONFIG_QCA_MMC
 	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
@@ -403,9 +399,6 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 
 			if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
 				return CMD_RET_FAILURE;
-
-			snprintf(runcmd, sizeof(runcmd),"bootm 0x%x%s\n",
-						CONFIG_SYS_LOAD_ADDR, gboard_param->dtb_config_name);
 		}
 
 #endif   	/* CONFIG_QCA_MMC   */
@@ -425,6 +418,32 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 		return CMD_RET_FAILURE;
 	}
 
+	ret = genimg_get_format((void *)CONFIG_SYS_LOAD_ADDR);
+	if (ret == IMAGE_FORMAT_FIT) {
+		snprintf(runcmd, sizeof(runcmd),
+			"bootm 0x%x%s\n", CONFIG_SYS_LOAD_ADDR,
+				gboard_param->dtb_config_name);
+	} else if (ret == IMAGE_FORMAT_LEGACY) {
+		snprintf(runcmd, sizeof(runcmd),
+			"bootm 0x%x\n", CONFIG_SYS_LOAD_ADDR);
+	} else {
+		ret = genimg_get_format((void *)CONFIG_SYS_LOAD_ADDR +
+					sizeof(mbn_header_t));
+		if (ret == IMAGE_FORMAT_FIT) {
+			snprintf(runcmd, sizeof(runcmd),
+				"bootm 0x%x%s\n", (CONFIG_SYS_LOAD_ADDR +
+				sizeof(mbn_header_t)), gboard_param->dtb_config_name);
+		} else if (ret == IMAGE_FORMAT_LEGACY) {
+			snprintf(runcmd, sizeof(runcmd),
+				"bootm 0x%x\n", (CONFIG_SYS_LOAD_ADDR +
+				sizeof(mbn_header_t)));
+		} else
+			return CMD_RET_FAILURE;
+	}
+
+	if (run_command(runcmd, 0) != CMD_RET_SUCCESS) {
+		return CMD_RET_FAILURE;
+	}
 	return CMD_RET_SUCCESS;
 }
 
