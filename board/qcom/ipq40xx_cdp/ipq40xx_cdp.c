@@ -504,6 +504,7 @@ void ft_board_setup(void *blob, bd_t *bd)
 	u64 memory_start = CONFIG_SYS_SDRAM_BASE;
 	u64 memory_size = gboard_param->ddr_size;
 	char *mtdparts = NULL;
+	char parts_str[256];
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 	struct flash_node_info nodes[] = {
 		{ "qcom,msm-nand", MTD_DEV_TYPE_NAND, 0 },
@@ -517,10 +518,15 @@ void ft_board_setup(void *blob, bd_t *bd)
 	if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
 		mtdparts = "mtdparts=nand0";
 	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
-		if (gboard_param->spi_nand_available)
-			mtdparts = "mtdparts=nand1:-@0(rootfs);spi0.0";
-		else
+		if (gboard_param->spi_nand_available) {
+			sprintf(parts_str,
+				"mtdparts=nand1:0x%x@0(rootfs);spi0.0",
+				IPQ_NAND_ROOTFS_SIZE);
+			mtdparts = parts_str;
+
+		} else {
 			mtdparts = "mtdparts=spi0.0";
+		}
 	}
 
 	if (mtdparts) {
