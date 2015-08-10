@@ -75,6 +75,7 @@
 
 #define ess_mib(x)	((0x1000 | (x * 0x100)))
 #define ESS_MIB_OFFSET	0x30
+#define ESS_MIB_REG	0x34
 #define ESS_MIB_EN	(1 << 0)
 #ifdef CONFIG_ESS_MIB_EN
 /*

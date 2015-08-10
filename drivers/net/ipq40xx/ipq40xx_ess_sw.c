@@ -32,23 +32,22 @@ static inline ipq40xx_ess_sw_wr(u32 addr, u32 data)
 int ipq40xx_ess_sw_init(ipq40xx_edma_board_cfg_t *cfg)
 {
 	u32 data;
+
+	ipq40xx_ess_sw_wr(S17_GLOFW_CTRL1_REG, 0x3e3e3e);
+	/*
+	 * configure Speed, Duplex.
+	 */
+	ipq40xx_ess_sw_wr(S17_P0STATUS_REG, S17_PORT_SPEED(2) |
+					S17_PORT_FULL_DUP |
+					S17_TX_FLOW_EN |
+					S17_RX_FLOW_EN);
+
 	switch(gboard_param->machid) {
 	case MACH_TYPE_IPQ40XX_AP_DK01_1_C1:
 	case MACH_TYPE_IPQ40XX_AP_DK01_1_C2:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C1:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C2:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C3:
-	case MACH_TYPE_IPQ40XX_DB_DK02_1_C1:
-	case MACH_TYPE_IPQ40XX_DB_DK01_1_C1:
-		ipq40xx_ess_sw_wr(S17_GLOFW_CTRL1_REG, 0x3e3e3e);
-		/*
-		 * configure Speed, Duplex.
-		 */
-		ipq40xx_ess_sw_wr(S17_P0STATUS_REG, S17_PORT_SPEED(2) |
-						S17_PORT_FULL_DUP |
-						S17_TX_FLOW_EN |
-						S17_RX_FLOW_EN);
-
 		ipq40xx_ess_sw_wr(S17_P0LOOKUP_CTRL_REG, 0x14003e);
 		ipq40xx_ess_sw_wr(S17_P1LOOKUP_CTRL_REG, 0x14001d);
 		ipq40xx_ess_sw_wr(S17_P2LOOKUP_CTRL_REG, 0x14001b);
@@ -85,25 +84,43 @@ int ipq40xx_ess_sw_init(ipq40xx_edma_board_cfg_t *cfg)
 		 */
 		ipq40xx_ess_sw_wr(S17_PORT5_HOL_CTRL0, 0x1e444444);
 		ipq40xx_ess_sw_wr(S17_PORT5_HOL_CTRL1, 0x1c6);
-
-
-		mdelay(1);
-		/*
-		 * Enable Rx and Tx mac.
-		 */
-		ipq40xx_ess_sw_rd(S17_P0STATUS_REG, &data);
-		ipq40xx_ess_sw_wr(S17_P0STATUS_REG, data |
-		                        S17_PORT_TX_MAC_EN |
-		                        S17_PORT_RX_MAC_EN);
-		ipq40xx_ess_sw_rd(ESS_MIB_OFFSET, &data);
-		ipq40xx_ess_sw_wr(ESS_MIB_OFFSET, data |
-						ESS_MIB_EN);
-		ipq40xx_ess_sw_wr(S17_GLOFW_CTRL1_REG, 0x7f7f7f);
-		printf ("%s done\n", __func__);
+		break;
+	case MACH_TYPE_IPQ40XX_DB_DK02_1_C1:
+	case MACH_TYPE_IPQ40XX_DB_DK01_1_C1:
+		ipq40xx_ess_sw_wr(S17_P4STATUS_REG, S17_PORT_SPEED(2) |
+						S17_PORT_FULL_DUP |
+						S17_TX_FLOW_EN |
+						S17_RX_FLOW_EN |
+						S17_PORT_TX_MAC_EN |
+						S17_PORT_RX_MAC_EN);
+		ipq40xx_ess_sw_wr(S17_P5STATUS_REG, S17_PORT_SPEED(2) |
+						S17_PORT_FULL_DUP |
+						S17_TX_FLOW_EN |
+						S17_RX_FLOW_EN |
+						S17_PORT_TX_MAC_EN |
+						S17_PORT_RX_MAC_EN);
+		ipq40xx_ess_sw_wr(ESS_MIB_REG, 0x100000);
+		ipq40xx_ess_sw_wr(S17_P4LOOKUP_CTRL_REG, 0x34006f);;
 		break;
 	default:
-		break;
+		printf("ess cfg not supported for %x machid\n",
+						gboard_param->machid);
+		return -1;
 	}
+	mdelay(1);
+	/*
+	 * Enable Rx and Tx mac.
+	 */
+	ipq40xx_ess_sw_rd(S17_P0STATUS_REG, &data);
+	ipq40xx_ess_sw_wr(S17_P0STATUS_REG, data |
+				S17_PORT_TX_MAC_EN |
+				S17_PORT_RX_MAC_EN);
+	ipq40xx_ess_sw_rd(ESS_MIB_OFFSET, &data);
+	ipq40xx_ess_sw_wr(ESS_MIB_OFFSET, data |
+					ESS_MIB_EN);
+	ipq40xx_ess_sw_wr(S17_GLOFW_CTRL1_REG, 0x7f7f7f);
+	printf ("%s done\n", __func__);
+
 	return 0;
 }
 

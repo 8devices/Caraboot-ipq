@@ -80,6 +80,8 @@ typedef struct {
 	unsigned int nand_gpio_count;
 	gpio_func_data_t *sw_gpio;
 	unsigned int sw_gpio_count;
+	gpio_func_data_t *rgmii_gpio;
+	unsigned int rgmii_gpio_count;
 	gpio_func_data_t dbg_uart_gpio[NO_OF_DBG_UART_GPIOS];
 	ipq40xx_edma_board_cfg_t edma_cfg[IPQ40XX_EDMA_DEV];
 	gpio_func_data_t *mmc_gpio;

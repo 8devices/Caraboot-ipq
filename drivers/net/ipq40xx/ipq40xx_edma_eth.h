@@ -43,6 +43,9 @@
 #define PSGMIIPHY_VCO_VAL	0x4ADA
 #define PSGMIIPHY_VCO_RST_VAL	0xADA
 
+#define RGMII_TCSR_ESS_CFG	0x01953000
+#define ESS_RGMII_CTRL		0x0C000004
+
 /* edma transmit descriptor */
 struct edma_tx_desc {
 	__le16  len; /* full packet including CRC */

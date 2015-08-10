@@ -367,6 +367,129 @@ gpio_func_data_t nand_gpio_bga[] = {
 
 };
 
+gpio_func_data_t rgmii_gpio_cfg[] = {
+	{
+		.gpio = 22,
+		.func = 1,	/* RGMMI0 */
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_16MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_DISABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES0
+	},
+	{
+		.gpio = 23,
+		.func = 2,	/* RGMII1 */
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_16MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_DISABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES0
+	},
+	{
+		.gpio = 24,
+		.func = 2,	/* RGMII2 */
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_16MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_DISABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES0
+	},
+	{
+		.gpio = 25,
+		.func = 2,	/* RGMII3 */
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_16MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_DISABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES0
+	},
+	{
+		.gpio = 26,
+		.func = 2,	/* RGMII RX */
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_16MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_DISABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES0
+	},
+	{
+		.gpio = 27,
+		.func = 2,	/* RGMII_TXC */
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_16MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_DISABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES0
+	},
+	{
+		.gpio = 28,
+		.func = 2,	/* RGMII0 */
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_16MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_DISABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES0
+	},
+	{
+		.gpio = 29,
+		.func = 2,	/* RGMII1 */
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_16MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_DISABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES0
+	},
+	{
+		.gpio = 30,
+		.func = 2,	/* RGMII2 */
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_16MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_DISABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES0
+	},
+	{
+		.gpio = 31,
+		.func = 2,	/* RGMII3 */
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_16MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_DISABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES0
+	},
+	{
+		.gpio = 32,
+		.func = 2,	/* RGMII RX_C */
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_16MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_DISABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES0
+	},
+	{
+		.gpio = 33,
+		.func = 1,	/* RGMII TX */
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_16MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_DISABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES0
+	},
+};
+
 gpio_func_data_t sw_gpio_bga[] = {
 	{
 		.gpio = 6,
@@ -394,6 +517,29 @@ gpio_func_data_t sw_gpio_bga[] = {
 		.pull = GPIO_PULL_DOWN,
 		.drvstr = GPIO_2MA,
 		.oe = GPIO_OE_ENABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+};
+
+gpio_func_data_t db_dk_2_1_sw_gpio_bga[] = {
+	{
+		.gpio = 6,
+		.func = 1,
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+	{
+		.gpio = 7,
+		.func = 1,
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_DISABLE,
 		.gpio_vm = GPIO_VM_ENABLE,
 		.gpio_od_en = GPIO_OD_DISABLE,
 		.gpio_pu_res = GPIO_PULL_RES2
@@ -655,8 +801,10 @@ board_ipq40xx_params_t board_params[] = {
 		.spi_nor_gpio_count = ARRAY_SIZE(spi_nor_bga),
 		.nand_gpio = nand_gpio_bga,
 		.nand_gpio_count = ARRAY_SIZE(nand_gpio_bga),
-		.sw_gpio = sw_gpio_bga,
-		.sw_gpio_count = ARRAY_SIZE(sw_gpio_bga),
+		.sw_gpio = db_dk_2_1_sw_gpio_bga,
+		.sw_gpio_count = ARRAY_SIZE(db_dk_2_1_sw_gpio_bga),
+		.rgmii_gpio = rgmii_gpio_cfg,
+		.rgmii_gpio_count = ARRAY_SIZE(rgmii_gpio_cfg),
 		.edma_cfg = {
 			ipq40xx_edma_cfg(0, 5, RGMII,
 					0, 1, 2, 3, 4)

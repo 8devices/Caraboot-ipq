@@ -950,6 +950,8 @@ int ipq40xx_edma_init(ipq40xx_edma_board_cfg_t *edma_cfg)
 			psgmii_self_test();
 			break;
 		case PHY_INTERFACE_MODE_RGMII:
+			writel(0x1, RGMII_TCSR_ESS_CFG);
+			writel(0x400, ESS_RGMII_CTRL);
 			break;
 		default:
 			printf("unknown MII interface\n");

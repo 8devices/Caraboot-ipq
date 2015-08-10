@@ -69,7 +69,8 @@ extern int nand_env_init(void);
 extern int nand_saveenv(void);
 extern void nand_env_relocate_spec(void);
 extern int ipq40xx_edma_init(ipq40xx_edma_board_cfg_t *edma_cfg);
-extern int ipq40xx_qca8075_phy_init(ipq40xx_edma_board_cfg_t *cfg);
+extern int ipq40xx_qca8075_phy_init(struct ipq40xx_eth_dev *cfg);
+extern int ipq40xx_qca8033_phy_init(struct ipq40xx_eth_dev *cfg);
 extern int mmc_env_init(void);
 extern int mmc_saveenv(void);
 extern void mmc_env_relocate_spec(void);
@@ -501,11 +502,17 @@ int board_eth_init(bd_t *bis)
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C1:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C2:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C3:
-	case MACH_TYPE_IPQ40XX_DB_DK01_1_C1:
-	case MACH_TYPE_IPQ40XX_DB_DK02_1_C1:
 		mdelay(100);
 		writel(GPIO_OUT, GPIO_IN_OUT_ADDR(47));
 		ipq40xx_register_switch(ipq40xx_qca8075_phy_init);
+		break;
+	case MACH_TYPE_IPQ40XX_DB_DK01_1_C1:
+	case MACH_TYPE_IPQ40XX_DB_DK02_1_C1:
+		gpio = gboard_param->rgmii_gpio;
+		if (gpio) {
+			qca_configure_gpio(gpio, gboard_param->rgmii_gpio_count);
+		}
+		ipq40xx_register_switch(ipq40xx_qca8033_phy_init);
 		break;
 	default:
 		break;
