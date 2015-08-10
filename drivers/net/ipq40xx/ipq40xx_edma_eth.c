@@ -30,9 +30,9 @@
 extern int ipq40xx_ess_sw_init(ipq40xx_edma_board_cfg_t *cfg);
 uchar ipq40xx_def_enetaddr[6] = {0x00, 0x03, 0x7F, 0xBA, 0xDB, 0xAD};
 static struct ipq40xx_eth_dev *ipq40xx_edma_dev[IPQ40XX_EDMA_DEV];
-static int (*ipq40xx_switch_init)(ipq40xx_edma_board_cfg_t *cfg);
+static int (*ipq40xx_switch_init)(struct ipq40xx_eth_dev *cfg);
 
-void ipq40xx_register_switch(int(*sw_init)(ipq40xx_edma_board_cfg_t *cfg))
+void ipq40xx_register_switch(int(*sw_init)(struct ipq40xx_eth_dev *cfg))
 {
 	ipq40xx_switch_init = sw_init;
 }
@@ -553,6 +553,7 @@ static int ipq40xx_eth_init(struct eth_device *eth_dev, bd_t *this)
 	struct ipq40xx_edma_common_info *c_info = priv->c_info;
 	struct ipq40xx_edma_desc_ring *ring;
 	struct ipq40xx_edma_hw *hw;
+	struct phy_ops *phy_get_ops;
 	static int linkup = 0;
 	int i;
 	u8 status;
@@ -568,17 +569,28 @@ static int ipq40xx_eth_init(struct eth_device *eth_dev, bd_t *this)
 	ring = c_info->rfd_ring[priv->mac_unit];
 	ipq40xx_edma_alloc_rx_buf(c_info, ring, ring->count,
 					priv->mac_unit);
+	if (!priv->ops) {
+		printf ("Phy ops not mapped\n");
+		return -1;
+	}
+	phy_get_ops = priv->ops;
+	if (!phy_get_ops->phy_get_link_status ||
+	    !phy_get_ops->phy_get_speed ||
+	    !phy_get_ops->phy_get_duplex) {
+		printf ("Link status/Get speed/Get duplex not mapped\n");
+		return -1;
+	}
 	/*
 	 * Check PHY link, speed, Duplex on all phys.
 	 * we will proceed even if single link is up
 	 * else we will return with -1;
 	 */
 	for (i =  0; i < PHY_MAX; i++) {
-		status = qca8075_phy_get_link_status(priv->mac_unit, i);
+		status = phy_get_ops->phy_get_link_status(priv->mac_unit, i);
 		if (status == 0)
 			linkup++;
-		qca8075_phy_get_speed(priv->mac_unit, i, &speed);
-		qca8075_phy_get_duplex(priv->mac_unit, i, &duplex);
+		phy_get_ops->phy_get_speed(priv->mac_unit, i, &speed);
+		phy_get_ops->phy_get_duplex(priv->mac_unit, i, &duplex);
 		switch (speed) {
 		case FAL_SPEED_10:
 		case FAL_SPEED_100:
@@ -968,7 +980,7 @@ int ipq40xx_edma_init(ipq40xx_edma_board_cfg_t *edma_cfg)
 		}
 
 		if (!sw_init_done) {
-			if (ipq40xx_switch_init(edma_cfg) == 0) {
+			if (ipq40xx_switch_init(ipq40xx_edma_dev[i]) == 0) {
 				sw_init_done = 1;
 			} else {
 				printf ("SW inits failed\n");

@@ -377,13 +377,14 @@ typedef enum {
 	FAL_CABLE_STATUS_BUTT = 0xffff,
 } fal_cable_status_t;
 
+struct phy_ops {
+	u8 (*phy_get_link_status) (u32 dev_id, u32 phy_id);
+	u32 (*phy_get_duplex) (u32 dev_id, u32 phy_id,
+				fal_port_duplex_t * duplex);
+	u32 (*phy_get_speed) (u32 dev_id, u32 phy_id,
+				fal_port_speed_t * speed);
+};
+
 int get_eth_mac_address(uchar *enetaddr, uint no_of_macs);
-void ipq40xx_register_switch(int(*sw_init)(ipq40xx_edma_board_cfg_t *cfg));
-int ipq40xx_qca8075_phy_init(ipq40xx_edma_board_cfg_t *cfg);
-u8  qca8075_phy_get_link_status(u32 dev_id, u32 phy_id);
-u32 qca8075_phy_get_duplex(u32 dev_id, u32 phy_id,
-			fal_port_duplex_t * duplex);
-u32 qca8075_phy_get_speed(u32 dev_id, u32 phy_id,
-			fal_port_speed_t * speed);
 int ipq40xx_sw_mdio_init(char *name);
 #endif	/* _IPQ40XX_EDMA_H */

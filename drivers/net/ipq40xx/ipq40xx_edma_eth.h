@@ -137,6 +137,7 @@ struct ipq40xx_eth_dev {
 	u32 padding;
 	struct eth_device *dev;
 	struct ipq40xx_edma_common_info *c_info;
+	struct phy_ops *ops;
 	const char phy_name[MDIO_NAME_LEN];
 } __attribute__ ((aligned(8)));
 

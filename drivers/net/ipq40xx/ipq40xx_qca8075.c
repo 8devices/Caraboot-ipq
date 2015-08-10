@@ -15,6 +15,7 @@
 #include <asm-generic/errno.h>
 #include <asm/io.h>
 #include <asm/arch-ipq40xx/ess/ipq40xx_edma.h>
+#include "ipq40xx_edma_eth.h"
 #include "ipq40xx_qca8075.h"
 
 extern int ipq40xx_mdio_write(int mii_id,
@@ -525,9 +526,19 @@ void clear_self_test_config()
 }
 
 
-int ipq40xx_qca8075_phy_init(ipq40xx_edma_board_cfg_t *cfg)
+int ipq40xx_qca8075_phy_init(struct ipq40xx_eth_dev *info)
 {
 	u16 phy_data;
+	struct phy_ops *qca8075_ops;
+
+	qca8075_ops = malloc(sizeof(struct phy_ops));
+	if (!qca8075_ops)
+		return -ENOMEM;
+
+	qca8075_ops->phy_get_link_status = qca8075_phy_get_link_status;
+	qca8075_ops->phy_get_speed = qca8075_phy_get_speed;
+	qca8075_ops->phy_get_duplex = qca8075_phy_get_duplex;
+	info->ops = qca8075_ops;
 
 	phy_data = qca8075_phy_reg_read(0x0, 0x0, QCA8075_PHY_ID1);
 	printf ("PHY ID1: 0x%x\n", phy_data);
