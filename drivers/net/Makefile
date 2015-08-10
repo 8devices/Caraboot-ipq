@@ -88,6 +88,7 @@ COBJS-$(CONFIG_IPQ_SWITCH_QCA8511) += ../../board/qcom/common/qca8511.o
 COBJS-$(CONFIG_IPQ40XX_EDMA) += ipq40xx/ipq40xx_edma_eth.o
 COBJS-$(CONFIG_IPQ40XX_ESS) += ipq40xx/ipq40xx_ess_sw.o
 COBJS-$(CONFIG_QCA8075_PHY) += ipq40xx/ipq40xx_qca8075.o
+COBJS-$(CONFIG_QCA8033_PHY) += ipq40xx/ipq40xx_qca8033.o
 COBJS-$(CONFIG_IPQ40XX_MDIO) += ipq40xx/ipq40xx_mdio.o
 
 COBJS	:= $(sort $(COBJS-y))
