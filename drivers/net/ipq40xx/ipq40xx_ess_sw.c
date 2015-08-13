@@ -29,6 +29,24 @@ static inline ipq40xx_ess_sw_wr(u32 addr, u32 data)
 	writel(data, ((void __iomem *)(IPQ40XX_NSS_BASE + addr)));
 }
 
+void ipq40xx_ess_disable_ports()
+{
+	ipq40xx_ess_sw_wr(S17_P1STATUS_REG, 0);
+	ipq40xx_ess_sw_wr(S17_P2STATUS_REG, 0);
+	ipq40xx_ess_sw_wr(S17_P3STATUS_REG, 0);
+	ipq40xx_ess_sw_wr(S17_P4STATUS_REG, 0);
+	ipq40xx_ess_sw_wr(S17_P5STATUS_REG, 0);
+}
+
+void ipq40xx_ess_enable_ports()
+{
+	ipq40xx_ess_sw_wr(S17_P1STATUS_REG, 0x1280);
+	ipq40xx_ess_sw_wr(S17_P2STATUS_REG, 0x1280);
+	ipq40xx_ess_sw_wr(S17_P3STATUS_REG, 0x1280);
+	ipq40xx_ess_sw_wr(S17_P4STATUS_REG, 0x1280);
+	ipq40xx_ess_sw_wr(S17_P5STATUS_REG, 0x1280);
+}
+
 int ipq40xx_ess_sw_init(ipq40xx_edma_board_cfg_t *cfg)
 {
 	u32 data;

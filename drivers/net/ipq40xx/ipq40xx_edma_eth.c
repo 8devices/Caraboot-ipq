@@ -569,6 +569,7 @@ static int ipq40xx_eth_init(struct eth_device *eth_dev, bd_t *this)
 	ring = c_info->rfd_ring[priv->mac_unit];
 	ipq40xx_edma_alloc_rx_buf(c_info, ring, ring->count,
 					priv->mac_unit);
+	ipq40xx_ess_enable_ports();
 	if (!priv->ops) {
 		printf ("Phy ops not mapped\n");
 		return -1;
@@ -665,6 +666,8 @@ static void ipq40xx_eth_halt(struct eth_device *dev)
 {
 	struct ipq40xx_eth_dev *priv = dev->priv;
 	struct ipq40xx_edma_common_info *c_info = priv->c_info;
+
+	ipq40xx_ess_disable_ports();
 	ipq40xx_edma_reset(c_info);
 }
 
@@ -965,8 +968,6 @@ int ipq40xx_edma_init(ipq40xx_edma_board_cfg_t *edma_cfg)
 		if (!cfg_edma) {
 			ipq40xx_edma_reset(c_info[i]);
 			ipq40xx_edma_configure(c_info[i]);
-			ipq40xx_edma_enable_tx_ctrl(hw[i]);
-			ipq40xx_edma_enable_rx_ctrl(hw[i]);
 			cfg_edma = 1;
 		}
 		/*
@@ -978,6 +979,7 @@ int ipq40xx_edma_init(ipq40xx_edma_board_cfg_t *edma_cfg)
 
 		if (!ipq40xx_ess_init_done) {
 			ipq40xx_ess_sw_init(edma_cfg);
+			ipq40xx_ess_disable_ports();
 			ipq40xx_ess_init_done = 1;
 		}
 
