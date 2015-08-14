@@ -196,7 +196,10 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 	kernel_img_info.kernel_load_addr = request;
 
 	if (ipq_fs_on_nand) {
-
+		if (sfi->rootfs.offset == 0xBAD0FF5E) {
+			sfi->rootfs.offset = 0;
+			sfi->rootfs.size = IPQ_NAND_ROOTFS_SIZE;
+		}
 		/*
 		 * The kernel will be available inside a UBI volume
 		 */
@@ -211,7 +214,6 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 			gboard_param->spi_nand_available,
 			sfi->rootfs.size, sfi->rootfs.offset,
 			request);
-
 
 		if (debug)
 			printf(runcmd);
