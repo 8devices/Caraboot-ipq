@@ -38,7 +38,9 @@ static const struct spi_nand_flash_params spi_nand_flash_tbl[] = {
 		.pages_per_sector = 64,
 		.nr_sectors = 1024,
 		.oob_size = 64,
-		.name = "GIGA_DEVICE",
+		.ecc_mask = 0x70,
+		.ecc_err = 0x70,
+		.name = "GD5F1GQ4XC",
 	},
 	{
 		.mid = 0x9b,
@@ -48,7 +50,9 @@ static const struct spi_nand_flash_params spi_nand_flash_tbl[] = {
 		.pages_per_sector = 64,
 		.nr_sectors = 1024,
 		.oob_size = 64,
-		.name = "ATO_DEVICE",
+		.ecc_mask = 0,
+		.ecc_err = 0,
+		.name = "ATO25D1GA",
 	},
 };
 
@@ -366,6 +370,18 @@ static int spi_nand_read(struct mtd_info *mtd, loff_t from, size_t len,
 			goto out;
 		}
 
+		if (info->params->ecc_mask != 0) {
+			if ((status & info->params->ecc_mask) ==
+						info->params->ecc_err) {
+				mtd->ecc_stats.failed++;
+				printf("ecc err(0x%x) for page read\n", status);
+				ret = -EBADMSG;
+				goto out;
+			} else if (status) {
+				mtd->ecc_stats.corrected++;
+			}
+		}
+
 		bytes = ((readlen < mtd->writesize) ? readlen : mtd->writesize);
 		cmd[0] = IPQ40XX_SPINAND_CMD_NORM_READ;
 		cmd[2] = 0;
@@ -376,18 +392,6 @@ static int spi_nand_read(struct mtd_info *mtd, loff_t from, size_t len,
 			return -1;
 		}
 
-		ret = spinand_waitfunc(mtd, SPINAND_VERC_STATUS_ECCMASK, &status);
-		if (ret) {
-			goto out;
-		}
-
-		if (status == SPINAND_VERC_STATUS_ECCMASK) {
-			mtd->ecc_stats.failed++;
-			printf("ecc err for page read\n");
-			return -EBADMSG;
-		} else if (status)
-			mtd->ecc_stats.corrected++;
-
 		readlen -= bytes;
 		if (readlen <= 0)
 			break;
@@ -395,6 +399,9 @@ static int spi_nand_read(struct mtd_info *mtd, loff_t from, size_t len,
 		realpage++;
 		page = realpage & 0xffff;
 	}
+
+	if (mtd->ecc_stats.corrected)
+		ret = -EUCLEAN;
 out:
 	spi_release_bus(flash->spi);
 	return ret;
@@ -661,6 +668,7 @@ int spi_nand_init(void)
 	 */
 	chip->scan_bbt = spi_nand_scan_bbt_nop;
 
+	info->params = params;
 	info->flash = flash;
 	info->mtd = mtd;
 	info->chip = chip;

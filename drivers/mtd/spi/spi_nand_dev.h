@@ -61,7 +61,7 @@
 #define IPQ40XX_SPINAND_STATUS_ECC3			0x3
 
 #define SPINAND_VERC_STATUS_ECCMASK			0x70
-#define SPINAND_VERC_STATUS_ERR				0x7
+#define SPINAND_VERC_STATUS_ERR				0x70
 
 #define STATUS_E_FAIL					0x04
 #define STATUS_P_FAIL					0x08
@@ -74,6 +74,8 @@ struct spi_nand_flash_params {
 	u16 nr_sectors;
 	u32 oob_size;
 	u32 erase_size;
+	u8 ecc_mask;
+	u8 ecc_err;
 	const char *name;
 };
 
