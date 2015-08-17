@@ -71,11 +71,10 @@ typedef enum {
 	SMEM_BOOT_FLASH_INDEX = 479,
 	SMEM_BOOT_FLASH_CHIP_SELECT = 480,
 	SMEM_BOOT_FLASH_BLOCK_SIZE = 481,
-	SMEM_MACHID_INFO_LOCATION = 482,
-	SMEM_BOOT_DUALPARTINFO = 483,
+	SMEM_BOOT_FLASH_DENSITY = 482,
 	SMEM_FIRST_VALID_TYPE = SMEM_SPINLOCK_ARRAY,
-	SMEM_LAST_VALID_TYPE = SMEM_BOOT_DUALPARTINFO,
-	SMEM_MAX_SIZE = SMEM_BOOT_DUALPARTINFO + 1,
+	SMEM_LAST_VALID_TYPE = SMEM_BOOT_FLASH_DENSITY,
+	SMEM_MAX_SIZE = SMEM_BOOT_FLASH_DENSITY + 1,
 } smem_mem_type_t;
 
 struct smem_proc_comm {
@@ -224,24 +223,6 @@ int smem_ptable_init(void)
 	return 0;
 }
 
-/**
- * smem_bootconfig_info - retrieve bootconfig flags
- */
-int smem_bootconfig_info(void)
-{
-	unsigned ret;
-
-	ret = smem_read_alloc_entry(SMEM_BOOT_DUALPARTINFO,
-		&qca_smem_bootconfig_info, sizeof(qca_smem_bootconfig_info_t));
-
-	if (ret != 0)
-		return -ENOMSG;
-
-	if (qca_smem_bootconfig_info.magic != _SMEM_DUAL_BOOTINFO_MAGIC)
-		return -ENOMSG;
-	return 0;
-}
-
 unsigned int get_rootfs_active_partition(void)
 {
 	int i;
@@ -302,13 +283,15 @@ int smem_getpart(char *part_name, uint32_t *start, uint32_t *size)
  * @flash_index: location where the flash index is to be stored
  * @flash_chip_select: location where the flash chip select is to be stored
  * @flash_block_size: location where the block size is to be stored
+ * @flash_density: location where the flash size is to be stored
  *
  * Retreive the flash type and flash index, of the boot flash.
  */
 int smem_get_boot_flash(uint32_t *flash_type,
 			uint32_t *flash_index,
 			uint32_t *flash_chip_select,
-			uint32_t *flash_block_size)
+			uint32_t *flash_block_size,
+			uint32_t *flash_density)
 {
 	int ret;
 
@@ -339,33 +322,14 @@ int smem_get_boot_flash(uint32_t *flash_type,
 		printf("smem: read flash block size failed\n");
 		return -ENOMSG;
 	}
-
-	return 0;
-}
-
-/**
- * smem_get_board_machtype - retreive the machtype info from SMEM
- *
- * Retrive the machtype info from SMEM and set as machid env. If
- * there is a problem then default machid is used.
- */
-unsigned int smem_get_board_machtype(void)
-{
-	struct smem_machid_info machid_info;
-	unsigned smem_status;
-	unsigned int machid = 0;
-
-	smem_status = smem_read_alloc_entry(SMEM_MACHID_INFO_LOCATION,
-					&machid_info, sizeof(machid_info));
-	if (!smem_status) {
-		machid = machid_info.machid;
-		debug("setting 0x%x as machine type from smem\n", machid);
-		printf("setting 0x%x as machine type from smem\n", machid);
-	} else {
-		printf("smem: get machine type from smem failed\n");
+	ret = smem_read_alloc_entry(SMEM_BOOT_FLASH_DENSITY,
+				flash_density, sizeof(uint32_t));
+	if (ret != 0) {
+		printf("smem: read flash density failed\n");
+		return -ENOMSG;
 	}
 
-	return machid;
+	return 0;
 }
 
 unsigned int smem_get_board_platform_type()
@@ -478,9 +442,11 @@ int do_smeminfo(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	printf(	"flash_type:		0x%x\n"
 		"flash_index:		0x%x\n"
 		"flash_chip_select:	0x%x\n"
-		"flash_block_size:	0x%x\n",
+		"flash_block_size:	0x%x\n"
+		"flash_density:		0x%x\n",
 			sfi->flash_type, sfi->flash_index,
-			sfi->flash_chip_select, sfi->flash_block_size);
+			sfi->flash_chip_select, sfi->flash_block_size,
+			sfi->flash_density);
 
 	if (smem_ptable.len > 0) {
 		printf("%-3s: " smem_ptn_name_fmt " %10s %16s %16s\n",

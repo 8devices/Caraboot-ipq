@@ -40,6 +40,7 @@ COBJS-$(CONFIG_SPI_FLASH_WINBOND)	+= winbond.o
 COBJS-$(CONFIG_SPI_FRAM_RAMTRON)	+= ramtron.o
 COBJS-$(CONFIG_SPI_M95XXX) += eeprom_m95xxx.o
 COBJS-$(CONFIG_SPI_NAND_GIGA) += spi_nand.o
+COBJS-$(CONFIG_SPI_NOR_GENERIC) += spi_nor_generic.o
 
 COBJS	:= $(COBJS-y)
 SRCS	:= $(COBJS:.o=.c)
