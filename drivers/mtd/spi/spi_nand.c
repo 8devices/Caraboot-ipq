@@ -27,6 +27,8 @@
 
 struct nand_chip nand_chip[CONFIG_SYS_MAX_NAND_DEVICE];
 
+#define mtd_to_ipq_info(m)	((struct nand_chip *)((m)->priv))->priv
+
 static const struct spi_nand_flash_params spi_nand_flash_tbl[] = {
 	{
 		.mid = 0xc8,
@@ -54,7 +56,7 @@ const struct spi_nand_flash_params *params;
 
 static int spinand_waitfunc(struct mtd_info *mtd, u8 val, u8 *status)
 {
-	struct ipq40xx_spinand_info *info = mtd->priv;
+	struct ipq40xx_spinand_info *info = mtd_to_ipq_info(mtd);
 	struct spi_flash *flash = info->flash;
 	int ret;
 
@@ -69,7 +71,7 @@ static int spinand_waitfunc(struct mtd_info *mtd, u8 val, u8 *status)
 
 static int check_offset(struct mtd_info *mtd, loff_t offs)
 {
-	struct ipq40xx_spinand_info *info = mtd->priv;
+	struct ipq40xx_spinand_info *info = mtd_to_ipq_info(mtd);
 	struct spi_flash *flash = info->flash;
 	struct nand_chip *chip = info->chip;
 	int ret = 0;
@@ -89,7 +91,7 @@ static int spi_nand_erase(struct mtd_info *mtd, struct erase_info *instr)
 	u8 status;
 	u32 ret;
 	u32 row_addr;
-	struct ipq40xx_spinand_info *info = mtd->priv;
+	struct ipq40xx_spinand_info *info = mtd_to_ipq_info(mtd);
 	struct spi_flash *flash = info->flash;
 	struct nand_chip *chip = info->chip;
 	u32 page = (int)(instr->addr >> chip->page_shift);
@@ -146,7 +148,7 @@ out:
 
 static int spi_nand_block_isbad(struct mtd_info *mtd, loff_t offs)
 {
-	struct ipq40xx_spinand_info *info = mtd->priv;
+	struct ipq40xx_spinand_info *info = mtd_to_ipq_info(mtd);
 	struct spi_flash *flash = info->flash;
 	struct nand_chip *chip = info->chip;
 	u8 cmd[8];
@@ -209,7 +211,7 @@ static int spinand_write_oob_std(struct mtd_info *mtd, struct nand_chip *chip,  
 	int column, len, status, ret = 0, bytes;
 	u_char *wbuf;
 	u8 cmd[8];
-	struct ipq40xx_spinand_info *info = mtd->priv;
+	struct ipq40xx_spinand_info *info = mtd_to_ipq_info(mtd);
 	struct spi_flash *flash = info->flash;
 
 	wbuf = chip->oob_poi;
@@ -261,7 +263,7 @@ out:
 static void fill_oob_data(struct mtd_info *mtd, uint8_t *oob,
         size_t len, struct mtd_oob_ops *ops)
 {
-	struct ipq40xx_spinand_info *info = mtd->priv;
+	struct ipq40xx_spinand_info *info = mtd_to_ipq_info(mtd);
 	struct nand_chip *chip = info->chip;
 
 	memset(chip->oob_poi, 0xff, mtd->oobsize);
@@ -274,7 +276,7 @@ static int spi_nand_write_oob(struct mtd_info *mtd, loff_t to,
 			      struct mtd_oob_ops *ops)
 {
 	int page, ret;
-	struct ipq40xx_spinand_info *info = mtd->priv;
+	struct ipq40xx_spinand_info *info = mtd_to_ipq_info(mtd);
 	struct spi_flash *flash = info->flash;
 	struct nand_chip *chip = info->chip;
 
@@ -290,7 +292,7 @@ static int spi_nand_block_markbad(struct mtd_info *mtd, loff_t offs)
 {
 	uint8_t buf[2]= { 0, 0 };
 	int block, ret;
-	struct ipq40xx_spinand_info *info = mtd->priv;
+	struct ipq40xx_spinand_info *info = mtd_to_ipq_info(mtd);
 	struct spi_flash *flash = info->flash;
 	struct nand_chip *chip = info->chip;
 	struct mtd_oob_ops ops;
@@ -333,7 +335,7 @@ out:
 static int spi_nand_read(struct mtd_info *mtd, loff_t from, size_t len,
 			 size_t *retlen, u_char *buf)
 {
-	struct ipq40xx_spinand_info *info = mtd->priv;
+	struct ipq40xx_spinand_info *info = mtd_to_ipq_info(mtd);
 	struct spi_flash *flash = info->flash;
 	u32 ret;
 	u8 cmd[8];
@@ -401,7 +403,7 @@ out:
 static int spi_nand_write(struct mtd_info *mtd, loff_t to, size_t len,
 			  size_t *retlen, const u_char *buf)
 {
-	struct ipq40xx_spinand_info *info = mtd->priv;
+	struct ipq40xx_spinand_info *info = mtd_to_ipq_info(mtd);
 	struct spi_flash *flash = info->flash;
 	u8 cmd[8];
 	u8 status;
@@ -535,7 +537,7 @@ struct spi_flash *spi_nand_flash_probe(struct spi_slave *spi,
 
 static int spinand_unlock_protect(struct mtd_info *mtd)
 {
-	struct ipq40xx_spinand_info *info = mtd->priv;
+	struct ipq40xx_spinand_info *info = mtd_to_ipq_info(mtd);
 	struct spi_flash *flash = info->flash;
 	int status;
 	int ret;
@@ -571,7 +573,7 @@ out:
 
 void spinand_internal_ecc(struct mtd_info *mtd, int enable)
 {
-	struct ipq40xx_spinand_info *info = mtd->priv;
+	struct ipq40xx_spinand_info *info = mtd_to_ipq_info(mtd);
 	struct spi_flash *flash = info->flash;
 	int status;
 	int ret;
@@ -597,6 +599,11 @@ void spinand_internal_ecc(struct mtd_info *mtd, int enable)
 
 	spi_release_bus(flash->spi);
 return;
+}
+
+static int spi_nand_scan_bbt_nop(struct mtd_info *mtd)
+{
+	return 0;
 }
 
 int spi_nand_init(void)
@@ -625,7 +632,7 @@ int spi_nand_init(void)
 	mtd = &nand_info[CONFIG_IPQ_SPI_NAND_INFO_IDX];
 	chip = &nand_chip[CONFIG_IPQ_SPI_NAND_INFO_IDX];
 
-	mtd->priv = info;
+	mtd->priv = chip;
 	mtd->writesize = flash->page_size;
 	mtd->erasesize = params->erase_size;
 	mtd->oobsize = params->oob_size;
@@ -649,9 +656,15 @@ int spi_nand_init(void)
 	chip->badblockpos = 0;
 	chip->oob_poi = mtd->writesize;
 
+	/* One of the NAND layer functions that the command layer
+	 * tries to access directly.
+	 */
+	chip->scan_bbt = spi_nand_scan_bbt_nop;
+
 	info->flash = flash;
 	info->mtd = mtd;
 	info->chip = chip;
+	chip->priv = info;
 
 	if ((ret = nand_register(CONFIG_IPQ_SPI_NAND_INFO_IDX)) < 0) {
 		spi_print("Failed to register with MTD subsystem\n");
