@@ -885,9 +885,20 @@ int ipq40xx_edma_init(ipq40xx_edma_board_cfg_t *edma_cfg)
 			memcpy(&dev[i]->enetaddr[0], ipq40xx_def_enetaddr, 6);
 		} else {
 			memcpy(&dev[i]->enetaddr[0],
-				&enet_addr[edma_cfg->unit * 6],
-				6);
+				&enet_addr[edma_cfg->unit * 6], 6);
+			/*
+			 * Populate the environment with these MAC addresses.
+			 * U-Boot uses these to patch the 'local-mac-address'
+			 * dts entry for the ethernet entries, which in turn
+			 * will be picked up by the HLOS driver
+			 */
+			sprintf(mac, "%x:%x:%x:%x:%x:%x",
+				dev[i]->enetaddr[0], dev[i]->enetaddr[1],
+				dev[i]->enetaddr[2], dev[i]->enetaddr[3],
+				dev[i]->enetaddr[4], dev[i]->enetaddr[5]);
+			setenv(ethaddr, mac);
 		}
+		sprintf(ethaddr, "eth%daddr", (i + 1));
 		printf("MAC%x addr:%x:%x:%x:%x:%x:%x\n",
 			edma_cfg->unit, dev[i]->enetaddr[0],
 			dev[i]->enetaddr[1],
@@ -895,18 +906,6 @@ int ipq40xx_edma_init(ipq40xx_edma_board_cfg_t *edma_cfg)
 			dev[i]->enetaddr[3],
 			dev[i]->enetaddr[4],
 			dev[i]->enetaddr[5]);
-		/*
-		 * Populate the environment with these MAC addresses.
-		 * U-Boot uses these to patch the 'local-mac-address'
-		 * dts entry for the ethernet entries, which in turn
-		 * will be picked up by the HLOS driver
-		 */
-		sprintf(mac, "%x:%x:%x:%x:%x:%x",
-			dev[i]->enetaddr[0], dev[i]->enetaddr[1],
-			dev[i]->enetaddr[2], dev[i]->enetaddr[3],
-			dev[i]->enetaddr[4], dev[i]->enetaddr[5]);
-		setenv(ethaddr, mac);
-		sprintf(ethaddr, "eth%daddr", (i + 1));
 
 		sprintf(dev[i]->name, "eth%d", i);
 		ipq40xx_edma_dev[i]->dev  = dev[i];
