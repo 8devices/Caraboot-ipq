@@ -25,6 +25,9 @@
 #include <mmc.h>
 
 #define DLOAD_MAGIC_COOKIE	0x10
+#define XMK_STR(x)		#x
+#define MK_STR(x)		XMK_STR(x)
+
 static int debug = 0;
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -453,6 +456,14 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
 	int ret;
 	char buf;
+	/*
+	 * set fdt_high parameter so that u-boot will not load
+	 * dtb above CONFIG_IPQ40XX_FDT_HIGH region.
+	 */
+	if (run_command("set fdt_high " MK_STR(CONFIG_IPQ_FDT_HIGH) "\n", 0)
+			!= CMD_RET_SUCCESS) {
+		return CMD_RET_FAILURE;
+	}
 
 	ret = scm_call(SCM_SVC_FUSE, QFPROM_IS_AUTHENTICATE_CMD,
 				NULL, 0, &buf, sizeof(char));
