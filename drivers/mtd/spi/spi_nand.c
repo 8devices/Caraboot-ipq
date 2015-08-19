@@ -131,9 +131,13 @@ static int spi_nand_erase(struct mtd_info *mtd, struct erase_info *instr)
 	}
 	ret = spinand_waitfunc(mtd, 0x01, &status);
 	if (ret) {
-		if (status & STATUS_E_FAIL)
-			printf("Erase operation failed for 0x%x\n", page);
 		printf("Operation timeout\n");
+		goto out;
+	}
+
+	if (status & STATUS_E_FAIL) {
+		printf("Erase operation failed for 0x%x\n", page);
+		ret = -EIO;
 		goto out;
 	}
 
@@ -345,6 +349,7 @@ static int spi_nand_read(struct mtd_info *mtd, loff_t from, size_t len,
 	u8 cmd[8];
 	u8 status;
 	int realpage, page, readlen, bytes;
+	int ecc_corrected = 0;
 
 	realpage = (int)(from >> 0xB);
 	page = realpage & 0xffff;
@@ -377,8 +382,9 @@ static int spi_nand_read(struct mtd_info *mtd, loff_t from, size_t len,
 				printf("ecc err(0x%x) for page read\n", status);
 				ret = -EBADMSG;
 				goto out;
-			} else if (status) {
+			} else if (status & info->params->ecc_mask) {
 				mtd->ecc_stats.corrected++;
+				ecc_corrected = 1;
 			}
 		}
 
@@ -400,7 +406,7 @@ static int spi_nand_read(struct mtd_info *mtd, loff_t from, size_t len,
 		page = realpage & 0xffff;
 	}
 
-	if (mtd->ecc_stats.corrected)
+	if ((ret == 0) && (ecc_corrected))
 		ret = -EUCLEAN;
 out:
 	spi_release_bus(flash->spi);
@@ -466,11 +472,16 @@ static int spi_nand_write(struct mtd_info *mtd, loff_t to, size_t len,
 
 		ret = spinand_waitfunc(mtd, 0x01, &status);
 		if (ret) {
-			if (status)
-				printf("Program failed\n");
-
+			printf("Operation timeout\n");
 			goto out;
 		}
+
+		if (status & STATUS_P_FAIL) {
+			printf("Program failure (0x%x)\n", status);
+			ret = -EIO;
+			goto out;
+		}
+
 		ret = spi_flash_cmd(flash->spi, IPQ40XX_SPINAND_CMD_WRDI, NULL, 0);
 		if (ret) {
 			printf("Write disable failed\n");
