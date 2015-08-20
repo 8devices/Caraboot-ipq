@@ -127,3 +127,4 @@ struct spi_flash *spi_flash_probe_stmicro(struct spi_slave *spi, u8 *idcode);
 struct spi_flash *spi_flash_probe_winbond(struct spi_slave *spi, u8 *idcode);
 struct spi_flash *spi_fram_probe_ramtron(struct spi_slave *spi, u8 *idcode);
 struct spi_flash *spi_nand_flash_probe(struct spi_slave *spi, u8 *idcode);
+struct spi_flash *spi_nor_probe_generic(struct spi_slave *spi, u8 *idcode);

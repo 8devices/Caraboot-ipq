@@ -140,7 +140,8 @@ int env_init(void)
 	smem_get_boot_flash(&sfi.flash_type,
 				&sfi.flash_index,
 				&sfi.flash_chip_select,
-				&sfi.flash_block_size);
+				&sfi.flash_block_size,
+				&sfi.flash_density);
 
 	if (sfi.flash_type != SMEM_BOOT_MMC_FLASH) {
 		ret = nand_env_init();
@@ -160,7 +161,8 @@ void env_relocate_spec(void)
 	smem_get_boot_flash(&sfi.flash_type,
 				&sfi.flash_index,
 				&sfi.flash_chip_select,
-				&sfi.flash_block_size);
+				&sfi.flash_block_size,
+				&sfi.flash_density);
 
 	if (sfi.flash_type != SMEM_BOOT_MMC_FLASH) {
 		nand_env_relocate_spec();
@@ -187,7 +189,8 @@ int board_init(void)
 	ret = smem_get_boot_flash(&sfi->flash_type,
 					&sfi->flash_index,
 					&sfi->flash_chip_select,
-					&sfi->flash_block_size);
+					&sfi->flash_block_size,
+					&sfi->flash_density);
 	if (ret < 0) {
 		printf("cdp: get boot flash failed\n");
 		return ret;

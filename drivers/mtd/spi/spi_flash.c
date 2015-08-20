@@ -455,6 +455,12 @@ struct spi_flash *spi_flash_probe(unsigned int bus, unsigned int cs,
 				break;
 		}
 
+#ifdef CONFIG_SPI_NOR_GENERIC
+	if (!flash)
+		/* We did not find a match, do generic probe */
+		flash = spi_nor_probe_generic(spi, idp);
+#endif
+
 	if (!flash) {
 		printf("SF: Unsupported manufacturer %02x\n", *idp);
 		goto err_manufacturer_probe;
