@@ -543,6 +543,44 @@ struct flash_node_info {
 	int idx;		/* flash index */
 };
 
+int ipq_fdt_fixup_spi_nor_params(void *blob)
+{
+	int nodeoff, ret;
+	qca_smem_flash_info_t sfi;
+	uint32_t val;
+
+	/* Get flash parameters from smem */
+	smem_get_boot_flash(&sfi.flash_type,
+				&sfi.flash_index,
+				&sfi.flash_chip_select,
+				&sfi.flash_block_size,
+				&sfi.flash_density);
+	nodeoff = fdt_node_offset_by_compatible(blob, -1, "n25q128a11");
+
+	if (nodeoff < 0) {
+		printf("ipq: fdt fixup unable to find compatible node\n");
+		return nodeoff;
+	}
+
+	val = cpu_to_fdt32(sfi.flash_block_size);
+	ret = fdt_setprop(blob, nodeoff, "sector-size",
+			&val, sizeof(uint32_t));
+	if (ret) {
+		printf("%s: unable to set sector size\n", __func__);
+		return -1;
+	}
+
+	val = cpu_to_fdt32(sfi.flash_density);
+	ret = fdt_setprop(blob, nodeoff, "density",
+			&val, sizeof(uint32_t));
+	if (ret) {
+		printf("%s: unable to set density\n", __func__);
+		return -1;
+	}
+
+	return 0;
+}
+
 void ipq_fdt_fixup_mtdparts(void *blob, struct flash_node_info *ni)
 {
 	struct mtd_device *dev;
@@ -608,6 +646,8 @@ void ft_board_setup(void *blob, bd_t *bd)
 			mtdparts = "mtdparts=spi0.0";
 		}
 	}
+
+	ipq_fdt_fixup_spi_nor_params(blob);
 
 	if (mtdparts) {
 		mtdparts = qca_smem_part_to_mtdparts(mtdparts);
