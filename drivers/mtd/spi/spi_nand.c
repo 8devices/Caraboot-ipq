@@ -57,6 +57,7 @@ static const struct spi_nand_flash_params spi_nand_flash_tbl[] = {
 };
 
 const struct spi_nand_flash_params *params;
+void spinand_internal_ecc(struct mtd_info *mtd, int enable);
 
 static int spinand_waitfunc(struct mtd_info *mtd, u8 val, u8 *status)
 {
@@ -208,11 +209,6 @@ out:
 	return ret;
 }
 
-static int spi_nand_read_oob(struct mtd_info *mtd, loff_t from,
-			     struct mtd_oob_ops *ops)
-{
-	return -EINVAL;
-}
 
 static int spinand_write_oob_std(struct mtd_info *mtd, struct nand_chip *chip,  int page)
 {
@@ -340,20 +336,20 @@ out:
 	return ret;
 }
 
-static int spi_nand_read(struct mtd_info *mtd, loff_t from, size_t len,
-			 size_t *retlen, u_char *buf)
+static int spi_nand_read_std(struct mtd_info *mtd, loff_t from, struct mtd_oob_ops *ops)
 {
 	struct ipq40xx_spinand_info *info = mtd_to_ipq_info(mtd);
 	struct spi_flash *flash = info->flash;
 	u32 ret;
 	u8 cmd[8];
 	u8 status;
-	int realpage, page, readlen, bytes;
+	int realpage, page, readlen, bytes, column, bytes_oob;
 	int ecc_corrected = 0;
+	column = mtd->writesize;
 
 	realpage = (int)(from >> 0xB);
 	page = realpage & 0xffff;
-	readlen = len;
+	readlen = ops->len;
 
 	ret = spi_claim_bus(flash->spi);
 	if (ret) {
@@ -389,19 +385,38 @@ static int spi_nand_read(struct mtd_info *mtd, loff_t from, size_t len,
 		}
 
 		bytes = ((readlen < mtd->writesize) ? readlen : mtd->writesize);
-		cmd[0] = IPQ40XX_SPINAND_CMD_NORM_READ;
-		cmd[2] = 0;
-		cmd[3] = 0;
-		ret = spi_flash_cmd_read(flash->spi, cmd, 4, buf, bytes);
-		if (ret) {
-			printf("%s: read data failed\n", __func__);
-			return -1;
+		bytes_oob = ops->ooblen;
+
+		/* Read Data */
+		if (bytes) {
+			cmd[0] = IPQ40XX_SPINAND_CMD_NORM_READ;
+			cmd[2] = 0;
+			cmd[3] = 0;
+			ret = spi_flash_cmd_read(flash->spi, cmd, 4, ops->datbuf, bytes);
+			if (ret) {
+				printf("%s: read data failed\n", __func__);
+				return -1;
+			}
+			ops->retlen += bytes;
+		}
+
+		/* Read OOB */
+		if (bytes_oob) {
+			cmd[0] = IPQ40XX_SPINAND_CMD_NORM_READ;
+			cmd[2] = (u8)(column >> 8);
+			cmd[3] = (u8)(column);
+			ret = spi_flash_cmd_read(flash->spi, cmd, 4, ops->oobbuf, ops->ooblen);
+			if (ret) {
+				printf("%s: read data failed\n", __func__);
+				return -1;
+			}
+			ops->oobretlen += ops->ooblen;
 		}
 
 		readlen -= bytes;
 		if (readlen <= 0)
 			break;
-		buf += bytes;
+		ops->datbuf += bytes;
 		realpage++;
 		page = realpage & 0xffff;
 	}
@@ -410,6 +425,34 @@ static int spi_nand_read(struct mtd_info *mtd, loff_t from, size_t len,
 		ret = -EUCLEAN;
 out:
 	spi_release_bus(flash->spi);
+	return ret;
+}
+
+static int spi_nand_read(struct mtd_info *mtd, loff_t from, size_t len,
+			 size_t *retlen, u_char *buf)
+{
+	struct mtd_oob_ops ops = {0};
+	u32 ret;
+
+	ops.mode = MTD_OOB_AUTO;
+	ops.len = len;
+	ops.datbuf = (uint8_t *)buf;
+	ret = spi_nand_read_std(mtd, from, &ops);
+	*retlen = ops.retlen;
+	return ret;
+}
+
+static int spi_nand_read_oob(struct mtd_info *mtd, loff_t from,
+			     struct mtd_oob_ops *ops)
+{
+	struct ipq40xx_spinand_info *info = mtd_to_ipq_info(mtd);
+	u32 ret;
+
+	/* Disable ECC */
+	spinand_internal_ecc(mtd, 0);
+	ret = spi_nand_read_std(mtd, from,ops);
+	/* Enable ECC */
+	spinand_internal_ecc(mtd, 1);
 	return ret;
 }
 
@@ -570,7 +613,7 @@ static int spinand_unlock_protect(struct mtd_info *mtd)
 	cmd[0] = IPQ40XX_SPINAND_CMD_GETFEA;
 	cmd[1] = IPQ40XX_SPINAND_PROTEC_REG;
 
-	ret = spi_flash_cmd_write(flash->spi, cmd, 2, status, 1);
+	ret = spi_flash_cmd_write(flash->spi, cmd, 2, &status, 1);
 	if (ret) {
 		printf("Failed to read status register");
 		goto out;
@@ -600,23 +643,34 @@ void spinand_internal_ecc(struct mtd_info *mtd, int enable)
 	ret = spi_claim_bus(flash->spi);
 	if (ret) {
 		printf ("Write enable failed %s %d\n", __func__, __LINE__);
-		return -1;
+		return;
+	}
+
+	cmd[0] = IPQ40XX_SPINAND_CMD_GETFEA;
+	cmd[1] = IPQ40XX_SPINAND_FEATURE_REG;
+
+	ret = spi_flash_cmd_read(flash->spi, cmd, 2, &status, 1);
+	if (ret) {
+		printf("%s: read data failed\n", __func__);
+		goto out;
 	}
 
 	cmd[0] = IPQ40XX_SPINAND_CMD_SETFEA;
 	cmd[1] = IPQ40XX_SPINAND_FEATURE_REG;
-	if (enable)
-		cmd[2] = IPQ40XX_SPINAND_FEATURE_ECC_EN;
-	else
-		cmd[2] = 0;
+	if (enable) {
+		cmd[2] = status | IPQ40XX_SPINAND_FEATURE_ECC_EN;
+	} else {
+		cmd[2] = status & ~(IPQ40XX_SPINAND_FEATURE_ECC_EN);
+	}
 
 	ret = spi_flash_cmd_write(flash->spi, cmd, 3, NULL, 0);
 	if (ret) {
 		printf("Internal ECC enable failed\n");
 	}
 
+out:
 	spi_release_bus(flash->spi);
-return;
+	return;
 }
 
 static int spi_nand_scan_bbt_nop(struct mtd_info *mtd)
