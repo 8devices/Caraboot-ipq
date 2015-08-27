@@ -84,7 +84,7 @@ struct ipq40xx_spinand_info {
 	struct mtd_info *mtd;
 	struct nand_chip *chip;
 	struct spi_flash *flash;
-	struct spi_nand_flash_params *params;
+	const struct spi_nand_flash_params *params;
 	uint8_t *cmd;
 	uint8_t chip_ver;
 	uint16_t cmd_len;

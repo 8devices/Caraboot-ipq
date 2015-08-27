@@ -128,3 +128,10 @@ struct spi_flash *spi_flash_probe_winbond(struct spi_slave *spi, u8 *idcode);
 struct spi_flash *spi_fram_probe_ramtron(struct spi_slave *spi, u8 *idcode);
 struct spi_flash *spi_nand_flash_probe(struct spi_slave *spi, u8 *idcode);
 struct spi_flash *spi_nor_probe_generic(struct spi_slave *spi, u8 *idcode);
+
+/*
+ * Send the read status command to the spi nand device and wait for the wip
+ * (write-in-progress) bit to clear itself.
+ */
+int spi_nand_flash_cmd_wait_ready(struct spi_flash *flash, u8 status_bit, u8 *status,
+                                  unsigned long timeout);

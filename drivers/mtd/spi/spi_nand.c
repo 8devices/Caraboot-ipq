@@ -18,6 +18,7 @@
 #include <asm/errno.h>
 #include "spi_flash_internal.h"
 #include "spi_nand_dev.h"
+#include <malloc.h>
 
 #define CONFIG_SF_DEFAULT_SPEED		(48 * 1000 * 1000)
 #define TIMEOUT		5000
@@ -77,7 +78,6 @@ static int spinand_waitfunc(struct mtd_info *mtd, u8 val, u8 *status)
 static int check_offset(struct mtd_info *mtd, loff_t offs)
 {
 	struct ipq40xx_spinand_info *info = mtd_to_ipq_info(mtd);
-	struct spi_flash *flash = info->flash;
 	struct nand_chip *chip = info->chip;
 	int ret = 0;
 
@@ -92,10 +92,9 @@ static int check_offset(struct mtd_info *mtd, loff_t offs)
 
 static int spi_nand_erase(struct mtd_info *mtd, struct erase_info *instr)
 {
-	u8 cmd[8], len;
+	u8 cmd[8];
 	u8 status;
 	u32 ret;
-	u32 row_addr;
 	struct ipq40xx_spinand_info *info = mtd_to_ipq_info(mtd);
 	struct spi_flash *flash = info->flash;
 	struct nand_chip *chip = info->chip;
@@ -124,10 +123,10 @@ static int spi_nand_erase(struct mtd_info *mtd, struct erase_info *instr)
 	cmd[1] = (u8)(page >> 16);
 	cmd[2] = (u8)(page >> 8);
 	cmd[3] = (u8)(page);
-	len = 4;
+
 	ret = spi_flash_cmd_write(flash->spi, cmd, 4, NULL, 0);
 	if (ret) {
-		printf("%s  failed for offset:%x \n", __func__, instr->addr);
+		printf("%s  failed for offset:%ld\n", __func__, (long)instr->addr);
 		goto out;
 	}
 	ret = spinand_waitfunc(mtd, 0x01, &status);
@@ -146,7 +145,7 @@ static int spi_nand_erase(struct mtd_info *mtd, struct erase_info *instr)
 
 	ret = spinand_waitfunc(mtd, 0x01, &status);
 	if (ret) {
-		printf("%s: Write disable failed\n");
+		printf("Write disable failed\n");
 	}
 
 out:
@@ -212,9 +211,9 @@ out:
 
 static int spinand_write_oob_std(struct mtd_info *mtd, struct nand_chip *chip,  int page)
 {
-	int column, len, status, ret = 0, bytes;
+	int column, ret = 0;
 	u_char *wbuf;
-	u8 cmd[8];
+	u8 cmd[8], status;
 	struct ipq40xx_spinand_info *info = mtd_to_ipq_info(mtd);
 	struct spi_flash *flash = info->flash;
 
@@ -279,9 +278,8 @@ static void fill_oob_data(struct mtd_info *mtd, uint8_t *oob,
 static int spi_nand_write_oob(struct mtd_info *mtd, loff_t to,
 			      struct mtd_oob_ops *ops)
 {
-	int page, ret;
+	int page;
 	struct ipq40xx_spinand_info *info = mtd_to_ipq_info(mtd);
-	struct spi_flash *flash = info->flash;
 	struct nand_chip *chip = info->chip;
 
 	/* Shift to get page */
@@ -295,7 +293,7 @@ static int spi_nand_write_oob(struct mtd_info *mtd, loff_t to,
 static int spi_nand_block_markbad(struct mtd_info *mtd, loff_t offs)
 {
 	uint8_t buf[2]= { 0, 0 };
-	int block, ret;
+	int ret;
 	struct ipq40xx_spinand_info *info = mtd_to_ipq_info(mtd);
 	struct spi_flash *flash = info->flash;
 	struct nand_chip *chip = info->chip;
@@ -445,7 +443,6 @@ static int spi_nand_read(struct mtd_info *mtd, loff_t from, size_t len,
 static int spi_nand_read_oob(struct mtd_info *mtd, loff_t from,
 			     struct mtd_oob_ops *ops)
 {
-	struct ipq40xx_spinand_info *info = mtd_to_ipq_info(mtd);
 	u32 ret;
 
 	/* Disable ECC */
@@ -464,7 +461,7 @@ static int spi_nand_write(struct mtd_info *mtd, loff_t to, size_t len,
 	u8 cmd[8];
 	u8 status;
 	u32 ret;
-	u_char *wbuf;
+	const u_char *wbuf;
 	int realpage, page, bytes, write_len;
 	write_len = len;
 	bytes = mtd->writesize;
@@ -580,7 +577,7 @@ struct spi_flash *spi_nand_flash_probe(struct spi_slave *spi,
 		return NULL;
 	}
 
-	flash = malloc(sizeof (*flash));
+	flash = (struct spi_flash *)malloc(sizeof (*flash));
 	if (!flash) {
 		printf ("SF Failed to allocate memeory\n");
 		return NULL;
@@ -613,7 +610,7 @@ static int spinand_unlock_protect(struct mtd_info *mtd)
 	cmd[0] = IPQ40XX_SPINAND_CMD_GETFEA;
 	cmd[1] = IPQ40XX_SPINAND_PROTEC_REG;
 
-	ret = spi_flash_cmd_write(flash->spi, cmd, 2, &status, 1);
+	ret = spi_flash_cmd_read(flash->spi, cmd, 2, &status, 1);
 	if (ret) {
 		printf("Failed to read status register");
 		goto out;
@@ -686,7 +683,7 @@ int spi_nand_init(void)
 	struct ipq40xx_spinand_info *info;
 	int ret;
 
-	info = malloc (sizeof (struct ipq40xx_spinand_info));
+	info = (struct ipq40xx_spinand_info *)malloc (sizeof (struct ipq40xx_spinand_info));
 	if (!info) {
 		printf ("Error in allocating mem\n");
 		return -ENOMEM;
@@ -698,7 +695,7 @@ int spi_nand_init(void)
 				CONFIG_SF_DEFAULT_MODE);
 	if (!flash) {
 		spi_print("Id could not be mapped\n");
-		return NULL;
+		return -ENODEV;
 	}
 
 	mtd = &nand_info[CONFIG_IPQ_SPI_NAND_INFO_IDX];
@@ -726,7 +723,8 @@ int spi_nand_init(void)
 	chip->chipsize = flash->size;
 	chip->pagemask = (chip->chipsize >> chip->page_shift) - 1;
 	chip->badblockpos = 0;
-	chip->oob_poi = mtd->writesize;
+	chip->buffers = kmalloc(sizeof(*chip->buffers), GFP_KERNEL);
+	chip->oob_poi = chip->buffers->databuf + mtd->writesize;
 
 	/* One of the NAND layer functions that the command layer
 	 * tries to access directly.
