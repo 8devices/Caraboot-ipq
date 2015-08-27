@@ -17,8 +17,10 @@
 #include <asm/arch-ipq40xx/smem.h>
 #include "spi_flash_internal.h"
 
-#define CMD_BLOCK_ERASE		0xd8	/* Sector Erase */
-#define CMD_BLOCK_4B_ERASE	0xdc	/* Sector Erase */
+#define CMD_BLOCK_ERASE		0xd8	/* Block Erase */
+#define CMD_BLOCK_4B_ERASE	0xdc	/* 4 byte Block Erase */
+#define CMD_SECTOR_4B_ERASE	0x21	/* 4 byte Sector Erase */
+#define CMD_SECTOR_ERASE	0x20	/* Sector Erase */
 #define CMD_W25_EN4B		0xb7	/* Enter 4-byte mode Winbond*/
 
 #define WINBOND_ID	0xEF
@@ -32,10 +34,19 @@ static int spi_nor_erase(struct spi_flash *flash, u32 offset, size_t len)
 {
 	u8 erase_opcode;
 
-	if ((flash->addr_width == 4) && (manufacturer_id != WINBOND_ID))
-		erase_opcode = CMD_BLOCK_4B_ERASE;
-	else
-		erase_opcode = CMD_BLOCK_ERASE;
+	if ((offset % flash->block_size) == 0 && (len % flash->block_size) == 0) {
+		/* Block erase 64K */
+		if ((flash->addr_width == 4) && (manufacturer_id != WINBOND_ID))
+			erase_opcode = CMD_BLOCK_4B_ERASE;
+		else
+			erase_opcode = CMD_BLOCK_ERASE;
+	} else {
+		/* Sector erase 4K*/
+		if ((flash->addr_width == 4) && (manufacturer_id != WINBOND_ID))
+			erase_opcode = CMD_SECTOR_4B_ERASE;
+		else
+			erase_opcode = CMD_SECTOR_ERASE;
+	}
 
 	return spi_flash_cmd_erase(flash, erase_opcode, offset, len);
 }
