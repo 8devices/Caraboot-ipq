@@ -23,6 +23,7 @@ extern int ipq40xx_mdio_write(int mii_id,
 extern int ipq40xx_mdio_read(int mii_id,
 		int regnum, ushort *data);
 
+static u32 qca8075_id;
 static u16 qca8075_phy_reg_write(u32 dev_id, u32 phy_id,
 		u32 reg_id, u16 reg_val)
 {
@@ -290,6 +291,218 @@ static u16 qca8075_phy_mmd_read(u32 dev_id, u32 phy_id,
 			QCA8075_MMD_DATA_REG);
 }
 
+/*
+ *  get phy4 medium is 100fx
+ */
+static u8 __medium_is_fiber_100fx(u32 dev_id, u32 phy_id)
+{
+	u16 phy_data;
+	phy_data = qca8075_phy_reg_read(dev_id, phy_id,
+				QCA8075_PHY_SGMII_STATUS);
+
+	if (phy_data & QCA8075_PHY4_AUTO_FX100_SELECT) {
+		return 1;
+	}
+	/* Link down */
+	if ((!(phy_data & QCA8075_PHY4_AUTO_COPPER_SELECT)) &&
+	    (!(phy_data & QCA8075_PHY4_AUTO_BX1000_SELECT)) &&
+	    (!(phy_data & QCA8075_PHY4_AUTO_SGMII_SELECT))) {
+
+		phy_data = qca8075_phy_reg_read(dev_id, phy_id,
+					QCA8075_PHY_CHIP_CONFIG);
+		if ((phy_data & QCA8075_PHY4_PREFER_FIBER)
+		    && (!(phy_data & QCA8075_PHY4_FIBER_MODE_1000BX))) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+/*
+ * qca8075_phy_set_hibernate - set hibernate status
+ * set hibernate status
+ */
+static u32 qca8075_phy_set_hibernate(u32 dev_id, u32 phy_id, u8 enable)
+{
+	u16 phy_data;
+
+	qca8075_phy_reg_write(dev_id, phy_id, QCA8075_DEBUG_PORT_ADDRESS,
+					QCA8075_DEBUG_PHY_HIBERNATION_CTRL);
+
+	phy_data = qca8075_phy_reg_read(dev_id, phy_id,
+				QCA8075_DEBUG_PORT_DATA);
+
+	if (enable) {
+		phy_data |= 0x8000;
+	} else {
+		phy_data &= ~0x8000;
+	}
+
+	qca8075_phy_reg_write(dev_id, phy_id, QCA8075_DEBUG_PORT_DATA, phy_data);
+	return 0;
+}
+
+/*
+ * qca8075_restart_autoneg - restart the phy autoneg
+ */
+static u32 qca8075_phy_restart_autoneg(u32 dev_id, u32 phy_id)
+{
+	u16 phy_data;
+
+	if (phy_id == COMBO_PHY_ID) {
+		if (__medium_is_fiber_100fx(dev_id, phy_id))
+			return -1;
+		__phy_reg_pages_sel_by_active_medium(dev_id, phy_id);
+	}
+	phy_data = qca8075_phy_reg_read(dev_id, phy_id, QCA8075_PHY_CONTROL);
+	phy_data |= QCA8075_CTRL_AUTONEGOTIATION_ENABLE;
+	qca8075_phy_reg_write(dev_id, phy_id, QCA8075_PHY_CONTROL,
+			phy_data | QCA8075_CTRL_RESTART_AUTONEGOTIATION);
+
+	return 0;
+}
+
+/*
+ * qca8075_phy_get_8023az status
+ * get 8023az status
+ */
+static u32 qca8075_phy_get_8023az(u32 dev_id, u32 phy_id, u8 *enable)
+{
+	u16 phy_data;
+	if (phy_id == COMBO_PHY_ID) {
+		if (QCA8075_PHY_MEDIUM_COPPER !=
+			__phy_active_medium_get(dev_id, phy_id))
+			return -1;
+	}
+	*enable = 0;
+
+	phy_data = qca8075_phy_mmd_read(dev_id, phy_id, QCA8075_PHY_MMD7_NUM,
+					QCA8075_PHY_MMD7_ADDR_8023AZ_EEE_CTRL);
+
+	if ((phy_data & 0x0004) && (phy_data & 0x0002))
+		*enable = 1;
+
+	return 0;
+}
+
+/*
+ * qca8075_phy_set_powersave - set power saving status
+ */
+static u32 qca8075_phy_set_powersave(u32 dev_id, u32 phy_id, u8 enable)
+{
+	u16 phy_data;
+	u8 status;
+
+	if (phy_id == COMBO_PHY_ID) {
+		if (QCA8075_PHY_MEDIUM_COPPER !=
+			__phy_active_medium_get(dev_id, phy_id))
+			return -1;
+	}
+
+	if (enable) {
+		qca8075_phy_get_8023az(dev_id, phy_id, &status);
+		if (!status) {
+			phy_data = qca8075_phy_mmd_read(dev_id, phy_id,
+							QCA8075_PHY_MMD3_NUM,
+					QCA8075_PHY_MMD3_ADDR_8023AZ_TIMER_CTRL);
+			phy_data &= ~(1 << 14);
+			qca8075_phy_mmd_write(dev_id, phy_id,
+					QCA8075_PHY_MMD3_NUM,
+					QCA8075_PHY_MMD3_ADDR_8023AZ_TIMER_CTRL,
+					phy_data);
+		}
+		phy_data = qca8075_phy_mmd_read(dev_id, phy_id,
+						QCA8075_PHY_MMD3_NUM,
+						QCA8075_PHY_MMD3_ADDR_CLD_CTRL5);
+		phy_data &= ~(1 << 14);
+		qca8075_phy_mmd_write(dev_id, phy_id, QCA8075_PHY_MMD3_NUM,
+					QCA8075_PHY_MMD3_ADDR_CLD_CTRL5,
+								phy_data);
+
+		phy_data = qca8075_phy_mmd_read(dev_id, phy_id,
+					QCA8075_PHY_MMD3_NUM,
+					QCA8075_PHY_MMD3_ADDR_CLD_CTRL3);
+		phy_data &= ~(1 << 15);
+		qca8075_phy_mmd_write(dev_id, phy_id, QCA8075_PHY_MMD3_NUM,
+					QCA8075_PHY_MMD3_ADDR_CLD_CTRL3, phy_data);
+
+	} else {
+		phy_data = qca8075_phy_mmd_read(dev_id, phy_id,
+					QCA8075_PHY_MMD3_NUM,
+					QCA8075_PHY_MMD3_ADDR_8023AZ_TIMER_CTRL);
+		phy_data |= (1 << 14);
+		qca8075_phy_mmd_write(dev_id, phy_id, QCA8075_PHY_MMD3_NUM,
+				QCA8075_PHY_MMD3_ADDR_8023AZ_TIMER_CTRL,
+				phy_data);
+
+		phy_data = qca8075_phy_mmd_read(dev_id, phy_id,
+					QCA8075_PHY_MMD3_NUM,
+					QCA8075_PHY_MMD3_ADDR_CLD_CTRL5);
+		phy_data |= (1 << 14);
+		qca8075_phy_mmd_write(dev_id, phy_id, QCA8075_PHY_MMD3_NUM,
+				QCA8075_PHY_MMD3_ADDR_CLD_CTRL5, phy_data);
+
+		phy_data = qca8075_phy_mmd_read(dev_id, phy_id,
+						QCA8075_PHY_MMD3_NUM,
+						QCA8075_PHY_MMD3_ADDR_CLD_CTRL3);
+		phy_data |= (1 << 15);
+		qca8075_phy_mmd_write(dev_id, phy_id, QCA8075_PHY_MMD3_NUM,
+				QCA8075_PHY_MMD3_ADDR_CLD_CTRL3, phy_data);
+
+	}
+	qca8075_phy_reg_write(dev_id, phy_id, QCA8075_PHY_CONTROL, 0x9040);
+	return 0;
+}
+
+/*
+ * qca8075_phy_set_802.3az
+ */
+ static u32 qca8075_phy_set_8023az(u32 dev_id, u32 phy_id, u8 enable)
+{
+	u16 phy_data;
+
+	if (phy_id == COMBO_PHY_ID) {
+		if (QCA8075_PHY_MEDIUM_COPPER !=
+			 __phy_active_medium_get(dev_id, phy_id))
+			return -1;
+	}
+	phy_data = qca8075_phy_mmd_read(dev_id, phy_id, QCA8075_PHY_MMD7_NUM,
+				       QCA8075_PHY_MMD7_ADDR_8023AZ_EEE_CTRL);
+	if (enable) {
+		phy_data |= 0x0006;
+
+		qca8075_phy_mmd_write(dev_id, phy_id, QCA8075_PHY_MMD7_NUM,
+			     QCA8075_PHY_MMD7_ADDR_8023AZ_EEE_CTRL, phy_data);
+		if (qca8075_id == QCA8075_PHY_V1_0_5P) {
+			/*
+			 * Workaround to avoid packet loss and < 10m cable
+			 * 1000M link not stable under az enable
+			 */
+			qca8075_phy_mmd_write(dev_id, phy_id,
+				QCA8075_PHY_MMD3_NUM,
+				QCA8075_PHY_MMD3_ADDR_8023AZ_TIMER_CTRL,
+				AZ_TIMER_CTRL_ADJUST_VALUE);
+
+			qca8075_phy_mmd_write(dev_id, phy_id,
+					QCA8075_PHY_MMD3_NUM,
+					QCA8075_PHY_MMD3_ADDR_8023AZ_CLD_CTRL,
+					AZ_CLD_CTRL_ADJUST_VALUE);
+		}
+	} else {
+		phy_data &= ~0x0006;
+		qca8075_phy_mmd_write(dev_id, phy_id, QCA8075_PHY_MMD7_NUM,
+				QCA8075_PHY_MMD7_ADDR_8023AZ_EEE_CTRL, phy_data);
+		if (qca8075_id == QCA8075_PHY_V1_0_5P) {
+			qca8075_phy_mmd_write(dev_id, phy_id,
+					QCA8075_PHY_MMD3_NUM,
+					QCA8075_PHY_MMD3_ADDR_8023AZ_TIMER_CTRL,
+					AZ_TIMER_CTRL_DEFAULT_VALUE);
+		}
+	}
+	qca8075_phy_restart_autoneg(dev_id, phy_id);
+	return 0;
+}
+
 void psgmii_self_test()
 {
 	int i, phy, j;
@@ -501,11 +714,6 @@ void clear_self_test_config()
 	u32 value = 0;
 
 	/*
-	 * Disable EEE
-	 */
-	qca8075_phy_mmd_write(0, 0x1f, 0x7,  0x3c, 0x0);
-
-	/*
 	 * Disable phy internal loopback
 	 */
 	qca8075_phy_reg_write(0, 0x1f, 0x10, 0x6860);
@@ -525,10 +733,10 @@ void clear_self_test_config()
 
 }
 
-
 int ipq40xx_qca8075_phy_init(struct ipq40xx_eth_dev *info)
 {
 	u16 phy_data;
+	u32 phy_id = 0;
 	struct phy_ops *qca8075_ops;
 
 	qca8075_ops = malloc(sizeof(struct phy_ops));
@@ -540,16 +748,42 @@ int ipq40xx_qca8075_phy_init(struct ipq40xx_eth_dev *info)
 	qca8075_ops->phy_get_duplex = qca8075_phy_get_duplex;
 	info->ops = qca8075_ops;
 
-	phy_data = qca8075_phy_reg_read(0x0, 0x0, QCA8075_PHY_ID1);
+	qca8075_id = phy_data = qca8075_phy_reg_read(0x0, 0x0, QCA8075_PHY_ID1);
 	printf ("PHY ID1: 0x%x\n", phy_data);
 	phy_data = qca8075_phy_reg_read(0x0, 0x0, QCA8075_PHY_ID2);
 	printf ("PHY ID2: 0x%x\n", phy_data);
+	qca8075_id = (qca8075_id << 16) | phy_data;
 
-	phy_data = qca8075_phy_mmd_read(0, PSGMII_ID,
-		QCA8075_PHY_MMD1_NUM, QCA8075_PSGMII_FIFI_CTRL);
-	phy_data &= 0xbfff;
-	qca8075_phy_mmd_write(0, PSGMII_ID, QCA8075_PHY_MMD1_NUM,
+	if (qca8075_id == QCA8075_PHY_V1_0_5P) {
+		phy_data = qca8075_phy_mmd_read(0, PSGMII_ID,
+			QCA8075_PHY_MMD1_NUM, QCA8075_PSGMII_FIFI_CTRL);
+		phy_data &= 0xbfff;
+		qca8075_phy_mmd_write(0, PSGMII_ID, QCA8075_PHY_MMD1_NUM,
 			QCA8075_PSGMII_FIFI_CTRL, phy_data);
+	}
+
+	/*
+	 * Enable AZ transmitting ability
+	 */
+	qca8075_phy_mmd_write(0, PSGMII_ID, QCA8075_PHY_MMD1_NUM,
+				QCA8075_PSGMII_MODE_CTRL,
+				QCA8075_PHY_PSGMII_MODE_CTRL_ADJUST_VALUE);
+
+	/*
+	 * Enable phy power saving function by default
+	 */
+	if (qca8075_id == QCA8075_PHY_V1_1_2P)
+		phy_id = 3;
+
+	if ((qca8075_id == QCA8075_PHY_V1_0_5P) ||
+	    (qca8075_id == QCA8075_PHY_V1_1_5P) ||
+	    (qca8075_id == QCA8075_PHY_V1_1_2P)) {
+		for (; phy_id < 5; phy_id++) {
+			qca8075_phy_set_8023az(0x0, phy_id, 0x1);
+			qca8075_phy_set_powersave(0x0, phy_id, 0x1);
+			qca8075_phy_set_hibernate(0x0, phy_id, 0x1);
+		}
+	}
 
 	phy_data = qca8075_phy_mmd_read(0, 4, QCA8075_PHY_MMD3_NUM, 0x805a);
 	phy_data &= (~(1 << 1));
