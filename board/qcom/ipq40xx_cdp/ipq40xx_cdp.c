@@ -473,6 +473,35 @@ int get_eth_mac_address(uchar *enetaddr, uint no_of_macs)
 	return ret;
 }
 
+static void ipq40xx_set_ethmac_addr(void)
+{
+	int i, ret;
+	uchar enetaddr[CONFIG_IPQ_NO_MACS * 6];
+	uchar *mac_addr;
+	char ethaddr[16] = "ethaddr";
+	char mac[64];
+	/* Get the MAC address from ART partition */
+	ret = get_eth_mac_address(enetaddr, CONFIG_IPQ_NO_MACS);
+	for (i = 0; (ret >= 0) && (i < CONFIG_IPQ_NO_MACS); i++) {
+		mac_addr = &enetaddr[i * 6];
+		if (!is_valid_ether_addr(mac_addr)) {
+			printf("eth%d MAC Address from ART is not valid\n", i);
+		} else {
+			/*
+			 * U-Boot uses these to patch the 'local-mac-address'
+			 * dts entry for the ethernet entries, which in turn
+			 * will be picked up by the HLOS driver
+			 */
+			sprintf(mac, "%x:%x:%x:%x:%x:%x",
+					mac_addr[0], mac_addr[1],
+					mac_addr[2], mac_addr[3],
+					mac_addr[4], mac_addr[5]);
+			setenv(ethaddr, mac);
+		}
+		sprintf(ethaddr, "eth%daddr", (i + 1));
+	}
+}
+
 static void ipq40xx_edma_common_init()
 {
 	writel(1, GCC_ESS_BCR);
@@ -658,6 +687,8 @@ void ft_board_setup(void *blob, bd_t *bd)
 
 		ipq_fdt_fixup_mtdparts(blob, nodes);
 	}
+	ipq40xx_set_ethmac_addr();
+	fdt_fixup_ethernet(blob);
 }
 
 #endif /* CONFIG_OF_BOARD_SETUP */

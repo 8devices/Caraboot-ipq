@@ -823,8 +823,6 @@ int ipq40xx_edma_init(ipq40xx_edma_board_cfg_t *edma_cfg)
 	uchar enet_addr[IPQ40XX_EDMA_DEV * 6];
 	int i;
 	int ret;
-	char ethaddr[16] = "ethaddr";
-	char mac[64];
 
 	memset(enet_addr, 0, sizeof(enet_addr));
 	/* Getting the MAC address from ART partition */
@@ -886,19 +884,7 @@ int ipq40xx_edma_init(ipq40xx_edma_board_cfg_t *edma_cfg)
 		} else {
 			memcpy(&dev[i]->enetaddr[0],
 				&enet_addr[edma_cfg->unit * 6], 6);
-			/*
-			 * Populate the environment with these MAC addresses.
-			 * U-Boot uses these to patch the 'local-mac-address'
-			 * dts entry for the ethernet entries, which in turn
-			 * will be picked up by the HLOS driver
-			 */
-			sprintf(mac, "%x:%x:%x:%x:%x:%x",
-				dev[i]->enetaddr[0], dev[i]->enetaddr[1],
-				dev[i]->enetaddr[2], dev[i]->enetaddr[3],
-				dev[i]->enetaddr[4], dev[i]->enetaddr[5]);
-			setenv(ethaddr, mac);
 		}
-		sprintf(ethaddr, "eth%daddr", (i + 1));
 		printf("MAC%x addr:%x:%x:%x:%x:%x:%x\n",
 			edma_cfg->unit, dev[i]->enetaddr[0],
 			dev[i]->enetaddr[1],

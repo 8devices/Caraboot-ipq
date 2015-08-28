@@ -232,6 +232,7 @@ typedef struct {
 #define CONFIG_MII
 #define CONFIG_CMD_MII
 #define CONFIG_IPADDR	192.168.1.11
+#define CONFIG_IPQ_NO_MACS	2
 /*
  * CRASH DUMP ENABLE
  */
