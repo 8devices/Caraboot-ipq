@@ -523,6 +523,39 @@ gpio_func_data_t sw_gpio_bga[] = {
 	},
 };
 
+gpio_func_data_t ap_dk04_1_c2_sw_gpio_bga[] = {
+	{
+		.gpio = 6,
+		.func = 1,
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+	{
+		.gpio = 7,
+		.func = 1,
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+	{
+		.gpio = 67,
+		.func = 0,
+		.pull = GPIO_PULL_DOWN,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_ENABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+};
+
 gpio_func_data_t db_dk_2_1_sw_gpio_bga[] = {
 	{
 		.gpio = 6,
@@ -703,10 +736,8 @@ board_ipq40xx_params_t board_params[] = {
 		},
 		.spi_nor_gpio = spi_nor_bga,
 		.spi_nor_gpio_count = ARRAY_SIZE(spi_nor_bga),
-		.nand_gpio = nand_gpio_bga,
-		.nand_gpio_count = ARRAY_SIZE(nand_gpio_bga),
-		.sw_gpio = sw_gpio_bga,
-		.sw_gpio_count = ARRAY_SIZE(sw_gpio_bga),
+		.sw_gpio = ap_dk04_1_c2_sw_gpio_bga,
+		.sw_gpio_count = ARRAY_SIZE(ap_dk04_1_c2_sw_gpio_bga),
 		.edma_cfg = {
 			ipq40xx_edma_cfg(0, 5, PSGMII,
 					0, 1, 2, 3, 4)
