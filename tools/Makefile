@@ -177,27 +177,27 @@ HOSTCPPFLAGS =	-idirafter $(SRCTREE)/include \
 all:	$(obj).depend $(BINS) $(LOGO-y) subdirs
 
 $(obj)bin2header$(SFX): $(obj)bin2header.o
-	$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^
-	$(HOSTSTRIP) $@
+	@$(call compile,$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^)
+	@$(call compile,$(HOSTSTRIP) $@)
 
 $(obj)bmp_logo$(SFX):	$(obj)bmp_logo.o
-	$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^
-	$(HOSTSTRIP) $@
+	@$(call compile,$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^)
+	@$(call compile,$(HOSTSTRIP) $@)
 
 $(obj)envcrc$(SFX):	$(obj)crc32.o $(obj)env_embedded.o $(obj)envcrc.o $(obj)sha1.o
-	$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^
+	@$(call compile,$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^)
 
 $(obj)gen_eth_addr$(SFX):	$(obj)gen_eth_addr.o
-	$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^
-	$(HOSTSTRIP) $@
+	@$(call compile,$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^)
+	@$(call compile,$(HOSTSTRIP) $@)
 
 $(obj)img2srec$(SFX):	$(obj)img2srec.o
-	$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^
-	$(HOSTSTRIP) $@
+	@$(call compile,$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^)
+	@$(call compile,$(HOSTSTRIP) $@)
 
 $(obj)xway-swap-bytes$(SFX):	$(obj)xway-swap-bytes.o
-	$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^
-	$(HOSTSTRIP) $@
+	@$(call compile,$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^)
+	@$(call compile,$(HOSTSTRIP) $@)
 
 $(obj)dumpimage$(SFX):	$(obj)aisimage.o \
 			$(FIT_SIG_OBJS) \
@@ -216,13 +216,13 @@ $(obj)dumpimage$(SFX):	$(obj)aisimage.o \
 			$(obj)ublimage.o \
 			$(LIBFDT_OBJS) \
 			$(RSA_OBJS)
-	$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^ $(HOSTLIBS)
-	$(HOSTSTRIP) $@
+	@$(call compile,$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^ $(HOSTLIBS))
+	@$(call compile,$(HOSTSTRIP) $@)
 
 $(obj)mkenvimage$(SFX):	$(obj)crc32.o $(obj)mkenvimage.o \
 	$(obj)os_support.o
-	$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^
-	$(HOSTSTRIP) $@
+	@$(call compile,$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^)
+	@$(call compile,$(HOSTSTRIP) $@)
 
 $(obj)mkimage$(SFX):	$(obj)aisimage.o \
 			$(obj)crc32.o \
@@ -239,41 +239,41 @@ $(obj)mkimage$(SFX):	$(obj)aisimage.o \
 			$(obj)sha1.o \
 			$(obj)ublimage.o \
 			$(LIBFDT_OBJS)
-	$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^
-	$(HOSTSTRIP) $@
+	@$(call compile,$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^)
+	@$(call compile,$(HOSTSTRIP) $@)
 
 $(obj)mk$(BOARD)spl$(SFX):	$(obj)mkexynosspl.o
-	$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^
-	$(HOSTSTRIP) $@
+	@$(call compile,$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^)
+	@$(call compile,$(HOSTSTRIP) $@)
 
 $(obj)mpc86x_clk$(SFX):	$(obj)mpc86x_clk.o
-	$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^
-	$(HOSTSTRIP) $@
+	@$(call compile,$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^)
+	@$(call compile,$(HOSTSTRIP) $@)
 
 $(obj)mxsboot$(SFX):	$(obj)mxsboot.o
-	$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^
-	$(HOSTSTRIP) $@
+	@$(call compile,$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^)
+	@$(call compile,$(HOSTSTRIP) $@)
 
 $(obj)ncb$(SFX):	$(obj)ncb.o
-	$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^
-	$(HOSTSTRIP) $@
+	@$(call compile,$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^)
+	@$(call compile,$(HOSTSTRIP) $@)
 
 $(obj)ubsha1$(SFX):	$(obj)os_support.o $(obj)sha1.o $(obj)ubsha1.o
-	$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^
+	@$(call compile,$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^)
 
 $(obj)kwboot$(SFX): $(obj)kwboot.o
-	$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^
-	$(HOSTSTRIP) $@
+	@$(call compile,$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^)
+	@$(call compile,$(HOSTSTRIP) $@)
 
 # Some of the tool objects need to be accessed from outside the tools directory
 $(obj)%.o: $(SRCTREE)/common/%.c
-	$(HOSTCC) -g $(HOSTCFLAGS_NOPED) -c -o $@ $<
+	@$(call compile,$(HOSTCC) -g $(HOSTCFLAGS_NOPED) -c -o $@ $<)
 
 $(obj)%.o: $(SRCTREE)/lib/%.c
-	$(HOSTCC) -g $(HOSTCFLAGS) -c -o $@ $<
+	@$(call compile,$(HOSTCC) -g $(HOSTCFLAGS) -c -o $@ $<)
 
 $(obj)%.o: $(SRCTREE)/lib/libfdt/%.c
-	$(HOSTCC) -g $(HOSTCFLAGS_NOPED) -c -o $@ $<
+	@$(call compile,$(HOSTCC) -g $(HOSTCFLAGS_NOPED) -c -o $@ $<)
 
 subdirs:
 ifeq ($(TOOLSUBDIRS),)
