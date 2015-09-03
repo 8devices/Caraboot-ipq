@@ -111,6 +111,8 @@ board_ipq40xx_params_t *gboard_param = (board_ipq40xx_params_t *)0xbadb0ad;
 #define SCM_CMD_TZ_CONFIG_HW_FOR_RAM_DUMP_ID 0x9
 #define SCM_CMD_TZ_FORCE_DLOAD_ID 0x10
 
+#define BOOT_VERSION	0
+#define TZ_VERSION	1
 /*******************************************************
  Function description: Board specific initialization.
  I/P : None
@@ -614,6 +616,35 @@ int ipq_fdt_fixup_spi_nor_params(void *blob)
 	return 0;
 }
 
+void ipq_fdt_fixup_version(void *blob)
+{
+	int nodeoff, ret;
+	char ver[OEM_VERSION_STRING_LENGTH + VERSION_STRING_LENGTH + 1];
+
+	nodeoff = fdt_node_offset_by_compatible(blob, -1, "qcom,ipq40xx");
+
+	if (nodeoff < 0) {
+		debug("ipq: fdt fixup unable to find compatible node\n");
+		return;
+	}
+
+	if (!smem_get_build_version(ver, sizeof(ver), BOOT_VERSION)) {
+		debug("BOOT Build Version:  %s\n", ver);
+		ret = fdt_setprop(blob, nodeoff, "boot_version",
+				ver, strlen(ver));
+		if (ret)
+			debug("%s: unable to set Boot version\n", __func__);
+	}
+
+	if (!smem_get_build_version(ver, sizeof(ver), TZ_VERSION)) {
+		debug("TZ Build Version:  %s\n", ver);
+		ret = fdt_setprop(blob, nodeoff, "tz_version",
+				ver, strlen(ver));
+		if (ret)
+			debug("%s: unable to set TZ version\n", __func__);
+	}
+}
+
 void ipq_fdt_fixup_mtdparts(void *blob, struct flash_node_info *ni)
 {
 	struct mtd_device *dev;
@@ -665,6 +696,7 @@ void ft_board_setup(void *blob, bd_t *bd)
 	};
 
 	fdt_fixup_memory_banks(blob, &memory_start, &memory_size, 1);
+	ipq_fdt_fixup_version(blob);
 
 	if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
 		mtdparts = "mtdparts=nand0";

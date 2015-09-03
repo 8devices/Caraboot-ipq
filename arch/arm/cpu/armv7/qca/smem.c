@@ -67,6 +67,7 @@ typedef enum {
 	SMEM_HW_SW_BUILD_ID = 137,
 	SMEM_USABLE_RAM_PARTITION_TABLE = 402,
 	SMEM_POWER_ON_STATUS_INFO = 403,
+	SMEM_IMAGE_VERSION_TABLE = 469,
 	SMEM_BOOT_FLASH_TYPE = 478,
 	SMEM_BOOT_FLASH_INDEX = 479,
 	SMEM_BOOT_FLASH_CHIP_SELECT = 480,
@@ -330,6 +331,23 @@ int smem_get_boot_flash(uint32_t *flash_type,
 	}
 
 	return 0;
+}
+
+int smem_get_build_version(char *version_name, int buf_size, int index)
+{
+	int ret;
+	struct version_entry version_entry[32];
+
+	ret = smem_read_alloc_entry(SMEM_IMAGE_VERSION_TABLE,
+                        &version_entry, sizeof(version_entry));
+	if (ret != 0)
+		return -ENOMSG;
+
+	snprintf(version_name, buf_size, "%s-%s\n",
+			version_entry[index].oem_version_string,
+			version_entry[index].version_string);
+
+	return ret;
 }
 
 unsigned int smem_get_board_platform_type()

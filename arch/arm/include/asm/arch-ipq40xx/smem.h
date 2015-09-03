@@ -21,6 +21,13 @@
 #define SOCINFO_VERSION_MAJOR(ver) ((ver & 0xffff0000) >> 16)
 #define SOCINFO_VERSION_MINOR(ver) (ver & 0x0000ffff)
 
+#define INDEX_LENGTH			2
+#define SEP1_LENGTH			1
+#define VERSION_STRING_LENGTH		72
+#define VARIANT_STRING_LENGTH		20
+#define SEP2_LENGTH			1
+#define OEM_VERSION_STRING_LENGTH	32
+
 enum {
 	SMEM_BOOT_NO_FLASH        = 0,
 	SMEM_BOOT_NOR_FLASH       = 1,
@@ -30,6 +37,16 @@ enum {
 	SMEM_BOOT_MMC_FLASH       = 5,
 	SMEM_BOOT_SPI_FLASH       = 6,
 };
+
+struct version_entry
+{
+	char index[INDEX_LENGTH];
+	char colon_sep1[SEP1_LENGTH];
+	char version_string[VERSION_STRING_LENGTH];
+	char variant_string[VARIANT_STRING_LENGTH];
+	char colon_sep2[SEP2_LENGTH];
+	char oem_version_string[OEM_VERSION_STRING_LENGTH];
+} __attribute__ ((__packed__));
 
 struct smem_ram_ptn {
 	char name[16];
@@ -73,6 +90,7 @@ int smem_get_boot_flash(uint32_t *flash_type,
 int smem_getpart(char *name, uint32_t *start, uint32_t *size);
 unsigned int smem_get_board_machtype(void);
 int smem_ram_ptable_init(struct smem_ram_ptable *smem_ram_ptable);
+int smem_get_build_version(char *version_name, int buf_size, int index);
 
 typedef struct {
 	loff_t offset;
