@@ -27,6 +27,9 @@
 #define spi_print(...)  printf("spi_nand: " __VA_ARGS__)
 
 struct nand_chip nand_chip[CONFIG_SYS_MAX_NAND_DEVICE];
+int verify_3bit_ecc(int status);
+int verify_2bit_ecc(int status);
+int verify_dummy_ecc(int status);
 
 #define mtd_to_ipq_info(m)	((struct nand_chip *)((m)->priv))->priv
 
@@ -39,8 +42,7 @@ static const struct spi_nand_flash_params spi_nand_flash_tbl[] = {
 		.pages_per_sector = 64,
 		.nr_sectors = 1024,
 		.oob_size = 64,
-		.ecc_mask = 0x70,
-		.ecc_err = 0x70,
+		.verify_ecc = verify_3bit_ecc,
 		.name = "GD5F1GQ4XC",
 	},
 	{
@@ -51,8 +53,7 @@ static const struct spi_nand_flash_params spi_nand_flash_tbl[] = {
 		.pages_per_sector = 64,
 		.nr_sectors = 1024,
 		.oob_size = 64,
-		.ecc_mask = 0,
-		.ecc_err = 0,
+		.verify_ecc = verify_dummy_ecc,
 		.name = "ATO25D1GA",
 	},
 };
@@ -334,6 +335,36 @@ out:
 	return ret;
 }
 
+int verify_3bit_ecc(int status)
+{
+	int ecc_status = (status & SPINAND_3BIT_ECC_MASK);
+
+	if (ecc_status == SPINAND_3BIT_ECC_ERROR)
+		return ECC_ERR;
+	else if (ecc_status)
+		return ECC_CORRECTED;
+	else
+		return 0;
+}
+
+int verify_2bit_ecc(int status)
+{
+	int ecc_status = (status & SPINAND_2BIT_ECC_MASK);
+
+	if ((ecc_status == SPINAND_2BIT_ECC_ERROR) ||
+	    (ecc_status == SPINAND_2BIT_ECC_MASK))
+		return ECC_ERR;
+	else if (ecc_status == SPINAND_2BIT_ECC_CORRECTED)
+		return ECC_CORRECTED;
+	else
+		return 0;
+}
+
+int verify_dummy_ecc(int status)
+{
+	return 0;
+}
+
 static int spi_nand_read_std(struct mtd_info *mtd, loff_t from, struct mtd_oob_ops *ops)
 {
 	struct ipq40xx_spinand_info *info = mtd_to_ipq_info(mtd);
@@ -369,17 +400,15 @@ static int spi_nand_read_std(struct mtd_info *mtd, loff_t from, struct mtd_oob_o
 			goto out;
 		}
 
-		if (info->params->ecc_mask != 0) {
-			if ((status & info->params->ecc_mask) ==
-						info->params->ecc_err) {
-				mtd->ecc_stats.failed++;
-				printf("ecc err(0x%x) for page read\n", status);
-				ret = -EBADMSG;
-				goto out;
-			} else if (status & info->params->ecc_mask) {
-				mtd->ecc_stats.corrected++;
-				ecc_corrected = 1;
-			}
+		ret = info->params->verify_ecc(status);
+		if (ret == ECC_ERR) {
+			mtd->ecc_stats.failed++;
+			printf("ecc err(0x%x) for page read\n", status);
+			ret = -EBADMSG;
+			goto out;
+		} else if (ret == ECC_CORRECTED) {
+			mtd->ecc_stats.corrected++;
+			ecc_corrected = 1;
 		}
 
 		bytes = ((readlen < mtd->writesize) ? readlen : mtd->writesize);
@@ -752,4 +781,3 @@ int spi_nand_init(void)
 
 	return 0;
 }
-

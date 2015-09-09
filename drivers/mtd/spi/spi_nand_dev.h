@@ -74,8 +74,7 @@ struct spi_nand_flash_params {
 	u16 nr_sectors;
 	u32 oob_size;
 	u32 erase_size;
-	u8 ecc_mask;
-	u8 ecc_err;
+	int (*verify_ecc) (int status);
 	const char *name;
 };
 
@@ -92,4 +91,13 @@ struct ipq40xx_spinand_info {
 	uint32_t status;
 };
 
+#define ECC_ERR		1
+#define ECC_CORRECTED	2
+
+#define SPINAND_3BIT_ECC_MASK		0x70
+#define SPINAND_3BIT_ECC_ERROR		0x70
+
+#define SPINAND_2BIT_ECC_MASK		0x30
+#define SPINAND_2BIT_ECC_ERROR		0x20
+#define SPINAND_2BIT_ECC_CORRECTED	0x10
 #endif
