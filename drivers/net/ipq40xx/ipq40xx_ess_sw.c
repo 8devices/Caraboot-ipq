@@ -40,11 +40,27 @@ void ipq40xx_ess_disable_ports()
 
 void ipq40xx_ess_enable_ports()
 {
-	ipq40xx_ess_sw_wr(S17_P1STATUS_REG, 0x1280);
-	ipq40xx_ess_sw_wr(S17_P2STATUS_REG, 0x1280);
-	ipq40xx_ess_sw_wr(S17_P3STATUS_REG, 0x1280);
-	ipq40xx_ess_sw_wr(S17_P4STATUS_REG, 0x1280);
-	ipq40xx_ess_sw_wr(S17_P5STATUS_REG, 0x1280);
+	if ((gboard_param->machid == MACH_TYPE_IPQ40XX_DB_DK02_1_C1) ||
+	    (gboard_param->machid == MACH_TYPE_IPQ40XX_DB_DK01_1_C1)) {
+		ipq40xx_ess_sw_wr(S17_P4STATUS_REG, S17_PORT_SPEED(2) |
+						S17_PORT_FULL_DUP |
+						S17_TX_FLOW_EN |
+						S17_RX_FLOW_EN |
+						S17_PORT_TX_MAC_EN |
+						S17_PORT_RX_MAC_EN);
+		ipq40xx_ess_sw_wr(S17_P5STATUS_REG, S17_PORT_SPEED(2) |
+						S17_PORT_FULL_DUP |
+						S17_TX_FLOW_EN |
+						S17_RX_FLOW_EN |
+						S17_PORT_TX_MAC_EN |
+						S17_PORT_RX_MAC_EN);
+	} else {
+		ipq40xx_ess_sw_wr(S17_P1STATUS_REG, 0x1280);
+		ipq40xx_ess_sw_wr(S17_P2STATUS_REG, 0x1280);
+		ipq40xx_ess_sw_wr(S17_P3STATUS_REG, 0x1280);
+		ipq40xx_ess_sw_wr(S17_P4STATUS_REG, 0x1280);
+		ipq40xx_ess_sw_wr(S17_P5STATUS_REG, 0x1280);
+	}
 }
 
 int ipq40xx_ess_sw_init(ipq40xx_edma_board_cfg_t *cfg)
