@@ -74,6 +74,7 @@ struct spi_nand_flash_params {
 	u16 nr_sectors;
 	u32 oob_size;
 	u32 erase_size;
+	void (*norm_read_cmd) (u8 *cmd, int column);
 	int (*verify_ecc) (int status);
 	const char *name;
 };
