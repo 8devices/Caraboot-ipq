@@ -67,8 +67,7 @@
 #define STATUS_P_FAIL					0x08
 
 struct spi_nand_flash_params {
-	u16 mid;
-	u16 devid;
+	u8 id[4];
 	u16 page_size;
 	u16 pages_per_sector;
 	u16 nr_sectors;

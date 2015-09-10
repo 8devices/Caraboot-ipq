@@ -44,8 +44,7 @@ void macronix_norm_read_cmd(u8 *cmd, int column);
 
 static const struct spi_nand_flash_params spi_nand_flash_tbl[] = {
 	{
-		.mid = 0xc8,
-		.devid = 0xb148,
+		.id = { 0xc8, 0xb1, 0x48 },
 		.page_size = 2048,
 		.erase_size = 0x00020000,
 		.pages_per_sector = 64,
@@ -56,8 +55,7 @@ static const struct spi_nand_flash_params spi_nand_flash_tbl[] = {
 		.name = "GD5F1GQ4XC",
 	},
 	{
-		.mid = 0x9b,
-		.devid = 0x12,
+		.id = { 0xff, 0x9b, 0x12 },
 		.page_size = 2048,
 		.erase_size = 0x00020000,
 		.pages_per_sector = 64,
@@ -68,8 +66,7 @@ static const struct spi_nand_flash_params spi_nand_flash_tbl[] = {
 		.name = "ATO25D1GA",
 	},
 	{
-		.mid = 0xc2,
-		.devid = 0x12,
+		.id = { 0x00, 0xc2, 0x12 },
 		.page_size = 2048,
 		.erase_size = 0x00020000,
 		.pages_per_sector = 64,
@@ -613,32 +610,22 @@ struct spi_flash *spi_nand_flash_probe(struct spi_slave *spi,
 {
 	struct spi_flash *flash;
 	unsigned int i;
-	u16 devid;
-	u32 mfid;
-
-	mfid = idcode[0];
-
-	if (mfid == MFID_GIGA)
-		devid = (idcode[1] << 8 | idcode[2]);
-	else
-		devid = idcode[1];
 
 	for (i = 0; i < ARRAY_SIZE(spi_nand_flash_tbl); i++) {
 		params = &spi_nand_flash_tbl[i];
-		if (params->mid == mfid) {
-			spi_print ("%s SF NAND MFID%x\n",
-				__func__, mfid);
-			if (params->devid == devid) {
-				spi_print ("%s SF NAND dev ID %x\n",
-					__func__, devid);
-				break;
-			}
+
+		if ((params->id[0] == idcode[0]) &&
+		    (params->id[1] == idcode[1]) &&
+		    (params->id[2] == idcode[2])) {
+			spi_print("%s SF NAND ID %x:%x:%x\n",
+				__func__, idcode[0], idcode[1], idcode[2]);
+			break;
 		}
 	}
 
 	if (i == ARRAY_SIZE(spi_nand_flash_tbl)) {
-		printf ("SF NAND unsupported Mfid:%04x devid:%04x",
-			mfid, devid);
+		printf("SF NAND unsupported id:%x:%x:%x",
+			idcode[0], idcode[1], idcode[2]);
 		return NULL;
 	}
 
