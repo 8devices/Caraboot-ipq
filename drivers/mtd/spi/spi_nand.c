@@ -22,6 +22,7 @@
 
 #define CONFIG_SF_DEFAULT_SPEED		(48 * 1000 * 1000)
 #define TIMEOUT		5000
+#define MFID_GIGA	0xc8
 #define MFID_ATO	0x9b
 /* Macronix Specific Defines */
 #define MFID_MACRONIX   	0xc2
@@ -36,40 +37,42 @@ struct nand_chip nand_chip[CONFIG_SYS_MAX_NAND_DEVICE];
 int verify_3bit_ecc(int status);
 int verify_2bit_ecc(int status);
 int verify_dummy_ecc(int status);
+void gigadevice_norm_read_cmd(u8 *cmd, int column);
+void macronix_norm_read_cmd(u8 *cmd, int column);
 
 #define mtd_to_ipq_info(m)	((struct nand_chip *)((m)->priv))->priv
 
 static const struct spi_nand_flash_params spi_nand_flash_tbl[] = {
 	{
-		.mid = 0xc8,
-		.devid = 0xb148,
+		.id = { 0xc8, 0xb1, 0x48 },
 		.page_size = 2048,
 		.erase_size = 0x00020000,
 		.pages_per_sector = 64,
 		.nr_sectors = 1024,
 		.oob_size = 64,
+		.norm_read_cmd = gigadevice_norm_read_cmd,
 		.verify_ecc = verify_3bit_ecc,
 		.name = "GD5F1GQ4XC",
 	},
 	{
-		.mid = 0x9b,
-		.devid = 0x12,
+		.id = { 0xff, 0x9b, 0x12 },
 		.page_size = 2048,
 		.erase_size = 0x00020000,
 		.pages_per_sector = 64,
 		.nr_sectors = 1024,
 		.oob_size = 64,
+		.norm_read_cmd = gigadevice_norm_read_cmd,
 		.verify_ecc = verify_dummy_ecc,
 		.name = "ATO25D1GA",
 	},
 	{
-		.mid = 0xc2,
-		.devid = 0x12,
+		.id = { 0x00, 0xc2, 0x12 },
 		.page_size = 2048,
 		.erase_size = 0x00020000,
 		.pages_per_sector = 64,
 		.nr_sectors = 1024,
 		.oob_size = 64,
+		.norm_read_cmd = macronix_norm_read_cmd,
 		.verify_ecc = verify_2bit_ecc,
 		.name = "MX35LFxGE4AB",
 	},
@@ -77,6 +80,22 @@ static const struct spi_nand_flash_params spi_nand_flash_tbl[] = {
 
 const struct spi_nand_flash_params *params;
 void spinand_internal_ecc(struct mtd_info *mtd, int enable);
+
+void gigadevice_norm_read_cmd(u8 *cmd, int column)
+{
+	cmd[0] = IPQ40XX_SPINAND_CMD_NORM_READ;
+	cmd[1] = 0;
+	cmd[2] = (u8)(column >> 8);
+	cmd[3] = (u8)(column);
+}
+
+void macronix_norm_read_cmd(u8 *cmd, int column)
+{
+	cmd[0] = IPQ40XX_SPINAND_CMD_NORM_READ;
+	cmd[1] = ((u8)(column >> 8) & MACRONIX_NORM_READ_MASK);
+	cmd[2] = (u8)(column);
+	cmd[3] = 0;
+}
 
 static int spinand_waitfunc(struct mtd_info *mtd, u8 val, u8 *status)
 {
@@ -206,18 +225,8 @@ static int spi_nand_block_isbad(struct mtd_info *mtd, loff_t offs)
 		goto out;
 	}
 
-	if (info->params->mid == MFID_MACRONIX) {
-		cmd[0] = IPQ40XX_SPINAND_CMD_NORM_READ;
-		cmd[1] = ((u8)(column >> 8) & MACRONIX_NORM_READ_MASK);
-		cmd[2] = (u8)(column);
-		cmd[3] = 0;
-	}
-	else {
-		cmd[0] = IPQ40XX_SPINAND_CMD_NORM_READ;
-		cmd[1] = 0;
-		cmd[2] = (u8)(column >> 8);
-		cmd[3] = (u8)(column);
-	}
+	info->params->norm_read_cmd(cmd, column);
+
 	ret = spi_flash_cmd_read(flash->spi, cmd, 4, &value, 1);
 	if (ret) {
 		printf("%s: read data failed\n", __func__);
@@ -454,17 +463,7 @@ static int spi_nand_read_std(struct mtd_info *mtd, loff_t from, struct mtd_oob_o
 
 		/* Read OOB */
 		if (bytes_oob) {
-			if (info->params->mid == MFID_MACRONIX) {
-				cmd[0] = IPQ40XX_SPINAND_CMD_NORM_READ;
-				cmd[1] = ((u8)(column >> 8) & MACRONIX_NORM_READ_MASK);
-				cmd[2] = (u8)(column);
-				cmd[3] = 0;
-			}
-			else {
-				cmd[0] = IPQ40XX_SPINAND_CMD_NORM_READ;
-				cmd[2] = (u8)(column >> 8);
-				cmd[3] = (u8)(column);
-			}
+			info->params->norm_read_cmd(cmd, column);
 			ret = spi_flash_cmd_read(flash->spi, cmd, 4, ops->oobbuf, ops->ooblen);
 			if (ret) {
 				printf("%s: read data failed\n", __func__);
@@ -611,32 +610,22 @@ struct spi_flash *spi_nand_flash_probe(struct spi_slave *spi,
 {
 	struct spi_flash *flash;
 	unsigned int i;
-	u16 devid;
-	u32 mfid;
-
-	mfid = idcode[0];
-
-	if ((mfid == MFID_ATO) || (mfid == MFID_MACRONIX))
-		devid = idcode[1];
-	else
-		devid = (idcode[1] << 8 | idcode[2]);
 
 	for (i = 0; i < ARRAY_SIZE(spi_nand_flash_tbl); i++) {
 		params = &spi_nand_flash_tbl[i];
-		if (params->mid == mfid) {
-			spi_print ("%s SF NAND MFID%x\n",
-				__func__, mfid);
-			if (params->devid == devid) {
-				spi_print ("%s SF NAND dev ID %x\n",
-					__func__, devid);
-				break;
-			}
+
+		if ((params->id[0] == idcode[0]) &&
+		    (params->id[1] == idcode[1]) &&
+		    (params->id[2] == idcode[2])) {
+			spi_print("%s SF NAND ID %x:%x:%x\n",
+				__func__, idcode[0], idcode[1], idcode[2]);
+			break;
 		}
 	}
 
 	if (i == ARRAY_SIZE(spi_nand_flash_tbl)) {
-		printf ("SF NAND unsupported Mfid:%04x devid:%04x",
-			mfid, devid);
+		printf("SF NAND unsupported id:%x:%x:%x",
+			idcode[0], idcode[1], idcode[2]);
 		return NULL;
 	}
 
