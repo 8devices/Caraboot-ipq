@@ -23,6 +23,12 @@
 #define CONFIG_SF_DEFAULT_SPEED		(48 * 1000 * 1000)
 #define TIMEOUT		5000
 #define MFID_ATO	0x9b
+/* Macronix Specific Defines */
+#define MFID_MACRONIX   	0xc2
+#define MACRONIX_WRAP		((0 & 0x3) << 6)
+#define MACRONIX_PLANE		((0 & 0x1) << 4)
+
+#define MACRONIX_NORM_READ_MASK	(MACRONIX_WRAP | MACRONIX_PLANE | 0x0F)
 
 #define spi_print(...)  printf("spi_nand: " __VA_ARGS__)
 
@@ -55,6 +61,17 @@ static const struct spi_nand_flash_params spi_nand_flash_tbl[] = {
 		.oob_size = 64,
 		.verify_ecc = verify_dummy_ecc,
 		.name = "ATO25D1GA",
+	},
+	{
+		.mid = 0xc2,
+		.devid = 0x12,
+		.page_size = 2048,
+		.erase_size = 0x00020000,
+		.pages_per_sector = 64,
+		.nr_sectors = 1024,
+		.oob_size = 64,
+		.verify_ecc = verify_2bit_ecc,
+		.name = "MX35LFxGE4AB",
 	},
 };
 
@@ -189,10 +206,18 @@ static int spi_nand_block_isbad(struct mtd_info *mtd, loff_t offs)
 		goto out;
 	}
 
-	cmd[0] = IPQ40XX_SPINAND_CMD_NORM_READ;
-	cmd[1] = 0;
-	cmd[2] = (u8)(column >> 8);
-	cmd[3] = (u8)(column);
+	if (info->params->mid == MFID_MACRONIX) {
+		cmd[0] = IPQ40XX_SPINAND_CMD_NORM_READ;
+		cmd[1] = ((u8)(column >> 8) & MACRONIX_NORM_READ_MASK);
+		cmd[2] = (u8)(column);
+		cmd[3] = 0;
+	}
+	else {
+		cmd[0] = IPQ40XX_SPINAND_CMD_NORM_READ;
+		cmd[1] = 0;
+		cmd[2] = (u8)(column >> 8);
+		cmd[3] = (u8)(column);
+	}
 	ret = spi_flash_cmd_read(flash->spi, cmd, 4, &value, 1);
 	if (ret) {
 		printf("%s: read data failed\n", __func__);
@@ -221,6 +246,12 @@ static int spinand_write_oob_std(struct mtd_info *mtd, struct nand_chip *chip,  
 	wbuf = chip->oob_poi;
 	column = mtd->writesize;
 
+	ret = spi_flash_cmd(flash->spi, IPQ40XX_SPINAND_CMD_WREN, NULL, 0);
+	if (ret) {
+		printf("Write enable failed in %s\n", __func__);
+		goto out;
+	}
+
 	cmd[0] = IPQ40XX_SPINAND_CMD_PLOAD;
 	cmd[1] = (u8)(column >> 8);
 	cmd[2] = (u8)(column);
@@ -229,12 +260,6 @@ static int spinand_write_oob_std(struct mtd_info *mtd, struct nand_chip *chip,  
 	if (ret) {
 		printf("%s: write command failed\n", __func__);
 		ret = 1;
-		goto out;
-	}
-
-	ret = spi_flash_cmd(flash->spi, IPQ40XX_SPINAND_CMD_WREN, NULL, 0);
-	if (ret) {
-		printf("Write enable failed in %s\n", __func__);
 		goto out;
 	}
 
@@ -429,9 +454,17 @@ static int spi_nand_read_std(struct mtd_info *mtd, loff_t from, struct mtd_oob_o
 
 		/* Read OOB */
 		if (bytes_oob) {
-			cmd[0] = IPQ40XX_SPINAND_CMD_NORM_READ;
-			cmd[2] = (u8)(column >> 8);
-			cmd[3] = (u8)(column);
+			if (info->params->mid == MFID_MACRONIX) {
+				cmd[0] = IPQ40XX_SPINAND_CMD_NORM_READ;
+				cmd[1] = ((u8)(column >> 8) & MACRONIX_NORM_READ_MASK);
+				cmd[2] = (u8)(column);
+				cmd[3] = 0;
+			}
+			else {
+				cmd[0] = IPQ40XX_SPINAND_CMD_NORM_READ;
+				cmd[2] = (u8)(column >> 8);
+				cmd[3] = (u8)(column);
+			}
 			ret = spi_flash_cmd_read(flash->spi, cmd, 4, ops->oobbuf, ops->ooblen);
 			if (ret) {
 				printf("%s: read data failed\n", __func__);
@@ -512,6 +545,13 @@ static int spi_nand_write(struct mtd_info *mtd, loff_t to, size_t len,
 	}
 	while (1) {
 		wbuf = buf;
+
+		ret = spi_flash_cmd(flash->spi, IPQ40XX_SPINAND_CMD_WREN, NULL, 0);
+		if (ret) {
+			printf("Write enable failed\n");
+			goto out;
+                }
+
 		/* buffer to be transmittted here */
 		cmd[0] = IPQ40XX_SPINAND_CMD_PLOAD;
 		cmd[1] = 0;
@@ -519,12 +559,6 @@ static int spi_nand_write(struct mtd_info *mtd, loff_t to, size_t len,
 		ret = spi_flash_cmd_write(flash->spi, cmd, 3, wbuf, bytes);
 		if (ret) {
 			printf("%s: write command failed\n", __func__);
-			goto out;
-		}
-
-		ret = spi_flash_cmd(flash->spi, IPQ40XX_SPINAND_CMD_WREN, NULL, 0);
-		if (ret) {
-			printf("Write enable failed\n");
 			goto out;
 		}
 
@@ -582,7 +616,7 @@ struct spi_flash *spi_nand_flash_probe(struct spi_slave *spi,
 
 	mfid = idcode[0];
 
-	if (mfid == MFID_ATO)
+	if ((mfid == MFID_ATO) || (mfid == MFID_MACRONIX))
 		devid = idcode[1];
 	else
 		devid = (idcode[1] << 8 | idcode[2]);
