@@ -98,6 +98,7 @@ static int set_fs_bootargs(int *fs_on_nand)
 		if (sfi->rootfs.offset == 0xBAD0FF5E) {
 			bootargs = nand_rootfs;
 			*fs_on_nand = 1;
+			gboard_param->nor_nand_available = 1;
 			if (getenv("fsbootargs") == NULL)
 				setenv("fsbootargs", bootargs);
 		} else {

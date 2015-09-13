@@ -87,6 +87,7 @@ typedef struct {
 	gpio_func_data_t *mmc_gpio;
 	unsigned int mmc_gpio_count;
 	unsigned int spi_nand_available;
+	unsigned int nor_nand_available;
 	unsigned char *dtb_config_name;
 } __attribute__ ((__packed__)) board_ipq40xx_params_t;
 
