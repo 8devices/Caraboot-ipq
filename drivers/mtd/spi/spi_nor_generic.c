@@ -27,6 +27,7 @@
 #define STMICRO_ID	0x20
 #define MACRONIX_ID	0xc2
 #define SPANSION_ID	0x01
+#define SIZE_64K	0x10000
 
 unsigned char manufacturer_id;
 
@@ -34,7 +35,7 @@ static int spi_nor_erase(struct spi_flash *flash, u32 offset, size_t len)
 {
 	u8 erase_opcode;
 
-	if ((offset % flash->block_size) == 0 && (len % flash->block_size) == 0) {
+	if (flash->sector_size == SIZE_64K) {
 		/* Block erase 64K */
 		if ((flash->addr_width == 4) && (manufacturer_id != WINBOND_ID))
 			erase_opcode = CMD_BLOCK_4B_ERASE;
