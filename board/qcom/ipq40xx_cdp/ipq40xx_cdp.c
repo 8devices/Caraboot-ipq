@@ -706,6 +706,11 @@ void ft_board_setup(void *blob, bd_t *bd)
 				"mtdparts=nand1:0x%x@0(rootfs);spi0.0",
 				IPQ_NAND_ROOTFS_SIZE);
 			mtdparts = parts_str;
+		} else if (gboard_param->nor_nand_available) {
+			sprintf(parts_str,
+				"mtdparts=nand0:0x%x@0(rootfs);spi0.0",
+				IPQ_NAND_ROOTFS_SIZE);
+			mtdparts = parts_str;
 
 		} else {
 			mtdparts = "mtdparts=spi0.0";
