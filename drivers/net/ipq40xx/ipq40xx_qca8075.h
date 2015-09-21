@@ -475,5 +475,6 @@
 
 #define RUN_CDT				0x8000
 #define CABLE_LENGTH_UNIT		0x0400
+#define QCA8075_MAX_TRIES		100
 
 #endif				/* _QCA8075_PHY_H_ */

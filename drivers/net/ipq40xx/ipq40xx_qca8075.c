@@ -503,6 +503,70 @@ static u32 qca8075_phy_set_powersave(u32 dev_id, u32 phy_id, u8 enable)
 	return 0;
 }
 
+void ess_reset(void)
+{
+	writel(0x1, 0x1812008);
+	mdelay(10);
+	writel(0x0, 0x1812008);
+	mdelay(100);
+}
+
+void qca8075_ess_reset(void)
+{
+	int i;
+	u32 status;
+	/*
+	 * Fix phy psgmii RX 20bit
+	 */
+	qca8075_phy_reg_write(0, 5, 0x0, 0x005b);
+	/*
+	 * Reset phy psgmii
+	 */
+	qca8075_phy_reg_write(0, 5, 0x0, 0x001b);
+	/*
+	 * Release reset phy psgmii
+	 */
+	qca8075_phy_reg_write(0, 5, 0x0, 0x005b);
+	for (i = 0; i < QCA8075_MAX_TRIES; i++) {
+		status = qca8075_phy_mmd_read(0, 5, 1, 0x28);
+		if(status & 0x1)
+			break;
+		mdelay(10);
+	}
+	if (i >= QCA8075_MAX_TRIES)
+		printf("qca8075 PSGMII PLL_VCO_CALIB Not Ready\n");
+	mdelay(50);
+	/*
+	 * Check qca8075 psgmii calibration done end.
+	 * Freeze phy psgmii RX CDR
+	 */
+	qca8075_phy_reg_write(0, 5, 0x1a, 0x2230);
+
+	ess_reset();
+	/*
+	 * Check ipq40xx psgmii calibration done start
+	 */
+	for (i = 0; i < QCA8075_MAX_TRIES; i++) {
+		status = readl(0x000980A0);
+		if (status & 0x1)
+			break;
+		mdelay(10);
+	}
+	if (i >= QCA8075_MAX_TRIES)
+		printf("PSGMII PLL_VCO_CALIB Not Ready\n");
+	mdelay(50);
+	/*
+	 * Check ipq40xx psgmii calibration done end.
+	 * Relesae phy psgmii RX CDR
+	 */
+	qca8075_phy_reg_write(0, 5, 0x1a, 0x3230);
+	/*
+	 * Release phy psgmii RX 20bit
+	 */
+	qca8075_phy_reg_write(0, 5, 0x0, 0x005f);
+	mdelay(200);
+}
+
 void psgmii_self_test()
 {
 	int i, phy, j;
@@ -657,36 +721,7 @@ void psgmii_self_test()
 			}
 		}
 		if (phy_t_status) {
-			/*
-			 * Fix phy psgmii RX 20bit
-			 */
-			qca8075_phy_reg_write(0, 5, 0x0, 0x005b);
-			/*
-			 * Reset phy psgmii
-			 */
-			qca8075_phy_reg_write(0, 5, 0x0, 0x001b);
-			/*
-			 * Release reset phy psgmii
-			 */
-			qca8075_phy_reg_write(0, 5, 0x0, 0x005b);
-			mdelay(100);
-			/*
-			 * Freeze phy psgmii RX CDR
-			 */
-			qca8075_phy_reg_write(0, 5, 0x1a, 0x2230);
-			writel(0x1, 0x1812008);
-			mdelay(10);
-			writel(0x0, 0x1812008);
-			mdelay(100);
-			/*
-			 * Relesae phy psgmii RX CDR
-			 */
-			qca8075_phy_reg_write(0, 5, 0x1a, 0x3230);
-			/*
-			 * Release phy psgmii RX 20bit
-			 */
-			qca8075_phy_reg_write(0, 5, 0x0, 0x005f);
-			mdelay(200);
+			qca8075_ess_reset();
 		} else {
 			break;
 		}

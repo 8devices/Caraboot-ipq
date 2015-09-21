@@ -31,6 +31,7 @@ extern int ipq40xx_ess_sw_init(ipq40xx_edma_board_cfg_t *cfg);
 uchar ipq40xx_def_enetaddr[6] = {0x00, 0x03, 0x7F, 0xBA, 0xDB, 0xAD};
 static struct ipq40xx_eth_dev *ipq40xx_edma_dev[IPQ40XX_EDMA_DEV];
 static int (*ipq40xx_switch_init)(struct ipq40xx_eth_dev *cfg);
+extern void qca8075_ess_reset(void);
 
 void ipq40xx_register_switch(int(*sw_init)(struct ipq40xx_eth_dev *cfg))
 {
@@ -935,6 +936,7 @@ int ipq40xx_edma_init(ipq40xx_edma_board_cfg_t *edma_cfg)
 			mdelay(10);
 			writel(PSGMIIPHY_VCO_RST_VAL, PSGMIIPHY_VCO_CALIBRATION_CTRL);
 			mdelay(10);
+			qca8075_ess_reset();
 			psgmii_self_test();
 			break;
 		case PHY_INTERFACE_MODE_RGMII:
