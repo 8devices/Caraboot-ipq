@@ -659,6 +659,35 @@ gpio_func_data_t ap_dk01_1_c2_sw_gpio_qfn[] = {
 /* Board specific parameter Array */
 board_ipq40xx_params_t board_params[] = {
 	{
+		.machid = MACH_TYPE_IPQ40XX_AP_DK01_1_S1,
+		.ddr_size = (128 << 20),
+		.uart_dm_base = UART1_DM_BASE,
+		.mtdids = "nand2=spi0.0",
+		.dbg_uart_gpio = {
+			{
+				.gpio = 60,
+				.func = 2,
+				.pull = GPIO_NO_PULL,
+				.oe = GPIO_OE_ENABLE
+			},
+			{
+				.gpio = 61,
+				.func = 2,
+				.pull = GPIO_NO_PULL,
+				.oe = GPIO_OE_ENABLE
+			},
+		},
+		.sw_gpio = ap_dk01_1_c2_sw_gpio_qfn,
+		.sw_gpio_count = ARRAY_SIZE(ap_dk01_1_c2_sw_gpio_qfn),
+		.edma_cfg = {
+			ipq40xx_edma_cfg(0, 5, PSGMII,
+					0, 1, 2, 3, 4)
+		},
+		.spi_nand_available = 0,
+		.nor_nand_available = 0,
+		.dtb_config_name = "#config@4",
+	},
+	{
 		.machid = MACH_TYPE_IPQ40XX_AP_DK01_1_C1,
 		.ddr_size = (256 << 20),
 		.uart_dm_base = UART1_DM_BASE,
