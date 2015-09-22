@@ -612,6 +612,39 @@ gpio_func_data_t sw_gpio_qfn[] = {
 	},
 };
 
+gpio_func_data_t ap_dk01_1_c2_sw_gpio_qfn[] = {
+	{
+		.gpio = 52,
+		.func = 2,
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+	{
+		.gpio = 53,
+		.func = 2,
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+	{
+		.gpio = 62,
+		.func = 0,
+		.pull = GPIO_NO_PULL,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_ENABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+};
+
 #define IPQ40XX_EDMA_CFG_BASE		0xC080000
 
 #define ipq40xx_edma_cfg(_b, _pn, _p, ...)		\
@@ -625,6 +658,35 @@ gpio_func_data_t sw_gpio_qfn[] = {
 #define ipq40xx_edma_cfg_invalid()	{ .unit = -1, }
 /* Board specific parameter Array */
 board_ipq40xx_params_t board_params[] = {
+	{
+		.machid = MACH_TYPE_IPQ40XX_AP_DK01_1_S1,
+		.ddr_size = (128 << 20),
+		.uart_dm_base = UART1_DM_BASE,
+		.mtdids = "nand2=spi0.0",
+		.dbg_uart_gpio = {
+			{
+				.gpio = 60,
+				.func = 2,
+				.pull = GPIO_NO_PULL,
+				.oe = GPIO_OE_ENABLE
+			},
+			{
+				.gpio = 61,
+				.func = 2,
+				.pull = GPIO_NO_PULL,
+				.oe = GPIO_OE_ENABLE
+			},
+		},
+		.sw_gpio = ap_dk01_1_c2_sw_gpio_qfn,
+		.sw_gpio_count = ARRAY_SIZE(ap_dk01_1_c2_sw_gpio_qfn),
+		.edma_cfg = {
+			ipq40xx_edma_cfg(0, 5, PSGMII,
+					0, 1, 2, 3, 4)
+		},
+		.spi_nand_available = 0,
+		.nor_nand_available = 0,
+		.dtb_config_name = "#config@4",
+	},
 	{
 		.machid = MACH_TYPE_IPQ40XX_AP_DK01_1_C1,
 		.ddr_size = (256 << 20),
@@ -673,8 +735,8 @@ board_ipq40xx_params_t board_params[] = {
 				.oe = GPIO_OE_ENABLE
 			},
 		},
-		.sw_gpio = sw_gpio_qfn,
-		.sw_gpio_count = ARRAY_SIZE(sw_gpio_qfn),
+		.sw_gpio = ap_dk01_1_c2_sw_gpio_qfn,
+		.sw_gpio_count = ARRAY_SIZE(ap_dk01_1_c2_sw_gpio_qfn),
 		.edma_cfg = {
 			ipq40xx_edma_cfg(0, 5, PSGMII,
 					0, 1, 2, 3, 4)

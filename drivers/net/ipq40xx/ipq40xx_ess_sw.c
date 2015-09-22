@@ -77,6 +77,7 @@ int ipq40xx_ess_sw_init(ipq40xx_edma_board_cfg_t *cfg)
 					S17_RX_FLOW_EN);
 
 	switch(gboard_param->machid) {
+	case MACH_TYPE_IPQ40XX_AP_DK01_1_S1:
 	case MACH_TYPE_IPQ40XX_AP_DK01_1_C1:
 	case MACH_TYPE_IPQ40XX_AP_DK01_1_C2:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C1:
