@@ -19,17 +19,17 @@
 #include "ipq40xx_ess_sw.h"
 
 extern board_ipq40xx_params_t *gboard_param;
-static inline ipq40xx_ess_sw_rd(u32 addr, u32 * data)
+static inline void ipq40xx_ess_sw_rd(u32 addr, u32 * data)
 {
 	*data = readl((void __iomem *)(IPQ40XX_NSS_BASE + addr));
 }
 
-static inline ipq40xx_ess_sw_wr(u32 addr, u32 data)
+static inline void ipq40xx_ess_sw_wr(u32 addr, u32 data)
 {
 	writel(data, ((void __iomem *)(IPQ40XX_NSS_BASE + addr)));
 }
 
-void ipq40xx_ess_disable_ports()
+void ipq40xx_ess_disable_ports(void)
 {
 	ipq40xx_ess_sw_wr(S17_P1STATUS_REG, 0);
 	ipq40xx_ess_sw_wr(S17_P2STATUS_REG, 0);
@@ -38,7 +38,7 @@ void ipq40xx_ess_disable_ports()
 	ipq40xx_ess_sw_wr(S17_P5STATUS_REG, 0);
 }
 
-void ipq40xx_ess_enable_ports()
+void ipq40xx_ess_enable_ports(void)
 {
 	if ((gboard_param->machid == MACH_TYPE_IPQ40XX_DB_DK02_1_C1) ||
 	    (gboard_param->machid == MACH_TYPE_IPQ40XX_DB_DK01_1_C1)) {

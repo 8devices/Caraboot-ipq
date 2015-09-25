@@ -645,14 +645,14 @@ gpio_func_data_t ap_dk01_1_c2_sw_gpio_qfn[] = {
 	},
 };
 
-#define IPQ40XX_EDMA_CFG_BASE		0xC080000
 
 #define ipq40xx_edma_cfg(_b, _pn, _p, ...)		\
 {							\
 	.base		= IPQ40XX_EDMA_CFG_BASE,	\
 	.unit		= _b,				\
 	.phy		= PHY_INTERFACE_MODE_##_p,	\
-	.phy_addr	= {.count = _pn, {__VA_ARGS__}}	\
+	.phy_addr	= {.count = _pn, {__VA_ARGS__}},\
+	.phy_name	= "IPQ MDIO"#_b			\
 }
 
 #define ipq40xx_edma_cfg_invalid()	{ .unit = -1, }

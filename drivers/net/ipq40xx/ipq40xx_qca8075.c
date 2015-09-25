@@ -15,6 +15,7 @@
 #include <asm-generic/errno.h>
 #include <asm/io.h>
 #include <asm/arch-ipq40xx/ess/ipq40xx_edma.h>
+#include <malloc.h>
 #include "ipq40xx_edma_eth.h"
 #include "ipq40xx_qca8075.h"
 
@@ -567,7 +568,7 @@ void qca8075_ess_reset(void)
 	mdelay(200);
 }
 
-void psgmii_self_test()
+void psgmii_self_test(void)
 {
 	int i, phy, j;
 	u32 value;
@@ -743,9 +744,9 @@ void psgmii_self_test()
 	qca8075_phy_mmd_write(0, 0x1f, 7, 0x8020, 0x0);
 }
 
-void clear_self_test_config()
+void clear_self_test_config(void)
 {
-	int i = 0, phy = 0;
+	int phy = 0;
 	u32 value = 0;
 
 	/*
@@ -774,7 +775,7 @@ int ipq40xx_qca8075_phy_init(struct ipq40xx_eth_dev *info)
 	u32 phy_id = 0;
 	struct phy_ops *qca8075_ops;
 
-	qca8075_ops = malloc(sizeof(struct phy_ops));
+	qca8075_ops = (struct phy_ops *)malloc(sizeof(struct phy_ops));
 	if (!qca8075_ops)
 		return -ENOMEM;
 

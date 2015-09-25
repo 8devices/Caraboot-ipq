@@ -386,5 +386,5 @@ struct phy_ops {
 };
 
 int get_eth_mac_address(uchar *enetaddr, uint no_of_macs);
-int ipq40xx_sw_mdio_init(char *name);
+int ipq40xx_sw_mdio_init(const char *name);
 #endif	/* _IPQ40XX_EDMA_H */

@@ -101,14 +101,14 @@ int ipq40xx_phy_write(struct mii_dev *bus,
 		addr, regnum, value);
 }
 
-int ipq40xx_phy_read(struct mii_bus *bus,
+int ipq40xx_phy_read(struct mii_dev *bus,
 		int addr, int dev_addr, int regnum)
 {
 	return ipq40xx_mdio_read(
 		addr, regnum, NULL);
 }
 
-int ipq40xx_sw_mdio_init(char *name)
+int ipq40xx_sw_mdio_init(const char *name)
 {
 	struct mii_dev *bus = mdio_alloc();
 	if(!bus) {
