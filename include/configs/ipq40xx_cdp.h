@@ -243,6 +243,7 @@ typedef struct {
 #ifdef CONFIG_QCA_APPSBL_DLOAD
 #define CONFIG_CMD_TFTPPUT
 /* We will be uploading very big files */
+#undef CONFIG_NET_RETRY_COUNT
 #define CONFIG_NET_RETRY_COUNT 500
 #endif
 #define CONFIG_CMD_ECHO

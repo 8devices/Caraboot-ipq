@@ -15,6 +15,7 @@
 #include <asm-generic/errno.h>
 #include <asm/io.h>
 #include <asm/arch-ipq40xx/ess/ipq40xx_edma.h>
+#include <malloc.h>
 #include "ipq40xx_edma_eth.h"
 #include "ipq40xx_qca8033.h"
 
@@ -91,7 +92,7 @@ int ipq40xx_qca8033_phy_init(struct ipq40xx_eth_dev *info)
 {
 	u16 phy_data;
 	struct phy_ops *qca8033_ops;
-	qca8033_ops = malloc(sizeof(struct phy_ops));
+	qca8033_ops = (struct phy_ops *)malloc(sizeof(struct phy_ops));
 	if (!qca8033_ops)
 		return -ENOMEM;
 	qca8033_ops->phy_get_link_status = qca8033_phy_get_link_status;
