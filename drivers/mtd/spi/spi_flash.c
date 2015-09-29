@@ -211,7 +211,6 @@ int spi_nand_flash_cmd_poll_bit(struct spi_flash *flash, unsigned long timeout,
 {
 	struct spi_slave *spi = flash->spi;
 	unsigned long timebase;
-	int ret;
 	u8 cmd_buf[2];
 
 	cmd_buf[0] = 0x0F;
@@ -221,7 +220,7 @@ int spi_nand_flash_cmd_poll_bit(struct spi_flash *flash, unsigned long timeout,
 	do {
 		WATCHDOG_RESET();
 
-		ret = spi_flash_cmd_read(spi, cmd_buf, 2, status, 1);
+		spi_flash_cmd_read(spi, cmd_buf, 2, status, 1);
 		if ((*status & poll_bit) == 0)
 			break;
 

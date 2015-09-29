@@ -305,14 +305,12 @@ struct bam_desc qup_spi_data_desc_fifo[QUP_BAM_DATA_FIFO_SIZE] __attribute__ ((a
 
 #define FUNC_SEL_GPIO				0
 #define GPIO_DRV_STR_10MA			0x4
-#define GPIO_OUT				1
 
 #define FUNC_SEL_GPIO				0
 #define GPIO_FUNC_ENABLE			1
 /* QUP0 CS GPIO mapping*/
 #define QUP0_SPI_CS_0				54
 #define QUP0_SPI_CS_1				59
-#define GPIO_OUT				1
 #define CS_ASSERT				1
 #define CS_DEASSERT				0
 

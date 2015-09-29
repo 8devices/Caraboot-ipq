@@ -183,16 +183,15 @@ static void CS_change(int port_num, int cs_num, int enable)
 	uint32_t addr = GPIO_IN_OUT_ADDR(cs_gpio);
 	uint32_t val = readl(addr);
 
-	val &= (~(1 << GPIO_OUT));
+	val &= ~(GPIO_OUT);
 	if (!enable)
-		val |= (1 << GPIO_OUT);
+		val |= GPIO_OUT;
 	writel(val, addr);
 }
 
 static void blsp_pin_config(unsigned int port_num, int cs_num)
 {
         unsigned int gpio;
-        unsigned int i;
 	gpio = cs_gpio_array[port_num][cs_num];
 	/* configure CS */
 	gpio_tlmm_config(gpio, FUNC_SEL_GPIO, GPIO_OUTPUT, GPIO_PULL_UP,
@@ -201,7 +200,7 @@ static void blsp_pin_config(unsigned int port_num, int cs_num)
 
 int qup_bam_init(struct ipq_spi_slave *ds)
 {
-	unsigned int read_pipe, write_pipe;
+	unsigned int read_pipe = QUP0_DATA_PRODUCER_PIPE, write_pipe = QUP0_DATA_CONSUMER_PIPE;
 	uint8_t read_pipe_grp, write_pipe_grp;
 	int bam_ret;
 
@@ -279,7 +278,6 @@ struct spi_slave *spi_setup_slave(unsigned int bus, unsigned int cs,
 				unsigned int max_hz, unsigned int mode)
 {
 	struct ipq_spi_slave *ds;
-	uint8_t use_dma;
 
 	ds = malloc(sizeof(struct ipq_spi_slave));
 	if (!ds) {
@@ -575,23 +573,13 @@ static int blsp_spi_bam_begin_xfer(struct ipq_spi_slave *ds, const u8 *buffer,
 	u32 ret = 0;
 	u32 prod_desc_cnt = SPI_BAM_MAX_DESC_NUM - 1;
 	u32 cons_desc_cnt = SPI_BAM_MAX_DESC_NUM - 1;
-	u32 byte_count = 0;
 	u32 tx_bytes_sent = 0;
 	u32 rx_bytes_rcvd = 0;
-	unsigned int write_len = 0;
-	unsigned int read_len = 0 ;
 	int state_config;
-	u32 rem_bc = 0;
 	u32 data_xfer_size;
 	int cons_flag = 0, prod_flag = 0;
 	int num_desc = 0;
 	u32 rem_bytes = 0;
-	u32 total_bytes;
-
-	if (type == WRITE)
-		write_len = bytes;
-	else if (type == READ)
-		read_len = bytes;
 
 	rem_bytes = bytes;
 
@@ -879,7 +867,7 @@ out:
 	return ret;
 }
 
-static int blsp_spi_write(struct ipq_spi_slave *ds, u8 *cmd_buffer,
+static int blsp_spi_write(struct ipq_spi_slave *ds, const u8 *cmd_buffer,
                                 unsigned int bytes)
 {
 	int length, ret;

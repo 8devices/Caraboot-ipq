@@ -55,13 +55,11 @@ static int spi_nor_erase(struct spi_flash *flash, u32 offset, size_t len)
 struct spi_flash *spi_nor_probe_generic(struct spi_slave *spi, u8 *idcode)
 {
 	struct spi_flash *flash;
-	unsigned int i;
 	int ret;
-	unsigned short jedec, ext_jedec;
+	unsigned short jedec;
 	qca_smem_flash_info_t sfi;
 
 	jedec = idcode[1] << 8 | idcode[2];
-	ext_jedec = idcode[3] << 8 | idcode[4];
 
 	if ((jedec == 0) || (jedec == 0xffff))
 		return NULL;
