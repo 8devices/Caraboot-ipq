@@ -95,7 +95,8 @@ static int set_fs_bootargs(int *fs_on_nand)
 #define nand_rootfs	"ubi.mtd=" IPQ_ROOT_FS_PART_NAME " root=mtd:ubi_rootfs rootfstype=squashfs"
 
 	if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
-		if (sfi->rootfs.offset == 0xBAD0FF5E) {
+		if ((sfi->rootfs.offset == 0xBAD0FF5E) &&
+		(gboard_param->nor_emmc_available == 0)) {
 			bootargs = nand_rootfs;
 			*fs_on_nand = 1;
 			gboard_param->nor_nand_available = 1;
@@ -227,7 +228,7 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 		kernel_img_info.kernel_load_size =
 			(unsigned int)ubi_get_volume_size("kernel");
 #ifdef CONFIG_QCA_MMC
-	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
+	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH || (gboard_param->nor_emmc_available == 1)) {
 		blk_dev = mmc_get_dev(host->dev_num);
 		ret = find_part_efi(blk_dev, "0:HLOS", &disk_info);
 
@@ -363,7 +364,7 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 			sfi->rootfs.size, sfi->rootfs.offset,
 			CONFIG_SYS_LOAD_ADDR);
 
-	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
+	} else if ((sfi->flash_type == SMEM_BOOT_SPI_FLASH) && (gboard_param->nor_emmc_available == 0)) {
 		if (sfi->rootfs.offset == 0xBAD0FF5E) {
 			sfi->rootfs.offset = 0;
 			sfi->rootfs.size = IPQ_NAND_ROOTFS_SIZE;
@@ -390,7 +391,7 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 				CONFIG_SYS_LOAD_ADDR, (uint)sfi->hlos.offset, (uint)sfi->hlos.size);
 		}
 #ifdef CONFIG_QCA_MMC
-	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
+	} else if ((sfi->flash_type == SMEM_BOOT_MMC_FLASH) || (gboard_param->nor_emmc_available == 1)) {
 		if (debug) {
 			printf("Using MMC device\n");
 		}
