@@ -80,7 +80,7 @@ struct smem_ram_ptable {
 	struct smem_ram_ptn parts[32];
 } __attribute__ ((__packed__));
 
-unsigned int smem_get_board_platform_type();
+unsigned int smem_get_board_platform_type(void);
 int smem_ptable_init(void);
 int smem_get_boot_flash(uint32_t *flash_type,
 			uint32_t *flash_index,
