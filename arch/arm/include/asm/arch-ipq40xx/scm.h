@@ -34,6 +34,6 @@
 #define CE_CHN_SWITCH_CMD		0x2
 
 int scm_init(void);
-extern int scm_call(u32 svc_id, u32 cmd_id, u32 cmd_buf, size_t cmd_len,
+extern int scm_call(u32 svc_id, u32 cmd_id, const void *cmd_buf, size_t cmd_len,
 		void *resp_buf, size_t resp_len);
 #endif

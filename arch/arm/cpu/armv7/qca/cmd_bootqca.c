@@ -64,7 +64,7 @@ kernel_img_info_t kernel_img_info;
  * requested to stop
  */
 #ifdef CONFIG_QCA_APPSBL_DLOAD
-static int inline do_dumpipq_data()
+static int inline do_dumpipq_data(void)
 {
 	uint64_t etime;
 
@@ -133,7 +133,6 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 #ifdef CONFIG_QCA_MMC
 	block_dev_desc_t *blk_dev;
 	disk_partition_t disk_info;
-	unsigned int active_part = 0;
 #endif
 
 	if (argc == 2 && strncmp(argv[1], "debug", 5) == 0)
@@ -142,13 +141,13 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 #ifdef CONFIG_QCA_APPSBL_DLOAD
 
 	ret = scm_call(SCM_SVC_BOOT, SCM_SVC_RD, NULL,
-			0, &val, sizeof(val));
+			0, (void *)&val, sizeof(val));
 	/* check if we are in download mode */
 	if (val == DLOAD_MAGIC_COOKIE) {
 		/* clear the magic and run the dump command */
 		val = 0x0;
 		ret = scm_call(SCM_SVC_BOOT, SCM_SVC_WR,
-			&val, sizeof(val), NULL, 0);
+			(void *)&val, sizeof(val), NULL, 0);
 		if (ret)
 			printf ("Error in reseting the Magic cookie\n");
 
@@ -307,13 +306,13 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 		debug = 1;
 #ifdef CONFIG_QCA_APPSBL_DLOAD
 	ret = scm_call(SCM_SVC_BOOT, SCM_SVC_RD, NULL,
-			0, &val, sizeof(val));
+			0, (void *)&val, sizeof(val));
 	/* check if we are in download mode */
 	if (val == DLOAD_MAGIC_COOKIE) {
 		/* clear the magic and run the dump command */
 		val = 0x0;
 		ret = scm_call(SCM_SVC_BOOT, SCM_SVC_WR,
-			&val, sizeof(val), NULL, 0);
+			(void *)&val, sizeof(val), NULL, 0);
 		if (ret)
 			printf ("Error in reseting the Magic cookie\n");
 
