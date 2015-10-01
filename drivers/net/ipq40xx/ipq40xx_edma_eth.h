@@ -16,6 +16,7 @@
 #include <common.h>
 #include <net.h>
 #include <configs/ipq40xx_cdp.h>
+#include <malloc.h>
 
 #define IPQ40XX_EDMA_DEV		1
 #define IPQ40XX_EDMA_TX_QUEUE		1
