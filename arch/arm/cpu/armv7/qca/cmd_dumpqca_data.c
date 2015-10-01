@@ -24,7 +24,6 @@ static int do_dumpqca_data(cmd_tbl_t *cmdtp, int flag, int argc,
 	char *serverip = NULL;
 	/* dump to root of TFTP server if none specified */
 	char *dumpdir;
-	int indx;
 	uint32_t memaddr;
 
 	if (argc == 2) {
@@ -53,7 +52,7 @@ static int do_dumpqca_data(cmd_tbl_t *cmdtp, int flag, int argc,
 	printf("\nProcessing dumps.....\n");
 	memaddr = CONFIG_SYS_SDRAM_BASE;
 	snprintf(runcmd, sizeof(runcmd), "tftpput 0x%x 0x%x %s/%s",
-		memaddr, gd->ram_size,
+		memaddr, (unsigned int)gd->ram_size,
 		dumpdir, "EBICS0.bin");
 
 	if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
