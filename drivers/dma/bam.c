@@ -29,20 +29,9 @@
 #include <asm/io.h>
 #include <asm/errno.h>
 
+#include <common.h>
 #include <asm/arch-qcom-common/bam.h>
 #define HLOS_EE_INDEX          0
-
-/* Reset BAM registers and pipes */
-static void bam_reset(struct bam_instance *bam)
-{
-	/* Initiate SW reset */
-	writel(BAM_SW_RST_BIT_MASK, BAM_CTRL_REG(bam->base));
-
-	/* No delay required */
-
-	/* Disable SW reset */
-	writel(~BAM_SW_RST_BIT_MASK, BAM_CTRL_REG(bam->base));
-}
 
 /* Resets pipe registers and state machines */
 void bam_pipe_reset(struct bam_instance *bam,
@@ -55,11 +44,6 @@ void bam_pipe_reset(struct bam_instance *bam,
 
 	/* Stop sw reset of the pipe to be allocated */
 	writel(0, BAM_P_RSTn(bam->pipe[pipe_num].pipe_num, bam->base));
-}
-
-static int bam_interrupt_handler(void* arg)
-{
-	return 0;
 }
 
 /* A blocking function that waits till an interrupt is signalled.
@@ -132,8 +116,6 @@ void bam_enable_interrupts(struct bam_instance *bam, uint8_t pipe_num)
 void bam_init(struct bam_instance *bam)
 {
 	uint32_t val = 0;
-
-//	bam_reset(bam);
 
 	/* Check for only one pipe's direction.
 	 * The other is assumed to be the opposite system
