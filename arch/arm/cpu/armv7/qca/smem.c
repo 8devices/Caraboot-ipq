@@ -352,7 +352,6 @@ int smem_get_build_version(char *version_name, int buf_size, int index)
 
 unsigned int smem_get_board_platform_type()
 {
-	int smem_status;
 	struct qca_platfrom platform_type;
 	unsigned int machid = 0;
 	smem_read_alloc_entry(SMEM_HW_SW_BUILD_ID, &platform_type,
