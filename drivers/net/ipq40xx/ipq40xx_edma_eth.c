@@ -378,7 +378,7 @@ static int ipq40xx_edma_tx_map_and_fill(
 		unsigned int length)
 {
 	struct edma_sw_desc *sw_desc = NULL;
-	struct edma_tx_desc *tpd;
+	struct edma_tx_desc *tpd = NULL;
 	u32 word1 = 0, word3 = 0, lso_word1 = 0, svlan_tag = 0;
 	u16 buf_len = length;
 
@@ -402,11 +402,11 @@ static int ipq40xx_edma_tx_map_and_fill(
 		 */
 		sw_desc->length = buf_len;
 		sw_desc->flags |= EDMA_SW_DESC_FLAG_SKB_HEAD;
-	}
-	tpd->word1 |= 1 << EDMA_TPD_EOP_SHIFT;
+		tpd->word1 |= 1 << EDMA_TPD_EOP_SHIFT;
 
-	sw_desc->data = skb;
-	sw_desc->flags |= EDMA_SW_DESC_FLAG_LAST;
+		sw_desc->data = skb;
+		sw_desc->flags |= EDMA_SW_DESC_FLAG_LAST;
+	}
 	return 0;
 }
 
@@ -515,7 +515,7 @@ static int ipq40xx_edma_rx_complete(
 			length = ((rrd[13] & 0x3f) << 8) + rrd[12];
 			/* Get the number of RFD from RRD */
 		}
-		skb = (u32 *)skb + 4;
+		skb = skb + 16;
 		NetReceive(skb, length);
 		rx--;
 	}
@@ -829,6 +829,7 @@ int ipq40xx_edma_init(ipq40xx_edma_board_cfg_t *edma_cfg)
 	int i;
 	int ret;
 
+	memset(c_info, 0, (sizeof(c_info) * IPQ40XX_EDMA_DEV));
 	memset(enet_addr, 0, sizeof(enet_addr));
 	/* Getting the MAC address from ART partition */
 	ret = get_eth_mac_address(enet_addr, IPQ40XX_EDMA_DEV);
@@ -866,7 +867,8 @@ int ipq40xx_edma_init(ipq40xx_edma_board_cfg_t *edma_cfg)
 		hw[i]->intr_sw_idx_w = IPQ40XX_EDMA_INTR_SW_IDX_W_TYPE;
 		hw[i]->rss_type = IPQ40XX_EDMA_RSS_TYPE_NONE;
 
-		c_info[i]->hw.hw_addr = IPQ40XX_EDMA_CFG_BASE;
+		c_info[i]->hw.hw_addr = (unsigned long  __iomem *)
+						IPQ40XX_EDMA_CFG_BASE;
 
 		ipq40xx_edma_dev[i] = ipq40xx_alloc_mem(
 				sizeof(struct ipq40xx_eth_dev));
