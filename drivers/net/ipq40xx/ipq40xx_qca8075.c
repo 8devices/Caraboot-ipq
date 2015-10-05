@@ -139,29 +139,6 @@ static  u32 __phy_reg_pages_sel_by_active_medium(u32 dev_id,
 	return __phy_reg_pages_sel(dev_id, phy_id, reg_pages);
 }
 
-
-
-static u8 qca8075_phy_speed_duplex_resolved(u32 dev_id, u32 phy_id)
-{
-	u16 phy_data;
-	u16 ii = 200; /* Wait for 2s */
-
-	if (phy_id == COMBO_PHY_ID)
-		__phy_reg_pages_sel_by_active_medium(dev_id, phy_id);
-
-	do {
-		phy_data =
-		    qca8075_phy_reg_read(dev_id, phy_id,
-				QCA8075_PHY_SPEC_STATUS);
-		mdelay(10);
-	} while ((!QCA8075_SPEED_DUPLEX_RESOVLED(phy_data)) && --ii);
-
-	if (ii == 0)
-		return 1;
-
-	return 0;
-}
-
 u8 qca8075_phy_get_link_status(u32 dev_id, u32 phy_id)
 {
 	u16 phy_data;
@@ -173,42 +150,6 @@ u8 qca8075_phy_get_link_status(u32 dev_id, u32 phy_id)
 		return 0;
 
 	return 1;
-}
-
-static u32 qca8075_autoneg_done(u32 dev_id, u32 phy_id)
-{
-	u16 phy_data;
-	u16 ii = 200; /* Wait for 2s */
-
-	if (phy_id == COMBO_PHY_ID)
-		__phy_reg_pages_sel_by_active_medium(dev_id, phy_id);
-
-	do {
-		phy_data =
-			qca8075_phy_reg_read(dev_id,
-				phy_id, QCA8075_PHY_STATUS);
-		mdelay(10);
-	} while ((!QCA8075_AUTONEG_DONE(phy_data)) && --ii);
-
-	if (ii == 0)
-		return 1;
-
-	return 0;
-}
-
-static u32 qca8075_phy_reset(u32 dev_id, u32 phy_id)
-{
-	u16 phy_data;
-
-	if (phy_id == COMBO_PHY_ID)
-		__phy_reg_pages_sel_by_active_medium(dev_id, phy_id);
-
-	phy_data = qca8075_phy_reg_read(dev_id,
-			phy_id, QCA8075_PHY_CONTROL);
-	qca8075_phy_reg_write(dev_id, phy_id, QCA8075_PHY_CONTROL,
-			     phy_data | QCA8075_CTRL_SOFTWARE_RESET);
-
-	return 0;
 }
 
 u32 qca8075_phy_get_duplex(u32 dev_id, u32 phy_id,
@@ -276,7 +217,6 @@ static u32 qca8075_phy_mmd_write(u32 dev_id, u32 phy_id,
 
 	return 0;
 }
-
 
 static u16 qca8075_phy_mmd_read(u32 dev_id, u32 phy_id,
 		u16 mmd_num, u16 reg_id)
@@ -392,7 +332,7 @@ static u32 qca8075_phy_get_8023az(u32 dev_id, u32 phy_id, u8 *enable)
 static u32 qca8075_phy_set_powersave(u32 dev_id, u32 phy_id, u8 enable)
 {
 	u16 phy_data;
-	u8 status;
+	u8 status = 0;
 
 	if (phy_id == COMBO_PHY_ID) {
 		if (QCA8075_PHY_MEDIUM_COPPER !=
@@ -712,6 +652,9 @@ void psgmii_self_test(void)
 			rx_counter_error = qca8075_phy_mmd_read(0, phy, 7, 0x802c);
 			tx_ok = tx_counter_ok + (tx_counter_ok_high16 << 16);
 			rx_ok = rx_counter_ok + (rx_counter_ok_high16 << 16);
+			debug("rx_ok: %d, tx_ok: %d", rx_ok, tx_ok);
+                        debug("rx_counter_error: %d, tx_counter_error: %d",
+						rx_counter_error, tx_counter_error);
 			/*
 			 * Success
 			 */
