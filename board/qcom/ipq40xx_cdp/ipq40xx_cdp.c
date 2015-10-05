@@ -42,6 +42,7 @@
 #include <phy.h>
 #include <part.h>
 #include <mmc.h>
+#include "../../../drivers/net/ipq40xx/ipq40xx_edma_eth.h"
 #ifdef CONFIG_IPQ_NAND
 #include <linux/mtd/ipq_nand.h>
 #include <asm/arch-qcom-common/nand.h>
@@ -67,13 +68,18 @@ extern env_t *mmc_env_ptr;
 extern env_t *nand_env_ptr;
 extern int nand_env_init(void);
 extern int nand_saveenv(void);
+extern int qpic_nand_init(struct qpic_nand_init_config *config);
 extern void nand_env_relocate_spec(void);
 extern int ipq40xx_edma_init(ipq40xx_edma_board_cfg_t *edma_cfg);
 extern int ipq40xx_qca8075_phy_init(struct ipq40xx_eth_dev *cfg);
 extern int ipq40xx_qca8033_phy_init(struct ipq40xx_eth_dev *cfg);
+extern void ipq40xx_register_switch(
+	int (*sw_init)(struct ipq40xx_eth_dev *cfg));
 extern int mmc_env_init(void);
 extern int mmc_saveenv(void);
 extern void mmc_env_relocate_spec(void);
+extern int fdt_node_set_part_info(void *blob, int parent_offset,
+					struct mtd_device *dev);
 #ifdef CONFIG_IPQ40XX_SPI
 extern int ipq_spi_init(u16 idx);
 #endif
@@ -181,7 +187,7 @@ int board_init(void)
 	int ret;
 	uint32_t start_blocks;
 	uint32_t size_blocks;
-	loff_t board_env_size;
+	loff_t board_env_size = 0;
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 
 	gd->bd->bi_boot_params = QCA_BOOT_PARAMS_ADDR;
@@ -325,13 +331,13 @@ void clear_l2cache_err(void)
 	return;
 }
 
-static void reset_crashdump()
+static void reset_crashdump(void)
 {
 	unsigned int magic_cookie = CLEAR_MAGIC;
 	unsigned int clear_info[] =
 		{ 1 /* Disable wdog debug */, 0 /* SDI enable*/, };
 	scm_call(SCM_SVC_BOOT, SCM_CMD_TZ_CONFIG_HW_FOR_RAM_DUMP_ID,
-		&clear_info, sizeof(clear_info), NULL, 0);
+		(const void *)&clear_info, sizeof(clear_info), NULL, 0);
 	scm_call(SCM_SVC_BOOT, SCM_CMD_TZ_FORCE_DLOAD_ID, &magic_cookie,
 			sizeof(magic_cookie), NULL, 0);
 }
@@ -504,7 +510,7 @@ static void ipq40xx_set_ethmac_addr(void)
 	}
 }
 
-static void ipq40xx_edma_common_init()
+static void ipq40xx_edma_common_init(void)
 {
 	writel(1, GCC_ESS_BCR);
 	mdelay(10);

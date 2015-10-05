@@ -73,7 +73,7 @@ typedef struct {
 	unsigned int machid;
 	unsigned int ddr_size;
 	unsigned int uart_dm_base;
-	unsigned char *mtdids;
+	const char *mtdids;
 	gpio_func_data_t *spi_nor_gpio;
 	unsigned int spi_nor_gpio_count;
 	gpio_func_data_t *nand_gpio;
@@ -88,7 +88,7 @@ typedef struct {
 	unsigned int mmc_gpio_count;
 	unsigned int spi_nand_available;
 	unsigned int nor_nand_available;
-	unsigned char *dtb_config_name;
+	const char *dtb_config_name;
 } __attribute__ ((__packed__)) board_ipq40xx_params_t;
 
 extern board_ipq40xx_params_t *gboard_param;
