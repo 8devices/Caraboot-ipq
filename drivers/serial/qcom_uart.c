@@ -339,7 +339,10 @@ static unsigned int msm_boot_uart_dm_init(unsigned int  uart_dm_base)
  */
 static void uart_dm_init(void)
 {
-	unsigned int dm_base, gsbi_base;
+	unsigned int dm_base;
+#ifdef CONFIG_IPQ806X
+	unsigned int gsbi_base;
+#endif
 
 	dm_base = gboard_param->uart_dm_base;
 
