@@ -403,6 +403,9 @@ static const struct {
 #ifdef CONFIG_SPI_NAND_MACRONIX
 	{ 0, 0x00, spi_nand_flash_probe, },
 #endif
+#ifdef CONFIG_SPI_NAND_WINBOND
+	{ 0, 0x00, spi_nand_flash_probe, },
+#endif
 };
 #define IDCODE_LEN (IDCODE_CONT_LEN + IDCODE_PART_LEN)
 #define MFID_ATO	0x9b

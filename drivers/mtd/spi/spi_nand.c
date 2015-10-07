@@ -39,43 +39,60 @@ int verify_2bit_ecc(int status);
 int verify_dummy_ecc(int status);
 void gigadevice_norm_read_cmd(u8 *cmd, int column);
 void macronix_norm_read_cmd(u8 *cmd, int column);
+void winbond_norm_read_cmd(u8 *cmd, int column);
 
 #define mtd_to_ipq_info(m)	((struct nand_chip *)((m)->priv))->priv
 
 static const struct spi_nand_flash_params spi_nand_flash_tbl[] = {
 	{
-		.id = { 0xc8, 0xb1, 0x48 },
+		.id = { 0xc8, 0xb1, 0x48, 0xc8 },
 		.page_size = 2048,
 		.erase_size = 0x00020000,
 		.pages_per_sector = 64,
 		.nr_sectors = 1024,
 		.oob_size = 64,
+		.protec_bpx = 0xC7,
 		.norm_read_cmd = gigadevice_norm_read_cmd,
 		.verify_ecc = verify_3bit_ecc,
 		.name = "GD5F1GQ4XC",
 	},
 	{
-		.id = { 0xff, 0x9b, 0x12 },
+		.id = { 0xff, 0x9b, 0x12 , 0xff },
 		.page_size = 2048,
 		.erase_size = 0x00020000,
 		.pages_per_sector = 64,
 		.nr_sectors = 1024,
 		.oob_size = 64,
+		.protec_bpx = 0xC7,
 		.norm_read_cmd = gigadevice_norm_read_cmd,
 		.verify_ecc = verify_dummy_ecc,
 		.name = "ATO25D1GA",
 	},
 	{
-		.id = { 0x00, 0xc2, 0x12 },
+		.id = { 0x00, 0xc2, 0x12, 0x0 },
 		.page_size = 2048,
 		.erase_size = 0x00020000,
 		.pages_per_sector = 64,
 		.nr_sectors = 1024,
 		.oob_size = 64,
+		.protec_bpx = 0xC7,
 		.norm_read_cmd = macronix_norm_read_cmd,
 		.verify_ecc = verify_2bit_ecc,
 		.name = "MX35LFxGE4AB",
 	},
+	{
+		.id = { 0x00, 0xef, 0xaa, 0x21 },
+		.page_size = 2048,
+		.erase_size = 0x00020000,
+		.pages_per_sector = 64,
+		.nr_sectors = 1024,
+		.oob_size = 64,
+		.protec_bpx = 0x87,
+		.norm_read_cmd = winbond_norm_read_cmd,
+		.verify_ecc = verify_2bit_ecc,
+		.name = "W25N01GV",
+        },
+
 };
 
 const struct spi_nand_flash_params *params;
@@ -93,6 +110,14 @@ void macronix_norm_read_cmd(u8 *cmd, int column)
 {
 	cmd[0] = IPQ40XX_SPINAND_CMD_NORM_READ;
 	cmd[1] = ((u8)(column >> 8) & MACRONIX_NORM_READ_MASK);
+	cmd[2] = (u8)(column);
+	cmd[3] = 0;
+}
+
+void winbond_norm_read_cmd(u8 *cmd, int column)
+{
+	cmd[0] = IPQ40XX_SPINAND_CMD_NORM_READ;
+	cmd[1] = (u8)(column >> 8);
 	cmd[2] = (u8)(column);
 	cmd[3] = 0;
 }
@@ -616,16 +641,17 @@ struct spi_flash *spi_nand_flash_probe(struct spi_slave *spi,
 
 		if ((params->id[0] == idcode[0]) &&
 		    (params->id[1] == idcode[1]) &&
-		    (params->id[2] == idcode[2])) {
-			spi_print("%s SF NAND ID %x:%x:%x\n",
-				__func__, idcode[0], idcode[1], idcode[2]);
+		    (params->id[2] == idcode[2]) &&
+		    (params->id[3] == idcode[3])) {
+			spi_print("%s SF NAND ID %x:%x:%x:%x\n",
+				__func__, idcode[0], idcode[1], idcode[2], idcode[3]);
 			break;
 		}
 	}
 
 	if (i == ARRAY_SIZE(spi_nand_flash_tbl)) {
-		printf("SF NAND unsupported id:%x:%x:%x",
-			idcode[0], idcode[1], idcode[2]);
+		printf("SF NAND unsupported id:%x:%x:%x:%x",
+			idcode[0], idcode[1], idcode[2], idcode[3]);
 		return NULL;
 	}
 
@@ -668,7 +694,7 @@ static int spinand_unlock_protect(struct mtd_info *mtd)
 		goto out;
 	}
 
-	status &= IPQ40XX_SPINAND_PROTEC_BPx;
+	status &= (info->params->protec_bpx);
 	cmd[0] = IPQ40XX_SPINAND_CMD_SETFEA;
 	cmd[1] = IPQ40XX_SPINAND_PROTEC_REG;
 	cmd[2] = (u8)status;
