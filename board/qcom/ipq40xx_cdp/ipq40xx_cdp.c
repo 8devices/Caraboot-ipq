@@ -58,6 +58,7 @@ DECLARE_GLOBAL_DATA_PTR;
 
 loff_t board_env_offset;
 loff_t board_env_range;
+loff_t board_env_size;
 extern int nand_env_device;
 char *env_name_spec;
 extern char *mmc_env_name_spec;
@@ -187,7 +188,6 @@ int board_init(void)
 	int ret;
 	uint32_t start_blocks;
 	uint32_t size_blocks;
-	loff_t board_env_size = 0;
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 
 	gd->bd->bi_boot_params = QCA_BOOT_PARAMS_ADDR;
@@ -754,7 +754,6 @@ int board_mmc_env_init(void)
 {
 	block_dev_desc_t *blk_dev;
 	disk_partition_t disk_info;
-	loff_t board_env_size;
 	int ret;
 
 	if (mmc_init(mmc_host.mmc)) {
