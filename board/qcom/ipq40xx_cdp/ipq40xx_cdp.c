@@ -736,10 +736,11 @@ void ft_board_setup(void *blob, bd_t *bd)
 
 	if (mtdparts) {
 		mtdparts = qca_smem_part_to_mtdparts(mtdparts);
-		debug("mtdparts = %s\n", mtdparts);
-
+		if (mtdparts != NULL) {
+			debug("mtdparts = %s\n", mtdparts);
+			setenv("mtdparts", mtdparts);
+		}
 		setenv("mtdids", gboard_param->mtdids);
-		setenv("mtdparts", mtdparts);
 
 		ipq_fdt_fixup_mtdparts(blob, nodes);
 	}
