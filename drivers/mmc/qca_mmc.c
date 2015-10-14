@@ -19,6 +19,7 @@
 #include <malloc.h>
 #include <asm/io.h>
 #include <asm/arch-qcom-common/clk.h>
+#include <asm-generic/errno.h>
 #include "../../board/qcom/common/qca_common.h"
 #include "qca_mmc.h"
 
@@ -290,6 +291,10 @@ int qca_mmc_init(bd_t *bis, qca_mmc *host)
 	struct mmc *mmc;
 
 	mmc = malloc(sizeof(struct mmc));
+	if (!mmc) {
+	    return -ENOMEM;
+	}
+
 	memset(mmc, 0, sizeof(struct mmc));
 
 	sprintf(mmc->name, "qca_mmc");
