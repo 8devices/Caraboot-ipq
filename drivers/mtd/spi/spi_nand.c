@@ -761,17 +761,20 @@ int spi_nand_init(void)
 	struct ipq40xx_spinand_info *info;
 	int ret;
 
-	info = (struct ipq40xx_spinand_info *)malloc (sizeof (struct ipq40xx_spinand_info));
+	info = (struct ipq40xx_spinand_info *)malloc(
+			sizeof(struct ipq40xx_spinand_info));
 	if (!info) {
 		printf ("Error in allocating mem\n");
 		return -ENOMEM;
 	}
+	memset(info, '0', sizeof(struct ipq40xx_spinand_info));
 
 	flash = spi_flash_probe(CONFIG_SF_DEFAULT_BUS,
 				CONFIG_SF_SPI_NAND_CS,
 				CONFIG_SF_DEFAULT_SPEED,
 				CONFIG_SF_DEFAULT_MODE);
 	if (!flash) {
+	    	free(info);
 		spi_print("Id could not be mapped\n");
 		return -ENODEV;
 	}
@@ -816,12 +819,14 @@ int spi_nand_init(void)
 	chip->priv = info;
 
 	if ((ret = nand_register(CONFIG_IPQ_SPI_NAND_INFO_IDX)) < 0) {
+		free(info);
 		spi_print("Failed to register with MTD subsystem\n");
 		return ret;
 	}
 
 	ret = spinand_unlock_protect(mtd);
 	if (ret) {
+	    	free(info);
 		printf("Failed to unlock blocks\n");
 		return -1;
 	}
