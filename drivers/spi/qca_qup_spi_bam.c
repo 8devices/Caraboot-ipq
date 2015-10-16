@@ -200,8 +200,10 @@ static void blsp_pin_config(unsigned int port_num, int cs_num)
 
 int qup_bam_init(struct ipq_spi_slave *ds)
 {
-	unsigned int read_pipe = QUP0_DATA_PRODUCER_PIPE, write_pipe = QUP0_DATA_CONSUMER_PIPE;
-	uint8_t read_pipe_grp, write_pipe_grp;
+	unsigned int read_pipe = QUP0_DATA_PRODUCER_PIPE;
+	unsigned int write_pipe = QUP0_DATA_CONSUMER_PIPE;
+	uint8_t read_pipe_grp = QUP0_DATA_PRODUCER_PIPE_GRP;
+	uint8_t write_pipe_grp = QUP0_DATA_CONSUMER_PIPE_GRP;
 	int bam_ret;
 
 	/* Pipe numbers based on the QUP index */
@@ -290,7 +292,7 @@ struct spi_slave *spi_setup_slave(unsigned int bus, unsigned int cs,
 	 * on different BLSP0 and BLSP1
 	 * with different number of chip selects (CS, channels):
 	*/
-	if ((bus < BLSP0_SPI) || (bus > BLSP1_SPI)
+	if ((bus > BLSP1_SPI)
 		|| ((bus == BLSP0_SPI) && (cs > 2))
 		|| ((bus == BLSP1_SPI) && (cs > 0))) {
 		printf("SPI error: unsupported bus %d "
@@ -902,7 +904,7 @@ int spi_xfer(struct spi_slave *slave, unsigned int bitlen,
 	unsigned int len;
 	const u8 *txp = dout;
 	u8 *rxp = din;
-	int ret;
+	int ret = SUCCESS;
 
 	if (bitlen & SPI_BITLEN_MSK) {
 		printf("err : Invalid bit length");
