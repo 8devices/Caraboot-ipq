@@ -68,11 +68,15 @@ typedef struct {
 	unsigned int gpio_pu_res;
 } gpio_func_data_t;
 
+typedef struct {
+	unsigned int uart_dm_base;
+	gpio_func_data_t *dbg_uart_gpio;
+} uart_cfg_t;
+
 /* Board specific parameters */
 typedef struct {
 	unsigned int machid;
 	unsigned int ddr_size;
-	unsigned int uart_dm_base;
 	const char *mtdids;
 	gpio_func_data_t *spi_nor_gpio;
 	unsigned int spi_nor_gpio_count;
@@ -82,8 +86,9 @@ typedef struct {
 	unsigned int sw_gpio_count;
 	gpio_func_data_t *rgmii_gpio;
 	unsigned int rgmii_gpio_count;
-	gpio_func_data_t dbg_uart_gpio[NO_OF_DBG_UART_GPIOS];
 	ipq40xx_edma_board_cfg_t edma_cfg[IPQ40XX_EDMA_DEV];
+	uart_cfg_t *uart_cfg;
+	uart_cfg_t *console_uart_cfg;
 	gpio_func_data_t *mmc_gpio;
 	unsigned int mmc_gpio_count;
 	unsigned int spi_nand_available;

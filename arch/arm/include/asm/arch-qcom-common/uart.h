@@ -87,6 +87,8 @@ enum MSM_BOOT_UART_DM_BITS_PER_CHAR {
                                              (MSM_BOOT_UART_DM_8_BPS << 4))
 
 #define GCC_BLSP1_UART1_APPS_CBCR	0x0180203c
+#define GCC_BLSP1_UART2_APPS_CBCR	0x0180302C
+
 /* UART_DM Registers */
 
 /* UART Operational Mode Register */
