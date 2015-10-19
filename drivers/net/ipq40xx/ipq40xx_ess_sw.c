@@ -29,38 +29,26 @@ static inline void ipq40xx_ess_sw_wr(u32 addr, u32 data)
 	writel(data, ((void __iomem *)(IPQ40XX_NSS_BASE + addr)));
 }
 
-void ipq40xx_ess_disable_ports(void)
+void ipq40xx_ess_disable_lookup(void)
 {
-	ipq40xx_ess_sw_wr(S17_P1STATUS_REG, 0);
-	ipq40xx_ess_sw_wr(S17_P2STATUS_REG, 0);
-	ipq40xx_ess_sw_wr(S17_P3STATUS_REG, 0);
-	ipq40xx_ess_sw_wr(S17_P4STATUS_REG, 0);
-	ipq40xx_ess_sw_wr(S17_P5STATUS_REG, 0);
+	ipq40xx_ess_sw_wr(S17_P0LOOKUP_CTRL_REG, 0x140000);
+	ipq40xx_ess_sw_wr(S17_P1LOOKUP_CTRL_REG, 0x14001c);
+	ipq40xx_ess_sw_wr(S17_P2LOOKUP_CTRL_REG, 0x14001a);
+	ipq40xx_ess_sw_wr(S17_P3LOOKUP_CTRL_REG, 0x140016);
+	ipq40xx_ess_sw_wr(S17_P4LOOKUP_CTRL_REG, 0x14001e);
+	ipq40xx_ess_sw_wr(S17_P5LOOKUP_CTRL_REG, 0x140000);
+	ipq40xx_ess_sw_wr(S17_GLOFW_CTRL1_REG, 0x3e3e3e);
 }
 
-void ipq40xx_ess_enable_ports(void)
+void ipq40xx_ess_enable_lookup(void)
 {
-	if ((gboard_param->machid == MACH_TYPE_IPQ40XX_DB_DK02_1_C1) ||
-	    (gboard_param->machid == MACH_TYPE_IPQ40XX_DB_DK01_1_C1)) {
-		ipq40xx_ess_sw_wr(S17_P4STATUS_REG, S17_PORT_SPEED(2) |
-						S17_PORT_FULL_DUP |
-						S17_TX_FLOW_EN |
-						S17_RX_FLOW_EN |
-						S17_PORT_TX_MAC_EN |
-						S17_PORT_RX_MAC_EN);
-		ipq40xx_ess_sw_wr(S17_P5STATUS_REG, S17_PORT_SPEED(2) |
-						S17_PORT_FULL_DUP |
-						S17_TX_FLOW_EN |
-						S17_RX_FLOW_EN |
-						S17_PORT_TX_MAC_EN |
-						S17_PORT_RX_MAC_EN);
-	} else {
-		ipq40xx_ess_sw_wr(S17_P1STATUS_REG, 0x1280);
-		ipq40xx_ess_sw_wr(S17_P2STATUS_REG, 0x1280);
-		ipq40xx_ess_sw_wr(S17_P3STATUS_REG, 0x1280);
-		ipq40xx_ess_sw_wr(S17_P4STATUS_REG, 0x1280);
-		ipq40xx_ess_sw_wr(S17_P5STATUS_REG, 0x1280);
-	}
+	ipq40xx_ess_sw_wr(S17_P0LOOKUP_CTRL_REG, 0x14003e);
+	ipq40xx_ess_sw_wr(S17_P1LOOKUP_CTRL_REG, 0x14001d);
+	ipq40xx_ess_sw_wr(S17_P2LOOKUP_CTRL_REG, 0x14001b);
+	ipq40xx_ess_sw_wr(S17_P3LOOKUP_CTRL_REG, 0x140017);
+	ipq40xx_ess_sw_wr(S17_P4LOOKUP_CTRL_REG, 0x14000f);
+	ipq40xx_ess_sw_wr(S17_P5LOOKUP_CTRL_REG, 0x140001);
+	ipq40xx_ess_sw_wr(S17_GLOFW_CTRL1_REG, 0x3f3f3f);
 }
 
 int ipq40xx_ess_sw_init(ipq40xx_edma_board_cfg_t *cfg)
@@ -83,12 +71,13 @@ int ipq40xx_ess_sw_init(ipq40xx_edma_board_cfg_t *cfg)
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C1:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C2:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C3:
-		ipq40xx_ess_sw_wr(S17_P0LOOKUP_CTRL_REG, 0x14003e);
-		ipq40xx_ess_sw_wr(S17_P1LOOKUP_CTRL_REG, 0x14001d);
-		ipq40xx_ess_sw_wr(S17_P2LOOKUP_CTRL_REG, 0x14001b);
-		ipq40xx_ess_sw_wr(S17_P3LOOKUP_CTRL_REG, 0x140017);
-		ipq40xx_ess_sw_wr(S17_P4LOOKUP_CTRL_REG, 0x14000f);
-		ipq40xx_ess_sw_wr(S17_P5LOOKUP_CTRL_REG, 0x140001);
+
+		ipq40xx_ess_sw_wr(S17_P0LOOKUP_CTRL_REG, 0x140000);
+		ipq40xx_ess_sw_wr(S17_P1LOOKUP_CTRL_REG, 0x140000);
+		ipq40xx_ess_sw_wr(S17_P2LOOKUP_CTRL_REG, 0x140000);
+		ipq40xx_ess_sw_wr(S17_P3LOOKUP_CTRL_REG, 0x140000);
+		ipq40xx_ess_sw_wr(S17_P4LOOKUP_CTRL_REG, 0x140000);
+		ipq40xx_ess_sw_wr(S17_P5LOOKUP_CTRL_REG, 0x140000);
 		/*
 		 * HOL setting for Port0
 		 */

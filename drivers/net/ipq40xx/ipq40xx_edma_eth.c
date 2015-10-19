@@ -28,8 +28,8 @@
 #endif
 
 extern int ipq40xx_ess_sw_init(ipq40xx_edma_board_cfg_t *cfg);
-extern void ipq40xx_ess_enable_ports(void);
-extern void ipq40xx_ess_disable_ports(void);
+extern void ipq40xx_ess_enable_lookup(void);
+extern void ipq40xx_ess_disable_lookup(void);
 extern void psgmii_self_test(void);
 extern void clear_self_test_config(void);
 uchar ipq40xx_def_enetaddr[6] = {0x00, 0x03, 0x7F, 0xBA, 0xDB, 0xAD};
@@ -574,7 +574,6 @@ static int ipq40xx_eth_init(struct eth_device *eth_dev, bd_t *this)
 	ring = c_info->rfd_ring[priv->mac_unit];
 	ipq40xx_edma_alloc_rx_buf(c_info, ring, ring->count,
 					priv->mac_unit);
-	ipq40xx_ess_enable_ports();
 	if (!priv->ops) {
 		printf ("Phy ops not mapped\n");
 		return -1;
@@ -628,7 +627,7 @@ static int ipq40xx_eth_init(struct eth_device *eth_dev, bd_t *this)
 
 	ipq40xx_edma_enable_tx_ctrl(hw);
 	ipq40xx_edma_enable_rx_ctrl(hw);
-
+	ipq40xx_ess_enable_lookup();
 	return 0;
 }
 
@@ -672,7 +671,7 @@ static void ipq40xx_eth_halt(struct eth_device *dev)
 	struct ipq40xx_eth_dev *priv = dev->priv;
 	struct ipq40xx_edma_common_info *c_info = priv->c_info;
 
-	ipq40xx_ess_disable_ports();
+	ipq40xx_ess_disable_lookup();
 	ipq40xx_edma_reset(c_info);
 }
 
@@ -941,9 +940,6 @@ int ipq40xx_edma_init(ipq40xx_edma_board_cfg_t *edma_cfg)
 			/* wait for 10ms */
 			mdelay(10);
 			writel(PSGMIIPHY_VCO_RST_VAL, PSGMIIPHY_VCO_CALIBRATION_CTRL);
-			mdelay(10);
-			qca8075_ess_reset();
-			psgmii_self_test();
 			break;
 		case PHY_INTERFACE_MODE_RGMII:
 			writel(0x1, RGMII_TCSR_ESS_CFG);
@@ -954,6 +950,24 @@ int ipq40xx_edma_init(ipq40xx_edma_board_cfg_t *edma_cfg)
 			goto failed;
 		}
 		eth_register(dev[i]);
+
+		if (!sw_init_done) {
+			if (ipq40xx_switch_init(ipq40xx_edma_dev[i]) == 0) {
+				sw_init_done = 1;
+			} else {
+				printf ("SW inits failed\n");
+				goto failed;
+			}
+		}
+
+		if(edma_cfg->phy == PHY_INTERFACE_MODE_PSGMII) {
+			qca8075_ess_reset();
+			mdelay(100);
+			psgmii_self_test();
+			mdelay(300);
+			clear_self_test_config();
+		}
+
 		/*
 		 * Configure EDMA This should
 		 * happen Only once.
@@ -972,20 +986,10 @@ int ipq40xx_edma_init(ipq40xx_edma_board_cfg_t *edma_cfg)
 
 		if (!ipq40xx_ess_init_done) {
 			ipq40xx_ess_sw_init(edma_cfg);
-			ipq40xx_ess_disable_ports();
+			ipq40xx_ess_disable_lookup();
 			ipq40xx_ess_init_done = 1;
 		}
 
-		if (!sw_init_done) {
-			if (ipq40xx_switch_init(ipq40xx_edma_dev[i]) == 0) {
-				sw_init_done = 1;
-			} else {
-				printf ("SW inits failed\n");
-				goto failed;
-			}
-		}
-		if(edma_cfg->phy == PHY_INTERFACE_MODE_PSGMII)
-			clear_self_test_config();
 	}
 	return 0;
 
