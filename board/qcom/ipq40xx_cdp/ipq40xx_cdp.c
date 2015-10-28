@@ -716,6 +716,9 @@ void ft_board_setup(void *blob, bd_t *bd)
 	if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
 		mtdparts = "mtdparts=nand0";
 	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
+		/* Patch NOR block size and density for
+		 * generic probe case */
+		ipq_fdt_fixup_spi_nor_params(blob);
 		if (gboard_param->spi_nand_available) {
 			sprintf(parts_str,
 				"mtdparts=nand1:0x%x@0(rootfs);spi0.0",
@@ -732,7 +735,6 @@ void ft_board_setup(void *blob, bd_t *bd)
 		}
 	}
 
-	ipq_fdt_fixup_spi_nor_params(blob);
 
 	if (mtdparts) {
 		mtdparts = qca_smem_part_to_mtdparts(mtdparts);
