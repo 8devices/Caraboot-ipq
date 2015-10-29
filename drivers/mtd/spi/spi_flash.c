@@ -382,6 +382,9 @@ static const struct {
 #ifdef CONFIG_SPI_FLASH_WINBOND
 	{ 0, 0xef, spi_flash_probe_winbond, },
 #endif
+#ifdef CONFIG_SPI_FLASH_GIGA
+	{ 0, 0xc8, spi_flash_probe_giga, },
+#endif
 #ifdef CONFIG_SPI_FRAM_RAMTRON
 	{ 6, 0xc2, spi_fram_probe_ramtron, },
 # undef IDCODE_CONT_LEN
