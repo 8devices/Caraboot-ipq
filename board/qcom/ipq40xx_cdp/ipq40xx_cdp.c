@@ -326,6 +326,11 @@ int board_early_init_f(void)
 	return 0;
 }
 
+void enable_caches(void)
+{
+	icache_enable();
+}
+
 void clear_l2cache_err(void)
 {
 	return;
