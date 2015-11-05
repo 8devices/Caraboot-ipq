@@ -19,7 +19,6 @@
 #include <errno.h>
 #include <asm/arch-ipq40xx/scm.h>
 #include <part.h>
-#include "../../../../../board/qcom/common/qca_common.h"
 #include <linux/mtd/ubi.h>
 #include <asm/arch-ipq40xx/smem.h>
 #include <mmc.h>
