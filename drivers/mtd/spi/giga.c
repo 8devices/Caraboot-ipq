@@ -42,7 +42,8 @@ struct giga_spi_flash_params {
 	u16 id;
 	u16 page_size;
 	u16 pages_per_sector;
-	u16 nr_sectors;
+	u16 sectors_per_block;
+	u16 nr_blocks;
 	const char *name;
 };
 
@@ -50,29 +51,27 @@ static const struct giga_spi_flash_params giga_spi_flash_table[] = {
 	{
 		.id = 0x4015,
 		.page_size = 256,
-		.pages_per_sector = 256,
-		.nr_sectors = 32,
+		.pages_per_sector = 16,
+		.sectors_per_block = 16,
+		.nr_blocks = 32,
 		.name = "GD25Q16",
 	},
 	{
 		.id = 0x4018,
 		.page_size = 256,
-		.pages_per_sector = 256,
-		.nr_sectors = 256,
+		.pages_per_sector = 16,
+		.sectors_per_block = 16,
+		.nr_blocks = 256,
 		.name = "GD25Q128",
 	},
 };
 
 static int giga_erase(struct spi_flash *flash, u32 offset, size_t len)
 {
-	u8 erase_opcode;
-
-	if (flash->sector_size == SIZE_4K)
-		erase_opcode = CMD_4K_SE;
+	if ((offset % flash->block_size) == 0 && (len % flash->block_size) == 0)
+		return spi_flash_cmd_erase_block(flash, CMD_64K_SE, offset, len);
 	else
-		erase_opcode = CMD_64K_SE;
-
-	return spi_flash_cmd_erase(flash, erase_opcode, offset, len);
+		return spi_flash_cmd_erase(flash, CMD_4K_SE, offset, len);
 }
 
 struct spi_flash *spi_flash_probe_giga(struct spi_slave *spi, u8 *idcode)
@@ -107,7 +106,8 @@ struct spi_flash *spi_flash_probe_giga(struct spi_slave *spi, u8 *idcode)
 	flash->read = spi_flash_cmd_read_fast;
 	flash->page_size = params->page_size;
 	flash->sector_size = params->page_size * params->pages_per_sector;
-	flash->size = flash->sector_size * params->nr_sectors;
+	flash->block_size = flash->sector_size * params->sectors_per_block;
+	flash->size = flash->block_size * params->nr_blocks;
 
 	return flash;
 }
