@@ -28,15 +28,15 @@
 #define FUSEPROV_SECDAT_LOCK_BLOWN	0xB
 #define TZ_BLOW_FUSE_SECDAT		0x20
 
-struct fuse_blow {
-	uint32_t address;
-	uint32_t status;
-} fuseip;
-
 int do_fuseipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
 	int ret;
 	uint32_t fuse_status = 0;
+	struct fuse_blow {
+		uint32_t address;
+		uint32_t status;
+	} fuseip;
+
 	if (argc != 2) {
 		printf("No Arguments provided\n");
 		printf("Command format: fuseipq <address>\n");
