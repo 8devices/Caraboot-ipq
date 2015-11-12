@@ -450,9 +450,10 @@ class FlashScript(object):
 class NandScript(FlashScript):
     """Class for creating NAND flash scripts."""
 
-    def __init__(self, flinfo, ipq_nand):
+    def __init__(self, flinfo, ipq_nand, spi_nand):
         FlashScript.__init__(self, flinfo)
         self.ipq_nand = ipq_nand
+        self.spi_nand = spi_nand
 
     def erase(self, offset, size):
         """Generate code, to erase the specified partition."""
@@ -477,7 +478,10 @@ class NandScript(FlashScript):
         self.append("ipq_nand %s" % layout)
 
     def probe(self):
-        pass
+        if self.spi_nand == "true":
+            self.append("nand device 1")
+        else:
+            self.append("nand device 0")
 
 class NorScript(FlashScript):
     """Class for creating NAND flash scripts."""
@@ -896,7 +900,7 @@ class Pack(object):
         self.flinfo = flinfo
         if flinfo.type == "nand":
             self.ipq_nand = False
-            script = NandScript(flinfo, self.ipq_nand)
+            script = NandScript(flinfo, self.ipq_nand, self.spi_nand)
         elif flinfo.type == "nor" or flinfo.type == "norplusnand":
             self.spi_nand = self.bconf.get(board_section, "spi_nand_available")
             self.ipq_nand = False
