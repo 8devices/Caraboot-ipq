@@ -57,7 +57,7 @@ static const struct spi_nand_flash_params spi_nand_flash_tbl[] = {
 		.name = "GD5F1GQ4XC",
 	},
 	{
-		.id = { 0xff, 0x9b, 0x12 , 0xff },
+		.id = { 0xff, 0x9b, 0x12 , 0x9b },
 		.page_size = 2048,
 		.erase_size = 0x00020000,
 		.pages_per_sector = 64,
@@ -69,7 +69,7 @@ static const struct spi_nand_flash_params spi_nand_flash_tbl[] = {
 		.name = "ATO25D1GA",
 	},
 	{
-		.id = { 0x00, 0xc2, 0x12, 0x0 },
+		.id = { 0x00, 0xc2, 0x12, 0xc2 },
 		.page_size = 2048,
 		.erase_size = 0x00020000,
 		.pages_per_sector = 64,
