@@ -57,6 +57,7 @@ COBJS-$(CONFIG_USB_EHCI_VCT) += ehci-vct.o
 
 COBJS-$(CONFIG_USB_XHCI) += xhci.o xhci-mem.o xhci-ring.o
 COBJS-$(CONFIG_IPQ806X_USB) += xhci-ipq.o
+COBJS-$(CONFIG_IPQ40XX_USB) += xhci-ipq40xx.o
 
 COBJS	:= $(COBJS-y)
 SRCS	:= $(COBJS:.o=.c)
