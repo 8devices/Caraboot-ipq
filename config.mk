@@ -232,6 +232,8 @@ else
 CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes
 endif
 
+CFLAGS += $(QSDK_CFLAGS)
+
 CFLAGS_SSP := $(call cc-option,-fno-stack-protector)
 CFLAGS += $(CFLAGS_SSP)
 # Some toolchains enable security related warning flags by default,
