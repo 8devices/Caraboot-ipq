@@ -215,8 +215,10 @@ int xhci_hcd_init(int index, struct xhci_hccr **hccr, struct xhci_hcor **hcor)
 
 void xhci_hcd_stop(int index)
 {
-	if (index >= IPQ_XHCI_COUNT)
-		return -1;
+	if (index >= IPQ_XHCI_COUNT) {
+		debug("ipq-xhci: index greater than xhci count\n");
+		return;
+	}
 
 	ipq_xhci_core_exit(&ipq[index]);
 }
