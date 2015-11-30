@@ -216,7 +216,7 @@ $(obj)dumpimage$(SFX):	$(obj)aisimage.o \
 			$(obj)ublimage.o \
 			$(LIBFDT_OBJS) \
 			$(RSA_OBJS)
-	@$(call compile,$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^ $(HOSTLIBS))
+	@$(call compile,$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) $(QSDK_CFLAGS) $(QSDK_LDFLAGS) -o $@ $^ $(HOSTLIBS))
 	@$(call compile,$(HOSTSTRIP) $@)
 
 $(obj)mkenvimage$(SFX):	$(obj)crc32.o $(obj)mkenvimage.o \
@@ -239,7 +239,7 @@ $(obj)mkimage$(SFX):	$(obj)aisimage.o \
 			$(obj)sha1.o \
 			$(obj)ublimage.o \
 			$(LIBFDT_OBJS)
-	@$(call compile,$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^)
+	@$(call compile,$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) $(QSDK_CFLAGS) $(QSDK_LDFLAGS) -o $@ $^)
 	@$(call compile,$(HOSTSTRIP) $@)
 
 $(obj)mk$(BOARD)spl$(SFX):	$(obj)mkexynosspl.o
