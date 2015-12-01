@@ -556,6 +556,39 @@ gpio_func_data_t ap_dk04_1_c2_sw_gpio_bga[] = {
 	},
 };
 
+gpio_func_data_t ap_dk06_1_c1_sw_gpio_bga[] = {
+	{
+		.gpio = 6,
+		.func = 1,
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+	{
+		.gpio = 7,
+		.func = 1,
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+	{
+		.gpio = 19,
+		.func = 0,
+		.pull = GPIO_PULL_DOWN,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_ENABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+};
+
 gpio_func_data_t db_dk_2_1_sw_gpio_bga[] = {
 	{
 		.gpio = 6,
@@ -831,6 +864,29 @@ board_ipq40xx_params_t board_params[] = {
 		.nor_emmc_available = 1,
 		.dtb_config_name = "#config@3",
 	},
+	{
+		.machid = MACH_TYPE_IPQ40XX_AP_DK06_1_C1,
+		.ddr_size = (256 << 20),
+		.console_uart_cfg = &uart1_console_uart_dk04,
+		.mtdids = "nand0=nand0,nand2=spi0.0",
+		.spi_nor_gpio = spi_nor_bga,
+		.spi_nor_gpio_count = ARRAY_SIZE(spi_nor_bga),
+		.nand_gpio = nand_gpio_bga,
+		.nand_gpio_count = ARRAY_SIZE(nand_gpio_bga),
+		.sw_gpio = ap_dk06_1_c1_sw_gpio_bga,
+		.sw_gpio_count = ARRAY_SIZE(ap_dk06_1_c1_sw_gpio_bga),
+		.edma_cfg = {
+			ipq40xx_edma_cfg(0, 5, PSGMII,
+			0, 1, 2, 3, 4)
+			},
+		.mmc_gpio = mmc_ap_dk04,
+		.mmc_gpio_count = ARRAY_SIZE(mmc_ap_dk04),
+		.spi_nand_available = 0,
+		.nor_nand_available = 0,
+		.nor_emmc_available = 0,
+		.dtb_config_name = "#config@9",
+	},
+
 	{
 		.machid = MACH_TYPE_IPQ40XX_DB_DK01_1_C1,
 		.ddr_size = (256 << 20),
