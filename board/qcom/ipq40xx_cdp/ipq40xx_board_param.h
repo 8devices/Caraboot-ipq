@@ -690,6 +690,23 @@ gpio_func_data_t uart2_gpio[] = {
 	},
 };
 
+#ifdef CONFIG_IPQ40XX_I2C
+gpio_func_data_t i2c0_gpio[] = {
+	{
+		.gpio = 20,
+		.func = 1,
+		.pull = GPIO_NO_PULL,
+		.oe = GPIO_OE_ENABLE
+	},
+	{
+		.gpio = 21,
+		.func = 1,
+		.pull = GPIO_NO_PULL,
+		.oe = GPIO_OE_ENABLE
+	},
+};
+#endif
+
 uart_cfg_t uart1_console_uart_dk01 = {
 	.uart_dm_base = UART1_DM_BASE,
 	.dbg_uart_gpio = uart1_gpio_dk01,
@@ -704,6 +721,13 @@ uart_cfg_t uart2 = {
 	.uart_dm_base = UART2_DM_BASE,
 	.dbg_uart_gpio = uart2_gpio,
 };
+
+#ifdef CONFIG_IPQ40XX_I2C
+i2c_cfg_t i2c0 = {
+	.i2c_base = I2C0_BASE,
+	.i2c_gpio = i2c0_gpio,
+};
+#endif
 
 #define ipq40xx_edma_cfg(_b, _pn, _p, ...)		\
 {							\
@@ -781,6 +805,9 @@ board_ipq40xx_params_t board_params[] = {
 		},
 		.uart_cfg = &uart2,
 		.console_uart_cfg = &uart1_console_uart_dk04,
+#ifdef CONFIG_IPQ40XX_I2C
+		.i2c_cfg = &i2c0,
+#endif
 		.mmc_gpio = mmc_ap_dk04,
 		.mmc_gpio_count = ARRAY_SIZE(mmc_ap_dk04),
 		.spi_nand_available = 0,

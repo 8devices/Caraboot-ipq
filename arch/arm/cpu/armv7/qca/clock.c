@@ -99,7 +99,7 @@ int uart2_trigger_update(void)
 
 	while (readl(GCC_BLSP1_UART2_APPS_CMD_RCGR) & UART2_CMD_RCGR_UPDATE) {
 		if (timeout++ >= CLOCK_UPDATE_TIMEOUT_US) {
-			printf("Timeout waiting for UART2 clock update \n");
+			printf("Timeout waiting for UART2 clock update\n");
 			return -ETIMEDOUT;
 		}
 		udelay(1);
@@ -125,3 +125,59 @@ void uart2_clock_config(unsigned int m,
 	uart2_trigger_update();
 	uart2_toggle_clock();
 }
+
+#ifdef CONFIG_IPQ40XX_I2C
+void i2c0_configure_mux(void)
+{
+	unsigned long cfg_rcgr;
+
+	cfg_rcgr = readl(GCC_BLSP1_QUP1_I2C_APPS_CFG_RCGR);
+	/* Clear mode, src sel, src div */
+	cfg_rcgr &= ~(GCC_I2C_CFG_RCGR_SRCSEL_MASK |
+			GCC_I2C_CFG_RCGR_SRCDIV_MASK);
+
+	cfg_rcgr |= ((I2C0_RCGR_SRC_SEL << GCC_I2C_CFG_RCGR_SRCSEL_SHIFT)
+			& GCC_UART_CFG_RCGR_SRCSEL_MASK);
+
+	cfg_rcgr |= ((I2C0_RCGR_SRC_DIV << GCC_I2C_CFG_RCGR_SRCDIV_SHIFT)
+			& GCC_UART_CFG_RCGR_SRCDIV_MASK);
+
+	writel(cfg_rcgr, GCC_BLSP1_QUP1_I2C_APPS_CFG_RCGR);
+}
+
+int i2c0_trigger_update(void)
+{
+	unsigned long cmd_rcgr;
+	int timeout = 0;
+
+	cmd_rcgr = readl(GCC_BLSP1_QUP1_I2C_APPS_CMD_RCGR);
+	cmd_rcgr |= I2C0_CMD_RCGR_UPDATE;
+	writel(cmd_rcgr, GCC_BLSP1_QUP1_I2C_APPS_CMD_RCGR);
+
+	while (readl(GCC_BLSP1_QUP1_I2C_APPS_CMD_RCGR) & I2C0_CMD_RCGR_UPDATE) {
+		if (timeout++ >= CLOCK_UPDATE_TIMEOUT_US) {
+			printf("Timeout waiting for I2C0 clock update\n");
+			return -ETIMEDOUT;
+		}
+		udelay(1);
+	}
+	cmd_rcgr = readl(GCC_BLSP1_QUP1_I2C_APPS_CMD_RCGR);
+	return 0;
+}
+
+void i2c0_toggle_clock(void)
+{
+	unsigned long cbcr_val;
+
+	cbcr_val = readl(GCC_BLSP1_QUP1_I2C_APPS_CBCR);
+	cbcr_val |= I2C0_CBCR_CLK_ENABLE;
+	writel(cbcr_val, GCC_BLSP1_QUP1_I2C_APPS_CBCR);
+}
+
+void i2c_clock_config(void)
+{
+	i2c0_configure_mux();
+	i2c0_trigger_update();
+	i2c0_toggle_clock();
+}
+#endif
