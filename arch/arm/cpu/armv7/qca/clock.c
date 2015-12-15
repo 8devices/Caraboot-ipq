@@ -181,3 +181,27 @@ void i2c_clock_config(void)
 	i2c0_toggle_clock();
 }
 #endif
+
+int pcie_clock_enable(int clk_addr)
+{
+	unsigned int count = PCIE_TIMEOUT_CNT;
+	int state, val;
+
+	writel(ENABLE, clk_addr);
+	do {
+		val = readl(clk_addr);
+		count--;
+		if (count == 0) {
+			printf("Timeout waiting for %d enable \n", clk_addr);
+			return -ETIMEDOUT;
+		}
+		state = (val & BIT(31));
+		udelay(10);
+	} while (state);
+	return 0;
+}
+
+void pcie_clock_disable(int clk_addr)
+{
+	writel(0, clk_addr);
+}

@@ -95,6 +95,13 @@
 #define CONFIG_SYS_I2C_SPEED	0
 #endif
 
+#define CONFIG_IPQ40XX_PCI
+#ifdef CONFIG_IPQ40XX_PCI
+#define CONFIG_PCI
+#define CONFIG_CMD_PCI
+#define CONFIG_PCI_SCAN_SHOW
+#endif
+
 #ifndef __ASSEMBLY__
 #include <compiler.h>
 #include "../../board/qcom/ipq40xx_cdp/ipq40xx_cdp.h"

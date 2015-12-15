@@ -83,6 +83,25 @@ typedef struct {
 } i2c_cfg_t;
 #endif
 
+#ifdef CONFIG_IPQ40XX_PCI
+#define PCI_MAX_DEVICES	1
+
+typedef struct {
+	gpio_func_data_t	*pci_gpio;
+	uint32_t		pci_gpio_count;
+	uint32_t		parf;
+	uint32_t		elbi;
+	uint32_t		pcie20;
+	uint32_t		axi_bar_start;
+	uint32_t		axi_bar_size;
+	uint32_t		pcie_rst;
+	uint32_t		axi_conf;
+	int			linkup;
+} pcie_params_t;
+
+void board_pci_init(void);
+#endif /* CONFIG_IPQ40XX_PCI */
+
 /* Board specific parameters */
 typedef struct {
 	unsigned int machid;
@@ -108,6 +127,9 @@ typedef struct {
 	unsigned int nor_nand_available;
 	unsigned int nor_emmc_available;
 	const char *dtb_config_name;
+#ifdef CONFIG_IPQ40XX_PCI
+	pcie_params_t pcie_cfg[PCI_MAX_DEVICES];
+#endif
 } __attribute__ ((__packed__)) board_ipq40xx_params_t;
 
 extern board_ipq40xx_params_t *gboard_param;

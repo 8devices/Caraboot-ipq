@@ -66,6 +66,15 @@
 #define CLOCK_UPDATE_TIMEOUT_US	1000
 #endif
 
+#define GCC_PCIE_SLEEP_CBCR	0x0181D014
+#define GCC_PCIE_AXI_M_CBCR	0x0181D004
+#define GCC_PCIE_AXI_S_CBCR	0x0181D008
+#define GCC_PCIE_AHB_CBCR	0x0181D00C
+#define PCIE_TIMEOUT_CNT	100
+#define ENABLE			0x1
+#define DISABLE			0x0
+#define BIT(s)			(1<<s)
+
 void emmc_clock_config(int mode);
 void emmc_clock_disable(void);
 
@@ -85,4 +94,7 @@ void i2c0_toggle_clock(void);
 int i2c0_trigger_update(void);
 void i2c0_configure_mux(void);
 #endif
+
+int pcie_clock_enable(int clk_addr);
+void pcie_clock_disable(int clk_addr);
 #endif /*QCA_CLK_H*/

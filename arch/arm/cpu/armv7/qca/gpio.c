@@ -75,3 +75,14 @@ void gpio_tlmm_config(unsigned int gpio, unsigned int func,
 
 	return;
 }
+
+void gpio_set_value(unsigned int gpio, unsigned int out)
+{
+	unsigned int *addr = (unsigned int *)GPIO_IN_OUT_ADDR(gpio);
+	unsigned int val = 0;
+
+	val = readl(addr);
+	val &= ~(0x2);
+	val |= out << 1;
+	writel(val, addr);
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014, 2015 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -14,17 +14,16 @@
 #include <common.h>
 #include <pci.h>
 
-#include <asm/arch-ipq806x/clock.h>
 #include <asm/sizes.h>
 #include <asm/io.h>
-#include <asm/arch-ipq806x/iomap.h>
+#include <asm/arch-ipq40xx/iomap.h>
 #include <asm/arch-qcom-common/gpio.h>
-#include "../../board/qcom/ipq806x_cdp/ipq806x_cdp.h"
+#include "../../board/qcom/ipq40xx_cdp/ipq40xx_cdp.h"
 
-#define PCI_CFG0_RDWR	0x4
-#define PCI_CFG1_RDWR	0x5
-#define RD 0
-#define WR 1
+#define PCI_CFG0_RDWR			0x4
+#define PCI_CFG1_RDWR			0x5
+#define RD				0
+#define WR 				1
 #define PCIE20_PLR_IATU_VIEWPORT        0x900
 #define PCIE20_PLR_IATU_CTRL1           0x904
 #define PCIE20_PLR_IATU_LTAR            0x918
@@ -33,9 +32,7 @@
 #define PCIE_AXI_CONF_SIZE   		SZ_1M
 
 static unsigned int local_buses[] = { 0, 0 };
-extern board_ipq806x_params_t *gboard_param;
-
-
+extern board_ipq40xx_params_t *gboard_param;
 struct pci_controller pci_hose[PCI_MAX_DEVICES];
 
 void ipq_pcie_config_cfgtype(uint32_t phyaddr)
@@ -65,7 +62,6 @@ int ipq_pcie_rd_conf_byte(struct  pci_controller *hose, pci_dev_t dev,
 	word_offset = offset & ~0x3;
 	byte_offset = offset & 0x3;
 	mask = (~0 >> (8 * (4 - 1))) << (8 * byte_offset);
-
 
 	ipq_pcie_config_cfgtype(hose->regions[0].phys_start);
 	if ((bus == local_buses[0]) || (bus == local_buses[1])) {

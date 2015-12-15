@@ -771,6 +771,148 @@ i2c_cfg_t i2c0 = {
 	.phy_name	= "IPQ MDIO"#_b			\
 }
 
+#ifdef CONFIG_IPQ40XX_PCI
+
+#define PCIE_RST_GPIO		38
+#define PCIE_WAKE_GPIO		40
+#define PCIE_CLKREQ_GPIO	39
+
+#define PCIE20_0_PARF_PHYS	0x80000
+#define PCIE20_0_ELBI_PHYS	0x40000f20
+#define PCIE20_0_PHYS		0x40000000
+#define PCIE20_SIZE             0xf1d
+#define PCIE20_0_AXI_BAR_PHYS	0x40300000
+#define PCIE20_0_AXI_BAR_SIZE	0xd00000
+#define PCIE20_0_AXI_CONF	0x40100000
+#define PCIE_AXI_CONF_SIZE	SZ_1M
+#define PCIE20_0_RESET		0x0181D010
+
+#define PCIE_RST_CTRL_PIPE_ARES			0x4
+#define PCIE_RST_CTRL_PIPE_STICKY_ARES		0x100
+#define PCIE_RST_CTRL_PIPE_PHY_AHB_ARES		0x800
+#define PCIE_RST_CTRL_AXI_M_ARES		0x1
+#define PCIE_RST_CTRL_AXI_M_STICKY_ARES		0x80
+#define PCIE_RST_CTRL_AXI_S_ARES		0x2
+#define PCIE_RST_CTRL_AHB_ARES			0x400
+
+#define MSM_PCIE_DEV_CFG_ADDR			0x01000000
+
+#define PCIE20_PLR_IATU_VIEWPORT		0x900
+#define PCIE20_PLR_IATU_CTRL1			0x904
+#define PCIE20_PLR_IATU_CTRL2			0x908
+#define PCIE20_PLR_IATU_LBAR			0x90C
+#define PCIE20_PLR_IATU_UBAR			0x910
+#define PCIE20_PLR_IATU_LAR			0x914
+#define PCIE20_PLR_IATU_LTAR			0x918
+#define PCIE20_PLR_IATU_UTAR			0x91c
+
+/* PCIE20_PARF_PHYS Registers */
+#define PARF_SLV_ADDR_SPACE_SIZE		0x16C
+#define SLV_ADDR_SPACE_SZ			0x40000000
+#define PCIE_0_PCIE20_PARF_LTSSM		0x1B0
+#define LTSSM_EN				(1 << 8)
+/* PCIE20_PHYS Registers */
+#define PCIE_0_PORT_FORCE_REG			0x708
+#define PCIE_0_ACK_F_ASPM_CTRL_REG		0x70C
+#define L1_ENTRANCE_LATENCY(x)			(x << 27)
+#define L0_ENTRANCE_LATENCY(x)			(x << 24)
+#define COMMON_CLK_N_FTS(x)			(x << 16)
+#define ACK_N_FTS(x)				(x << 8)
+
+#define PCIE_0_GEN2_CTRL_REG			0x80C
+#define FAST_TRAINING_SEQ(x)			(x << 0)
+#define NUM_OF_LANES(x)				(x << 8)
+#define DIRECT_SPEED_CHANGE			(1 << 17)
+
+#define PCIE_0_TYPE0_STATUS_COMMAND_REG_1	0x004
+#define PCI_TYPE0_BUS_MASTER_EN			(1 << 2)
+
+#define PCIE_0_MISC_CONTROL_1_REG		0x8BC
+#define DBI_RO_WR_EN				(1 << 0)
+
+#define PCIE_0_LINK_CAPABILITIES_REG		0x07C
+#define PCIE_CAP_ASPM_OPT_COMPLIANCE		(1 << 22)
+#define PCIE_CAP_LINK_BW_NOT_CAP		(1 << 21)
+#define PCIE_CAP_DLL_ACTIVE_REP_CAP		(1 << 20)
+#define PCIE_CAP_L1_EXIT_LATENCY(x)		(x << 15)
+#define PCIE_CAP_L0S_EXIT_LATENCY(x)		(x << 12)
+#define PCIE_CAP_MAX_LINK_WIDTH(x)		(x << 4)
+#define PCIE_CAP_MAX_LINK_SPEED(x)		(x << 0)
+
+#define PCIE_0_DEVICE_CONTROL2_DEVICE_STATUS2_REG	0x098
+#define PCIE_CAP_CPL_TIMEOUT_DISABLE			(1 << 4)
+#define PCIE_0_TYPE0_LINK_CONTROL_LINK_STATUS_REG_1	0x080
+
+gpio_func_data_t pci_0_gpio_data[] = {
+	{
+		.gpio = PCIE_RST_GPIO,
+		.func = 0,
+		.out = GPIO_OUT_HIGH,
+		.pull = GPIO_PULL_DOWN,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_ENABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2,
+	},
+	{
+		.gpio = PCIE_WAKE_GPIO,
+		.func = 0,
+		.out = GPIO_OUT_LOW,
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2,
+	},
+	{
+		.gpio = PCIE_CLKREQ_GPIO,
+		.func = 0,
+		.out = GPIO_OUT_HIGH,
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_ENABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2,
+	},
+};
+
+#define TLMM_GPIO_OUT_1		0x01200004
+#define TLMM_GPIO_OE_1		0x01200084
+
+#define pcie_board_cfg(_id)						\
+{									\
+	.pci_gpio		= pci_##_id##_gpio_data,		\
+	.pci_gpio_count		= ARRAY_SIZE(pci_##_id##_gpio_data),	\
+	.parf			= PCIE20_##_id##_PARF_PHYS,		\
+	.elbi			= PCIE20_##_id##_ELBI_PHYS,		\
+	.pcie20			= PCIE20_##_id##_PHYS,			\
+	.axi_bar_start		= PCIE20_##_id##_AXI_BAR_PHYS,		\
+	.axi_bar_size		= PCIE20_##_id##_AXI_BAR_SIZE,		\
+	.axi_conf		= PCIE20_##_id##_AXI_CONF,		\
+	.pcie_rst		= PCIE20_##_id##_RESET,			\
+}
+
+#define PCIE20_PARF_PHY_CTRL				0x40
+#define __mask(a, b)	(((1 << ((a) + 1)) - 1) & ~((1 << (b)) - 1))
+#define __set(v, a, b)	(((v) << (b)) & __mask(a, b))
+#define PCIE20_PARF_PHY_CTRL_PHY_TX0_TERM_OFFST(x)	_set(x, 20, 16)
+#define PCIE20_PARF_PCS_DEEMPH				0x34
+#define PCIE20_PARF_PCS_DEEMPH_TX_DEEMPH_GEN1(x)	__set(x, 21, 16)
+#define PCIE20_PARF_PCS_DEEMPH_TX_DEEMPH_GEN2_3_5DB(x)	__set(x, 13, 8)
+#define PCIE20_PARF_PCS_DEEMPH_TX_DEEMPH_GEN2_6DB(x)	__set(x, 5, 0)
+#define PCIE20_PARF_PCS_SWING				0x38
+#define PCIE20_PARF_PCS_SWING_TX_SWING_FULL(x)		__set(x, 14, 8)
+#define PCIE20_PARF_PCS_SWING_TX_SWING_LOW(x)		__set(x, 6, 0)
+#define PCIE20_PARF_PHY_REFCLK 				0x4C
+#define PCIE_SFAB_AXI_S5_FCLK_CTL			(MSM_CLK_CTL_BASE + 0x2154)
+#define PCIE20_AXI_MSTR_RESP_COMP_CTRL0			0x818
+#define PCIE20_AXI_MSTR_RESP_COMP_CTRL1			0x81c
+
+#endif
+
 #define ipq40xx_edma_cfg_invalid()	{ .unit = -1, }
 /* Board specific parameter Array */
 board_ipq40xx_params_t board_params[] = {
@@ -847,6 +989,11 @@ board_ipq40xx_params_t board_params[] = {
 		.nor_nand_available = 0,
 		.nor_emmc_available = 0,
 		.dtb_config_name = "#config@1",
+#ifdef CONFIG_IPQ40XX_PCI
+		.pcie_cfg = {
+			pcie_board_cfg(0),
+		},
+#endif
 	},
 	{
 		.machid = MACH_TYPE_IPQ40XX_AP_DK04_1_C2,
