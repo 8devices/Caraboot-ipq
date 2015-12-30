@@ -36,6 +36,7 @@
 #include <asm/arch-qcom-common/clk.h>
 #include <asm/arch-qcom-common/uart.h>
 #include <asm/arch-qcom-common/gsbi.h>
+#include "ipq40xx_cdp.h"
 
 #define FIFO_DATA_SIZE	4
 

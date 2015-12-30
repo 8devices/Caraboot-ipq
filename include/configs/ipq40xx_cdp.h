@@ -104,7 +104,6 @@
 
 #ifndef __ASSEMBLY__
 #include <compiler.h>
-#include "../../board/qcom/ipq40xx_cdp/ipq40xx_cdp.h"
 extern loff_t board_env_offset;
 extern loff_t board_env_range;
 extern loff_t board_env_size;

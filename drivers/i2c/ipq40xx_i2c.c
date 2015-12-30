@@ -17,6 +17,7 @@
 #include <asm/io.h>
 #include <asm/errno.h>
 #include <asm/arch-qcom-common/clk.h>
+#include "ipq40xx_cdp.h"
 
 static int i2c_base_addr;
 static int i2c_hw_initialized;

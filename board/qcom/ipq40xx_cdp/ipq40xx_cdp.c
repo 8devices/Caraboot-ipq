@@ -43,7 +43,7 @@
 #include <phy.h>
 #include <part.h>
 #include <mmc.h>
-#include "../../../drivers/net/ipq40xx/ipq40xx_edma_eth.h"
+#include "ipq40xx_edma_eth.h"
 #ifdef CONFIG_IPQ_NAND
 #include <linux/mtd/ipq_nand.h>
 #include <asm/arch-qcom-common/nand.h>

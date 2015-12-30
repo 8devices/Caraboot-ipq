@@ -21,6 +21,7 @@
 #include <miiphy.h>
 #include <asm/arch-ipq40xx/ess/ipq40xx_edma.h>
 #include "ipq40xx_edma_eth.h"
+#include "ipq40xx_cdp.h"
 #ifdef DEBUG
 #define debugf(fmt, args...) printf(fmt, ##args);
 #else

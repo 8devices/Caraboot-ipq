@@ -18,7 +18,7 @@
 #include <asm/io.h>
 #include <asm/arch-ipq40xx/iomap.h>
 #include <asm/arch-qcom-common/gpio.h>
-#include "../../board/qcom/ipq40xx_cdp/ipq40xx_cdp.h"
+#include "ipq40xx_cdp.h"
 
 #define PCI_CFG0_RDWR			0x4
 #define PCI_CFG1_RDWR			0x5

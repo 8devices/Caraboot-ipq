@@ -22,6 +22,7 @@
 #include <linux/mtd/ubi.h>
 #include <asm/arch-ipq40xx/smem.h>
 #include <mmc.h>
+#include "ipq40xx_cdp.h"
 
 #define DLOAD_MAGIC_COOKIE	0x10
 #define XMK_STR(x)		#x

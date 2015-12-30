@@ -17,6 +17,7 @@
 #include <asm/io.h>
 
 #include "ipq40xx_ess_sw.h"
+#include "ipq40xx_cdp.h"
 
 extern board_ipq40xx_params_t *gboard_param;
 static inline void ipq40xx_ess_sw_rd(u32 addr, u32 * data)

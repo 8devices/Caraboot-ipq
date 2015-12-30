@@ -24,6 +24,8 @@
 include $(TOPDIR)/config.mk
 
 LIB	:= $(obj)libpci.o
+CPPFLAGS += -I$(TOPDIR)/board/qcom/ipq40xx_cdp -I$(TOPDIR)/board/qcom/common
+CFLAGS += -I$(TOPDIR)/board/qcom/ipq40xx_cdp -I$(TOPDIR)/board/qcom/common
 
 COBJS-$(CONFIG_FSL_PCI_INIT) += fsl_pci_init.o
 COBJS-$(CONFIG_PCI) += pci.o pci_auto.o pci_indirect.o

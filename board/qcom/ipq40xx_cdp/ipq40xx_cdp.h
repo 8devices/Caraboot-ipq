@@ -34,7 +34,7 @@
 #include <configs/ipq40xx_cdp.h>
 #include <asm/u-boot.h>
 #include <phy.h>
-#include "../common/qca_common.h"
+#include "qca_common.h"
 
 #define NO_OF_DBG_UART_GPIOS	2
 #ifdef CONFIG_IPQ40XX_I2C
