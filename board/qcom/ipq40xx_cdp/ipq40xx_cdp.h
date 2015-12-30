@@ -37,6 +37,9 @@
 #include "../common/qca_common.h"
 
 #define NO_OF_DBG_UART_GPIOS	2
+#ifdef CONFIG_IPQ40XX_I2C
+#define NO_OF_I2C_GPIOS		2
+#endif
 
 unsigned int smem_get_board_machtype(void);
 
@@ -73,6 +76,13 @@ typedef struct {
 	gpio_func_data_t *dbg_uart_gpio;
 } uart_cfg_t;
 
+#ifdef CONFIG_IPQ40XX_I2C
+typedef struct {
+	unsigned int i2c_base;
+	gpio_func_data_t *i2c_gpio;
+} i2c_cfg_t;
+#endif
+
 /* Board specific parameters */
 typedef struct {
 	unsigned int machid;
@@ -89,6 +99,9 @@ typedef struct {
 	ipq40xx_edma_board_cfg_t edma_cfg[IPQ40XX_EDMA_DEV];
 	uart_cfg_t *uart_cfg;
 	uart_cfg_t *console_uart_cfg;
+#ifdef CONFIG_IPQ40XX_I2C
+	i2c_cfg_t *i2c_cfg;
+#endif
 	gpio_func_data_t *mmc_gpio;
 	unsigned int mmc_gpio_count;
 	unsigned int spi_nand_available;

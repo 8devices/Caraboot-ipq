@@ -42,6 +42,30 @@
 #define NOT_N_MINUS_M(n,m)	(~(n - m))
 #define CLOCK_UPDATE_TIMEOUT_US	1000
 
+#ifdef CONFIG_IPQ40XX_I2C
+#define GCC_BLSP1_QUP1_I2C_APPS_CFG_RCGR	0x01802010
+
+#define GCC_BLSP1_QUP1_I2C_APPS_M		0x0180303C
+#define GCC_BLSP1_QUP1_I2C_APPS_N		0x01803040
+#define GCC_BLSP1_QUP1_I2C_APPS_D		0x01803044
+#define GCC_BLSP1_QUP1_I2C_APPS_CMD_RCGR	0x0180200C
+#define GCC_BLSP1_QUP1_I2C_APPS_CBCR		0x01802008
+
+#define GCC_I2C_CFG_RCGR_SRCSEL_MASK	0x0700
+#define GCC_I2C_CFG_RCGR_SRCDIV_MASK	0x001F
+
+#define GCC_I2C_CFG_RCGR_SRCSEL_SHIFT	8
+#define GCC_I2C_CFG_RCGR_SRCDIV_SHIFT	0
+
+#define I2C0_RCGR_SRC_SEL	1
+#define I2C0_RCGR_SRC_DIV	20
+#define I2C0_CMD_RCGR_UPDATE	0x1
+#define I2C0_CBCR_CLK_ENABLE	0x1
+#define NOT_2D(two_d)		(~two_d)
+#define NOT_N_MINUS_M(n,m)	(~(n - m))
+#define CLOCK_UPDATE_TIMEOUT_US	1000
+#endif
+
 void emmc_clock_config(int mode);
 void emmc_clock_disable(void);
 
@@ -54,4 +78,11 @@ void uart2_set_rate_mnd(unsigned int m,
 			unsigned int n, unsigned int two_d);
 void uart2_configure_mux(void);
 
+/* I2C clocks configuration */
+#ifdef CONFIG_IPQ40XX_I2C
+void i2c_clock_config(void);
+void i2c0_toggle_clock(void);
+int i2c0_trigger_update(void);
+void i2c0_configure_mux(void);
+#endif
 #endif /*QCA_CLK_H*/
