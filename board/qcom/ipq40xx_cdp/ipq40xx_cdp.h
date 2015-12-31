@@ -40,6 +40,7 @@
 #ifdef CONFIG_IPQ40XX_I2C
 #define NO_OF_I2C_GPIOS		2
 #endif
+#define MAX_CONF_NAME		5
 
 unsigned int smem_get_board_machtype(void);
 
@@ -126,10 +127,10 @@ typedef struct {
 	unsigned int spi_nand_available;
 	unsigned int nor_nand_available;
 	unsigned int nor_emmc_available;
-	const char *dtb_config_name;
 #ifdef CONFIG_IPQ40XX_PCI
 	pcie_params_t pcie_cfg[PCI_MAX_DEVICES];
 #endif
+	const char *dtb_config_name[MAX_CONF_NAME];
 } __attribute__ ((__packed__)) board_ipq40xx_params_t;
 
 extern board_ipq40xx_params_t *gboard_param;

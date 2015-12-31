@@ -930,7 +930,7 @@ board_ipq40xx_params_t board_params[] = {
 		.spi_nand_available = 0,
 		.nor_nand_available = 0,
 		.nor_emmc_available = 0,
-		.dtb_config_name = "#config@4",
+		.dtb_config_name = { "config@4", "config@ap.dk01.1-s1" },
 	},
 	{
 		.machid = MACH_TYPE_IPQ40XX_AP_DK01_1_C1,
@@ -946,7 +946,7 @@ board_ipq40xx_params_t board_params[] = {
 		.spi_nand_available = 0,
 		.nor_nand_available = 0,
 		.nor_emmc_available = 0,
-		.dtb_config_name = "#config@4",
+		.dtb_config_name = { "config@4", "config@ap.dk01.1-c1" },
 	},
 	{
 		.machid = MACH_TYPE_IPQ40XX_AP_DK01_1_C2,
@@ -962,7 +962,7 @@ board_ipq40xx_params_t board_params[] = {
 		.spi_nand_available = 1,
 		.nor_nand_available = 0,
 		.nor_emmc_available = 0,
-		.dtb_config_name = "#config@5",
+		.dtb_config_name = { "config@5", "config@ap.dk01.1-c2" },
 	},
 	{
 		.machid = MACH_TYPE_IPQ40XX_AP_DK04_1_C1,
@@ -988,12 +988,12 @@ board_ipq40xx_params_t board_params[] = {
 		.spi_nand_available = 0,
 		.nor_nand_available = 0,
 		.nor_emmc_available = 0,
-		.dtb_config_name = "#config@1",
 #ifdef CONFIG_IPQ40XX_PCI
 		.pcie_cfg = {
 			pcie_board_cfg(0),
 		},
 #endif
+		.dtb_config_name = { "config@1", "config@ap.dk04.1-c1" },
 	},
 	{
 		.machid = MACH_TYPE_IPQ40XX_AP_DK04_1_C2,
@@ -1014,7 +1014,7 @@ board_ipq40xx_params_t board_params[] = {
 		.spi_nand_available = 0,
 		.nor_nand_available = 0,
 		.nor_emmc_available = 0,
-		.dtb_config_name = "#config@2",
+		.dtb_config_name = { "config@2", "config@ap.dk04.1-c2" },
 	},
 	{
 		.machid = MACH_TYPE_IPQ40XX_AP_DK04_1_C3,
@@ -1036,7 +1036,7 @@ board_ipq40xx_params_t board_params[] = {
 		.spi_nand_available = 0,
 		.nor_nand_available = 0,
 		.nor_emmc_available = 1,
-		.dtb_config_name = "#config@3",
+		.dtb_config_name = { "config@3", "config@ap.dk04.1-c3" },
 	},
 	{
 		.machid = MACH_TYPE_IPQ40XX_AP_DK06_1_C1,
@@ -1058,7 +1058,7 @@ board_ipq40xx_params_t board_params[] = {
 		.spi_nand_available = 0,
 		.nor_nand_available = 0,
 		.nor_emmc_available = 0,
-		.dtb_config_name = "#config@9",
+		.dtb_config_name = { "config@9", "config@ap.dk06.1-c1" },
 	},
 
 	{
@@ -1075,7 +1075,7 @@ board_ipq40xx_params_t board_params[] = {
 		.spi_nand_available = 0,
 		.nor_nand_available = 0,
 		.nor_emmc_available = 0,
-		.dtb_config_name = "#config@6",
+		.dtb_config_name = { "config@6", "config@db.dk01.1-c1" },
 	},
 	{
 		.machid = MACH_TYPE_IPQ40XX_DB_DK02_1_C1,
@@ -1099,7 +1099,7 @@ board_ipq40xx_params_t board_params[] = {
 		.spi_nand_available = 0,
 		.nor_nand_available = 0,
 		.nor_emmc_available = 0,
-		.dtb_config_name = "#config@7",
+		.dtb_config_name = { "config@7", "config@db.dk02.1-c1" },
 	},
 	{
 		.machid = MACH_TYPE_IPQ40XX_TB832,
@@ -1114,7 +1114,7 @@ board_ipq40xx_params_t board_params[] = {
 		.spi_nand_available = 0,
 		.nor_nand_available = 0,
 		.nor_emmc_available = 0,
-		.dtb_config_name = "",
+		.dtb_config_name = { "", "" },
 	},
 };
 
