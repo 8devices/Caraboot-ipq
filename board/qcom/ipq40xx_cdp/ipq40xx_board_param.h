@@ -1001,6 +1001,9 @@ board_ipq40xx_params_t board_params[] = {
 		.mtdids = "nand2=spi0.0",
 		.uart_cfg = &uart2,
 		.console_uart_cfg = &uart1_console_uart_dk04,
+#ifdef CONFIG_IPQ40XX_I2C
+		.i2c_cfg = &i2c0,
+#endif
 		.spi_nor_gpio = spi_nor_bga,
 		.spi_nor_gpio_count = ARRAY_SIZE(spi_nor_bga),
 		.sw_gpio = ap_dk04_1_c2_sw_gpio_bga,
