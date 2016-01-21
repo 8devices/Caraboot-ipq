@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2015, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2016, The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -114,11 +114,14 @@ extern int spi_nand_init(void);
  */
 board_ipq40xx_params_t *gboard_param = (board_ipq40xx_params_t *)0xbadb0ad;
 
+#define DLOAD_DISABLE 0x1
+#define RESERVE_ADDRESS_START 0x87B00000 /*TZAPPS, SMEM and TZ Regions */
+#define RESERVE_ADDRESS_SIZE 0x500000
+
 #define SET_MAGIC 0x1
 #define CLEAR_MAGIC 0x0
 #define SCM_CMD_TZ_CONFIG_HW_FOR_RAM_DUMP_ID 0x9
 #define SCM_CMD_TZ_FORCE_DLOAD_ID 0x10
-
 #define BOOT_VERSION	0
 #define TZ_VERSION	1
 /*******************************************************
@@ -140,7 +143,6 @@ static board_ipq40xx_params_t *get_board_param(unsigned int machid)
 	printf("cdp: Invalid machine id 0x%x\n", machid);
 	for (;;);
 }
-
 
 int env_init(void)
 {
@@ -643,6 +645,60 @@ int ipq_fdt_fixup_spi_nor_params(void *blob)
 	return 0;
 }
 
+void ipq_fdt_mem_rsvd_fixup(void *blob)
+{
+	u32 val[2], dload;
+	int nodeoff, ret;
+	dload = htonl(DLOAD_DISABLE);
+	val[0] = htonl(RESERVE_ADDRESS_START);
+	val[1] = htonl(RESERVE_ADDRESS_SIZE);
+
+	/* Reserve only the TZ and SMEM memory region and free the rest */
+	nodeoff = fdt_path_offset(blob, "/reserved-memory/rsvd2");
+	if (nodeoff < 0) {
+		debug("ipq: fdt fixup unable to find compatible node\n");
+		return;
+	}
+	ret = fdt_del_node(blob, nodeoff);
+	if (ret != 0) {
+		debug("ipq: fdt fixup unable to delete node\n");
+		return;
+	}
+	nodeoff = fdt_path_offset(blob, "/reserved-memory/wifi_dump");
+	if (nodeoff < 0) {
+		debug("ipq: fdt fixup unable to find compatible node\n");
+		return;
+	}
+	ret = fdt_del_node(blob, nodeoff);
+	if (ret != 0) {
+		debug("ipq: fdt fixup unable to delete node\n");
+		return;
+	}
+	nodeoff = fdt_path_offset(blob, "/reserved-memory/rsvd1");
+	if (nodeoff < 0) {
+		debug("ipq: fdt fixup unable to find compatible node\n");
+		return;
+	}
+	ret = fdt_setprop(blob, nodeoff, "reg", val, sizeof(val));
+	if (ret != 0) {
+		debug("ipq: fdt fixup unable to find compatible node\n");
+		return;
+	}
+
+	/* Set the dload_status to DLOAD_DISABLE */
+	nodeoff = fdt_path_offset(blob, "/soc/qca,scm_restart_reason");
+	if (nodeoff < 0) {
+		debug("ipq: fdt fixup unable to find compatible node\n");
+		return;
+	}
+	ret = fdt_setprop(blob, nodeoff, "dload_status", &dload, sizeof(dload));
+	if (ret != 0) {
+		debug("ipq: fdt fixup unable to find compatible node\n");
+		return;
+	}
+	reset_crashdump();
+}
+
 void ipq_fdt_fixup_version(void *blob)
 {
 	int nodeoff, ret;
@@ -724,7 +780,9 @@ void ft_board_setup(void *blob, bd_t *bd)
 
 	fdt_fixup_memory_banks(blob, &memory_start, &memory_size, 1);
 	ipq_fdt_fixup_version(blob);
-
+#ifndef CONFIG_QCA_APPSBL_DLOAD
+	ipq_fdt_mem_rsvd_fixup(blob);
+#endif
 	if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
 		mtdparts = "mtdparts=nand0";
 	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
