@@ -250,7 +250,7 @@ int i2c_process_read_data(uint32_t data, uchar *buffer, int len)
 	return idx;
 }
 
-uint32_t i2c_write_read_offset(uchar chip)
+uint32_t i2c_write_read_offset(uchar chip, int alen)
 {
 	uint32_t tag;
 	uint32_t *fifo;
@@ -259,7 +259,7 @@ uint32_t i2c_write_read_offset(uchar chip)
 	tag = QUP_I2C_START_SEQ;
 	tag |= ((QUP_I2C_ADDR(chip)) | (I2C_WRITE)) << 8;
 	tag |= QUP_I2C_DATA_WRITE_SEQ << 16;
-	tag |= OFFSET_BYTE_CNT << 24;
+	tag |= alen << 24;
 	writel(tag, fifo);
 
 	return tag;
@@ -267,38 +267,47 @@ uint32_t i2c_write_read_offset(uchar chip)
 
 uint32_t i2c_write_read_tag(uchar chip, uint addr, int alen, int data_len)
 {
-	uint32_t tag;
+	uint32_t tag = 0;
 	uint32_t *fifo;
 
 	fifo = (uint32_t *) (i2c_base_addr + QUP_OUTPUT_FIFO_OFFSET);
 
 	if (alen == 2) {
 		/* based on the slave send msb 8 bits or lsb 8 bits first */
-		tag = QUP_I2C_DATA(addr >> 8);
-		tag |= QUP_I2C_DATA(addr) << 8;
+		tag = QUP_I2C_DATA(addr);
+		tag |= QUP_I2C_DATA(addr >> 8) << 8;
+		tag |= QUP_I2C_START_SEQ << 16;
+		tag |= ((QUP_I2C_ADDR(chip)) | (I2C_READ)) << 24;
+		writel(tag, fifo);
+
+		tag = 0;
+		tag |= QUP_I2C_DATA_READ_AND_STOP_SEQ;
+		tag |= data_len << 8;
+		writel(tag, fifo);
 	} else if (alen == 1) {
 		tag = QUP_I2C_DATA(addr);
-		tag |= QUP_I2C_NOP_PADDING << 8;
-	} else { /* alen == 0 */
-		tag = QUP_I2C_NOP_PADDING;
-		tag |= QUP_I2C_NOP_PADDING << 8;
+		tag |= QUP_I2C_START_SEQ << 8;
+		tag |= ((QUP_I2C_ADDR(chip)) | (I2C_READ)) << 16;
+		tag |= (QUP_I2C_DATA_READ_AND_STOP_SEQ << 24);
+		writel(tag, fifo);
+
+		tag = 0;
+		tag |= data_len;
+		writel(tag, fifo);
+	} else if (alen == 0) {
+		tag |= QUP_I2C_START_SEQ;
+		tag |= ((QUP_I2C_ADDR(chip)) | (I2C_READ)) << 8;
+		tag |= (QUP_I2C_DATA_READ_AND_STOP_SEQ << 16);
+		tag |= data_len << 24;
+		writel(tag, fifo);
 	}
-
-	tag |= QUP_I2C_START_SEQ << 16;
-	tag |= ((QUP_I2C_ADDR(chip)) | (I2C_READ)) << 24;
-	writel(tag, fifo);
-
-	tag = 0;
-	tag |= QUP_I2C_DATA_READ_AND_STOP_SEQ;
-	tag |= (data_len) << 8;
-	writel(tag, fifo);
-
 	return 0;
 }
 
 int i2c_read(uchar chip, uint addr, int alen, uchar *buffer, int len)
 {
 	int ret = 0;
+	int nack = 0;
 	uint32_t data = 0;
 	uint8_t data_len = len;
 	uint32_t *fifo;
@@ -321,8 +330,13 @@ int i2c_read(uchar chip, uint addr, int alen, uchar *buffer, int len)
 	writel(0x3C, i2c_base_addr + QUP_ERROR_FLAGS_EN_OFFSET);
 	writel(0, i2c_base_addr + QUP_I2C_MASTER_STATUS_OFFSET);
 
-	writel((OUT_FIFO_RD_TAG_BYTE_CNT + OFFSET_BYTE_CNT),
+	if (alen != 0)
+		writel((OUT_FIFO_RD_TAG_BYTE_CNT + alen),
 			i2c_base_addr + QUP_MX_WRITE_COUNT_OFFSET);
+	else
+		writel(OUT_FIFO_WR_TAG_BYTE_CNT,
+			i2c_base_addr + QUP_MX_WRITE_COUNT_OFFSET);
+
 	writel((IN_FIFO_TAG_BYTE_CNT + data_len),
 			i2c_base_addr + QUP_MX_READ_COUNT_OFFSET);
 
@@ -346,7 +360,9 @@ int i2c_read(uchar chip, uint addr, int alen, uchar *buffer, int len)
 
 	fifo = (uint32_t *) (i2c_base_addr + QUP_OUTPUT_FIFO_OFFSET);
 
-	data = i2c_write_read_offset(chip);
+	if (alen != 0)
+		data = i2c_write_read_offset(chip, alen);
+
 	data = i2c_write_read_tag(chip, addr, alen, data_len);
 
 	/* Set to RUN state */
@@ -361,6 +377,13 @@ int i2c_read(uchar chip, uint addr, int alen, uchar *buffer, int len)
 	if (ret != SUCCESS) {
 		debug("Write done failed\n");
 		goto out;
+	}
+
+	nack = readl(i2c_base_addr + QUP_I2C_MASTER_STATUS_OFFSET) & NACK_BIT_MASK;
+	nack = nack >> NACK_BIT_SHIFT;
+	if (nack == 1) {
+		debug("NACK RECVD\n");
+		return -ENACK;
 	}
 
 	if (readl(i2c_base_addr + QUP_OPERATIONAL_OFFSET)
@@ -393,7 +416,7 @@ int i2c_read(uchar chip, uint addr, int alen, uchar *buffer, int len)
 		writel(INPUT_SERVICE_FLAG,
 			i2c_base_addr + QUP_OPERATIONAL_OFFSET);
 	}
-
+	(void)config_i2c_state(QUP_STATE_RESET);
 	return SUCCESS;
 out:
 	/*
@@ -425,20 +448,21 @@ int create_data_byte(uint16_t *data, uchar *buffer, int len)
 	return idx;
 }
 
-uint32_t i2c_frame_wr_tag(uchar chip, uint8_t data_len)
+uint32_t i2c_frame_wr_tag(uchar chip, uint8_t data_len, int alen)
 {
 	uint32_t tag;
 
 	tag = QUP_I2C_START_SEQ;
 	tag |= (((QUP_I2C_ADDR(chip)) | (I2C_WRITE)) << 8);
 	tag |= (QUP_I2C_DATA_WRITE_AND_STOP_SEQ << 16);
-	tag |= (data_len + OFFSET_BYTE_CNT) << 24;
+	tag |= (data_len + alen) << 24;
 	return tag;
 }
 
 int i2c_write(uchar chip, uint addr, int alen, uchar *buffer, int len)
 {
 	int ret = 0;
+	int nack = 0;
 	int idx = 0;
 	int first = 1;
 	uint32_t data = 0;
@@ -465,7 +489,7 @@ int i2c_write(uchar chip, uint addr, int alen, uchar *buffer, int len)
 	writel(0x3C, i2c_base_addr + QUP_ERROR_FLAGS_EN_OFFSET);
 	writel(0, i2c_base_addr + QUP_I2C_MASTER_STATUS_OFFSET);
 
-	writel((OUT_FIFO_WR_TAG_BYTE_CNT + len + OFFSET_BYTE_CNT),
+	writel((OUT_FIFO_WR_TAG_BYTE_CNT + len + alen),
 		i2c_base_addr + QUP_MX_WRITE_COUNT_OFFSET);
 
 
@@ -489,7 +513,7 @@ int i2c_write(uchar chip, uint addr, int alen, uchar *buffer, int len)
 		goto out;
 	}
 	fifo = (uint32_t *) (i2c_base_addr + QUP_OUTPUT_FIFO_OFFSET);
-	data = i2c_frame_wr_tag(chip, data_len);
+	data = i2c_frame_wr_tag(chip, data_len, alen);
 
 	/* Write tags to the FIFO along with Slave address
 	 * and Write len */
@@ -499,19 +523,17 @@ int i2c_write(uchar chip, uint addr, int alen, uchar *buffer, int len)
 		data_lsb_16 = 0;
 		data_msb_16 = 0;
 		data = 0;
-		if (first == 1) {
+		if ((first == 1) && (alen != 0)) {
 			if (alen == 2) {
 				/* based on the slave send msb 8 bits or lsb 8 bits first */
-				data_lsb_16 = QUP_I2C_DATA(addr >> 8);
-				data_lsb_16 |= QUP_I2C_DATA(addr) << 8;
+				data_lsb_16 = QUP_I2C_DATA(addr);
+				data_lsb_16 |= QUP_I2C_DATA(addr >> 8) << 8;
 			} else if (alen == 1) {
 				data_lsb_16 = QUP_I2C_DATA(addr);
-				data_lsb_16 |= QUP_I2C_NOP_PADDING << 8;
-			} else { /* alen == 0 */
-				data_lsb_16 = QUP_I2C_NOP_PADDING;
-				data_lsb_16 |= QUP_I2C_NOP_PADDING << 8;
+				data_lsb_16 |= QUP_I2C_DATA(buffer[idx]) << 8;
+				idx++;
+				len --;
 			}
-
 			first = 0;
 			ret = 2;
 		} else {
@@ -551,7 +573,12 @@ int i2c_write(uchar chip, uint addr, int alen, uchar *buffer, int len)
 		goto out;
 	}
 
-	return ret;
+	nack = readl(i2c_base_addr + QUP_I2C_MASTER_STATUS_OFFSET) & NACK_BIT_MASK;
+	nack = nack >> NACK_BIT_SHIFT;
+	if (nack == 1) {
+		debug("NACK RECVD\n");
+		return -ENACK;
+	}
 out:
 	/*
 	 * Put the I2C Core back in the Reset State to end the transfer.
@@ -559,7 +586,6 @@ out:
 	(void)config_i2c_state(QUP_STATE_RESET);
 	return ret;
 }
-
 
 /*
  * Probe the given I2C chip address.
@@ -570,7 +596,7 @@ int i2c_probe(uchar chip)
 	uchar buf;
 
 	/*send the third parameter alen as per the i2c slave*/
-	return i2c_read(chip, 0x0, 0x2, &buf, 0x1);
+	return i2c_read(chip, 0x0, 0x0, &buf, 0x1);
 }
 
 void i2c_init(int speed, int slaveaddr)

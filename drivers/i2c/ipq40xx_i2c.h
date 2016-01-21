@@ -49,6 +49,7 @@
 #define QUP_MX_READ_COUNT			0x0000
 
 #define SUCCESS					0
+#define ENACK					1
 #define TIMEOUT_CNT				100
 
 #define QUP_STATE_RESET				0x0
@@ -57,6 +58,9 @@
 #define QUP_STATE_VALID_BIT			2
 #define QUP_STATE_VALID				1
 #define QUP_STATE_MASK				0x3
+
+#define NACK_BIT_MASK				0x8
+#define NACK_BIT_SHIFT				3
 
 #define QUP_CONFIG_MINI_CORE_I2C		(2 << 8)
 #define I2C_BIT_WORD				0x7
