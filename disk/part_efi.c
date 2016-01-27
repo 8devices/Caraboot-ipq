@@ -187,7 +187,7 @@ void print_part_efi(block_dev_desc_t * dev_desc)
 					gpt_head, &gpt_pte) != 1) {
 			printf("%s: *** ERROR: Invalid Backup GPT ***\n",
 				__func__);
-			return -1;
+			return;
 		}
 	}
 
