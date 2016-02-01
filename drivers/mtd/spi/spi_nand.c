@@ -57,6 +57,18 @@ static const struct spi_nand_flash_params spi_nand_flash_tbl[] = {
 		.name = "GD5F1GQ4XC",
 	},
 	{
+		.id = { 0xc8, 0xb4, 0x68, 0xc8 },
+		.page_size = 4096,
+		.erase_size = 0x00040000,
+		.pages_per_sector = 64,
+		.nr_sectors = 2048,
+		.oob_size = 256,
+		.protec_bpx = 0xC7,
+		.norm_read_cmd = gigadevice_norm_read_cmd,
+		.verify_ecc = verify_3bit_ecc,
+		.name = "GD5F4GQ4XC",
+	},
+	{
 		.id = { 0xff, 0x9b, 0x12 , 0x9b },
 		.page_size = 2048,
 		.erase_size = 0x00020000,
