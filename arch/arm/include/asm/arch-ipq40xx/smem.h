@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015, 2016 The Linux Foundation. All rights reserved.
 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -89,6 +89,8 @@ int smem_get_boot_flash(uint32_t *flash_type,
 			uint32_t *flash_density);
 int smem_getpart(char *name, uint32_t *start, uint32_t *size);
 unsigned int smem_get_board_machtype(void);
+uint32_t get_nand_block_size(uint8_t dev_id);
+unsigned int get_which_flash_param(char *part_name);
 int smem_ram_ptable_init(struct smem_ram_ptable *smem_ram_ptable);
 int smem_get_build_version(char *version_name, int buf_size, int index);
 
@@ -110,7 +112,7 @@ typedef struct {
 
 extern qca_smem_flash_info_t qca_smem_flash_info;
 
-void qca_set_part_entry(qca_smem_flash_info_t *sfi, qca_part_entry_t *part,
+void qca_set_part_entry(char *name, qca_smem_flash_info_t *sfi, qca_part_entry_t *part,
 			uint32_t start, uint32_t size);
 
 #define ALT_PART_NAME_LENGTH 16

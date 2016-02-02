@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015, 2016 The Linux Foundation. All rights reserved.
 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -95,8 +95,9 @@ static int set_fs_bootargs(int *fs_on_nand)
 #define nand_rootfs	"ubi.mtd=" IPQ_ROOT_FS_PART_NAME " root=mtd:ubi_rootfs rootfstype=squashfs"
 
 	if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
-		if ((sfi->rootfs.offset == 0xBAD0FF5E) &&
-		(gboard_param->nor_emmc_available == 0)) {
+		if (((sfi->rootfs.offset == 0xBAD0FF5E) &&
+		(gboard_param->nor_emmc_available == 0)) ||
+			get_which_flash_param("rootfs")) {
 			bootargs = nand_rootfs;
 			*fs_on_nand = 1;
 			gboard_param->nor_nand_available = 1;
@@ -390,10 +391,12 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 			CONFIG_SYS_LOAD_ADDR);
 
 	} else if ((sfi->flash_type == SMEM_BOOT_SPI_FLASH) && (gboard_param->nor_emmc_available == 0)) {
-		if (sfi->rootfs.offset == 0xBAD0FF5E) {
-			sfi->rootfs.offset = 0;
-			sfi->rootfs.size = IPQ_NAND_ROOTFS_SIZE;
-
+		if ((sfi->rootfs.offset == 0xBAD0FF5E) ||
+			get_which_flash_param("rootfs")) {
+			if (sfi->rootfs.offset == 0xBAD0FF5E) {
+				sfi->rootfs.offset = 0;
+				sfi->rootfs.size = IPQ_NAND_ROOTFS_SIZE;
+			}
 			snprintf(runcmd, sizeof(runcmd),
 				"nand device %d && "
 				"set mtdids nand%d=nand%d && "

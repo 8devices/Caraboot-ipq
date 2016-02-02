@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013,2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013, 2015, 2016 The Linux Foundation. All rights reserved.
  *
  * Based on smem.c from lk.
  *
@@ -35,8 +35,10 @@
 #include <asm/sizes.h>
 #include <asm/arch-ipq40xx/smem.h>
 #include <nand.h>
+#include "ipq40xx_cdp.h"
 
 extern int nand_env_device;
+extern board_ipq40xx_params_t *gboard_param;
 
 #define BUILD_ID_LEN 32
 
@@ -405,11 +407,48 @@ int smem_ram_ptable_init(struct smem_ram_ptable *smem_ram_ptable)
 	return 1;
 }
 
-void qca_set_part_entry(qca_smem_flash_info_t *smem, qca_part_entry_t *part,
-			uint32_t start, uint32_t size)
+/*
+ * get nand block size by device id.
+ * dev_id is 0 for parallel nand.
+ * dev_id is 1 for spi nand.
+ */
+uint32_t get_nand_block_size(uint8_t dev_id)
 {
-	part->offset = ((loff_t) start) * smem->flash_block_size;
-	part->size = ((loff_t) size) * smem->flash_block_size;
+	struct mtd_info *mtd;
+
+	mtd = &nand_info[dev_id];
+
+	return mtd->erasesize;
+}
+
+/*
+ * get flash block size based on partition name.
+ */
+static inline uint32_t get_flash_block_size(char *name,
+				qca_smem_flash_info_t *smem)
+{
+	return (get_which_flash_param(name) == 1) ?
+		get_nand_block_size(gboard_param->spi_nand_available)
+		: smem->flash_block_size;
+}
+
+#define part_which_flash(p)	(((p)->attr & 0xff000000) >> 24)
+
+static inline uint32_t get_part_block_size(struct smem_ptn *p,
+					qca_smem_flash_info_t *sfi)
+{
+	return (part_which_flash(p) == 1) ?
+			get_nand_block_size(gboard_param->spi_nand_available)
+			: sfi->flash_block_size;
+}
+
+void qca_set_part_entry(char *name, qca_smem_flash_info_t *smem,
+		qca_part_entry_t *part, uint32_t start, uint32_t size)
+{
+	uint32_t bsize = get_flash_block_size(name, smem);
+
+	part->offset = ((loff_t)start) * bsize;
+	part->size = ((loff_t)size) * bsize;
 }
 
 uint32_t qca_smem_get_flash_block_size(void)
@@ -419,36 +458,37 @@ uint32_t qca_smem_get_flash_block_size(void)
 
 static char parts[4096];
 
-uint32_t get_flash_block_size(uint8_t dev_id)
-{
-	struct mtd_info *mtd;
-
-	mtd = &nand_info[dev_id];
-
-	return mtd->erasesize;
-}
-
 char *qca_smem_part_to_mtdparts(char *mtdid)
 {
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 	int i, l;
+	int device_id = 0;
 	char *part = parts, *unit;
+	int init = 0;
+	uint32_t bsize;
 
 	part += sprintf(part, "%s:", mtdid);
 
 	for (i = 0; i < smem_ptable.len; i++) {
 		struct smem_ptn *p = &smem_ptable.parts[i];
 		loff_t psize;
+		bsize = get_part_block_size(p, sfi);
 
+		if (part_which_flash(p) && init == 0) {
+			device_id = (gboard_param->spi_nand_available == 1) ? 1 : 0;
+			l = sprintf(part, ";nand%d:", device_id);
+			part += l;
+			init = 1;
+		}
 		if (p->size == (~0u)) {
 			/*
 			 * Partition size is 'till end of device', calculate
 			 * appropriately
 			 */
-			psize = nand_info[nand_env_device].size - (((loff_t)
-					p->start) * sfi->flash_block_size);
+			psize = (nand_info[nand_env_device].size
+					- (((loff_t)p->start) * bsize));
 		} else {
-			psize = ((loff_t)p->size) * sfi->flash_block_size;
+			psize =  ((loff_t)p->size) * bsize;
 		}
 
 		if ((psize > SZ_1M) && (((psize & (SZ_1M - 1)) == 0))) {
@@ -462,8 +502,7 @@ char *qca_smem_part_to_mtdparts(char *mtdid)
 		}
 
 		l = sprintf(part, "%lld%s0x%llx(%s),", psize, unit,
-				((loff_t)p->start) * sfi->flash_block_size,
-				p->name);
+				((loff_t)p->start) * bsize, p->name);
 		part += l;
 	}
 
@@ -475,10 +514,30 @@ char *qca_smem_part_to_mtdparts(char *mtdid)
 	return parts;
 }
 
+/*
+ * retrieve the which_flash flag based on partition name.
+ * flash_var is 1 if partition is in NAND.
+ * flash_var is 0 if partition is in NOR.
+ */
+unsigned int get_which_flash_param(char *part_name)
+{
+	int i;
+	int flash_var = 0;
+
+	for (i = 0; i < smem_ptable.len; i++) {
+		struct smem_ptn *p = &smem_ptable.parts[i];
+		if (strcmp(p->name, part_name) == 0)
+			flash_var = part_which_flash(p);
+	}
+
+	return flash_var;
+}
+
 int do_smeminfo(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 	int i;
+	uint32_t bsize;
 
 	printf(	"flash_type:		0x%x\n"
 		"flash_index:		0x%x\n"
@@ -500,20 +559,22 @@ int do_smeminfo(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	for (i = 0; i < smem_ptable.len; i++) {
 		struct smem_ptn *p = &smem_ptable.parts[i];
 		loff_t psize;
+		bsize = get_part_block_size(p, sfi);
 
 		if (p->size == (~0u)) {
 			/*
 			 * Partition size is 'till end of device', calculate
 			 * appropriately
 			 */
-			psize = nand_info[nand_env_device].size - (((loff_t)
-					p->start) * sfi->flash_block_size);
+			psize = nand_info[nand_env_device].size
+				- (((loff_t)p->start) * bsize);
 		} else {
-			psize = ((loff_t)p->size) * sfi->flash_block_size;
+			psize =  ((loff_t)p->size) * bsize;
 		}
+
 		printf("%3d: " smem_ptn_name_fmt " 0x%08x %#16llx %#16llx\n",
-			i, p->name, p->attr,
-			((loff_t)p->start) * sfi->flash_block_size, psize);
+			i, p->name, p->attr, ((loff_t)p->start) *
+			bsize, psize);
 	}
 	return 0;
 }
