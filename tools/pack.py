@@ -109,7 +109,7 @@ def error(msg, ex=None):
 
 FlashInfo = namedtuple("FlashInfo", "type pagesize blocksize chipsize")
 ImageInfo = namedtuple("ProgInfo", "name filename type")
-PartInfo = namedtuple("PartInfo", "name offset length")
+PartInfo = namedtuple("PartInfo", "name offset length which_flash")
 
 def roundup(value, roundto):
     """Return the next largest multiple of 'roundto'."""
@@ -161,7 +161,8 @@ class GPT(object):
         name = "0:GPT"
         block_start = gptheader.current_lba - 1
         block_count = gptheader.first_usable_lba - gptheader.current_lba + 1
-        part_info = PartInfo(name, block_start, block_count)
+        which_flash = 0
+        part_info = PartInfo(name, block_start, block_count, which_flash)
         self.__partitions[name] = part_info
 
         part_fp.seek(2 * self.blocksize, os.SEEK_SET)
@@ -176,7 +177,7 @@ class GPT(object):
 
             part_name = gpt_table.part_name.strip(chr(0))
             name = part_name.replace('\0','')
-            part_info = PartInfo(name, block_start, block_count)
+            part_info = PartInfo(name, block_start, block_count, which_flash)
             self.__partitions[name] = part_info
 
         # Adding the GPT Backup partition.
@@ -186,7 +187,7 @@ class GPT(object):
         name = "0:GPTBACKUP"
         block_start = gptheader.backup_lba - 32
         block_count = 33
-        part_info = PartInfo(name, block_start, block_count)
+        part_info = PartInfo(name, block_start, block_count, which_flash)
         self.__partitions[name] = part_info
 
     def get_parts(self):
@@ -217,11 +218,13 @@ class MIBIB(object):
                         " attr1 attr2 attr3 which_flash")
     ENTRY_FMT = "<16sLLBBBB"
 
-    def __init__(self, filename, pagesize, blocksize, chipsize):
+    def __init__(self, filename, pagesize, blocksize, chipsize, nand_blocksize, nand_chipsize):
         self.filename = filename
         self.pagesize = pagesize
         self.blocksize = blocksize
         self.chipsize = chipsize
+        self.nand_blocksize = nand_blocksize
+        self.nand_chipsize = nand_chipsize
         self.__partitions = OrderedDict()
 
     def __validate(self, part_fp):
@@ -258,15 +261,23 @@ class MIBIB(object):
             mentry = struct.unpack(MIBIB.ENTRY_FMT, mentry_str)
             mentry = MIBIB.Entry._make(mentry)
 
-            byte_offset = mentry.offset * self.blocksize
+            if mentry.which_flash == 0:
+                byte_offset = mentry.offset * self.blocksize
 
-            if mentry.length == 0xFFFFFFFF:
-                byte_length = self.chipsize - byte_offset
+                if mentry.length == 0xFFFFFFFF:
+                    byte_length = self.chipsize - byte_offset
+                else:
+                    byte_length = mentry.length * self.blocksize
             else:
-                byte_length = mentry.length * self.blocksize
+                byte_offset = mentry.offset * self.nand_blocksize
+
+                if mentry.length == 0xFFFFFFFF:
+                    byte_length = self.nand_chipsize - byte_offset
+                else:
+                    byte_length = mentry.length * self.nand_blocksize
 
             part_name = mentry.name.strip(chr(0))
-            part_info = PartInfo(part_name, byte_offset, byte_length)
+            part_info = PartInfo(part_name, byte_offset, byte_length, mentry.which_flash)
             self.__partitions[part_name] = part_info
 
     def __write_header(self, part_fp):
@@ -765,9 +776,14 @@ class Pack(object):
                     script.nand_write(offset, img_size)
                     count = count + 1
             else:
-                offset = part_info.offset
-                script.erase(offset, part_info.length)
-                script.write(offset, img_size, yaffs)
+                if part_info.which_flash == 0:
+                    offset = part_info.offset
+                    script.erase(offset, part_info.length)
+                    script.write(offset, img_size, yaffs)
+                else:
+                    offset = part_info.offset
+                    script.nand_write(offset, part_info.length)
+
             script.finish_activity()
 
             if machid:
@@ -890,8 +906,17 @@ class Pack(object):
             error("error opening flash config file '%s'" % fconf_fname, e)
 
         if flinfo.type != "emmc":
+            nand_pagesize = int(self.bconf.get(board_section, "nand_pagesize"))
+            nand_pages_per_block = int(self.bconf.get(board_section,
+                                                 "nand_pages_per_block"))
+            nand_blocks_per_chip = int(self.bconf.get(board_section,
+                                                 "nand_total_blocks"))
+
+            nand_blocksize = nand_pages_per_block * nand_pagesize
+            nand_chipsize = nand_blocks_per_chip * nand_blocksize
+
             mibib = MIBIB(part_fname, flinfo.pagesize, flinfo.blocksize,
-                          flinfo.chipsize)
+                          flinfo.chipsize, nand_blocksize, nand_chipsize)
             self.partitions = mibib.get_parts()
         else:
             gpt = GPT(part_fname, flinfo.pagesize, flinfo.blocksize, flinfo.chipsize)
@@ -1143,8 +1168,17 @@ class Pack(object):
         if not os.path.isabs(fconf_fname):
             self.fconf_fname = os.path.join(self.images_dname, fconf_fname)
 
+        nand_pagesize = int(self.bconf.get(board_section, "nand_pagesize"))
+        nand_pages_per_block = int(self.bconf.get(board_section,
+                                             "nand_pages_per_block"))
+        nand_blocks_per_chip = int(self.bconf.get(board_section,
+                                             "nand_total_blocks"))
+
+        nand_blocksize = nand_pages_per_block * nand_pagesize
+        nand_chipsize = nand_blocks_per_chip * nand_blocksize
+
         mibib = MIBIB(part_fname, self.flinfo.pagesize, self.flinfo.blocksize,
-                      self.flinfo.chipsize)
+                      self.flinfo.chipsize, nand_blocksize, nand_chipsize)
         self.partitions = mibib.get_parts()
 
         script.echo("", verbose=True)
