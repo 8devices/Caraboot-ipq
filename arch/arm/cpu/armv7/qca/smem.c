@@ -419,6 +419,15 @@ uint32_t qca_smem_get_flash_block_size(void)
 
 static char parts[4096];
 
+uint32_t get_flash_block_size(uint8_t dev_id)
+{
+	struct mtd_info *mtd;
+
+	mtd = &nand_info[dev_id];
+
+	return mtd->erasesize;
+}
+
 char *qca_smem_part_to_mtdparts(char *mtdid)
 {
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
