@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2015,2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015, 2016 The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -124,6 +124,8 @@ board_ipq40xx_params_t *gboard_param = (board_ipq40xx_params_t *)0xbadb0ad;
 #define SCM_CMD_TZ_FORCE_DLOAD_ID 0x10
 #define BOOT_VERSION	0
 #define TZ_VERSION	1
+#define RD_FAST_BOOT_CONFIG	0x0005E02C
+
 /*******************************************************
  Function description: Board specific initialization.
  I/P : None
@@ -299,6 +301,7 @@ void qca_get_part_details(void)
 int board_late_init(void)
 {
 	unsigned int machid;
+	unsigned int flash_type;
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 
 	if (sfi->flash_type != SMEM_BOOT_MMC_FLASH) {
@@ -308,6 +311,9 @@ int board_late_init(void)
 	/* get machine type from SMEM and set in env */
 	machid = gd->bd->bi_arch_number;
 	printf("machid: %x\n", machid);
+	flash_type = ((readl(RD_FAST_BOOT_CONFIG) & 0x1E ) >> 1);
+	setenv_addr("flash_type", (void *)flash_type);
+	printf("flash_type: %d\n", flash_type);
 	if (machid != 0) {
 		setenv_addr("machid", (void *)machid);
 		gd->bd->bi_arch_number = machid;
