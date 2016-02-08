@@ -446,6 +446,7 @@ void board_init_f(ulong bootflag)
 	display_dram_config();	/* and display it */
 
 #ifdef CONFIG_IPQ40XX_XIP
+	gd->malloc_end = addr;
 	gd->relocaddr = _TEXT_BASE;
 	gd->start_addr_sp = addr_sp;
 	gd->reloc_off = 0;
@@ -524,7 +525,11 @@ void board_init_r(gd_t *id, ulong dest_addr)
 #endif
 
 	/* The Malloc area is immediately below the monitor copy in DRAM */
+#ifdef CONFIG_IPQ40XX_XIP
+	malloc_start = gd->malloc_end - TOTAL_MALLOC_LEN;
+#else
 	malloc_start = dest_addr - TOTAL_MALLOC_LEN;
+#endif
 	mem_malloc_init (malloc_start, TOTAL_MALLOC_LEN);
 
 #ifdef CONFIG_ARCH_EARLY_INIT_R
