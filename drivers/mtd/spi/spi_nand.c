@@ -440,6 +440,7 @@ static int spi_nand_read_std(struct mtd_info *mtd, loff_t from, struct mtd_oob_o
 {
 	struct ipq40xx_spinand_info *info = mtd_to_ipq_info(mtd);
 	struct spi_flash *flash = info->flash;
+	struct nand_chip *chip = info->chip;
 	u32 ret;
 	u8 cmd[8];
 	u8 status;
@@ -447,10 +448,9 @@ static int spi_nand_read_std(struct mtd_info *mtd, loff_t from, struct mtd_oob_o
 	int ecc_corrected = 0;
 	column = mtd->writesize;
 
-	realpage = (int)(from >> 0xB);
-	page = realpage & 0xffff;
+	realpage = (int)(from >> chip->page_shift);
+	page = realpage & chip->pagemask;
 	readlen = ops->len;
-
 	ret = spi_claim_bus(flash->spi);
 	if (ret) {
 		printf ("Claim bus failed. %s\n", __func__);
@@ -514,7 +514,7 @@ static int spi_nand_read_std(struct mtd_info *mtd, loff_t from, struct mtd_oob_o
 			break;
 		ops->datbuf += bytes;
 		realpage++;
-		page = realpage & 0xffff;
+		page = realpage & chip->pagemask;
 	}
 
 	if ((ret == 0) && (ecc_corrected))
@@ -556,6 +556,7 @@ static int spi_nand_write(struct mtd_info *mtd, loff_t to, size_t len,
 {
 	struct ipq40xx_spinand_info *info = mtd_to_ipq_info(mtd);
 	struct spi_flash *flash = info->flash;
+	struct nand_chip *chip = info->chip;
 	u8 cmd[8];
 	u8 status;
 	u32 ret;
@@ -571,8 +572,8 @@ static int spi_nand_write(struct mtd_info *mtd, loff_t to, size_t len,
 		return -EINVAL;
 	}
 
-	realpage = (int)(to >> 0xb);
-	page = realpage & 0xffff;
+	realpage = (int)(to >> chip->page_shift);
+	page = realpage & chip->pagemask;
 
 	ret = spi_claim_bus(flash->spi);
 	if (ret) {
@@ -632,7 +633,7 @@ static int spi_nand_write(struct mtd_info *mtd, loff_t to, size_t len,
 			break;
 		buf += bytes;
 		realpage++;
-		page = realpage & 0xffff;
+		page = realpage & chip->pagemask;
 
 	}
 
