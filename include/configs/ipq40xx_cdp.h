@@ -168,7 +168,7 @@ typedef struct {
 #define CONFIG_ENV_SIZE_MAX		(256 << 10) /* 256 KB */
 #define CONFIG_ENV_RANGE		board_env_size
 #define CONFIG_ENV_SIZE			board_env_range
-#define CONFIG_SYS_MALLOC_LEN		(CONFIG_ENV_SIZE_MAX + (256 << 10))
+#define CONFIG_SYS_MALLOC_LEN		(CONFIG_ENV_SIZE_MAX + (512 << 10))
 
 #define CONFIG_CMD_MEMORY
 #define CONFIG_SYS_MEMTEST_START	CONFIG_SYS_SDRAM_BASE + 0x1300000
