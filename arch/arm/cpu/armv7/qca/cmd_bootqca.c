@@ -292,6 +292,8 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 		BUG();
 	}
 
+	dcache_enable();
+
 	ret = config_select(request, gboard_param->dtb_config_name,
 				runcmd, sizeof(runcmd));
 
@@ -306,6 +308,7 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 #ifdef CONFIG_QCA_MMC
 	mmc_initialize(gd->bd);
 #endif
+		dcache_disable();
 		return CMD_RET_FAILURE;
 	}
 
@@ -445,6 +448,9 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 #endif
 		return CMD_RET_FAILURE;
 	}
+
+	dcache_enable();
+
 	ret = genimg_get_format((void *)CONFIG_SYS_LOAD_ADDR);
 	if (ret == IMAGE_FORMAT_FIT) {
 		ret = config_select(CONFIG_SYS_LOAD_ADDR, gboard_param->dtb_config_name,
@@ -463,11 +469,14 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 			snprintf(runcmd, sizeof(runcmd),
 				"bootm 0x%x\n", (CONFIG_SYS_LOAD_ADDR +
 				sizeof(mbn_header_t)));
-		} else
+		} else {
+			dcache_disable();
 			return CMD_RET_FAILURE;
+		}
 	}
 
 	if (ret < 0 || run_command(runcmd, 0) != CMD_RET_SUCCESS) {
+		dcache_disable();
 		return CMD_RET_FAILURE;
 	}
 	return CMD_RET_SUCCESS;
