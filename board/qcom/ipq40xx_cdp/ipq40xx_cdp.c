@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2015-2016, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015,2016 The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -289,7 +289,7 @@ void qca_get_part_details(void)
 			part->offset = 0xBAD0FF5E;
 			part->size = 0xBAD0FF5E;
 		} else {
-			qca_set_part_entry(smem, entries[i].part, start, size);
+			qca_set_part_entry(entries[i].name, smem, entries[i].part, start, size);
 		}
 	}
 
@@ -787,12 +787,14 @@ void ft_board_setup(void *blob, bd_t *bd)
 		/* Patch NOR block size and density for
 		 * generic probe case */
 		ipq_fdt_fixup_spi_nor_params(blob);
-		if (gboard_param->spi_nand_available) {
+		if (gboard_param->spi_nand_available &&
+			get_which_flash_param("rootfs") == 0) {
 			sprintf(parts_str,
 				"mtdparts=nand1:0x%x@0(rootfs);spi0.0",
 				IPQ_NAND_ROOTFS_SIZE);
 			mtdparts = parts_str;
-		} else if (gboard_param->nor_nand_available) {
+		} else if (gboard_param->nor_nand_available &&
+			get_which_flash_param("rootfs") == 0) {
 			sprintf(parts_str,
 				"mtdparts=nand0:0x%x@0(rootfs);spi0.0",
 				IPQ_NAND_ROOTFS_SIZE);
