@@ -441,10 +441,6 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 		return -1;
 	}
 
-#ifdef CONFIG_QCA_MMC
-	board_mmc_deinit();
-#endif
-
 	if (run_command(runcmd, 0) != CMD_RET_SUCCESS) {
 #ifdef CONFIG_QCA_MMC
 		mmc_initialize(gd->bd);

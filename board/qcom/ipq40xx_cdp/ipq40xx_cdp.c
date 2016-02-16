@@ -824,6 +824,11 @@ void ft_board_setup(void *blob, bd_t *bd)
 	}
 	ipq40xx_set_ethmac_addr();
 	fdt_fixup_ethernet(blob);
+
+#ifdef CONFIG_QCA_MMC
+        board_mmc_deinit();
+#endif
+
 }
 
 #endif /* CONFIG_OF_BOARD_SETUP */
