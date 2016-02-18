@@ -822,6 +822,7 @@ void ft_board_setup(void *blob, bd_t *bd)
 
 		ipq_fdt_fixup_mtdparts(blob, nodes);
 	}
+	dcache_disable();
 	ipq40xx_set_ethmac_addr();
 	fdt_fixup_ethernet(blob);
 
