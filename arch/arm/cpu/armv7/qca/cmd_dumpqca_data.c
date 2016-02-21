@@ -15,6 +15,8 @@
 #include <command.h>
 #include <image.h>
 #include <asm/arch-ipq806x/smem.h>
+#include <asm/arch-ipq40xx/scm.h>
+#include <configs/ipq40xx_cdp.h>
 DECLARE_GLOBAL_DATA_PTR;
 
 static int do_dumpqca_data(cmd_tbl_t *cmdtp, int flag, int argc,
@@ -25,6 +27,8 @@ static int do_dumpqca_data(cmd_tbl_t *cmdtp, int flag, int argc,
 	/* dump to root of TFTP server if none specified */
 	char *dumpdir;
 	uint32_t memaddr;
+	int ret;
+	char buf;
 
 	if (argc == 2) {
 		serverip = argv[1];
@@ -46,14 +50,28 @@ static int do_dumpqca_data(cmd_tbl_t *cmdtp, int flag, int argc,
 		dumpdir = "";
 		printf("Env 'dumpdir' not set. Using / dir in TFTP server\n");
 	}
-	/*
-	 * Dumps CONFIG_SYS_SDRAM_BASE to gd->ram_size.
-	 */
+
 	printf("\nProcessing dumps.....\n");
-	memaddr = CONFIG_SYS_SDRAM_BASE;
-	snprintf(runcmd, sizeof(runcmd), "tftpput 0x%x 0x%x %s/%s",
-		memaddr, (unsigned int)gd->ram_size,
-		dumpdir, "EBICS0.bin");
+	ret = scm_call(SCM_SVC_FUSE, QFPROM_IS_AUTHENTICATE_CMD,
+				NULL, 0, &buf, sizeof(char));
+	if (ret == 0 && buf == 1) {
+		/*
+		* Dumps CPU_CONTEXT_DUMP_BASE to gd->ram_size.
+		*/
+		memaddr = CONFIG_CPU_CONTEXT_DUMP_BASE;
+		gd->ram_size = CONFIG_CPU_CONTEXT_DUMP_SIZE;
+		snprintf(runcmd, sizeof(runcmd), "tftpput 0x%x 0x%x %s/%s",
+			memaddr, (unsigned int)gd->ram_size,
+			dumpdir, "EBICS0.bin");
+	} else {
+		/*
+		* Dumps CONFIG_SYS_SDRAM_BASE to gd->ram_size.
+		*/
+		memaddr = CONFIG_SYS_SDRAM_BASE;
+		snprintf(runcmd, sizeof(runcmd), "tftpput 0x%x 0x%x %s/%s",
+			memaddr, (unsigned int)gd->ram_size,
+			dumpdir, "EBICS0.bin");
+	}
 
 	if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
 		return CMD_RET_FAILURE;
