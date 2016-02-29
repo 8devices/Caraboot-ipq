@@ -5,6 +5,7 @@
 # SPDX-License-Identifier:	GPL-2.0+
 #
 
+obj-$(CONFIG_ARCH_IPQ807x_SERIAL) += qcom_uart.o
 ifdef CONFIG_DM_SERIAL
 obj-y += serial-uclass.o
 obj-$(CONFIG_PL01X_SERIAL) += serial_pl01x.o

@@ -421,6 +421,13 @@ config ARCH_EXYNOS
 	select DM_GPIO
 	select DM_KEYBOARD
 
+config ARCH_IPQ807x
+	bool "QCA, IPQ807x"
+	select DM
+	select DM_SERIAL
+	select CPU_V7
+	select SYS_GENERIC_BOARD
+
 config ARCH_S5PC1XX
 	bool "Samsung S5PC1XX"
 	select CPU_V7
@@ -808,6 +815,7 @@ source "board/gumstix/pepper/Kconfig"
 source "board/h2200/Kconfig"
 source "board/hisilicon/hikey/Kconfig"
 source "board/imx31_phycore/Kconfig"
+source "board/ipq807x/Kconfig"
 source "board/isee/igep0033/Kconfig"
 source "board/maxbcm/Kconfig"
 source "board/mpl/vcma9/Kconfig"

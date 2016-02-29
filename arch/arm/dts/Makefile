@@ -19,6 +19,9 @@ dtb-$(CONFIG_EXYNOS5) += exynos5250-arndale.dtb \
 	exynos5420-peach-pit.dtb \
 	exynos5800-peach-pi.dtb \
 	exynos5422-odroidxu3.dtb
+
+dtb-$(CONFIG_ARCH_IPQ807x) += ipq807x-hk01.dtb
+
 dtb-$(CONFIG_ARCH_ROCKCHIP) += \
 	rk3288-firefly.dtb \
 	rk3288-jerry.dtb \
