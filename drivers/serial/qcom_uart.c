@@ -37,15 +37,26 @@
 #include <asm/arch-qcom-common/uart.h>
 #include <asm/arch-qcom-common/gsbi.h>
 
+#include <dm.h>
+#include <errno.h>
+#include <fdtdec.h>
+#include <linux/compiler.h>
+#include <asm/io.h>
+#include <serial.h>
+
+DECLARE_GLOBAL_DATA_PTR;
+
+/* Information about a serial port */
+struct ipq_serial_platdata {
+	unsigned long reg_base;  /* address of registers in physical memory */
+	u8 port_id;     /* uart port number */
+	u8 bit_rate;
+};
+
 #define FIFO_DATA_SIZE	4
 
-#if defined CONFIG_IPQ806X
-extern board_ipq806x_params_t *gboard_param;
-#elif defined CONFIG_IPQ40XX
-extern board_ipq40xx_params_t *gboard_param;
-#endif
 
-static unsigned int msm_boot_uart_dm_init(unsigned int  uart_dm_base);
+static unsigned int msm_boot_uart_dm_init(unsigned long uart_dm_base);
 
 /* Received data is valid or not */
 static int valid_data = 0;
@@ -57,7 +68,8 @@ static unsigned int word = 0;
  * msm_boot_uart_dm_init_rx_transfer - Init Rx transfer
  * @uart_dm_base: UART controller base address
  */
-static unsigned int msm_boot_uart_dm_init_rx_transfer(unsigned int uart_dm_base)
+static unsigned int
+msm_boot_uart_dm_init_rx_transfer(unsigned long uart_dm_base)
 {
 	/* Reset receiver */
 	writel(MSM_BOOT_UART_DM_CMD_RESET_RX,
@@ -90,14 +102,12 @@ static unsigned int msm_boot_uart_dm_init_rx_transfer(unsigned int uart_dm_base)
  * @wait is true, else returns %MSM_BOOT_UART_DM_E_RX_NOT_READY.
  */
 static unsigned int
-msm_boot_uart_dm_read(unsigned int *data, int *count, int wait)
+msm_boot_uart_dm_read(unsigned int *data, int *count, int wait,
+			unsigned long base)
 {
 	static int total_rx_data = 0;
 	static int rx_data_read = 0;
-	unsigned int  base = 0;
 	uint32_t status_reg;
-
-	base = gboard_param->uart_dm_base;
 
 	if (data == NULL)
 		return MSM_BOOT_UART_DM_E_INVAL;
@@ -163,7 +173,7 @@ msm_boot_uart_dm_read(unsigned int *data, int *count, int wait)
  * "\r\n". Currently keeping it simple than efficient.
  */
 static unsigned int
-msm_boot_uart_replace_lr_with_cr(char *data_in,
+msm_boot_uart_replace_lr_with_cr(const char *data_in,
                                  int num_of_chars,
                                  char *data_out, int *num_of_chars_out)
 {
@@ -193,7 +203,8 @@ msm_boot_uart_replace_lr_with_cr(char *data_in,
  * till space becomes available.
  */
 static unsigned int
-msm_boot_uart_dm_write(char *data, unsigned int num_of_chars)
+msm_boot_uart_dm_write(const char *data, unsigned int num_of_chars,
+			unsigned long base)
 {
 	unsigned int tx_word_count = 0;
 	unsigned int tx_char_left = 0, tx_char = 0;
@@ -201,7 +212,6 @@ msm_boot_uart_dm_write(char *data, unsigned int num_of_chars)
 	int i = 0;
 	char *tx_data = NULL;
 	char new_data[1024];
-	unsigned int base = gboard_param->uart_dm_base;
 
         if ((data == NULL) || (num_of_chars <= 0))
                 return MSM_BOOT_UART_DM_E_INVAL;
@@ -258,7 +268,7 @@ msm_boot_uart_dm_write(char *data, unsigned int num_of_chars)
  * msm_boot_uart_dm_reset - resets UART controller
  * @base: UART controller base address
  */
-static unsigned int msm_boot_uart_dm_reset(unsigned int base)
+static unsigned int msm_boot_uart_dm_reset(unsigned long base)
 {
 	writel(MSM_BOOT_UART_DM_CMD_RESET_RX, MSM_BOOT_UART_DM_CR(base));
 	writel(MSM_BOOT_UART_DM_CMD_RESET_TX, MSM_BOOT_UART_DM_CR(base));
@@ -273,7 +283,7 @@ static unsigned int msm_boot_uart_dm_reset(unsigned int base)
  * msm_boot_uart_dm_init - initilaizes UART controller
  * @uart_dm_base: UART controller base address
  */
-static unsigned int msm_boot_uart_dm_init(unsigned int  uart_dm_base)
+static unsigned int msm_boot_uart_dm_init(unsigned long uart_dm_base)
 {
 	/* Configure UART mode registers MR1 and MR2 */
 	/* Hardware flow control isn't supported */
@@ -338,56 +348,14 @@ static unsigned int msm_boot_uart_dm_init(unsigned int  uart_dm_base)
  *
  * Initializes clocks, GPIO and UART controller.
  */
-static void uart_dm_init(void)
+static void ipq_serial_init(struct ipq_serial_platdata *plat,
+				unsigned long base)
 {
-	unsigned int dm_base;
-#ifdef CONFIG_IPQ806X
-	unsigned int gsbi_base;
-#endif
-
-	dm_base = gboard_param->uart_dm_base;
-
-#ifdef CONFIG_IPQ806X
-	gsbi_base = gboard_param->uart_gsbi_base;
-	ipq_configure_gpio(gboard_param->dbg_uart_gpio, NO_OF_DBG_UART_GPIOS);
-
-	/* Configure the uart clock */
-        uart_clock_config(gboard_param->uart_gsbi,
-		gboard_param->uart_mnd_value.m_value,
-		gboard_param->uart_mnd_value.n_value,
-		gboard_param->uart_mnd_value.d_value,
-		gboard_param->clk_dummy);
-
-	writel(GSBI_PROTOCOL_CODE_I2C_UART <<
-		GSBI_CTRL_REG_PROTOCOL_CODE_S,
-		GSBI_CTRL_REG(gsbi_base));
-#elif defined CONFIG_IPQ40XX
-	qca_configure_gpio(gboard_param->dbg_uart_gpio, NO_OF_DBG_UART_GPIOS);
 	writel(1, GCC_BLSP1_UART1_APPS_CBCR);
-#endif
-        writel(UART_DM_CLK_RX_TX_BIT_RATE, MSM_BOOT_UART_DM_CSR(dm_base));
+        writel(plat->bit_rate, MSM_BOOT_UART_DM_CSR(base));
 
 	/* Intialize UART_DM */
-	msm_boot_uart_dm_init(dm_base);
-}
-
-/**
- * serial_putc - transmits a character
- * @c: character to transmit
- */
-void serial_putc(char c)
-{
-        msm_boot_uart_dm_write(&c, 1);
-}
-
-/**
- * serial_puts - transmits a string of data
- * @s: string to transmit
- */
-void serial_puts(const char *s)
-{
-        while (*s != '\0')
-                serial_putc(*s++);
+	msm_boot_uart_dm_init(base);
 }
 
 /**
@@ -395,14 +363,17 @@ void serial_puts(const char *s)
  *
  * Returns 1 if data available, 0 otherwise
  */
-int serial_tstc(void)
+static int ipq_serial_pending(struct udevice *dev, bool input)
 {
+	struct ipq_serial_platdata *plat = dev->platdata;
+	unsigned long base = plat->reg_base;
+
 	/* Return if data is already read */
 	if (valid_data)
 		return 1;
 
 	/* Read data from the FIFO */
-	if (msm_boot_uart_dm_read(&word, &valid_data, 0) != MSM_BOOT_UART_DM_E_SUCCESS)
+	if (msm_boot_uart_dm_read(&word, &valid_data, 0, base) != MSM_BOOT_UART_DM_E_SUCCESS)
 		return 0;
 
 	return 1;
@@ -413,11 +384,11 @@ int serial_tstc(void)
  *
  * Returns the character read from serial port.
  */
-int serial_getc(void)
+static int ipq_serial_getc(struct udevice *dev)
 {
 	int byte;
 
-	while (!serial_tstc()) {
+	while (!ipq_serial_pending(dev, true)) {
 		WATCHDOG_RESET();
 		/* wait for incoming data */
 	}
@@ -432,16 +403,65 @@ int serial_getc(void)
 /*
  * serial_setbrg - sets serial baudarate
  */
-void serial_setbrg(void)
+static int ipq_serial_setbrg(struct udevice *dev, int baudrate)
 {
-        return;
+	return 0;
 }
 
-/**
- * serial_init - initializes serial controller
- */
-int  serial_init(void)
+static int ipq_serial_putc(struct udevice *dev, const char ch)
 {
-        uart_dm_init();
-        return 0;
+	struct ipq_serial_platdata *plat = dev->platdata;
+	unsigned long base = plat->reg_base;
+
+	return msm_boot_uart_dm_write(&ch, 1, base);
 }
+
+static int ipq_serial_probe(struct udevice *dev)
+{
+	struct ipq_serial_platdata *plat = dev->platdata;
+	unsigned long base = plat->reg_base;
+
+	ipq_serial_init(plat, base);
+
+	return 0;
+}
+
+static int ipq_serial_ofdata_to_platdata(struct udevice *dev)
+{
+	struct ipq_serial_platdata *plat = dev->platdata;
+	fdt_addr_t addr;
+
+	addr = dev_get_addr(dev);
+	if (addr == FDT_ADDR_T_NONE)
+		return -EINVAL;
+
+	plat->reg_base = addr;
+	plat->port_id = fdtdec_get_int(gd->fdt_blob, dev->of_offset, "id", -1);
+	plat->bit_rate = fdtdec_get_int(gd->fdt_blob, dev->of_offset,
+			"bit_rate", -1);
+
+	return 0;
+}
+
+static const struct dm_serial_ops ipq_serial_ops = {
+	.putc = ipq_serial_putc,
+	.pending = ipq_serial_pending,
+	.getc = ipq_serial_getc,
+	.setbrg = ipq_serial_setbrg,
+};
+
+static const struct udevice_id ipq_serial_ids[] = {
+	{ .compatible = "qca,ipq-uartdm" },
+	{ }
+};
+
+U_BOOT_DRIVER(serial_ipq) = {
+	.name   = "serial_ipq",
+	.id     = UCLASS_SERIAL,
+	.of_match = ipq_serial_ids,
+	.ofdata_to_platdata = ipq_serial_ofdata_to_platdata,
+	.platdata_auto_alloc_size = sizeof(struct ipq_serial_platdata),
+	.probe = ipq_serial_probe,
+	.ops    = &ipq_serial_ops,
+	.flags = DM_FLAG_PRE_RELOC,
+};

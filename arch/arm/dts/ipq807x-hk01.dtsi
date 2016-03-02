@@ -19,6 +19,7 @@
 		compatible = "qca,ipq-uartdm";
 		reg = <0x78b0000 0x200>;
 		id = <2>;
+		bit_rate = <0xff>;
 	};
 
 	timer {
