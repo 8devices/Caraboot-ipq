@@ -427,6 +427,7 @@ config ARCH_IPQ807x
 	select DM_SERIAL
 	select CPU_V7
 	select SYS_GENERIC_BOARD
+	select QCA_COMMON
 
 config ARCH_S5PC1XX
 	bool "Samsung S5PC1XX"
@@ -853,6 +854,7 @@ source "board/vscom/baltos/Kconfig"
 source "board/woodburn/Kconfig"
 source "board/work-microwave/work_92105/Kconfig"
 
+source "arch/arm/cpu/armv7/qca/common/Kconfig"
 source "arch/arm/Kconfig.debug"
 
 endmenu

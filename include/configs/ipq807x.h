@@ -41,8 +41,6 @@
  * Size of malloc() pool
  */
 
-#define CONFIG_SYS_TIMER_RATE 32768
-
 /*
  * select serial console configuration
  */

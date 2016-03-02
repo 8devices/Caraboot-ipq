@@ -28,25 +28,59 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <asm/arch-ipq40xx/iomap.h>
 #include <asm/io.h>
 #include <common.h>
 #include <asm/types.h>
-#include <asm/arch-ipq40xx/timer.h>
+
+#include <watchdog.h>
+#include <fdtdec.h>
 
 static unsigned long long timestamp;
 static unsigned long long lastinc;
 
-#define GPT_FREQ	48
-#define GPT_FREQ_KHZ	(GPT_FREQ * 1000)
-#define GPT_FREQ_HZ	(GPT_FREQ_KHZ * 1000)	/* 48 MHz */
+#define GPT_FREQ_HZ     (ipq_timer.gpt_freq_hz)
+#define GPT_FREQ_KHZ	(GPT_FREQ_HZ / 1000)
+#define GPT_FREQ	(GPT_FREQ_KHZ / 1000)
+#define TIMER_LOAD_VAL  (ipq_timer.timer_load_val)
+
+DECLARE_GLOBAL_DATA_PTR;
+
+/* Information about timer */
+static struct ipq_timer_platdata {
+	unsigned int gcnt_base;
+	unsigned int gcnt_cntcv_lo;
+	unsigned int gcnt_cntcv_hi;
+	unsigned int gpt_freq_hz;
+	unsigned int timer_load_val;
+} ipq_timer;
 
 /**
  * timer_init - initialize timer
  */
 int timer_init(void)
 {
-	writel(1, GCNT_BASE);
+	int nodeoff;
+
+	nodeoff = fdt_path_offset(gd->fdt_blob, "/timer");
+	if (nodeoff < 0) {
+		WATCHDOG_RESET();
+	}
+
+	ipq_timer.gcnt_base = fdtdec_get_uint(gd->fdt_blob, nodeoff,
+			"gcnt_base", -1);
+
+	ipq_timer.gcnt_cntcv_lo = fdtdec_get_uint(gd->fdt_blob, nodeoff,
+			"gcnt_cntcv_lo", -1);
+
+	ipq_timer.gcnt_cntcv_hi = fdtdec_get_uint(gd->fdt_blob, nodeoff,
+			"gcnt_cntcv_hi", -1);
+
+	ipq_timer.gpt_freq_hz = fdtdec_get_uint(gd->fdt_blob, nodeoff,
+			"gpt_freq_hz", -1);
+
+	ipq_timer.timer_load_val = fdtdec_get_uint64(gd->fdt_blob, nodeoff,
+			"timer_load_val", -1);
+	writel(1, ipq_timer.gcnt_base);
 	return 0;
 }
 
@@ -71,9 +105,9 @@ static unsigned long long read_counter(void)
 	unsigned long vect_low;
 
 repeat:
-	vect_hi1 = readl(GCNT_CNTCV_HI);
-	vect_low = readl(GCNT_CNTCV_LO);
-	vect_hi2 = readl(GCNT_CNTCV_HI);
+	vect_hi1 = readl(ipq_timer.gcnt_cntcv_hi);
+	vect_low = readl(ipq_timer.gcnt_cntcv_lo);
+	vect_hi2 = readl(ipq_timer.gcnt_cntcv_hi);
 
 	if (vect_hi1 != vect_hi2)
 		goto repeat;

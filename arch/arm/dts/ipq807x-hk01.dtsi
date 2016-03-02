@@ -20,5 +20,14 @@
 		reg = <0x78b0000 0x200>;
 		id = <2>;
 	};
+
+	timer {
+		gcnt_base = <0x4a1000>;
+		gcnt_cntcv_lo = <0x4a2000>;
+		gcnt_cntcv_hi = <0x4a2004>;
+		gpt_freq_hz = <48000000>;
+		timer_load_val = <0x00FFFFFF 0xFFFFFFFF>;
+	};
+
 };
 
