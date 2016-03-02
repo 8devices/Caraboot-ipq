@@ -10,6 +10,7 @@
 #include <common.h>
 
 DECLARE_GLOBAL_DATA_PTR;
+#define STACK_MARKER_LEN 32
 
 /*
  * It isn't trivial to figure out whether memcpy() exists. The arch-specific
@@ -54,6 +55,8 @@ ulong board_init_f_mem(ulong top)
 	top -= CONFIG_SYS_MALLOC_F_LEN;
 	gd->malloc_base = top;
 #endif
+
+	top -= STACK_MARKER_LEN;
 
 	return top;
 }
