@@ -51,7 +51,7 @@ static struct ipq_timer_platdata {
 	unsigned int gcnt_cntcv_lo;
 	unsigned int gcnt_cntcv_hi;
 	unsigned int gpt_freq_hz;
-	unsigned int timer_load_val;
+	unsigned long long timer_load_val;
 } ipq_timer;
 
 /**
