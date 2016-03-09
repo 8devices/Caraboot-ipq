@@ -97,6 +97,7 @@ struct ipq40xx_spinand_info {
 
 #define SPINAND_3BIT_ECC_MASK		0x70
 #define SPINAND_3BIT_ECC_ERROR		0x70
+#define SPINAND_3BIT_ECC_BF_THRESHOLD	0x40
 
 #define SPINAND_2BIT_ECC_MASK		0x30
 #define SPINAND_2BIT_ECC_ERROR		0x20

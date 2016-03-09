@@ -412,7 +412,7 @@ int verify_3bit_ecc(int status)
 
 	if (ecc_status == SPINAND_3BIT_ECC_ERROR)
 		return ECC_ERR;
-	else if (ecc_status)
+	else if (ecc_status >= SPINAND_3BIT_ECC_BF_THRESHOLD)
 		return ECC_CORRECTED;
 	else
 		return 0;
