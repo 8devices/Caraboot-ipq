@@ -715,7 +715,7 @@ gpio_func_data_t uart1_gpio_dk01[] = {
 	{
 		.gpio = 60,
 		.func = 2,
-		.pull = GPIO_NO_PULL,
+		.pull = GPIO_PULL_DOWN,
 		.oe = GPIO_OE_ENABLE
 	},
 	{
@@ -730,7 +730,7 @@ gpio_func_data_t uart1_gpio_dk04[] = {
 	{
 		.gpio = 16,
 		.func = 1,
-		.pull = GPIO_NO_PULL,
+		.pull = GPIO_PULL_DOWN,
 		.oe = GPIO_OE_ENABLE
 	},
 	{
