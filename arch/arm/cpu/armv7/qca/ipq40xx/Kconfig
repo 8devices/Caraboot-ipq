@@ -1,0 +1,3 @@
+config ARCH_IPQ40xx
+	bool "QCA IPQ40xx SPECIFIC IPs"
+
