@@ -44,6 +44,11 @@
 #include <asm/io.h>
 #include <serial.h>
 
+#ifdef CONFIG_ARCH_IPQ40xx
+#include "ipq40xx.h"
+extern board_ipq40xx_params_t *gboard_param;
+#endif
+
 DECLARE_GLOBAL_DATA_PTR;
 
 /* Information about a serial port */
@@ -351,6 +356,11 @@ static unsigned int msm_boot_uart_dm_init(unsigned long uart_dm_base)
 static void ipq_serial_init(struct ipq_serial_platdata *plat,
 				unsigned long base)
 {
+
+#ifdef CONFIG_ARCH_IPQ40xx
+	qca_configure_gpio(gboard_param->console_uart_cfg->dbg_uart_gpio,
+				NO_OF_DBG_UART_GPIOS);
+#endif
 	writel(1, GCC_BLSP1_UART1_APPS_CBCR);
         writel(plat->bit_rate, MSM_BOOT_UART_DM_CSR(base));
 

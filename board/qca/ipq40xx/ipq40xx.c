@@ -141,6 +141,18 @@ int board_eth_init(bd_t *bis)
 	return 0;
 }
 
+void qca_configure_gpio(gpio_func_data_t *gpio, uint count)
+{
+	int i;
+
+	for (i = 0; i < count; i++) {
+		gpio_tlmm_config(gpio->gpio, gpio->func, gpio->out,
+			gpio->pull, gpio->drvstr, gpio->oe,
+			gpio->gpio_vm, gpio->gpio_od_en, gpio->gpio_pu_res);
+		gpio++;
+	}
+}
+
 #ifdef CONFIG_OF_BOARD_SETUP
 struct flash_node_info {
 	const char *compat;	/* compatible string */
