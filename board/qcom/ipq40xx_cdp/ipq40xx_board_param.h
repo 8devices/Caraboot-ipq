@@ -1142,6 +1142,8 @@ board_ipq40xx_params_t board_params[] = {
 			ipq40xx_edma_cfg(0, 5, PSGMII,
 			0, 1, 2, 3, 4)
 			},
+		.mmc_gpio = mmc_ap_dk04,
+		.mmc_gpio_count = ARRAY_SIZE(mmc_ap_dk04),
 		.spi_nand_available = 0,
 		.nor_nand_available = 1,
 		.nor_emmc_available = 0,
