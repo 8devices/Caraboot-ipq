@@ -164,6 +164,18 @@ const struct nand_flash_dev nand_flash_ids[] = {
 	{NULL,}
 };
 
+/* Spansion devices which need S/W Reset before Read parameter Page command
+ */
+const struct nand_devices spansion_devices[] = {
+	{0x01, 0xF1},
+	{0x01, 0xDA},
+	{0x01, 0xDC},
+	{0x01, 0xC1},
+	{0x01, 0xCA},
+	{0x01, 0xCC},
+	{0x0, }
+};
+
 /*
 *	Manufacturer ID list
 */
