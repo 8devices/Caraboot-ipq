@@ -50,7 +50,7 @@ static const struct spi_nand_flash_params spi_nand_flash_tbl[] = {
 		.erase_size = 0x00020000,
 		.pages_per_sector = 64,
 		.nr_sectors = 1024,
-		.oob_size = 64,
+		.oob_size = 128,
 		.protec_bpx = 0xC7,
 		.norm_read_cmd = gigadevice_norm_read_cmd,
 		.verify_ecc = verify_3bit_ecc,
@@ -281,7 +281,8 @@ out:
 }
 
 
-static int spinand_write_oob_std(struct mtd_info *mtd, struct nand_chip *chip,  int page)
+static int spinand_write_oob_std(struct mtd_info *mtd, struct nand_chip *chip,
+				int page, struct mtd_oob_ops *ops)
 {
 	int column, ret = 0;
 	u_char *wbuf;
@@ -302,7 +303,7 @@ static int spinand_write_oob_std(struct mtd_info *mtd, struct nand_chip *chip,  
 	cmd[1] = (u8)(column >> 8);
 	cmd[2] = (u8)(column);
 
-	ret = spi_flash_cmd_write(flash->spi, cmd, 3, wbuf, 2);
+	ret = spi_flash_cmd_write(flash->spi, cmd, 3, wbuf, ops->ooblen);
 	if (ret) {
 		printf("%s: write command failed\n", __func__);
 		ret = 1;
@@ -347,7 +348,7 @@ static void fill_oob_data(struct mtd_info *mtd, uint8_t *oob,
 	return;
 }
 
-static int spi_nand_write_oob(struct mtd_info *mtd, loff_t to,
+static int spi_nand_write_oob_data(struct mtd_info *mtd, loff_t to,
 			      struct mtd_oob_ops *ops)
 {
 	int page;
@@ -359,7 +360,8 @@ static int spi_nand_write_oob(struct mtd_info *mtd, loff_t to,
 
 	fill_oob_data(mtd, ops->oobbuf, ops->ooblen, ops);
 
-	return spinand_write_oob_std(mtd, chip, page & chip->pagemask);
+	return spinand_write_oob_std(mtd, chip,
+			page & chip->pagemask, ops);
 }
 
 static int spi_nand_block_markbad(struct mtd_info *mtd, loff_t offs)
@@ -397,7 +399,7 @@ static int spi_nand_block_markbad(struct mtd_info *mtd, loff_t offs)
 	ops.ooboffs = chip->badblockpos;
 	ops.len = ops.ooblen = 1;
 
-	ret = spi_nand_write_oob(mtd, offs,&ops);
+	ret = spi_nand_write_oob_data(mtd, offs, &ops);
 	if (ret)
 		goto out;
 
@@ -551,8 +553,7 @@ static int spi_nand_read_oob(struct mtd_info *mtd, loff_t from,
 	return ret;
 }
 
-static int spi_nand_write(struct mtd_info *mtd, loff_t to, size_t len,
-			  size_t *retlen, const u_char *buf)
+static int spi_nand_write_std(struct mtd_info *mtd, loff_t to, struct mtd_oob_ops *ops)
 {
 	struct ipq40xx_spinand_info *info = mtd_to_ipq_info(mtd);
 	struct spi_flash *flash = info->flash;
@@ -561,13 +562,15 @@ static int spi_nand_write(struct mtd_info *mtd, loff_t to, size_t len,
 	u8 status;
 	u32 ret;
 	const u_char *wbuf;
+	const u_char *buf;
 	int realpage, page, bytes, write_len;
-	write_len = len;
+	write_len = ops->len;
+	buf = ops->datbuf;
 	bytes = mtd->writesize;
 
 	/* Check whether page is aligned */
 	if (((to & (mtd->writesize -1)) !=0) ||
-		((len & (mtd->writesize -1)) != 0)) {
+		((ops->len & (mtd->writesize -1)) != 0)) {
 		printf("Attempt to write to non page aligned data\n");
 		return -EINVAL;
 	}
@@ -627,7 +630,8 @@ static int spi_nand_write(struct mtd_info *mtd, loff_t to, size_t len,
 			printf("Write disable failed\n");
 			goto out;
 		}
-
+		if (ops->ooblen)
+			ret = spi_nand_write_oob_data(mtd, to, ops);
 		write_len -= bytes;
 		if (!write_len)
 			break;
@@ -642,6 +646,32 @@ out:
 	return ret;
 }
 
+static int spi_nand_write(struct mtd_info *mtd, loff_t to, size_t len,
+			size_t *retlen, const u_char *buf)
+{
+	struct mtd_oob_ops ops = { 0 };
+	int ret;
+
+	ops.len = len;
+	ops.datbuf = (uint8_t *)buf;
+	ret = spi_nand_write_std(mtd, to, &ops);
+
+	return ret;
+}
+
+static int spi_nand_write_oob(struct mtd_info *mtd, loff_t to,
+				struct mtd_oob_ops *ops)
+{
+	int ret;
+
+	if(ops->datbuf == NULL)
+		return -EINVAL;
+	spinand_internal_ecc(mtd, 0);
+	ret = spi_nand_write_std(mtd, to, ops);
+	spinand_internal_ecc(mtd, 1);
+
+	return ret;
+}
 
 struct spi_flash *spi_nand_flash_probe(struct spi_slave *spi,
                                                 u8 *idcode)
