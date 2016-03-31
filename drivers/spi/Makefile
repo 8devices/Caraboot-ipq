@@ -32,6 +32,7 @@ obj-$(CONFIG_FSL_DSPI) += fsl_dspi.o
 obj-$(CONFIG_FSL_ESPI) += fsl_espi.o
 obj-$(CONFIG_FSL_QSPI) += fsl_qspi.o
 obj-$(CONFIG_ICH_SPI) +=  ich.o
+obj-$(CONFIG_QCA_SPI) += qca_qup_spi.o
 obj-$(CONFIG_KIRKWOOD_SPI) += kirkwood_spi.o
 obj-$(CONFIG_LPC32XX_SSP) += lpc32xx_ssp.o
 obj-$(CONFIG_MPC52XX_SPI) += mpc52xx_spi.o

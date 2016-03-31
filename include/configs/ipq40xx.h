@@ -85,10 +85,10 @@ typedef struct {
 
 #define CONFIG_QCA_SMEM_BASE		0x87e00000
 #define QCA_KERNEL_START_ADDR	\
-	(CONFIG_SYS_SDRAM_BASE + GENERATED_QCA_RESERVE_SIZE)
+	(CONFIG_SYS_SDRAM_BASE + sizeof(qca_mem_reserve_t))
 
 #define QCA_DRAM_KERNEL_SIZE	\
-	(CONFIG_SYS_SDRAM_SIZE - GENERATED_QCA_RESERVE_SIZE)
+	(CONFIG_SYS_SDRAM_SIZE - sizeof(qca_mem_reserve_t))
 
 #define QCA_BOOT_PARAMS_ADDR	(QCA_KERNEL_START_ADDR + 0x100)
 #endif
@@ -113,6 +113,23 @@ typedef struct {
  * Cache flush and invalidation based on L1 cache, so the cache line
  * size is configured to 64 */
 #define CONFIG_SYS_CACHELINE_SIZE	64
+
+/*
+ * SPI Flash Configs
+ */
+
+#define CONFIG_QCA_SPI
+#define CONFIG_SPI_FLASH
+#define CONFIG_CMD_SF
+#define CONFIG_SPI_FLASH_STMICRO
+#define CONFIG_SPI_FLASH_WINBOND
+#define CONFIG_SPI_FLASH_MACRONIX
+#define CONFIG_SPI_FLASH_GIGADEVICE
+
+#define CONFIG_SF_DEFAULT_BUS 0
+#define CONFIG_SF_DEFAULT_CS 0
+#define CONFIG_SF_DEFAULT_MODE SPI_MODE_0
+#define CONFIG_SPI_FLASH_BAR    1
 
 #define CONFIG_IPQ40XX_EDMA     1
 #define CONFIG_NET_RETRY_COUNT          5

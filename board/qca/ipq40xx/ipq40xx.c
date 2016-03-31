@@ -24,6 +24,10 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+loff_t board_env_offset;
+loff_t board_env_range;
+loff_t board_env_size;
+
 /*
  * Don't have this as a '.bss' variable. The '.bss' and '.rel.dyn'
  * sections seem to overlap.
@@ -68,7 +72,7 @@ static board_ipq40xx_params_t *get_board_param(unsigned int machid)
 {
 	unsigned int index;
 
-	printf("machid : 0x%0x\n", machid);
+	printf("machid: %x\n", machid);
 	for (index = 0; index < NUM_IPQ40XX_BOARDS; index++) {
 		if (machid == board_params[index].machid)
 			return &board_params[index];
@@ -78,13 +82,112 @@ static board_ipq40xx_params_t *get_board_param(unsigned int machid)
 	for (;;);
 }
 
+
 int board_init(void)
 {
+	int ret;
+	uint32_t start_blocks;
+	uint32_t size_blocks;
+	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
+
+	gd->bd->bi_boot_params = QCA_BOOT_PARAMS_ADDR;
+	gd->bd->bi_arch_number = smem_get_board_platform_type();
+	gboard_param = get_board_param(gd->bd->bi_arch_number);
+
+	ret = smem_get_boot_flash(&sfi->flash_type,
+					&sfi->flash_index,
+					&sfi->flash_chip_select,
+					&sfi->flash_block_size,
+					&sfi->flash_density);
+	if (ret < 0) {
+		printf("cdp: get boot flash failed\n");
+		return ret;
+	}
+
+	/*
+	 * Should be inited, before env_relocate() is called,
+	 * since env. offset is obtained from SMEM.
+	 */
+	if (sfi->flash_type != SMEM_BOOT_MMC_FLASH) {
+		ret = smem_ptable_init();
+		if (ret < 0) {
+			printf("cdp: SMEM init failed\n");
+			return ret;
+		}
+	}
+
+	if (sfi->flash_type != SMEM_BOOT_MMC_FLASH) {
+		ret = smem_getpart("0:APPSBLENV", &start_blocks, &size_blocks);
+		if (ret < 0) {
+			printf("cdp: get environment part failed\n");
+			return ret;
+		}
+
+		board_env_offset = ((loff_t) sfi->flash_block_size) * start_blocks;
+		board_env_size = ((loff_t) sfi->flash_block_size) * size_blocks;
+	}
+
+	if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
+		board_env_range = CONFIG_ENV_SIZE_MAX;
+		BUG_ON(board_env_size < CONFIG_ENV_SIZE_MAX);
+	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
+		board_env_range = board_env_size;
+		BUG_ON(board_env_size > CONFIG_ENV_SIZE_MAX);
+#ifdef CONFIG_QCA_MMC
+	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
+		board_env_range = CONFIG_ENV_SIZE_MAX;
+#endif
+	} else {
+		printf("BUG: unsupported flash type : %d\n", sfi->flash_type);
+		BUG();
+	}
 	return 0;
+}
+
+void qca_get_part_details(void)
+{
+	int ret, i;
+	uint32_t start;         /* block number */
+	uint32_t size;          /* no. of blocks */
+
+	qca_smem_flash_info_t *smem = &qca_smem_flash_info;
+
+	struct { char *name; qca_part_entry_t *part; } entries[] = {
+		{ "0:HLOS", &smem->hlos },
+		{ "rootfs", &smem->rootfs },
+	};
+
+	for (i = 0; i < ARRAY_SIZE(entries); i++) {
+		ret = smem_getpart(entries[i].name, &start, &size);
+		if (ret < 0) {
+			qca_part_entry_t *part = entries[i].part;
+			debug("cdp: get part failed for %s\n", entries[i].name);
+			part->offset = 0xBAD0FF5E;
+			part->size = 0xBAD0FF5E;
+		} else {
+			qca_set_part_entry(entries[i].name, smem, entries[i].part, start, size);
+		}
+	}
+
+	return;
 }
 
 int board_late_init(void)
 {
+	unsigned int machid;
+	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
+
+	if (sfi->flash_type != SMEM_BOOT_MMC_FLASH) {
+		qca_get_part_details();
+	}
+
+	/* get machine type from SMEM and set in env */
+	machid = gd->bd->bi_arch_number;
+	printf("machid: %x\n", machid);
+	if (machid != 0) {
+		setenv_addr("machid", (void *)machid);
+		gd->bd->bi_arch_number = machid;
+	}
 	return 0;
 }
 

@@ -32,6 +32,7 @@ const struct spi_flash_params spi_flash_params_table[] = {
 	{"EN25S64",	   0x1c3817, 0x0,	64 * 1024,   128, RD_NORM,			  0},
 #endif
 #ifdef CONFIG_SPI_FLASH_GIGADEVICE	/* GIGADEVICE */
+	{"GD25Q16",	   0xc84015, 0x0,	64 * 1024,    32, RD_NORM,			  0},
 	{"GD25Q64B",	   0xc84017, 0x0,	64 * 1024,   128, RD_NORM,		    SECT_4K},
 	{"GD25LQ32",	   0xc86016, 0x0,	64 * 1024,    64, RD_NORM,		    SECT_4K},
 #endif
@@ -48,9 +49,13 @@ const struct spi_flash_params spi_flash_params_table[] = {
 	{"MX25L3205D",	   0xc22016, 0x0,	64 * 1024,    64, RD_NORM,			  0},
 	{"MX25L6405D",	   0xc22017, 0x0,	64 * 1024,   128, RD_NORM,			  0},
 	{"MX25L12805",	   0xc22018, 0x0,	64 * 1024,   256, RD_FULL,		     WR_QPP},
+	{"MX25L25635E",	   0xc22019, 0x0,	64 * 1024,   512, RD_NORM,			  0},
 	{"MX25L25635F",	   0xc22019, 0x0,	64 * 1024,   512, RD_FULL,		     WR_QPP},
 	{"MX25L51235F",	   0xc2201a, 0x0,	64 * 1024,  1024, RD_FULL,		     WR_QPP},
 	{"MX25L12855E",	   0xc22618, 0x0,	64 * 1024,   256, RD_FULL,		     WR_QPP},
+	{"MX25U3235F",	   0xc2536,  0x0,	64 * 1024,   64,  RD_NORM,			  0},
+	{"MX25U6435F",	   0xc22537, 0x0,	64 * 1024,   128, RD_NORM,			  0},
+	{"MX25U25635F",	   0xc22539, 0x0,	64 * 1024,   512, RD_NORM,			  0},
 #endif
 #ifdef CONFIG_SPI_FLASH_SPANSION	/* SPANSION */
 	{"S25FL008A",	   0x010213, 0x0,	64 * 1024,    16, RD_NORM,			  0},
