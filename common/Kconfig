@@ -361,6 +361,10 @@ config CMD_GPIO
 	help
 	  GPIO support.
 
+config CMD_MMC
+	bool "mmc"
+	help
+	  MMC support.
 endmenu
 
 
@@ -486,6 +490,12 @@ config CMD_MISC
 	default y
 	help
 	  Delay execution for some time
+
+config CMD_PART
+	bool "part"
+
+config PARTITION_UUIDS
+	bool "partition_uuids"
 
 config CMD_TIMER
 	bool "timer"
