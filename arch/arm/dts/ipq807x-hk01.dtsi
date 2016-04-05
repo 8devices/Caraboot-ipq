@@ -15,11 +15,11 @@
 
 / {
 
-	serial@78b0000 {
+	serial@78af000 {
 		compatible = "qca,ipq-uartdm";
-		reg = <0x78b0000 0x200>;
+		reg = <0x78af000 0x200>;
 		id = <2>;
-		bit_rate = <0xff>;
+		bit_rate = <0xcc>;
 	};
 
 	timer {
