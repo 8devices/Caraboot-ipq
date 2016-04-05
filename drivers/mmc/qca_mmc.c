@@ -18,9 +18,8 @@
 #include <part.h>
 #include <malloc.h>
 #include <asm/io.h>
-#include <asm/arch-qcom-common/clk.h>
 #include <asm-generic/errno.h>
-#include "../../board/qcom/common/qca_common.h"
+#include "../../board/qca/common/qca_common.h"
 #include "qca_mmc.h"
 
 static inline void qca_reg_wr_delay(qca_mmc  *host)
@@ -229,7 +228,7 @@ void qca_set_ios(struct mmc *mmc)
 	u32 clk = 0, pwr = 0;
 	int mode;
 
-	if (mmc->clock <= mmc->f_min) {
+	if (mmc->clock <= mmc->cfg->f_min) {
 		mode = MMC_IDENTIFY_MODE;
 	} else {
 		mode = MMC_DATA_TRANSFER_MODE;
@@ -285,37 +284,50 @@ int qca_mmc_start (struct mmc *mmc)
 
 	return 0;
 }
+static struct mmc_ops qca_mmc_ops = {
+	.send_cmd = qca_mmc_send_cmd,
+	.set_ios = qca_set_ios,
+	.init = qca_mmc_start
+};
 
 int qca_mmc_init(bd_t *bis, qca_mmc *host)
 {
+	struct mmc_config *cfg;
 	struct mmc *mmc;
+	int ret = 0;
 
-	mmc = malloc(sizeof(struct mmc));
-	if (!mmc) {
+	cfg = malloc(sizeof(struct mmc_config));
+	if (!cfg) {
 	    return -ENOMEM;
 	}
 
-	memset(mmc, 0, sizeof(struct mmc));
+	memset(cfg, 0, sizeof(struct mmc_config));
 
-	sprintf(mmc->name, "qca_mmc");
-	mmc->priv = host;
-	mmc->send_cmd = qca_mmc_send_cmd;
-	mmc->set_ios = qca_set_ios;
-	mmc->init = qca_mmc_start;
-	mmc->getcd = NULL;
+	cfg->ops = &qca_mmc_ops;
+	cfg->f_min = 400000;
+	cfg->f_max = 52000000;
+	cfg->b_max = 512;
 
-	mmc->f_min = 400000;
-	mmc->f_max = 52000000;
-
-	mmc->b_max = 512;
 	/* voltage either 2.7-3.6V or 1.70 -1.95V  */
-	mmc->voltages = 0x40FF8080;
-	mmc->host_caps = MMC_MODE_8BIT;
-	mmc->host_caps |= MMC_MODE_HC;
+	cfg->voltages = 0x40FF8080;
+	cfg->host_caps = MMC_MODE_8BIT;
+	cfg->host_caps |= MMC_MODE_HC;
 
-	mmc_register(mmc);
-	host->mmc = mmc;
-	host->dev_num = mmc->block_dev.dev;
+	mmc = mmc_create(cfg, host);
+	if (!mmc) {
+		puts("mmc_create failed\n");
+		free(cfg);
+		ret = -ENODEV;
+	} else {
 
-	return 0;
+		host->mmc = mmc;
+		host->dev_num = mmc->block_dev.dev;
+		mmc->has_init = 0;
+		mmc->init_in_progress = 0;
+		ret = mmc_init(mmc);
+		if (ret)
+			puts("mmc_init failed\n");
+	}
+
+	return ret;
 }

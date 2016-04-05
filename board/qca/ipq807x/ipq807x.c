@@ -17,8 +17,11 @@
 #include <environment.h>
 
 #include "ipq807x.h"
+#include "../common/qca_common.h"
 
 DECLARE_GLOBAL_DATA_PTR;
+
+qca_mmc mmc_host;
 
 void enable_caches(void)
 {
@@ -50,4 +53,22 @@ unsigned long timer_read_counter(void)
 void reset_cpu(unsigned long a)
 {
 	while(1);
+}
+
+void emmc_clock_config(int mode)
+{
+	/* TODO: To be filled */
+}
+
+int board_mmc_init(bd_t *bis)
+{
+	int ret;
+
+	mmc_host.base = MSM_SDC1_BASE;
+	mmc_host.clk_mode = MMC_IDENTIFY_MODE;
+	emmc_clock_config(mmc_host.clk_mode);
+
+	ret = qca_mmc_init(bis, &mmc_host);
+
+	return ret;
 }

@@ -25,6 +25,18 @@ config GENERIC_MMC
 	  appear as block devices in U-Boot and can support filesystems such
 	  as EXT4 and FAT.
 
+config SDHCI
+	bool "Enable SDHCI controllers"
+	depends on GENERIC_MMC
+	help
+	  This enables SDHCI controllers support
+
+config SDHCI_QCOM
+	bool "Enable Qualcomm SDHCI controllers"
+	depends on SDHCI
+	help
+	  This enables Qualcomm SDHCI controller support
+
 config ROCKCHIP_DWMMC
 	bool "Rockchip SD/MMC controller support"
 	depends on DM_MMC && OF_CONTROL
