@@ -80,7 +80,10 @@ int timer_init(void)
 
 	ipq_timer.timer_load_val = fdtdec_get_uint64(gd->fdt_blob, nodeoff,
 			"timer_load_val", -1);
-	writel(1, ipq_timer.gcnt_base);
+
+	if (ipq_timer.gcnt_base != -1)
+		writel(1, ipq_timer.gcnt_base);
+
 	return 0;
 }
 
