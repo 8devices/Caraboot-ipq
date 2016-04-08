@@ -49,6 +49,7 @@ obj-$(CONFIG_OMAP34XX) += omap3/
 obj-$(CONFIG_OMAP44XX) += omap4/
 obj-$(CONFIG_OMAP54XX) += omap5/
 obj-$(CONFIG_QCA_COMMON) += qca/common/
+obj-$(CONFIG_ARCH_IPQ40xx) += qca/ipq40xx/
 obj-$(CONFIG_RMOBILE) += rmobile/
 obj-$(if $(filter stv0991,$(SOC)),y) += stv0991/
 obj-$(CONFIG_ARCH_SUNXI) += sunxi/
