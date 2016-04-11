@@ -312,6 +312,9 @@ int dram_init(void)
 
 void board_nand_init(void)
 {
+#ifdef CONFIG_IPQ40XX_SPI
+	ipq_spi_init(CONFIG_IPQ_SPI_NOR_INFO_IDX);
+#endif
 }
 
 int board_eth_init(bd_t *bis)
