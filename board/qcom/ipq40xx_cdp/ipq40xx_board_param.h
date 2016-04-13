@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2015, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015, 2016 The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -1104,6 +1104,22 @@ board_ipq40xx_params_t board_params[] = {
 		.nor_nand_available = 0,
 		.nor_emmc_available = 1,
 		.dtb_config_name = { "config@3", "config@ap.dk04.1-c3" },
+	},
+	{
+		.machid = MACH_TYPE_IPQ40XX_AP_DK05_1_C1,
+		.ddr_size = (256 << 20),
+		.mtdids = "nand1=nand1,nand2=spi0.0",
+		.console_uart_cfg = &uart1_console_uart_dk01,
+		.sw_gpio = ap_dk01_1_c2_sw_gpio_qfn,
+		.sw_gpio_count = ARRAY_SIZE(ap_dk01_1_c2_sw_gpio_qfn),
+		.edma_cfg = {
+			ipq40xx_edma_cfg(0, 5, PSGMII,
+					0, 1, 2, 3, 4)
+		},
+		.spi_nand_available = 1,
+		.nor_nand_available = 0,
+		.nor_emmc_available = 0,
+		.dtb_config_name = { "config@11", "config@ap.dk05.1-c1" },
 	},
 	{
 		.machid = MACH_TYPE_IPQ40XX_AP_DK06_1_C1,
