@@ -96,7 +96,11 @@ const struct spi_flash_params spi_flash_params_table[] = {
 	{"N25Q128A",	   0x20bb18, 0x0,       64 * 1024,   256, RD_FULL,		     WR_QPP},
 	{"N25Q256",	   0x20ba19, 0x0,       64 * 1024,   512, RD_FULL,	   WR_QPP | SECT_4K},
 	{"N25Q256A",	   0x20bb19, 0x0,       64 * 1024,   512, RD_FULL,	   WR_QPP | SECT_4K},
+#ifdef CONFIG_IPQ_RUMI
+	{"N25Q512",	   0x20ba20, 0x0,       64 * 1024,  8192, RD_NORM,                  SECT_4K},
+#else
 	{"N25Q512",	   0x20ba20, 0x0,       64 * 1024,  1024, RD_FULL, WR_QPP | E_FSR | SECT_4K},
+#endif
 	{"N25Q512A",	   0x20bb20, 0x0,       64 * 1024,  1024, RD_FULL, WR_QPP | E_FSR | SECT_4K},
 	{"N25Q1024",	   0x20ba21, 0x0,       64 * 1024,  2048, RD_FULL, WR_QPP | E_FSR | SECT_4K},
 	{"N25Q1024A",	   0x20bb21, 0x0,       64 * 1024,  2048, RD_FULL, WR_QPP | E_FSR | SECT_4K},
@@ -126,7 +130,11 @@ const struct spi_flash_params spi_flash_params_table[] = {
 	{"W25Q16CL",	   0xef4015, 0x0,	64 * 1024,    32, RD_FULL,	    WR_QPP | SECT_4K},
 	{"W25Q32BV",	   0xef4016, 0x0,	64 * 1024,    64, RD_FULL,	    WR_QPP | SECT_4K},
 	{"W25Q64CV",	   0xef4017, 0x0,	64 * 1024,   128, RD_FULL,	    WR_QPP | SECT_4K},
+#ifdef CONFIG_IPQ_RUMI
+	{"W25Q128BV",	   0xef4018, 0x0,	64 * 1024,   256, RD_NORM,	             SECT_4K},
+#else
 	{"W25Q128BV",	   0xef4018, 0x0,	64 * 1024,   256, RD_FULL,	    WR_QPP | SECT_4K},
+#endif
 	{"W25Q256",	   0xef4019, 0x0,	64 * 1024,   512, RD_FULL,	    WR_QPP | SECT_4K},
 	{"W25Q80BW",	   0xef5014, 0x0,	64 * 1024,    16, RD_FULL,	    WR_QPP | SECT_4K},
 	{"W25Q16DW",	   0xef6015, 0x0,	64 * 1024,    32, RD_FULL,	    WR_QPP | SECT_4K},

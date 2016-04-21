@@ -19,6 +19,11 @@
 #endif
 
 /*
+ * Support for IPQ807X RUMI
+ */
+#define CONFIG_IPQ_RUMI
+
+/*
  * Disabled for actual chip.
  * #define CONFIG_RUMI
  */
@@ -78,6 +83,21 @@
 #define CONFIG_SYS_SDRAM_SIZE           0x10000000
 #define CONFIG_MAX_RAM_BANK_SIZE        CONFIG_SYS_SDRAM_SIZE
 #define CONFIG_SYS_LOAD_ADDR            (CONFIG_SYS_SDRAM_BASE + (64 << 20))
+
+/*
+* SPI Flash Configs
+*/
+#define CONFIG_QCA_SPI
+#define CONFIG_SPI_FLASH
+#define CONFIG_CMD_SF
+#define CONFIG_SPI_FLASH_STMICRO
+#define CONFIG_SPI_FLASH_WINBOND
+#define CONFIG_SPI_FLASH_MACRONIX
+#define CONFIG_SPI_FLASH_GIGADEVICE
+#define CONFIG_SF_DEFAULT_BUS	0
+#define CONFIG_SF_DEFAULT_CS	0
+#define CONFIG_SF_DEFAULT_MODE	SPI_MODE_0
+#define CONFIG_SPI_FLASH_BAR	1
 
 /*
  * U-Boot Env Configs
