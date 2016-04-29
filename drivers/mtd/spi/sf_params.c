@@ -95,10 +95,11 @@ const struct spi_flash_params spi_flash_params_table[] = {
 	{"N25Q128",	   0x20ba18, 0x0,       64 * 1024,   256, RD_FULL,		     WR_QPP},
 	{"N25Q128A",	   0x20bb18, 0x0,       64 * 1024,   256, RD_FULL,		     WR_QPP},
 	{"N25Q256",	   0x20ba19, 0x0,       64 * 1024,   512, RD_FULL,	   WR_QPP | SECT_4K},
-	{"N25Q256A",	   0x20bb19, 0x0,       64 * 1024,   512, RD_FULL,	   WR_QPP | SECT_4K},
 #ifdef CONFIG_IPQ_RUMI
+	{"N25Q256A",	   0x20bb19, 0x0,       64 * 1024,   512, RD_NORM,	            SECT_4K},
 	{"N25Q512",	   0x20ba20, 0x0,       64 * 1024,  8192, RD_NORM,                  SECT_4K},
 #else
+	{"N25Q256A",	   0x20bb19, 0x0,       64 * 1024,   512, RD_FULL,	   WR_QPP | SECT_4K},
 	{"N25Q512",	   0x20ba20, 0x0,       64 * 1024,  1024, RD_FULL, WR_QPP | E_FSR | SECT_4K},
 #endif
 	{"N25Q512A",	   0x20bb20, 0x0,       64 * 1024,  1024, RD_FULL, WR_QPP | E_FSR | SECT_4K},
