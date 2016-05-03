@@ -142,9 +142,7 @@
 #define CFG_FLASH_SECTOR_SIZE_F         CFG_FLASH_SECTOR_SIZE
 #endif
 
-#define CONFIG_ENV_IS_NOWHERE   1
-#define CONFIG_SYS_NO_FLASH 1
-//#define	CONFIG_ENV_IS_IN_FLASH	1
+#define	CONFIG_ENV_IS_IN_FLASH	1
 #define CONFIG_ENV_SIZE	CFG_FLASH_SECTOR_SIZE //CFG_ENV_SIZE
 #define	CONFIG_ENV_ADDR	0x9f040000
 
@@ -164,6 +162,11 @@
 
 #define __CONFIG_BOARD_NAME ap152
 #define CONFIG_BOARD_NAME "ap152"
+
+#if defined(CONFIG_CUS249) || defined(CONFIG_TB753)
+#else
+#define CONFIG_USB 1
+#endif
 
 /*
 ** Parameters defining the location of the calibration/initialization
