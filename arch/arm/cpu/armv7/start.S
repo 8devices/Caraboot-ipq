@@ -47,6 +47,13 @@ save_boot_params_ret:
 	orr	r0, r0, #0xc0		@ disable FIQ and IRQ
 	msr	cpsr,r0
 
+/* Setup CP15 barrier */
+#ifdef CONFIG_ARCH_IPQ807x
+	mrc p15, 0, r0, c1, c0, 0 @Read SCTLR to r0
+	orr r0, r0, #0x20 @set the cp15 barrier enable bit
+	mcr p15, 0, r0, c1, c0, 0 @write back to SCTLR
+#endif
+
 /*
  * Setup vector:
  * (OMAP4 spl TEXT_BASE is not 32 byte aligned.
