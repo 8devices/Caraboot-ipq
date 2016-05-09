@@ -538,10 +538,12 @@ static int ath_gmac_alloc_fifo(int ndesc, ath_gmac_desc_t ** fifo)
 		return -1;
 	}
 
-	/* Desc gets overwritten maliciously, this is temp WAR */
-	p = p+ 4096;
 	p = (uchar *) (((u32) p + CONFIG_SYS_CACHELINE_SIZE - 1) &
 			~(CONFIG_SYS_CACHELINE_SIZE - 1));
+
+	/* gmac descriptors got overwritten due to cache invalidation issue. So , flush_cache is needed here*/
+	flush_cache((u32)p, (sizeof(ath_gmac_desc_t) * ndesc));
+
 	p = UNCACHED_SDRAM(p);
 
 	for (i = 0; i < ndesc; i++)
