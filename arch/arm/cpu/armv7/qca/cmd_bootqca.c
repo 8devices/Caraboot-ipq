@@ -91,8 +91,9 @@ static int inline do_dumpipq_data(void)
 static int set_fs_bootargs(int *fs_on_nand)
 {
 	char *bootargs;
+	unsigned int active_part = 0;
 
-#define nand_rootfs	"ubi.mtd=" IPQ_ROOT_FS_PART_NAME " root=mtd:ubi_rootfs rootfstype=squashfs"
+#define nand_rootfs	"ubi.mtd=" QCA_ROOT_FS_PART_NAME " root=mtd:ubi_rootfs rootfstype=squashfs"
 
 	if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
 		if (((sfi->rootfs.offset == 0xBAD0FF5E) &&
@@ -104,7 +105,19 @@ static int set_fs_bootargs(int *fs_on_nand)
 			if (getenv("fsbootargs") == NULL)
 				setenv("fsbootargs", bootargs);
 		} else {
+			if (smem_bootconfig_info() == 0) {
+				active_part = get_rootfs_active_partition();
+				if (active_part) {
+					bootargs = "rootfsname=rootfs_1";
+				} else {
+					bootargs = "rootfsname=rootfs";
+				}
+			} else {
+				bootargs = "rootfsname=rootfs";
+			}
 			*fs_on_nand = 0;
+			if (getenv("fsbootargs") == NULL)
+				setenv("fsbootargs", bootargs);
 		}
 	} else if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
 		bootargs = nand_rootfs;
@@ -113,7 +126,20 @@ static int set_fs_bootargs(int *fs_on_nand)
 		*fs_on_nand = 1;
 #ifdef CONFIG_QCA_MMC
 	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
+		if (smem_bootconfig_info() == 0) {
+			active_part = get_rootfs_active_partition();
+			if (active_part) {
+				bootargs = "rootfsname=rootfs_1";
+			} else {
+				bootargs = "rootfsname=rootfs";
+			}
+		} else {
+			bootargs = "rootfsname=rootfs";
+		}
+
 		*fs_on_nand = 0;
+		if (getenv("fsbootargs") == NULL)
+			setenv("fsbootargs", bootargs);
 #endif
 	} else {
 		printf("bootipq: unsupported boot flash type\n");
@@ -156,6 +182,7 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 #ifdef CONFIG_QCA_MMC
 	block_dev_desc_t *blk_dev;
 	disk_partition_t disk_info;
+	unsigned int active_part = 0;
 #endif
 
 	if (argc == 2 && strncmp(argv[1], "debug", 5) == 0)
@@ -252,7 +279,16 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 #ifdef CONFIG_QCA_MMC
 	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH || (gboard_param->nor_emmc_available == 1)) {
 		blk_dev = mmc_get_dev(host->dev_num);
-		ret = find_part_efi(blk_dev, "0:HLOS", &disk_info);
+		if (smem_bootconfig_info() == 0) {
+			active_part = get_rootfs_active_partition();
+			if (active_part) {
+				ret = find_part_efi(blk_dev, "0:HLOS_1", &disk_info);
+			} else {
+				ret = find_part_efi(blk_dev, "0:HLOS", &disk_info);
+			}
+		} else {
+			ret = find_part_efi(blk_dev, "0:HLOS", &disk_info);
+		}
 
 		if (ret > 0) {
 			snprintf(runcmd, sizeof(runcmd), "mmc read 0x%x 0x%X 0x%X",
@@ -327,6 +363,7 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 #ifdef CONFIG_QCA_MMC
 	block_dev_desc_t *blk_dev;
 	disk_partition_t disk_info;
+	unsigned int active_part = 0;
 #endif
 
 	if (argc == 2 && strncmp(argv[1], "debug", 5) == 0)
@@ -424,7 +461,16 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 			printf("Using MMC device\n");
 		}
 		blk_dev = mmc_get_dev(host->dev_num);
-		ret = find_part_efi(blk_dev, "0:HLOS", &disk_info);
+		if (smem_bootconfig_info() == 0) {
+			active_part = get_rootfs_active_partition();
+			if (active_part) {
+				ret = find_part_efi(blk_dev, "0:HLOS_1", &disk_info);
+			} else {
+				ret = find_part_efi(blk_dev, "0:HLOS", &disk_info);
+			}
+		} else {
+			ret = find_part_efi(blk_dev, "0:HLOS", &disk_info);
+		}
 
 		if (ret > 0) {
 			snprintf(runcmd, sizeof(runcmd), "mmc read 0x%x 0x%x 0x%x",

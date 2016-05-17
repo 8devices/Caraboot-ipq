@@ -157,7 +157,8 @@ typedef struct {
 #define QCA_BOOT_PARAMS_ADDR	(QCA_KERNEL_START_ADDR + 0x100)
 #endif
 
-#define IPQ_ROOT_FS_PART_NAME		"rootfs"
+#define QCA_ROOT_FS_PART_NAME           "rootfs"
+#define QCA_ROOT_FS_ALT_PART_NAME       QCA_ROOT_FS_PART_NAME "_1"
 
 /* Environment */
 #define CONFIG_IPQ40XX_ENV
