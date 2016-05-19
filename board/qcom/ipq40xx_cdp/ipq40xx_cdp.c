@@ -818,8 +818,8 @@ int ipq40xx_patch_eth_params(void *blob, unsigned long gmac_no)
 			printf("ipq: unable to find compatiable edma node\n");
 			return -1;
 		}
-		vlan.r0 = 0x1;
-		vlan.r1 = 0x10;
+		vlan.r0 = htonl(0x1);
+		vlan.r1 = htonl(0x10);
 		ret = fdt_setprop(blob, nodeoff_c, "vlan_tag",
 			&vlan, sizeof(vlan));
 		if (ret)
@@ -830,8 +830,8 @@ int ipq40xx_patch_eth_params(void *blob, unsigned long gmac_no)
 			printf("ipq: unable to find compatiable edma node\n");
 			return -1;
 		}
-		vlan.r0 = 0x3;
-		vlan.r1 = 0xE;
+		vlan.r0 = htonl(0x3);
+		vlan.r1 = htonl(0xE);
 		ret = fdt_setprop(blob, nodeoff_c, "vlan_tag",
 			&vlan, sizeof(vlan));
 		if (ret)
@@ -843,8 +843,8 @@ int ipq40xx_patch_eth_params(void *blob, unsigned long gmac_no)
 			printf("ipq: unable to find compatiable edma node\n");
 			return -1;
 		}
-		vlan.r0 = 0x1;
-		vlan.r1 = 0x10;
+		vlan.r0 = htonl(0x1);
+		vlan.r1 = htonl(0x10);
 		ret = fdt_setprop(blob, nodeoff_c, "vlan_tag",
 			&vlan, sizeof(vlan));
 		if (ret)
@@ -855,8 +855,8 @@ int ipq40xx_patch_eth_params(void *blob, unsigned long gmac_no)
 			printf("ipq: unable to find compatiable edma node\n");
 			return -1;
 		}
-		vlan.r0 = 0x3;
-		vlan.r1 = 0x8;
+		vlan.r0 = htonl(0x3);
+		vlan.r1 = htonl(0x8);
 		ret = fdt_setprop(blob, nodeoff_c, "vlan_tag",
 			&vlan, sizeof(vlan));
 		if (ret)
@@ -867,8 +867,8 @@ int ipq40xx_patch_eth_params(void *blob, unsigned long gmac_no)
 			printf("ipq: unable to find compatiable edma node\n");
 			return -1;
 		}
-		vlan.r0 = 0x4;
-		vlan.r1 = 0x6;
+		vlan.r0 = htonl(0x4);
+		vlan.r1 = htonl(0x6);
 		ret = fdt_setprop(blob, nodeoff_c, "vlan_tag",
 			&vlan, sizeof(vlan));
 		if (ret)
@@ -880,8 +880,8 @@ int ipq40xx_patch_eth_params(void *blob, unsigned long gmac_no)
 			printf("ipq: unable to find compatiable edma node\n");
 			return -1;
 		}
-		vlan.r0 = 0x1;
-		vlan.r1 = 0x10;
+		vlan.r0 = htonl(0x1);
+		vlan.r1 = htonl(0x10);
 		ret = fdt_setprop(blob, nodeoff_c, "vlan_tag",
 			&vlan, sizeof(vlan));
 		if (ret)
@@ -892,8 +892,8 @@ int ipq40xx_patch_eth_params(void *blob, unsigned long gmac_no)
 			printf("ipq: unable to find compatiable edma node\n");
 			return -1;
 		}
-		vlan.r0 = 0x3;
-		vlan.r1 = 0x8;
+		vlan.r0 = htonl(0x3);
+		vlan.r1 = htonl(0x8);
 		ret = fdt_setprop(blob, nodeoff_c, "vlan_tag",
 			&vlan, sizeof(vlan));
 		if (ret)
@@ -904,8 +904,8 @@ int ipq40xx_patch_eth_params(void *blob, unsigned long gmac_no)
 			printf("ipq: unable to find compatiable edma node\n");
 			return -1;
 		}
-		vlan.r0 = 0x4;
-		vlan.r1 = 0x4;
+		vlan.r0 = htonl(0x4);
+		vlan.r1 = htonl(0x4);
 		ret = fdt_setprop(blob, nodeoff_c, "vlan_tag",
 			&vlan, sizeof(vlan));
 		if (ret)
@@ -916,8 +916,8 @@ int ipq40xx_patch_eth_params(void *blob, unsigned long gmac_no)
 			printf("ipq: unable to find compatiable edma node\n");
 			return -1;
 		}
-		vlan.r0 = 0x5;
-		vlan.r1 = 0x2;
+		vlan.r0 = htonl(0x5);
+		vlan.r1 = htonl(0x2);
 		ret = fdt_setprop(blob, nodeoff_c, "vlan_tag",
 			&vlan, sizeof(vlan));
 		if (ret)
@@ -931,6 +931,7 @@ int ipq40xx_patch_eth_params(void *blob, unsigned long gmac_no)
 		return -1;
 	}
 
+	gmac_no = htonl(gmac_no);
 	ret = fdt_setprop(blob, nodeoff, "qcom,num_gmac",
 		&gmac_no, sizeof(gmac_no));
 	if (ret)
