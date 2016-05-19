@@ -36,6 +36,69 @@
 #include <asm/sizes.h>
 #include "ipq40xx_cdp.h"
 
+gpio_func_data_t mmc_ap_dk07[] = {
+	{
+		.gpio = 23,
+		.func = 1,	/* sdio0 */
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_10MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+	{
+		.gpio = 24,
+		.func = 1,	 /* sdio1 */
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_10MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+	{
+		.gpio = 25,
+		.func = 1,	 /* sdio2 */
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_10MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+	{
+		.gpio = 26,
+		.func = 1,	 /* sdio3 */
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_10MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+	{
+		.gpio = 27,
+		.func = 1,	 /* sdio_clk */
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_16MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+	{
+		.gpio = 28,
+		.func = 1,	 /* sdio_cmd */
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_10MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+};
+
 gpio_func_data_t mmc_ap_dk04[] = {
 	{
 		.gpio = 23,
@@ -1158,8 +1221,8 @@ board_ipq40xx_params_t board_params[] = {
 			ipq40xx_edma_cfg(0, 5, PSGMII,
 			0, 1, 2, 3, 4)
 			},
-		.mmc_gpio = mmc_ap_dk04,
-		.mmc_gpio_count = ARRAY_SIZE(mmc_ap_dk04),
+		.mmc_gpio = mmc_ap_dk07,
+		.mmc_gpio_count = ARRAY_SIZE(mmc_ap_dk07),
 		.spi_nand_available = 0,
 		.nor_nand_available = 1,
 		.nor_emmc_available = 0,
