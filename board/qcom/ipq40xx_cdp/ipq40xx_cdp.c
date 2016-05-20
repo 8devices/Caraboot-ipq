@@ -777,7 +777,7 @@ struct vlan_tag {
 /*
  * Logic to patch Ethernet params.
  */
-int ipq40xx_patch_eth_params(void *blob, uint8_t gmac_no)
+int ipq40xx_patch_eth_params(void *blob, unsigned long gmac_no)
 {
 	int nodeoff, nodeoff_c;
 	int ret, i;
@@ -950,7 +950,7 @@ void ft_board_setup(void *blob, bd_t *bd)
 {
 	u64 memory_start = CONFIG_SYS_SDRAM_BASE;
 	u64 memory_size = gboard_param->ddr_size;
-	uint8_t gmac_no;
+	unsigned long gmac_no;
 	char *s;
 	char *mtdparts = NULL;
 	char parts_str[256];
