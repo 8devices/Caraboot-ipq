@@ -79,10 +79,15 @@
 						sizeof(CONFIG_SYS_PROMPT) + 16)
 
 #define CONFIG_SYS_SDRAM_BASE           0x40000000
-#define CONFIG_SYS_TEXT_BASE            0x4f600000
+#define CONFIG_SYS_TEXT_BASE            0x4AD00000
 #define CONFIG_SYS_SDRAM_SIZE           0x10000000
 #define CONFIG_MAX_RAM_BANK_SIZE        CONFIG_SYS_SDRAM_SIZE
 #define CONFIG_SYS_LOAD_ADDR            (CONFIG_SYS_SDRAM_BASE + (64 << 20))
+
+#define CONFIG_OF_COMBINE		1
+
+#define CONFIG_DTB_LOAD_ADDR 0x4AE00000
+#define CONFIG_EXTRA_ENV_SETTINGS "fdtcontroladdr=0x4AE00000\0"
 
 /*
 * SPI Flash Configs

@@ -144,6 +144,13 @@ SECTIONS
 		KEEP(*(.__bss_end));
 	}
 
+#ifdef CONFIG_OF_COMBINE
+	. = ALIGN(4);
+	. = CONFIG_DTB_LOAD_ADDR;
+	.dtb : {
+		KEEP(*(.dtb.combine*));
+	}
+#endif
 	.dynsym _image_binary_end : { *(.dynsym) }
 	.dynbss : { *(.dynbss) }
 	.dynstr : { *(.dynstr*) }

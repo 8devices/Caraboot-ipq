@@ -37,12 +37,16 @@ arch-dtbs:
 
 .SECONDARY: $(obj)/dt.dtb.S
 
+.SECONDARY: $(obj)/dt_comb.dtb.S
+
 obj-$(CONFIG_OF_EMBED) := dt.dtb.o
+
+obj-$(CONFIG_OF_COMBINE) := dt_comb.dtb.o
 
 dtbs: $(obj)/dt.dtb
 	@:
 
-clean-files := dt.dtb.S
+clean-files := dt.dtb.S dt_comb.dtb.S
 
 # Let clean descend into dts directories
 subdir- += ../arch/arm/dts ../arch/microblaze/dts ../arch/sandbox/dts ../arch/x86/dts
