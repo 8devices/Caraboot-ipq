@@ -1259,6 +1259,9 @@ board_ipq40xx_params_t board_params[] = {
 			ipq40xx_edma_cfg(0, 5, PSGMII,
 			0, 1, 2, 3, 4)
 			},
+#ifdef CONFIG_IPQ40XX_I2C
+		.i2c_cfg = &i2c0,
+#endif
 		.mmc_gpio = mmc_ap_dk07,
 		.mmc_gpio_count = ARRAY_SIZE(mmc_ap_dk07),
 		.spi_nand_available = 0,
