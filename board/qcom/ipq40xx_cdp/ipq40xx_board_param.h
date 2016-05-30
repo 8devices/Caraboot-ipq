@@ -986,6 +986,31 @@ gpio_func_data_t pci_0_gpio_data[] = {
 	},
 };
 
+gpio_func_data_t pci_0_dk07_gpio_data[] = {
+	{
+		.gpio = PCIE_RST_GPIO,
+		.func = 0,
+		.out = GPIO_OUT_HIGH,
+		.pull = GPIO_PULL_DOWN,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_ENABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2,
+	},
+	{
+		.gpio = PCIE_WAKE_GPIO,
+		.func = 0,
+		.out = GPIO_OUT_LOW,
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2,
+	},
+};
+
 #define TLMM_GPIO_OUT_1		0x01200004
 #define TLMM_GPIO_OE_1		0x01200084
 
@@ -1000,6 +1025,19 @@ gpio_func_data_t pci_0_gpio_data[] = {
 	.axi_bar_size		= PCIE20_##_id##_AXI_BAR_SIZE,		\
 	.axi_conf		= PCIE20_##_id##_AXI_CONF,		\
 	.pcie_rst		= PCIE20_##_id##_RESET,			\
+}
+
+#define pcie_board_cfg_dk07(_id)                                             \
+{                                                                       \
+	.pci_gpio		= pci_##_id##_dk07_gpio_data,                \
+	.pci_gpio_count		= ARRAY_SIZE(pci_##_id##_dk07_gpio_data),    \
+	.parf			= PCIE20_##_id##_PARF_PHYS,             \
+	.elbi			= PCIE20_##_id##_ELBI_PHYS,             \
+	.pcie20			= PCIE20_##_id##_PHYS,                  \
+	.axi_bar_start		= PCIE20_##_id##_AXI_BAR_PHYS,          \
+	.axi_bar_size		= PCIE20_##_id##_AXI_BAR_SIZE,          \
+	.axi_conf		= PCIE20_##_id##_AXI_CONF,              \
+	.pcie_rst		= PCIE20_##_id##_RESET,                 \
 }
 
 #define PCIE20_PARF_PHY_CTRL				0x40
@@ -1232,11 +1270,19 @@ board_ipq40xx_params_t board_params[] = {
 			ipq40xx_edma_cfg(0, 5, PSGMII,
 			0, 1, 2, 3, 4)
 			},
+#ifdef CONFIG_IPQ40XX_I2C
+		.i2c_cfg = &i2c0,
+#endif
 		.mmc_gpio = mmc_ap_dk07,
 		.mmc_gpio_count = ARRAY_SIZE(mmc_ap_dk07),
 		.spi_nand_available = 0,
 		.nor_nand_available = 1,
 		.nor_emmc_available = 0,
+#ifdef CONFIG_IPQ40XX_PCI
+		.pcie_cfg = {
+			pcie_board_cfg_dk07(0),
+		},
+#endif
 		.dtb_config_name = { "config@10", "config@ap.dk07.1-c1" },
 	},
 	{
