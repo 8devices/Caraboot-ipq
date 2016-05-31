@@ -76,9 +76,10 @@ typedef enum {
 	SMEM_BOOT_FLASH_BLOCK_SIZE = 481,
 	SMEM_BOOT_FLASH_DENSITY = 482,
 	SMEM_PARTITION_TABLE_OFFSET = 483,
+	SMEM_BOOT_DUALPARTINFO = 484,
 	SMEM_FIRST_VALID_TYPE = SMEM_SPINLOCK_ARRAY,
-	SMEM_LAST_VALID_TYPE = SMEM_PARTITION_TABLE_OFFSET,
-	SMEM_MAX_SIZE = SMEM_PARTITION_TABLE_OFFSET + 1,
+	SMEM_LAST_VALID_TYPE = SMEM_BOOT_DUALPARTINFO,
+	SMEM_MAX_SIZE = SMEM_BOOT_DUALPARTINFO + 1,
 } smem_mem_type_t;
 
 struct smem_proc_comm {
@@ -223,6 +224,23 @@ int smem_ptable_init(void)
 
 	debug("smem ptable found: ver: %d len: %d\n",
 	      smem_ptable.version, smem_ptable.len);
+
+	return 0;
+}
+
+/**
+ * smem_bootconfig_info - retrieve bootconfig flags
+ */
+int smem_bootconfig_info(void)
+{
+	unsigned ret;
+
+	ret = smem_read_alloc_entry(SMEM_BOOT_DUALPARTINFO,
+		&qca_smem_bootconfig_info, sizeof(qca_smem_bootconfig_info_t));
+	if (ret != 0)
+		return -ENOMSG;
+	if (qca_smem_bootconfig_info.magic != _SMEM_DUAL_BOOTINFO_MAGIC)
+		return -ENOMSG;
 
 	return 0;
 }
