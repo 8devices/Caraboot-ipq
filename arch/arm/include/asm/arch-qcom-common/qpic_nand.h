@@ -30,10 +30,15 @@
 #ifndef __QPIC_NAND_H
 #define __QPIC_NAND_H
 
-#define IPQ40xx_EBI2ND_BASE		(0x079b0000)
-#define IPQ40xx_QPIC_BAM_CTRL		(0x07984000)
+#if defined(CONFIG_IPQ40XX) || defined(CONFIG_IPQ_RUMI)
+#define QPIC_EBI2ND_BASE		(0x079b0000)
+#else
+#error "QPIC NAND not supported"
+#endif
 
-#define NAND_REG(off)			(IPQ40xx_EBI2ND_BASE + (off))
+#define QPIC_BAM_CTRL_BASE		(0x07984000)
+
+#define NAND_REG(off)			(QPIC_EBI2ND_BASE + (off))
 
 #define NAND_FLASH_CMD			NAND_REG(0x0000)
 #define NAND_ADDR0			NAND_REG(0x0004)

@@ -106,6 +106,32 @@
 #define CONFIG_SPI_FLASH_BAR	1
 
 #define CONFIG_EFI_PARTITION
+#define CONFIG_QCOM_BAM			1
+/*
+ * NAND Flash Configs
+ */
+
+/* CONFIG_QPIC_NAND: QPIC NAND in BAM mode
+ * CONFIG_IPQ_NAND: QPIC NAND in FIFO/block mode.
+ * BAM is enabled by default.
+ */
+#define CONFIG_QPIC_NAND
+#define CONFIG_CMD_NAND
+#define CONFIG_CMD_NAND_YAFFS
+#define CONFIG_CMD_MEMORY
+#define CONFIG_SYS_NAND_SELF_INIT
+#define CONFIG_SYS_NAND_ONFI_DETECTION
+
+/*
+ * Expose SPI driver as a pseudo NAND driver to make use
+ * of U-Boot's MTD framework.
+ */
+#define CONFIG_SYS_MAX_NAND_DEVICE	CONFIG_IPQ_MAX_NAND_DEVICE
+
+#define CONFIG_IPQ_MAX_NAND_DEVICE	1
+
+#define CONFIG_IPQ_NAND_NAND_INFO_IDX	0
+#define CONFIG_QPIC_NAND_NAND_INFO_IDX	0
 
 /*
  * U-Boot Env Configs

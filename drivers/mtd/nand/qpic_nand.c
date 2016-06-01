@@ -1174,7 +1174,7 @@ qpic_nand_mark_badblock(struct mtd_info *mtd, loff_t offs)
 
 	page = offs >> chip->page_shift;
 
-	ops.mode = MTD_OOB_RAW;
+	ops.mode = MTD_OPS_RAW;
 	ops.len = mtd->writesize;
 	ops.retlen = 0;
 	ops.ooblen = mtd->oobsize;
@@ -1421,7 +1421,7 @@ static void qpic_nand_read_oobcopy(struct mtd_info *mtd,
 		return;
 
 	read_ooblen = ops->ooblen - ops->oobretlen;
-	ooblen = MIN(read_ooblen, dev->oob_per_page);
+	ooblen = (read_ooblen < dev->oob_per_page ? read_ooblen : dev->oob_per_page);
 	if (read_ooblen < dev->oob_per_page)
 		memcpy(ops->oobbuf + ops->oobretlen, dev->pad_oob, ooblen);
 
@@ -1442,7 +1442,7 @@ static void qpic_nand_read_datcopy(struct mtd_info *mtd, struct mtd_oob_ops *ops
 		return;
 
 	read_datlen = ops->len - ops->retlen;
-	datlen = MIN(read_datlen, mtd->writesize);
+	datlen = (read_datlen < mtd->writesize ? read_datlen : mtd->writesize);
 
 	if (read_datlen < mtd->writesize)
 		memcpy(ops->datbuf + ops->retlen, dev->pad_dat, datlen);
@@ -1689,7 +1689,7 @@ static int qpic_nand_read_oob(struct mtd_info *mtd, loff_t to,
 	enum nand_cfg_value cfg_mode;
 
 	/* We don't support MTD_OOB_PLACE as of yet. */
-	if (ops->mode == MTD_OOB_PLACE)
+	if (ops->mode == MTD_OPS_PLACE_OOB)
 		return -ENOSYS;
 
 	/* Check for reads past end of device */
@@ -1702,7 +1702,7 @@ static int qpic_nand_read_oob(struct mtd_info *mtd, loff_t to,
 	if (ops->ooboffs != 0)
 		return -EINVAL;
 
-	if(ops->mode == MTD_OOB_RAW) {
+	if(ops->mode == MTD_OPS_RAW) {
 		cfg_mode = NAND_CFG_RAW;
 		dev->oob_per_page = mtd->oobsize;
 	} else {
@@ -1767,7 +1767,7 @@ static int qpic_nand_read(struct mtd_info *mtd, loff_t from, size_t len,
 	unsigned ret = 0;
 	struct mtd_oob_ops ops;
 
-	ops.mode = MTD_OOB_AUTO;
+	ops.mode = MTD_OPS_AUTO_OOB;
 	ops.len = len;
 	ops.retlen = 0;
 	ops.ooblen = 0;
@@ -1840,7 +1840,7 @@ static void qpic_nand_write_oobinc(struct mtd_info *mtd,
 		return;
 
 	write_ooblen = ops->ooblen - ops->oobretlen;
-	ooblen = MIN(write_ooblen, dev->oob_per_page);
+	ooblen = (write_ooblen < dev->oob_per_page ? write_ooblen : dev->oob_per_page);
 
 	ops->oobretlen += ooblen;
 }
@@ -1858,7 +1858,7 @@ static int qpic_nand_write_oob(struct mtd_info *mtd, loff_t to,
 	enum nand_cfg_value cfg_mode;
 
 	/* We don't support MTD_OOB_PLACE as of yet. */
-	if (ops->mode == MTD_OOB_PLACE)
+	if (ops->mode == MTD_OPS_PLACE_OOB)
 		return -ENOSYS;
 
 	/* Check for writes past end of device. */
@@ -1877,7 +1877,7 @@ static int qpic_nand_write_oob(struct mtd_info *mtd, loff_t to,
 	if (ops->datbuf == NULL)
 		return -EINVAL;
 
-	if(ops->mode == MTD_OOB_RAW) {
+	if(ops->mode == MTD_OPS_RAW) {
 		cfg_mode = NAND_CFG_RAW;
 		dev->oob_per_page = mtd->oobsize;
 	}
@@ -1945,7 +1945,7 @@ static int qpic_nand_write(struct mtd_info *mtd, loff_t to, size_t len,
 		return NANDC_RESULT_PARAM_INVALID;
 	}
 
-	ops.mode = MTD_OOB_AUTO;
+	ops.mode = MTD_OPS_AUTO_OOB;
 	ops.len = len;
 	ops.retlen = 0;
 	ops.ooblen = 0;
@@ -2104,18 +2104,20 @@ qpic_nand_mtd_params(struct mtd_info *mtd)
 	mtd->type = MTD_NANDFLASH;
 	mtd->flags = MTD_CAP_NANDFLASH;
 
-	mtd->erase = qpic_nand_erase;
-	mtd->point = NULL;
-	mtd->unpoint = NULL;
-	mtd->read = qpic_nand_read;
-	mtd->write = qpic_nand_write;
-	mtd->read_oob = qpic_nand_read_oob;
-	mtd->write_oob = qpic_nand_write_oob;
-	mtd->lock = NULL;
-	mtd->unlock = NULL;
-	mtd->block_isbad = qpic_nand_block_isbad;
-	mtd->block_markbad = qpic_nand_mark_badblock;
-	mtd->sync = qpic_nand_sync;
+	mtd->_erase = qpic_nand_erase;
+#ifndef __UBOOT__
+	mtd->_point = NULL;
+	mtd->_unpoint = NULL;
+#endif
+	mtd->_read = qpic_nand_read;
+	mtd->_write = qpic_nand_write;
+	mtd->_read_oob = qpic_nand_read_oob;
+	mtd->_write_oob = qpic_nand_write_oob;
+	mtd->_lock = NULL;
+	mtd->_unlock = NULL;
+	mtd->_block_isbad = qpic_nand_block_isbad;
+	mtd->_block_markbad = qpic_nand_mark_badblock;
+	mtd->_sync = qpic_nand_sync;
 
 	mtd->ecclayout = NULL;
 
