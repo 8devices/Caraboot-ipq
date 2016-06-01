@@ -588,7 +588,18 @@ struct nand_manufacturers {
 	char *name;
 };
 
+/**
+ * struct nand_devices - NAND Flash Device ID Structure
+ * @id:		Manufacture ID code of device
+ * @device:	Device ID
+ */
+struct nand_devices {
+	uint8_t id;
+	uint8_t device;
+};
+
 extern const struct nand_flash_dev nand_flash_ids[];
+extern const struct nand_devices spansion_devices[];
 extern const struct nand_manufacturers nand_manuf_ids[];
 
 extern int nand_scan_bbt(struct mtd_info *mtd, struct nand_bbt_descr *bd);

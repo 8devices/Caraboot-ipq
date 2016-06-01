@@ -495,13 +495,6 @@ qpic_nand_onfi_save_params(struct mtd_info *mtd,
 	int onfi_ret = NANDC_RESULT_SUCCESS;
 	uint32_t ecc_bits;
 
-	onfi_ret = qpic_nand_fetch_id(mtd);
-
-	if (onfi_ret) {
-		printf("Fetch ID cmd failed\n");
-		goto onfi_save_params_err;
-	}
-
 	dev->page_size = param_page->data_per_pg;
 	mtd->writesize = dev->page_size;
 	dev->block_size = param_page->pgs_per_blk * (dev->page_size);
@@ -521,8 +514,7 @@ qpic_nand_onfi_save_params(struct mtd_info *mtd,
 	else
 		dev->ecc_width = NAND_WITH_4_BIT_ECC;
 
-	onfi_save_params_err:
-		return onfi_ret;
+	return onfi_ret;
 }
 
 static void
@@ -628,6 +620,23 @@ qpic_nand_save_config(struct mtd_info *mtd)
 	chip->ecc.layout = &fake_ecc_layout;
 }
 
+/*
+ * Check if it a spansion device which needs S/W Reset
+ * before Read parameter Page command
+ */
+static int
+is_spansion_device(uint8_t manu_id, uint8_t dev_id)
+{
+	int i;
+	for (i = 0; spansion_devices[i].id; i++) {
+		if (spansion_devices[i].id == manu_id &&
+				spansion_devices[i].device == dev_id)
+			return 1;
+	}
+
+	return 0;
+}
+
 /* Onfi probe should issue the following commands to the flash device:
  * 1. Read ID - with addr ONFI_READ_ID_ADDR.
  *              This returns the ONFI ASCII string indicating support for ONFI.
@@ -647,6 +656,11 @@ qpic_nand_onfi_probe(struct mtd_info *mtd)
 	uint32_t *id;
 	struct onfi_param_page *param_page;
 	int onfi_ret = NANDC_RESULT_SUCCESS;
+	struct qpic_nand_dev *dev = MTD_QPIC_NAND_DEV(mtd);
+	uint8_t num_desc = 0;
+	struct cmd_element *cmd_list_ptr;
+	struct cmd_element *cmd_list_ptr_start;
+	uint32_t status, nand_ret;
 
 	/* Allocate memory required to read the onfi param page */
 	buffer = (unsigned char*) malloc(ONFI_READ_PARAM_PAGE_BUFFER_SIZE);
@@ -700,6 +714,42 @@ qpic_nand_onfi_probe(struct mtd_info *mtd)
 	}
 
 	printf("ONFI device found\n");
+
+	nand_ret = is_spansion_device(dev->vendor, dev->device);
+	if (nand_ret) {
+		printf("Is a spansion device needing reset logic\n");
+		/*
+	 	 * Add Reset logic for Spansion
+	 	 */
+		cmd_list_ptr = ce_array;
+		cmd_list_ptr_start = ce_array;
+		bam_add_cmd_element(cmd_list_ptr, NAND_FLASH_CMD,
+				0x0D, CE_WRITE_TYPE);
+		cmd_list_ptr++;
+		bam_add_cmd_element(cmd_list_ptr, NAND_DEV_CMD_VLD,
+				(u32)NAND_CMD_VALID_BASE, CE_WRITE_TYPE);
+		cmd_list_ptr++;
+
+		bam_add_cmd_element(cmd_list_ptr, NAND_EXEC_CMD,
+				0x1, CE_WRITE_TYPE);
+		cmd_list_ptr++;
+		bam_add_one_desc(&bam, CMD_PIPE_INDEX,
+				(unsigned char *)cmd_list_ptr_start,
+				((uint32_t)cmd_list_ptr - (uint32_t)cmd_list_ptr_start),
+				BAM_DESC_NWD_FLAG | BAM_DESC_CMD_FLAG |
+				BAM_DESC_INT_FLAG);
+		num_desc++;
+		qpic_nand_wait_for_cmd_exec(num_desc);
+		status = qpic_nand_read_reg(NAND_FLASH_STATUS, 0);
+
+		/* Check for errors */
+		nand_ret = qpic_nand_check_status(mtd, status);
+		if (nand_ret) {
+			printf("Reset cmd status failed\n");
+			return nand_ret;
+		}
+	}
+
 	/* Now read the param page */
 	/* Initialize the config */
 	params.cfg.cfg0 = NAND_CFG0_RAW_ONFI_PARAM_PAGE;
@@ -2148,6 +2198,9 @@ qpic_nand_init(struct qpic_nand_init_config *config)
     
 	qpic_bam_init(config);
 
+	ret = qpic_nand_fetch_id(mtd);
+	if (ret < 0)
+		return ret;
 	ret = qpic_nand_onfi_probe(mtd);
 	if (ret < 0)
 		return ret;
