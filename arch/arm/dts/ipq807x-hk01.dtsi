@@ -30,5 +30,14 @@
 		timer_load_val = <0x00FFFFFF 0xFFFFFFFF>;
 	};
 
+	nand: nand-controller@79B0000 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "qcom,qpic-nand.1.5.20";
+		reg = <0x79B0000 0x10000>;
+
+	};
+
+
 };
 

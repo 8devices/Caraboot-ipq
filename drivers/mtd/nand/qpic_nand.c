@@ -35,8 +35,14 @@
 #include <linux/mtd/nand.h>
 #include <asm/arch-qcom-common/bam.h>
 #include <asm/arch-qcom-common/qpic_nand.h>
+#include <fdtdec.h>
+#include <dm.h>
+
+DECLARE_GLOBAL_DATA_PTR;
 
 typedef unsigned long addr_t;
+
+static uint32_t hw_ver;
 
 struct cmd_element ce_array[100] __attribute__ ((aligned(16)));
 struct cmd_element ce_read_array[20] __attribute__ ((aligned(16)));
@@ -45,6 +51,13 @@ struct bam_desc qpic_cmd_desc_fifo[QPIC_BAM_CMD_FIFO_SIZE] __attribute__ ((align
 struct bam_desc qpic_data_desc_fifo[QPIC_BAM_DATA_FIFO_SIZE] __attribute__ ((aligned(BAM_DESC_SIZE)));
 static struct bam_instance bam;
 struct nand_ecclayout fake_ecc_layout;
+
+static const struct udevice_id qpic_ver_ids[] = {
+	{ .compatible = "qcom,qpic-nand.1.4.20", .data = QCOM_QPIC_V1_4_20 },
+	{ .compatible = "qcom,qpic-nand.1.5.20", .data = QCOM_QPIC_V1_5_20 },
+	{ },
+};
+
 
 static void
 qpic_nand_wait_for_cmd_exec(uint32_t num_desc)
@@ -190,6 +203,7 @@ qpic_nand_fetch_id(struct mtd_info *mtd)
 	uint32_t exec_cmd = 1;
 	int nand_ret = NANDC_RESULT_SUCCESS;
 	uint32_t vld;
+	uint32_t cmd_vld = NAND_DEV_CMD_VLD_V1_4_20;
 
 	/* Issue the Fetch id command to the NANDc */
 	bam_add_cmd_element(cmd_list_ptr, NAND_FLASH_CMD, (uint32_t)flash_cmd,
@@ -198,7 +212,10 @@ qpic_nand_fetch_id(struct mtd_info *mtd)
 
 	vld = NAND_CMD_VALID_BASE;
 
-	bam_add_cmd_element(cmd_list_ptr, NAND_DEV_CMD_VLD, (uint32_t)vld,
+	if (hw_ver == QCOM_QPIC_V1_5_20)
+		cmd_vld = NAND_DEV_CMD_VLD_V1_5_20;
+
+	bam_add_cmd_element(cmd_list_ptr, cmd_vld, (uint32_t)vld,
 			    CE_WRITE_TYPE);
 	cmd_list_ptr++;
 
@@ -379,13 +396,19 @@ qpic_nand_add_onfi_probe_ce(struct onfi_probe_params *params,
 			    struct cmd_element *start)
 {
 	struct cmd_element *cmd_list_ptr = start;
+	uint32_t cmd_vld = NAND_DEV_CMD_VLD_V1_4_20;
+	uint32_t dev_cmd1 = NAND_DEV_CMD1_V1_4_20;
 
 	cmd_list_ptr = qpic_nand_add_addr_n_cfg_ce(&params->cfg, cmd_list_ptr);
 
-	bam_add_cmd_element(cmd_list_ptr, NAND_DEV_CMD1,
+	if (hw_ver == QCOM_QPIC_V1_5_20) {
+		cmd_vld = NAND_DEV_CMD_VLD_V1_5_20;
+		dev_cmd1 = NAND_DEV_CMD1_V1_5_20;
+	}
+	bam_add_cmd_element(cmd_list_ptr, dev_cmd1,
 			   (uint32_t)params->dev_cmd1, CE_WRITE_TYPE);
 	cmd_list_ptr++;
-	bam_add_cmd_element(cmd_list_ptr, NAND_DEV_CMD_VLD,
+	bam_add_cmd_element(cmd_list_ptr, cmd_vld,
 			   (uint32_t)params->vld, CE_WRITE_TYPE);
 	cmd_list_ptr++;
 	bam_add_cmd_element(cmd_list_ptr, NAND_READ_LOCATION_n(0),
@@ -467,11 +490,17 @@ qpic_nand_onfi_probe_cleanup(uint32_t vld, uint32_t dev_cmd1)
 {
 	struct cmd_element *cmd_list_ptr = ce_array;
 	struct cmd_element *cmd_list_ptr_start = ce_array;
+	uint32_t cmd_vld = NAND_DEV_CMD_VLD_V1_4_20;
+	uint32_t dev_cmd1_reg = NAND_DEV_CMD1_V1_4_20;
 
-	bam_add_cmd_element(cmd_list_ptr, NAND_DEV_CMD1, dev_cmd1,
+	if (hw_ver == QCOM_QPIC_V1_5_20) {
+		cmd_vld = NAND_DEV_CMD_VLD_V1_5_20;
+		dev_cmd1_reg = NAND_DEV_CMD1_V1_5_20;
+	}
+	bam_add_cmd_element(cmd_list_ptr, dev_cmd1_reg, dev_cmd1,
 			    CE_WRITE_TYPE);
 	cmd_list_ptr++;
-	bam_add_cmd_element(cmd_list_ptr, NAND_DEV_CMD_VLD, vld,
+	bam_add_cmd_element(cmd_list_ptr, cmd_vld, vld,
 			    CE_WRITE_TYPE);
 	cmd_list_ptr++;
 
@@ -642,6 +671,8 @@ qpic_nand_onfi_probe(struct mtd_info *mtd)
 	struct onfi_probe_params params;
 	uint32_t vld;
 	uint32_t dev_cmd1;
+	uint32_t cmd_vld = NAND_DEV_CMD_VLD_V1_4_20;
+	uint32_t dev_cmd1_reg = NAND_DEV_CMD1_V1_4_20;
 	unsigned char *buffer;
 	unsigned char onfi_str[4];
 	uint32_t *id;
@@ -655,9 +686,13 @@ qpic_nand_onfi_probe(struct mtd_info *mtd)
 		return -ENOMEM;
 	}
 
+	if (hw_ver == QCOM_QPIC_V1_5_20) {
+		cmd_vld = NAND_DEV_CMD_VLD_V1_5_20;
+		dev_cmd1_reg = NAND_DEV_CMD1_V1_5_20;
+	}
 	/* Read the vld and dev_cmd1 registers before modifying */
-	vld = qpic_nand_read_reg(NAND_DEV_CMD_VLD, 0);
-	dev_cmd1 = qpic_nand_read_reg(NAND_DEV_CMD1, 0);
+	vld = qpic_nand_read_reg(cmd_vld, 0);
+	dev_cmd1 = qpic_nand_read_reg(dev_cmd1_reg, 0);
 
 	/* Initialize flash cmd */
 	params.cfg.cmd = NAND_CMD_PAGE_READ;
@@ -2136,18 +2171,29 @@ int
 qpic_nand_init(struct qpic_nand_init_config *config)
 {
 	struct mtd_info *mtd;
+	const struct udevice_id *of_match = qpic_ver_ids;
 	struct nand_chip *chip;
 	int ret = 0;
 	struct qpic_nand_dev *dev;
 	size_t alloc_size;
 	unsigned char *buf;
 
+	while (of_match->compatible) {
+		ret = fdt_node_offset_by_compatible(gd->fdt_blob, 0,
+						of_match->compatible);
+		if (ret < 0) {
+			of_match++;
+			continue;
+		}
+		hw_ver = of_match->data;
+		break;
+	}
 	mtd = &nand_info[CONFIG_QPIC_NAND_NAND_INFO_IDX];
 	mtd->priv = &nand_chip[0];
 
 	chip = mtd->priv;
 	chip->priv = &qpic_nand_dev;
-    
+
 	qpic_bam_init(config);
 
 	ret = qpic_nand_onfi_probe(mtd);

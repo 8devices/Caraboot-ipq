@@ -74,9 +74,9 @@
 #define NAND_GENP_REG3			NAND_REG(0x009C)
 #define NAND_SFLASHC_STATUS		NAND_REG(0x001C)
 #define NAND_DEV_CMD0			NAND_REG(0x00A0)
-#define NAND_DEV_CMD1			NAND_REG(0x00A4)
+#define NAND_DEV_CMD1_V1_4_20		NAND_REG(0x00A4)
 #define NAND_DEV_CMD2			NAND_REG(0x00A8)
-#define NAND_DEV_CMD_VLD		NAND_REG(0x00AC)
+#define NAND_DEV_CMD_VLD_V1_4_20	NAND_REG(0x00AC)
 #define NAND_EBI2_MISR_SIG_REG		NAND_REG(0x00B0)
 #define NAND_ADDR2			NAND_REG(0x00C0)
 #define NAND_ADDR3			NAND_REG(0x00C4)
@@ -101,6 +101,9 @@
 #define NAND_RD_LOC_LAST_BIT(x)		((x) << 31)
 #define NAND_RD_LOC_SIZE(x)		((x) <<  16)
 #define NAND_RD_LOC_OFFSET(x)		((x) <<  0)
+
+#define NAND_DEV_CMD_VLD_V1_5_20	NAND_REG(0x70AC)
+#define NAND_DEV_CMD1_V1_5_20		NAND_REG(0x70A4)
 
 /* Shift Values */
 #define NAND_DEV0_CFG1_WIDE_BUS_SHIFT		1
@@ -265,6 +268,13 @@
 
 #define QPIC_BAM_DATA_FIFO_SIZE			64
 #define QPIC_BAM_CMD_FIFO_SIZE			64
+
+enum qpic_verion{
+	QCOM_QPIC_V1_4_20,
+	QCOM_QPIC_V1_5_20,
+
+};
+
 
 /* result type */
 typedef enum {
