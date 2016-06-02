@@ -1181,6 +1181,16 @@ void pcie_controller_reset(int id)
 	pcie_clock_enable(GCC_PCIE_AXI_S_CBCR);
 	pcie_clock_enable(GCC_PCIE_AHB_CBCR);
 
+	/* Assert cc_pcie20_mstr_axi_ares */
+	val = readl(cfg->pcie_rst);
+	val |= PCIE_RST_CTRL_AXI_M_ARES;
+	writel(val, cfg->pcie_rst);
+
+	/* Assert cc_pcie20_slv_axi_ares */
+	val = readl(cfg->pcie_rst);
+	val |= PCIE_RST_CTRL_AXI_S_ARES;
+	writel(val, cfg->pcie_rst);
+
 	/* Assert cc_pcie20_core_ares */
 	writel(PCIE_RST_CTRL_PIPE_ARES, cfg->pcie_rst);
 
@@ -1194,31 +1204,21 @@ void pcie_controller_reset(int id)
 	val |= PCIE_RST_CTRL_PIPE_PHY_AHB_ARES;
 	writel(val, cfg->pcie_rst);
 
-	gpio_set_value(PCIE_RST_GPIO, GPIO_OUT_LOW);
-
-	/* Assert cc_pcie20_mstr_axi_ares */
-	val = readl(cfg->pcie_rst);
-	val |= PCIE_RST_CTRL_AXI_M_ARES;
-	writel(val, cfg->pcie_rst);
-
 	/* Assert cc_pcie20_mstr_sticky_ares */
 	val = readl(cfg->pcie_rst);
 	val |= PCIE_RST_CTRL_AXI_M_STICKY_ARES;
 	writel(val, cfg->pcie_rst);
 
-	/* Assert cc_pcie20_slv_axi_ares */
-	val = readl(cfg->pcie_rst);
-	val |= PCIE_RST_CTRL_AXI_S_ARES;
-	writel(val, cfg->pcie_rst);
+	gpio_set_value(PCIE_RST_GPIO, GPIO_OUT_LOW);
 
 	/* Assert cc_pcie20_ahb_ares;  */
 	val = readl(cfg->pcie_rst);
 	val |= PCIE_RST_CTRL_AHB_ARES;
 	writel(val, cfg->pcie_rst);
 
-	/* DeAssert cc_pcie20_phy_ahb_ares  */
+	/* DeAssert cc_pcie20_ahb_ares */
 	val = readl(cfg->pcie_rst);
-	val &= ~(PCIE_RST_CTRL_AHB_ARES);
+	val &= ~(PCIE_RST_CTRL_PIPE_PHY_AHB_ARES);
 	writel(val, cfg->pcie_rst);
 
 	/* DeAssert cc_pcie20_pciephy_phy_ares*/
@@ -1250,9 +1250,9 @@ void pcie_controller_reset(int id)
 	val &= ~(PCIE_RST_CTRL_AXI_S_ARES);
 	writel(val, cfg->pcie_rst);
 
-	/* DeAssert cc_pcie20_ahb_ares */
+	/* DeAssert cc_pcie20_phy_ahb_ares  */
 	val = readl(cfg->pcie_rst);
-	val &= ~(PCIE_RST_CTRL_PIPE_PHY_AHB_ARES);
+	val &= ~(PCIE_RST_CTRL_AHB_ARES);
 	writel(val, cfg->pcie_rst);
 }
 
