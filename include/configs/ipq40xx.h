@@ -30,7 +30,6 @@
 #define CONFIG_SYS_CACHELINE_SIZE	64
 #define CONFIG_SKIP_LOWLEVEL_INIT
 #define CONFIG_SYS_HZ			1000
-#define CONFIG_ENV_IS_NOWHERE		1
 
 #define CONFIG_IPQ40XX_UART
 #define CONFIG_CONS_INDEX		1
@@ -56,6 +55,8 @@
 
 #define CONFIG_IPQ_APPSBL_IMG_TYPE	0x5
 
+#define CONFIG_IPQ40XX_ENV
+#define CONFIG_ENV_IS_IN_NAND
 #define CONFIG_EXTRA_ENV_SETTINGS                                       \
 				"fdtcontroladdr=0x84000000\0"
 
@@ -114,10 +115,24 @@ typedef struct {
  * size is configured to 64 */
 #define CONFIG_SYS_CACHELINE_SIZE	64
 
+#define CONFIG_CMD_NAND
+
+#define CONFIG_SYS_MAX_NAND_DEVICE      (CONFIG_IPQ_MAX_NAND_DEVICE + \
+					CONFIG_IPQ_MAX_SPI_DEVICE)
+
+#define CONFIG_IPQ_MAX_SPI_DEVICE       2
+#define CONFIG_IPQ_MAX_NAND_DEVICE      1
+
+#define CONFIG_SYS_NAND_SELF_INIT
+#define CONFIG_IPQ_NAND_NAND_INFO_IDX	0
+#define CONFIG_QPIC_NAND_NAND_INFO_IDX	0
+#define CONFIG_IPQ_SPI_NAND_INFO_IDX	1
+#define CONFIG_IPQ_SPI_NOR_INFO_IDX	2
 /*
  * SPI Flash Configs
  */
 
+#define CONFIG_IPQ40XX_SPI
 #define CONFIG_QCA_SPI
 #define CONFIG_SPI_FLASH
 #define CONFIG_CMD_SF

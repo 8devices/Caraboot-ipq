@@ -19,6 +19,7 @@
 #include <configs/ipq40xx.h>
 #include "ipq40xx.h"
 #include "ipq40xx_board_param.h"
+#include <nand.h>
 #include <part.h>
 #include <asm/arch-ipq40xx/smem.h>
 
@@ -27,7 +28,15 @@ DECLARE_GLOBAL_DATA_PTR;
 loff_t board_env_offset;
 loff_t board_env_range;
 loff_t board_env_size;
-
+extern int nand_env_device;
+char *env_name_spec;
+extern char *nand_env_name_spec;
+int (*saveenv)(void);
+env_t *env_ptr;
+extern env_t *nand_env_ptr;
+extern int nand_env_init(void);
+extern int nand_saveenv(void);
+extern void nand_env_relocate_spec(void);
 /*
  * Don't have this as a '.bss' variable. The '.bss' and '.rel.dyn'
  * sections seem to overlap.
@@ -82,6 +91,47 @@ static board_ipq40xx_params_t *get_board_param(unsigned int machid)
 	for (;;);
 }
 
+int env_init(void)
+{
+	int ret;
+	qca_smem_flash_info_t sfi;
+
+	smem_get_boot_flash(&sfi.flash_type,
+				&sfi.flash_index,
+				&sfi.flash_chip_select,
+				&sfi.flash_block_size,
+				&sfi.flash_density);
+
+	if (sfi.flash_type != SMEM_BOOT_MMC_FLASH) {
+		ret = nand_env_init();
+#ifdef CONFIG_QCA_MMC
+	} else {
+		ret = mmc_env_init();
+#endif
+	}
+
+	return ret;
+}
+
+void env_relocate_spec(void)
+{
+	qca_smem_flash_info_t sfi;
+
+	smem_get_boot_flash(&sfi.flash_type,
+				&sfi.flash_index,
+				&sfi.flash_chip_select,
+				&sfi.flash_block_size,
+				&sfi.flash_density);
+
+	if (sfi.flash_type != SMEM_BOOT_MMC_FLASH) {
+		nand_env_relocate_spec();
+#ifdef CONFIG_QCA_MMC
+	} else {
+		mmc_env_relocate_spec();
+#endif
+	}
+
+};
 
 int board_init(void)
 {
@@ -116,6 +166,15 @@ int board_init(void)
 		}
 	}
 
+	if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
+		nand_env_device = CONFIG_QPIC_NAND_NAND_INFO_IDX;
+	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
+		nand_env_device = CONFIG_IPQ_SPI_NOR_INFO_IDX;
+	} else if (sfi->flash_type != SMEM_BOOT_MMC_FLASH) {
+		printf("BUG: unsupported flash type : %d\n", sfi->flash_type);
+		BUG();
+	}
+
 	if (sfi->flash_type != SMEM_BOOT_MMC_FLASH) {
 		ret = smem_getpart("0:APPSBLENV", &start_blocks, &size_blocks);
 		if (ret < 0) {
@@ -140,6 +199,18 @@ int board_init(void)
 	} else {
 		printf("BUG: unsupported flash type : %d\n", sfi->flash_type);
 		BUG();
+	}
+
+	if (sfi->flash_type != SMEM_BOOT_MMC_FLASH) {
+		saveenv = nand_saveenv;
+		env_ptr = nand_env_ptr;
+		env_name_spec = nand_env_name_spec;
+#ifdef CONFIG_QCA_MMC
+	} else {
+		saveenv = mmc_saveenv;
+		env_ptr = mmc_env_ptr;
+		env_name_spec = mmc_env_name_spec;
+#endif
 	}
 	return 0;
 }
@@ -237,6 +308,13 @@ int dram_init(void)
 		gd->ram_size = gboard_param->ddr_size;
 	}
 	return 0;
+}
+
+void board_nand_init(void)
+{
+#ifdef CONFIG_IPQ40XX_SPI
+	ipq_spi_init(CONFIG_IPQ_SPI_NOR_INFO_IDX);
+#endif
 }
 
 int board_eth_init(bd_t *bis)
