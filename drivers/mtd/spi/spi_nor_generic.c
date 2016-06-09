@@ -22,11 +22,13 @@
 #define CMD_SECTOR_4B_ERASE	0x21	/* 4 byte Sector Erase */
 #define CMD_SECTOR_ERASE	0x20	/* Sector Erase */
 #define CMD_W25_EN4B		0xb7	/* Enter 4-byte mode Winbond*/
+#define CMD_GIGA_EN4B		0xb7	/* Enter 4-byte mode giga*/
 
 #define WINBOND_ID	0xEF
 #define STMICRO_ID	0x20
 #define MACRONIX_ID	0xc2
 #define SPANSION_ID	0x01
+#define GIGA_ID		0xc8
 #define SIZE_64K	0x10000
 
 unsigned char manufacturer_id;
@@ -87,13 +89,25 @@ struct spi_flash *spi_nor_probe_generic(struct spi_slave *spi, u8 *idcode)
 	flash->sector_size = sfi.flash_block_size;
 	flash->size = sfi.flash_density;
 
-	if (idcode[0] == WINBOND_ID)	{
+	if (idcode[0] == WINBOND_ID) {
 		flash->name = "winbond";
 		flash->read_opcode  = CMD_READ_ARRAY_FAST;
 		flash->write_opcode = CMD_PAGE_PROGRAM;
 		if (flash->size > 0x1000000) {
 			/* Switch to 4 byte addressing mode */
 			ret = spi_flash_cmd(spi, CMD_W25_EN4B, NULL, 0);
+			if (ret) {
+				debug("SF: Setting 4 byte mode failed, moving to 3 byte mode\n");
+				flash->size = 0x1000000;
+			}
+		}
+	} else if (idcode[0] == GIGA_ID) {
+		flash->name = "Giga";
+		flash->read_opcode  = CMD_READ_ARRAY_FAST;
+		flash->write_opcode = CMD_PAGE_PROGRAM;
+		if (flash->size > 0x1000000) {
+			/* Switch to 4 byte addressing mode */
+			ret = spi_flash_cmd(spi, CMD_GIGA_EN4B, NULL, 0);
 			if (ret) {
 				debug("SF: Setting 4 byte mode failed, moving to 3 byte mode\n");
 				flash->size = 0x1000000;
