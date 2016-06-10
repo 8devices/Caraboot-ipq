@@ -17,4 +17,15 @@
 #include <configs/ipq807x.h>
 #include <asm/u-boot.h>
 
+/*
+ * GCC-SDCC Registers
+ */
+#define GCC_SDCC1_MISC		0x1842020
+#define GCC_SDCC1_APPS_CBCR	0x1842018
+#define GCC_SDCC1_APPS_CFG_RCGR	0x1842008
+#define GCC_SDCC1_APPS_CMD_RCGR	0x1842004
+#define GCC_SDCC1_APPS_M	0x184200C
+#define GCC_SDCC1_APPS_N	0x1842010
+#define GCC_SDCC1_APPS_D	0x1842014
+
 #endif /* _IPQ807X_H_ */
