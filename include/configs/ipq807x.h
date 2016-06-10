@@ -104,6 +104,8 @@
 #define CONFIG_SF_DEFAULT_MODE	SPI_MODE_0
 #define CONFIG_SPI_FLASH_BAR	1
 
+#define CONFIG_EFI_PARTITION
+
 /*
  * U-Boot Env Configs
  */

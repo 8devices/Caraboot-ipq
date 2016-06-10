@@ -312,6 +312,7 @@ int qca_mmc_init(bd_t *bis, qca_mmc *host)
 	cfg->voltages = 0x40FF8080;
 	cfg->host_caps = MMC_MODE_8BIT;
 	cfg->host_caps |= MMC_MODE_HC;
+	cfg->part_type = PART_TYPE_EFI;
 
 	mmc = mmc_create(cfg, host);
 	if (!mmc) {
