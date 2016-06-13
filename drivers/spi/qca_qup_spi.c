@@ -20,7 +20,7 @@
 #include <asm/io.h>
 #include <asm/errno.h>
 #include <asm/arch-qcom-common/gpio.h>
-#include <asm/arch-ipq40xx/iomap.h>
+#include <asm/arch-qcom-common/iomap.h>
 #include "qca_qup_spi.h"
 
 static int check_bit_state(uint32_t reg_addr, int bit_num, int val, int us_delay)

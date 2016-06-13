@@ -14,7 +14,7 @@
 #ifndef _IPQ40XX_BOARD_PARAM_H_
 #define _IPQ40XX_BOARD_PARAM_H_
 
-#include <asm/arch-ipq40xx/iomap.h>
+#include <asm/arch-qcom-common/iomap.h>
 #include <asm/arch-qcom-common/gpio.h>
 #include <linux/sizes.h>
 #include "ipq40xx.h"

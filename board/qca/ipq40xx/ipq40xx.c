@@ -21,7 +21,7 @@
 #include "ipq40xx_board_param.h"
 #include <nand.h>
 #include <part.h>
-#include <asm/arch-ipq40xx/smem.h>
+#include <asm/arch-qcom-common/smem.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 

@@ -89,6 +89,7 @@
 #define CONFIG_DTB_LOAD_ADDR 0x4AE00000
 #define CONFIG_EXTRA_ENV_SETTINGS "fdtcontroladdr=0x4AE00000\0"
 
+#define CONFIG_QCA_SMEM_BASE		0x41000000
 /*
 * SPI Flash Configs
 */

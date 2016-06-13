@@ -33,12 +33,10 @@
 #include <asm/io.h>
 #include <asm/errno.h>
 #include <linux/sizes.h>
-#include <asm/arch-ipq40xx/smem.h>
+#include <asm/arch-qcom-common/smem.h>
 #include <nand.h>
-#include "ipq40xx.h"
 
 extern int nand_env_device;
-extern board_ipq40xx_params_t *gboard_param;
 
 #define BUILD_ID_LEN 32
 
@@ -266,7 +264,6 @@ unsigned int get_partition_table_offset(void)
 int smem_getpart(char *part_name, uint32_t *start, uint32_t *size)
 {
 	unsigned i;
-	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 	struct smem_ptn *p;
 
 	for (i = 0; i < smem_ptable.len; i++) {
@@ -397,51 +394,13 @@ int smem_ram_ptable_init(struct smem_ram_ptable *smem_ram_ptable)
 	return 1;
 }
 
-/*
- * get nand block size by device id.
- * dev_id is 0 for parallel nand.
- * dev_id is 1 for spi nand.
- */
-uint32_t get_nand_block_size(uint8_t dev_id)
-{
-#if 0
-	struct mtd_info *mtd;
-
-	mtd = &nand_info[dev_id];
-
-	return mtd->erasesize;
-#endif
-	return 0; //fix_me
-}
-
-/*
- * get flash block size based on partition name.
- */
-static inline uint32_t get_flash_block_size(char *name,
-				qca_smem_flash_info_t *smem)
-{
-	return (get_which_flash_param(name) == 1) ?
-		get_nand_block_size(gboard_param->spi_nand_available)
-		: smem->flash_block_size;
-}
-
-#define part_which_flash(p)	(((p)->attr & 0xff000000) >> 24)
-
-static inline uint32_t get_part_block_size(struct smem_ptn *p,
-					qca_smem_flash_info_t *sfi)
-{
-	return (part_which_flash(p) == 1) ?
-			get_nand_block_size(gboard_param->spi_nand_available)
-			: sfi->flash_block_size;
-}
+#define part_which_flash(p)    (((p)->attr & 0xff000000) >> 24)
 
 void qca_set_part_entry(char *name, qca_smem_flash_info_t *smem,
 		qca_part_entry_t *part, uint32_t start, uint32_t size)
 {
-	uint32_t bsize = get_flash_block_size(name, smem);
-
-	part->offset = ((loff_t)start) * bsize;
-	part->size = ((loff_t)size) * bsize;
+	part->offset = ((loff_t)start) * smem->flash_block_size;
+	part->size = ((loff_t)size) * smem->flash_block_size;
 }
 
 uint32_t qca_smem_get_flash_block_size(void)
@@ -449,7 +408,6 @@ uint32_t qca_smem_get_flash_block_size(void)
 	return qca_smem_flash_info.flash_block_size;
 }
 
-static char parts[4096];
 
 char *qca_smem_part_to_mtdparts(char *mtdid)
 {
@@ -533,7 +491,6 @@ int do_smeminfo(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 	int i;
-	uint32_t bsize;
 
 	printf(	"flash_type:		0x%x\n"
 		"flash_index:		0x%x\n"
@@ -555,13 +512,12 @@ int do_smeminfo(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	for (i = 0; i < smem_ptable.len; i++) {
 		struct smem_ptn *p = &smem_ptable.parts[i];
 		loff_t psize;
-		bsize = get_part_block_size(p, sfi);
 
-		psize =  ((loff_t)p->size) * bsize;
+		psize = ((loff_t)p->size) * sfi->flash_block_size;
 
 		printf("%3d: " smem_ptn_name_fmt " 0x%08x %#16llx %#16llx\n",
 			i, p->name, p->attr, ((loff_t)p->start) *
-			bsize, psize);
+			sfi->flash_block_size, psize);
 	}
 	return 0;
 }
