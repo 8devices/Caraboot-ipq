@@ -1070,9 +1070,11 @@ void ft_board_setup(void *blob, bd_t *bd)
 		ipq_fdt_fixup_mtdparts(blob, nodes);
 	}
 	s = (getenv("gmacnumber"));
-	strict_strtoul(s, 16, &gmac_no);
-	if (gmac_no > 2 && gmac_no < 6)
-		ipq40xx_patch_eth_params(blob, gmac_no);
+	if (s) {
+		strict_strtoul(s, 16, &gmac_no);
+		if (gmac_no > 2 && gmac_no < 6)
+			ipq40xx_patch_eth_params(blob, gmac_no);
+	}
 	dcache_disable();
 	ipq40xx_set_ethmac_addr();
 	fdt_fixup_ethernet(blob);
