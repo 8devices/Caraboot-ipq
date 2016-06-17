@@ -30,7 +30,7 @@ struct ipq_xhci {
 };
 static struct ipq_xhci ipq[IPQ_XHCI_COUNT];
 
-inline int __board_usb_init(int index, enum usb_init_type init)
+int __board_usb_init(int index, enum usb_init_type init)
 {
 	return 0;
 }
