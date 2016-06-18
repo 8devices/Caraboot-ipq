@@ -36,6 +36,8 @@
 #define CMD_64K_SE		0xd8	/* 64K Sector Erase */
 #define CMD_4K_SE		0x20	/* 4K Sector Erase */
 
+#define CMD_GIGA_EN4B		0xb7	/* Enter 4-byte mode */
+
 #define SIZE_4K			0x1000
 
 struct giga_spi_flash_params {
@@ -64,6 +66,14 @@ static const struct giga_spi_flash_params giga_spi_flash_table[] = {
 		.nr_blocks = 256,
 		.name = "GD25Q128",
 	},
+	{
+		.id = 0x4019,
+		.page_size = 256,
+		.pages_per_sector = 16,
+		.sectors_per_block = 16,
+		.nr_blocks = 512,
+		.name = "GD25Q256",
+	},
 };
 
 static int giga_erase(struct spi_flash *flash, u32 offset, size_t len)
@@ -79,6 +89,7 @@ struct spi_flash *spi_flash_probe_giga(struct spi_slave *spi, u8 *idcode)
 	const struct giga_spi_flash_params *params;
 	struct spi_flash *flash;
 	unsigned int i;
+	int ret;
 
 	for (i = 0; i < ARRAY_SIZE(giga_spi_flash_table); i++) {
 		params = &giga_spi_flash_table[i];
@@ -108,6 +119,18 @@ struct spi_flash *spi_flash_probe_giga(struct spi_slave *spi, u8 *idcode)
 	flash->sector_size = params->page_size * params->pages_per_sector;
 	flash->block_size = flash->sector_size * params->sectors_per_block;
 	flash->size = flash->block_size * params->nr_blocks;
+
+	flash->read_opcode  = CMD_READ_ARRAY_FAST;
+	flash->write_opcode = CMD_PAGE_PROGRAM;
+
+	if (flash->size > 0x1000000) {
+		/* Switch to 4 byte addressing mode */
+		ret = spi_flash_cmd(spi, CMD_GIGA_EN4B, NULL, 0);
+		if (ret) {
+			debug("SF: Setting 4 byte mode failed, moving to 3 byte mode\n");
+			flash->size = 0x1000000;
+		}
+	}
 
 	return flash;
 }
