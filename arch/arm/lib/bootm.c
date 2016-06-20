@@ -29,7 +29,9 @@
 #ifdef CONFIG_ARMV7_NONSEC
 #include <asm/armv7.h>
 #endif
-
+#ifdef CONFIG_SCM_TZ64
+#include <asm/arch-qcom-common/scm.h>
+#endif
 DECLARE_GLOBAL_DATA_PTR;
 
 static struct tag *params;
@@ -258,6 +260,23 @@ bool armv7_boot_nonsec(void)
 }
 #endif
 
+#ifdef CONFIG_SCM_TZ64
+struct aarch64_hdr {
+	u32 code0; /* Executable code */
+	u32 code1; /* Executable code */
+	u64 text_offset; /* Image load offset, little endian */
+	u64 image_size; /* Effective Image size, little endian */
+	u64 flags; /* kernel flags, little endian */
+	u64 res1; /* reserved */
+	u64 res2; /* reserved */
+	u64 res3; /* reserved */
+	u32 magic; /* Magic number, little endian, "ARM\x64" */
+	u32 res4; /* reserved (used for PE COFF offset) */
+};
+#define AARCH64_LINUX_MAGIC 0x644d5241
+#define TEST_AARCH64(ptr) (ptr->magic == AARCH64_LINUX_MAGIC) ? true : false
+#endif
+
 /* Subcommand: GO */
 static void boot_jump_linux(bootm_headers_t *images, int flag)
 {
@@ -307,16 +326,24 @@ static void boot_jump_linux(bootm_headers_t *images, int flag)
 	else
 		r2 = gd->bd->bi_boot_params;
 
-	if (!fake) {
-#ifdef CONFIG_ARMV7_NONSEC
-		if (armv7_boot_nonsec()) {
-			armv7_init_nonsec();
-			secure_ram_addr(_do_nonsec_entry)(kernel_entry,
-							  0, machid, r2);
-		} else
+#ifdef CONFIG_SCM_TZ64
+	if (TEST_AARCH64(((struct aarch64_hdr *)kernel_entry))) {
+		jump_kernel64(kernel_entry, images->ft_addr);
+	} else {
 #endif
-			kernel_entry(0, machid, r2);
+		if (!fake) {
+#ifdef CONFIG_ARMV7_NONSEC
+			if (armv7_boot_nonsec()) {
+				armv7_init_nonsec();
+				secure_ram_addr(_do_nonsec_entry)(kernel_entry,
+						0, machid, r2);
+			} else
+#endif
+				kernel_entry(0, machid, r2);
+		}
+#ifdef CONFIG_SCM_TZ64
 	}
+#endif
 #endif
 }
 
