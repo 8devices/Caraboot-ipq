@@ -205,7 +205,22 @@ targets += $(dtb-y)
 DTC_FLAGS +=
 
 PHONY += dtbs
-dtbs: $(addprefix $(obj)/, $(dtb-y))
+
+ifneq ($(CONFIG_OF_COMBINE),)
+
+%(obj)/%.dtb.comb.S: %(obj)/%.dtb
 	@:
 
-clean-files := *.dtb
+$(obj)/dtbtable.S: $(addsuffix .comb.o, $(addprefix $(obj)/, $(dtb-y)))
+	@:
+
+obj-y := dtbtable.o $(addsuffix .comb.o, $(dtb-y))
+
+targets += obj-$(CONFIG_OF_EMBED)
+
+else
+dtbs: $(addprefix $(obj)/, $(dtb-y))
+	@:
+endif
+
+clean-files := *.dtb *.o *.S

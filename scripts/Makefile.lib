@@ -289,15 +289,44 @@ $(obj)/%.dtb.S: $(obj)/%.dtb
 # Generate an assembly file to wrap the output of the device tree compiler
 quiet_cmd_dt_comb_S_dtb= DTB_COMB     $@
 # Modified for U-Boot Combined ELF
-cmd_dt_comb_S_dtb=						\
-(							\
-	echo '.section .dtb.combine,"a"';		\
-	echo '.balign 16';				\
-	echo '.incbin "$<" ';				\
-	echo '.balign 16';				\
+#get the Magic
+cmd_dt_comb_S_dtb=							\
+	dtbmachid=`cat "$(obj)/$(*F).dts" | grep machid | 		\
+	cut -f 2 -d '<' | cut -f 1 -d '>'` ; 				\
+	if [ -e $$dtbmachid ];						\
+	then								\
+		echo "Need to specify \"machid\" in dts $(obj)/$(*F).dts "; \
+		exit 1;							\
+	fi;								\
+	machiddec=`printf %d $$dtbmachid`;				\
+	if [ ! -f $(obj)/dtbtable.S ];					\
+	then								\
+		echo ".section .dtb.combine_table,\"a\"" > $(obj)/dtbtable.S; \
+		echo ".balign 16" >> $(obj)/dtbtable.S;			\
+		echo ".global __dtb_table_start" >> $(obj)/dtbtable.S; \
+		echo "__dtb_table_start:" >> $(obj)/dtbtable.S; 	\
+		echo ".word 0" >> $(obj)/dtbtable.S;			\
+	fi;								\
+	echo ".extern __dtb_begin_$$machiddec " >> $(obj)/dtbtable.S ;	\
+	echo ".word $$machiddec" >> $(obj)/dtbtable.S ;			\
+	echo ".word __dtb_begin_$$machiddec " >> $(obj)/dtbtable.S ;	\
+	num=`cat $(obj)/dtbtable.S | head -n 5 | tail -n 1 | cut -f 2 -d ' '`; \
+	num=$$(expr $$num + 1);						\
+	sed -i '5 d' $(obj)/dtbtable.S;					\
+	sed -i "5 i .word $$num" $(obj)/dtbtable.S;			\
+(									\
+	dtbmachid=`cat "$(obj)/$(*F).dts" | grep machid | 		\
+	cut -f 2 -d '<' | cut -f 1 -d '>'` ; 				\
+	machiddec=`printf %d $$dtbmachid`;				\
+	echo ".section .dtb.combine_$$machiddec,\"a\"";			\
+	echo '.balign 16';						\
+	echo ".global __dtb_begin_$$machiddec";				\
+	echo "__dtb_begin_$$machiddec:";				\
+	echo '.incbin "$<" ';						\
+	echo '.balign 16';						\
 ) > $@
 
-$(obj)/%_comb.dtb.S: $(obj)/%.dtb
+$(obj)/%.dtb.comb.S: $(obj)/%.dtb
 	$(call cmd,dt_comb_S_dtb)
 
 

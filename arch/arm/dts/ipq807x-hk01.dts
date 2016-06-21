@@ -16,6 +16,7 @@
 / {
 	model ="QCA, IPQ807x-HK01";
 	compatible = "qca,ipq807x", "qca,ipq807x-hk01";
+	machid = <0x01010000>;
 
 	aliases {
 		console = "/serial@78af000";

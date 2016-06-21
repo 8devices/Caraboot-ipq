@@ -630,7 +630,7 @@ HAVE_VENDOR_COMMON_LIB = $(if $(wildcard $(srctree)/board/$(VENDOR)/common/Makef
 libs-y += lib/
 libs-$(HAVE_VENDOR_COMMON_LIB) += board/$(VENDOR)/common/
 libs-$(CONFIG_OF_EMBED) += dts/
-libs-$(CONFIG_OF_COMBINE) += dts/
+libs-$(CONFIG_OF_COMBINE) += arch/$(ARCH)/dts/
 libs-y += fs/
 libs-y += net/
 libs-y += disk/
@@ -753,7 +753,9 @@ endif
 ALL-$(CONFIG_SPL) += spl/u-boot-spl.bin
 ALL-$(CONFIG_SPL_FRAMEWORK) += u-boot.img
 ALL-$(CONFIG_TPL) += tpl/u-boot-tpl.bin
+ifeq ($(CONFIG_OF_COMBINE),)
 ALL-$(CONFIG_OF_SEPARATE) += u-boot.dtb u-boot-dtb.bin
+endif
 ifeq ($(CONFIG_SPL_FRAMEWORK),y)
 ALL-$(CONFIG_OF_SEPARATE) += u-boot-dtb.img
 endif

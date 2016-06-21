@@ -11,6 +11,7 @@
 #include <fdtdec.h>
 #include <asm/sections.h>
 #include <linux/ctype.h>
+#include <asm/arch-qcom-common/smem.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -1212,6 +1213,39 @@ int fdtdec_decode_display_timing(const void *blob, int parent, int index,
 	return 0;
 }
 
+#ifdef CONFIG_OF_COMBINE
+extern unsigned long __dtb_table_start;
+struct dtb_combined_hdr {
+	unsigned long machid;
+	unsigned long dtbaddr;
+};
+
+static int parse_combined_fdt(unsigned long machid)
+{
+	unsigned long *ptr = NULL;
+	struct dtb_combined_hdr *fdt_table;
+	unsigned long ndtbs = 0;
+
+	ptr = &__dtb_table_start;
+	ndtbs = *ptr;
+
+	ptr++;
+
+	fdt_table = (struct dtb_combined_hdr *)ptr;
+
+	while(ndtbs && (fdt_table->machid != machid)) {
+		fdt_table++;
+		ndtbs--;
+	}
+
+	if(ndtbs == 0)
+		hang();
+
+	return fdt_table->dtbaddr;
+
+}
+#endif
+
 int fdtdec_setup(void)
 {
 #if CONFIG_IS_ENABLED(OF_CONTROL)
@@ -1226,8 +1260,13 @@ int fdtdec_setup(void)
 	else
 		gd->fdt_blob = (ulong *)&__bss_end;
 #  else
+#ifdef CONFIG_OF_COMBINE
+	gd->fdt_blob = (ulong *)
+			parse_combined_fdt(smem_get_board_platform_type());
+#else
 	/* FDT is at end of image */
 	gd->fdt_blob = (ulong *)&_end;
+#endif
 #  endif
 # elif defined(CONFIG_OF_HOSTFILE)
 	if (sandbox_read_fdt_from_file()) {
