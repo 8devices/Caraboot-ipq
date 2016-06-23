@@ -790,7 +790,7 @@ static void ipq40xx_set_setprop(void *blob, int nodeoff, unsigned long gmac_no,
 
 	ret = fdt_setprop(blob, nodeoff, str, &val, sizeof(val));
 	if (ret)
-		debug("unable to set property %s for %d with error %d\n",
+		debug("unable to set property %s for %lu with error %d\n",
 							str, gmac_no, ret);
 }
 
