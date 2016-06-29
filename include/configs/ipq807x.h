@@ -130,6 +130,7 @@
 #define CONFIG_IPQ_NAND_NAND_INFO_IDX	0
 #define CONFIG_QPIC_NAND_NAND_INFO_IDX	0
 
+#define CONFIG_SCM_TZ64	1
 /*
  * U-Boot Env Configs
  */

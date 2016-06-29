@@ -16,63 +16,8 @@
 #include <linux/compat.h>
 #include <asm-generic/errno.h>
 #include <asm/io.h>
-#include <asm/arch-ipq40xx/scm.h>
+#include <asm/arch-qcom-common/scm.h>
 #include <common.h>
-
-#define SCM_EBUSY		-6
-#define SCM_ENOMEM		-5
-#define SCM_EOPNOTSUPP		-4
-#define SCM_EINVAL_ADDR		-3
-#define SCM_EINVAL_ARG		-2
-#define SCM_ERROR		-1
-#define SCM_INTERRUPTED		 1
-
-/* to align the pointer to the (next) page boundary */
-#define PAGE_ALIGN(addr) ALIGN(addr, PAGE_SIZE)
-
-/**
- * struct scm_command - one SCM command buffer
- * @len: total available memory for command and response
- * @buf_offset: start of command buffer
- * @resp_hdr_offset: start of response buffer
- * @id: command to be executed
- * @buf: buffer returned from scm_get_command_buffer()
- *
- * An SCM command is laid out in memory as follows:
- *
- *	------------------- <--- struct scm_command
- *	| command header  |
- *	------------------- <--- scm_get_command_buffer()
- *	| command buffer  |
- *	------------------- <--- struct scm_response and
- *	| response header |      scm_command_to_response()
- *	------------------- <--- scm_get_response_buffer()
- *	| response buffer |
- *	-------------------
- *
- * There can be arbitrary padding between the headers and buffers so
- * you should always use the appropriate scm_get_*_buffer() routines
- * to access the buffers in a safe manner.
- */
-struct scm_command {
-	u32	len;
-	u32	buf_offset;
-	u32	resp_hdr_offset;
-	u32	id;
-	u32	buf[0];
-};
-
-/**
- * struct scm_response - one SCM response buffer
- * @len: total available memory for response
- * @buf_offset: start of response data relative to start of scm_response
- * @is_complete: indicates if the command has finished processing
- */
-struct scm_response {
-	u32	len;
-	u32	buf_offset;
-	u32	is_complete;
-};
 
 /**
  * alloc_scm_command() - Allocate an SCM command
@@ -280,4 +225,99 @@ int scm_init(void)
 	return 0;
 }
 
+#ifdef CONFIG_SCM_TZ64
 
+int __qca_scm_call_armv8_32(u32 x0, u32 x1, u32 x2, u32 x3, u32 x4, u32 x5,
+				u32 *ret1, u32 *ret2, u32 *ret3)
+{
+	register u32 r0 __asm__("r0") = x0;
+	register u32 r1 __asm__("r1") = x1;
+	register u32 r2 __asm__("r2") = x2;
+	register u32 r3 __asm__("r3") = x3;
+	register u32 r4 __asm__("r4") = x4;
+	register u32 r5 __asm__("r5") = x5;
+
+	asm volatile(
+		__asmeq("%0", "r0")
+		__asmeq("%1", "r1")
+		__asmeq("%2", "r2")
+		__asmeq("%3", "r3")
+		__asmeq("%4", "r0")
+		__asmeq("%5", "r1")
+		__asmeq("%6", "r2")
+		__asmeq("%7", "r3")
+		__asmeq("%8", "r4")
+		__asmeq("%9", "r5")
+		".arch_extension sec\n"
+		"smc    #0\n"
+		: "=r" (r0), "=r" (r1), "=r" (r2), "=r" (r3)
+		: "r" (r0), "r" (r1), "r" (r2), "r" (r3), "r" (r4),
+		"r" (r5));
+
+	if (ret1)
+		*ret1 = r1;
+	if (ret2)
+		*ret2 = r2;
+	if (ret3)
+		*ret3 = r3;
+
+	return r0;
+}
+
+
+/**
+ * qca_scm_call() - Invoke a syscall in the secure world
+ *  <at> svc_id: service identifier
+ *  <at> cmd_id: command identifier
+ *  <at> fn_id: The function ID for this syscall
+ *  <at> desc: Descriptor structure containing arguments and return values
+ *
+ * Sends a command to the SCM and waits for the command to finish processing.
+ *
+ */
+static int qca_scm_call(u32 svc_id, u32 cmd_id, struct qca_scm_desc *desc)
+{
+	int arglen = desc->arginfo & 0xf;
+	int ret;
+	u32 fn_id = QCA_SCM_SIP_FNID(svc_id, cmd_id);
+
+
+	if (arglen > QCA_MAX_ARG_LEN) {
+		printf("Error Extra args not supported\n");
+		hang();
+	}
+
+	desc->ret[0] = desc->ret[1] = desc->ret[2] = 0;
+
+	ret = __qca_scm_call_armv8_32(fn_id, desc->arginfo,
+			desc->args[0], desc->args[1],
+			desc->args[2], desc->x5,
+			&desc->ret[0], &desc->ret[1],
+			&desc->ret[2]);
+
+	return ret;
+}
+
+void __attribute__ ((noreturn)) jump_kernel64(void *kernel_entry,
+				void *fdt_addr)
+{
+	struct qca_scm_desc desc = {0};
+	int ret = 0;
+	kernel_params param = {0};
+
+	param.reg_x0 = (u32)fdt_addr;
+	param.kernel_start = (u32)kernel_entry;
+
+	desc.arginfo = QCA_SCM_ARGS(2, SCM_READ_OP);
+	desc.args[0] = (u32) &param;
+	desc.args[1] = sizeof(param);
+
+	printf("Jumping to AARCH64 kernel via monitor\n");
+	ret = qca_scm_call(SCM_ARCH64_SWITCH_ID, SCM_EL1SWITCH_CMD_ID,
+		&desc);
+
+	printf("Can't boot kernel: %d\n", ret);
+	hang();
+}
+
+#endif
