@@ -62,7 +62,6 @@ typedef struct {
 
 #ifdef CONFIG_IPQ40XX_I2C
 typedef struct {
-	unsigned int i2c_base;
 	gpio_func_data_t *i2c_gpio;
 } i2c_cfg_t;
 #endif
