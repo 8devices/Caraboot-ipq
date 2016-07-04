@@ -9,6 +9,7 @@ ccflags-y += -I$(srctree)/board/qca/ipq40xx
 cppflags-y += -I$(srctree)/board/qca/ipq40xx
 
 obj-$(CONFIG_ARCH_IPQ807x) += qcom_uart.o
+obj-$(CONFIG_ARCH_IPQ806x) += qcom_uart.o
 obj-$(CONFIG_ARCH_IPQ40xx) += qcom_uart.o
 ifdef CONFIG_DM_SERIAL
 obj-y += serial-uclass.o

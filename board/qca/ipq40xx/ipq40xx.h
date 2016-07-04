@@ -25,7 +25,7 @@
 #define NO_OF_I2C_GPIOS		2
 #endif
 #define MAX_CONF_NAME		5
-
+#define GCC_BLSP1_UART1_APPS_CBCR       0x0180203c
 unsigned int smem_get_board_machtype(void);
 extern qca_mmc mmc_host;
 
@@ -139,5 +139,4 @@ typedef enum {
 extern board_ipq40xx_params_t *gboard_param;
 unsigned int get_board_index(unsigned int machid);
 void qca_configure_gpio(gpio_func_data_t *gpio, uint count);
-
 #endif

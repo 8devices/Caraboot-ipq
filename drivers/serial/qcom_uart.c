@@ -36,7 +36,6 @@
 #include <watchdog.h>
 #include <asm/arch-qcom-common/uart.h>
 #include <asm/arch-qcom-common/gsbi.h>
-
 #include <dm.h>
 #include <errno.h>
 #include <fdtdec.h>
@@ -44,19 +43,8 @@
 #include <asm/io.h>
 #include <serial.h>
 
-#ifdef CONFIG_ARCH_IPQ40xx
-#include "ipq40xx.h"
-extern board_ipq40xx_params_t *gboard_param;
-#endif
-
 DECLARE_GLOBAL_DATA_PTR;
 
-/* Information about a serial port */
-struct ipq_serial_platdata {
-	unsigned long reg_base;  /* address of registers in physical memory */
-	u8 port_id;     /* uart port number */
-	u8 bit_rate;
-};
 
 #define FIFO_DATA_SIZE	4
 
@@ -356,13 +344,8 @@ static unsigned int msm_boot_uart_dm_init(unsigned long uart_dm_base)
 static void ipq_serial_init(struct ipq_serial_platdata *plat,
 				unsigned long base)
 {
-
-#ifdef CONFIG_ARCH_IPQ40xx
-	qca_configure_gpio(gboard_param->console_uart_cfg->dbg_uart_gpio,
-				NO_OF_DBG_UART_GPIOS);
-#endif
-	writel(1, GCC_BLSP1_UART1_APPS_CBCR);
-        writel(plat->bit_rate, MSM_BOOT_UART_DM_CSR(base));
+	qca_serial_init(plat);
+	writel(plat->bit_rate, MSM_BOOT_UART_DM_CSR(base));
 
 	/* Intialize UART_DM */
 	msm_boot_uart_dm_init(base);
@@ -449,6 +432,9 @@ static int ipq_serial_ofdata_to_platdata(struct udevice *dev)
 	plat->port_id = fdtdec_get_int(gd->fdt_blob, dev->of_offset, "id", -1);
 	plat->bit_rate = fdtdec_get_int(gd->fdt_blob, dev->of_offset,
 			"bit_rate", -1);
+	plat->m_value = fdtdec_get_int(gd->fdt_blob, dev->of_offset, "m_value", -1);
+	plat->n_value = fdtdec_get_int(gd->fdt_blob, dev->of_offset, "n_value", -1);
+	plat->d_value = fdtdec_get_int(gd->fdt_blob, dev->of_offset, "d_value", -1);
 
 	return 0;
 }

@@ -19,8 +19,11 @@
 		compatible = "qca,ipq-uartdm";
 		reg = <0x16340000 0x200>;
 		gsbi_base = <0x16300000>;
-		id = <2>;
+		id = <4>;
 		bit_rate = <0xCC>;
+		m_value = <0x0C>;
+		n_value = <0x271>;
+		d_value = <0x139>;
 	};
 
 	timer {

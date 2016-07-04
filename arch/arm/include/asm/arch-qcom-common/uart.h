@@ -78,6 +78,18 @@ enum MSM_BOOT_UART_DM_BITS_PER_CHAR {
         MSM_BOOT_UART_DM_8_BPS
 };
 
+/* Information about a serial port */
+struct ipq_serial_platdata {
+
+	unsigned long reg_base;  /* address of registers in physical memory */
+	u8 port_id;     /* uart port number */
+	u8 bit_rate;
+	int m_value;
+	int n_value;
+	int d_value;
+
+};
+
 /* UART clock @ 7.3728 MHz */
 #ifdef CONFIG_IPQ806X
 #define UART_DM_CLK_RX_TX_BIT_RATE 0xCC
@@ -90,7 +102,6 @@ enum MSM_BOOT_UART_DM_BITS_PER_CHAR {
                                              (MSM_BOOT_UART_DM_SBL_1 << 2) | \
                                              (MSM_BOOT_UART_DM_8_BPS << 4))
 
-#define GCC_BLSP1_UART1_APPS_CBCR	0x0180203c
 /* UART_DM Registers */
 
 /* UART Operational Mode Register */

@@ -19,6 +19,7 @@
 #include "ipq807x.h"
 #include <asm/arch-qcom-common/qca_common.h>
 #include <asm/arch-qcom-common/qpic_nand.h>
+#include <asm/arch-qcom-common/uart.h>
 #include <fdtdec.h>
 
 
@@ -36,10 +37,14 @@ void disable_caches(void)
 	icache_disable();
 }
 
-
 int board_init(void)
 {
 	return 0;
+}
+
+void qca_serial_init(struct ipq_serial_platdata *plat)
+{
+	writel(1, GCC_BLSP1_UART1_APPS_CBCR);
 }
 
 int dram_init(void)

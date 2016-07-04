@@ -26,6 +26,7 @@
 #include <asm/arch-qcom-common/qpic_nand.h>
 #include <jffs2/load_kernel.h>
 #include <fdtdec.h>
+#include <asm/arch-qcom-common/uart.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -289,6 +290,12 @@ int board_late_init(void)
 	return 0;
 }
 
+void qca_serial_init(struct ipq_serial_platdata *plat)
+{
+	qca_configure_gpio(gboard_param->console_uart_cfg->dbg_uart_gpio,
+			NO_OF_DBG_UART_GPIOS);
+	writel(1, GCC_BLSP1_UART1_APPS_CBCR);
+}
 /*
  * This function is called in the very beginning.
  * Retreive the machtype info from SMEM and map the board specific
