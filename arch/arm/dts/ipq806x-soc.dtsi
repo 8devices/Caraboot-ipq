@@ -27,10 +27,11 @@
 	};
 
 	timer {
-		gcnt_en = <0x0200A00C>;
-		gcnt_cnt = <0x0200A008>;
+		gcnt_base = <0x0200A00C>;
+		gcnt_cntcv_lo = <0x0200A008>;
+		gcnt_cntcv_hi = <0>;
 		gpt_freq_hz = <32000>;
-		timer_load_val = <0x00FFFFFF 0xFFFFFFFF>;
+		timer_load_val = <0x00000000 0xFFFFFFFF>;
 	};
 
 };

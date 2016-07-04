@@ -35,8 +35,8 @@
 #include <watchdog.h>
 #include <fdtdec.h>
 
-static unsigned long long timestamp;
-static unsigned long long lastinc;
+static unsigned long long timestamp __attribute__((section(".data")));
+static unsigned long long lastinc __attribute__((section(".data")));
 
 #define GPT_FREQ_HZ     (ipq_timer.gpt_freq_hz)
 #define GPT_FREQ_KHZ	(GPT_FREQ_HZ / 1000)
@@ -52,7 +52,7 @@ static struct ipq_timer_platdata {
 	unsigned int gcnt_cntcv_hi;
 	unsigned int gpt_freq_hz;
 	unsigned long long timer_load_val;
-} ipq_timer;
+} ipq_timer __attribute__((section(".data")));
 
 /**
  * timer_init - initialize timer
@@ -107,15 +107,21 @@ static unsigned long long read_counter(void)
 	unsigned long vect_hi1, vect_hi2;
 	unsigned long vect_low;
 
+	if(ipq_timer.gcnt_cntcv_hi != 0){
 repeat:
-	vect_hi1 = readl(ipq_timer.gcnt_cntcv_hi);
-	vect_low = readl(ipq_timer.gcnt_cntcv_lo);
-	vect_hi2 = readl(ipq_timer.gcnt_cntcv_hi);
+		vect_hi1 = readl(ipq_timer.gcnt_cntcv_hi);
+		vect_low = readl(ipq_timer.gcnt_cntcv_lo);
+		vect_hi2 = readl(ipq_timer.gcnt_cntcv_hi);
 
-	if (vect_hi1 != vect_hi2)
-		goto repeat;
+		if (vect_hi1 != vect_hi2)
+			goto repeat;
 
-	return ((unsigned long long)vect_hi1 << 32 | vect_low);
+		return ((unsigned long long)vect_hi1 << 32 | vect_low);
+	}
+	else{
+		return (readl(ipq_timer.gcnt_cntcv_lo));
+	}
+
 }
 /**
  * __udelay -  generates micro second delay.
