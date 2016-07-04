@@ -12,33 +12,51 @@
  */
 
 #include <common.h>
-#include <asm/arch-ipq806x/clock.h>
-#include <asm/arch-ipq806x/nss/clock.h>
-#include <asm/arch-ipq806x/iomap.h>
 #include <asm/io.h>
+
+#define MSM_CLK_CTL_BASE			0x00900000
+#define GSBIn_UART_APPS_MD_REG(n)		(MSM_CLK_CTL_BASE + 0x29D0 + (0x20*((n)-1)))
+#define GSBIn_UART_APPS_NS_REG(n)		(MSM_CLK_CTL_BASE + 0x29D4 + (0x20*((n)-1)))
+#define GSBIn_HCLK_CTL_REG(n)			(MSM_CLK_CTL_BASE + 0x29C0 + (0x20*((n)-1)))
+#define BB_PLL_ENA_SC0_REG			(MSM_CLK_CTL_BASE + 0x34C0)
+#define PLL_LOCK_DET_STATUS_REG			(MSM_CLK_CTL_BASE + 0x03420)
+
+#define MN_MODE_DUAL_EDGE 			0x2
+
+#define BIT(s)					(1 << s)
+#define BM(m, l)				(((((unsigned int)-1) << (31-m)) >> (31-m+l)) << l)
+#define BVAL(m, l, val)				(((val) << l) & BM(m, l))
+
+#define Uart_clk_ns_mask			(BM(31, 16) | BM(6, 0))
+#define Uart_en_mask				BIT(11)
+#define MD16(m, n)				(BVAL(31, 16, m) | BVAL(15, 0, ~(n)))
+
+/* NS Registers */
+#define NS(n_msb, n_lsb, n, m, mde_lsb, d_msb, d_lsb, d, s_msb, s_lsb, s) \
+	(BVAL(n_msb, n_lsb, ~(n-m)) \
+	 | (BVAL((mde_lsb+1), mde_lsb, MN_MODE_DUAL_EDGE) * !!(n)) \
+	 | BVAL(d_msb, d_lsb, (d-1)) | BVAL(s_msb, s_lsb, s))
 
 /**
  * uart_pll_vote_clk_enable - enables PLL8
  */
-void uart_pll_vote_clk_enable(unsigned int clk_dummy)
+void uart_pll_vote_clk_enable(void)
 {
 	setbits_le32(BB_PLL_ENA_SC0_REG, BIT(8));
 
-	if (!clk_dummy)
-		while((readl(PLL_LOCK_DET_STATUS_REG) & BIT(8)) == 0);
+	while((readl(PLL_LOCK_DET_STATUS_REG) & BIT(8)) == 0);
 }
-
+#ifdef CONFIG_IPQ806X_USB
 /**
  * usb_pll_vote_clk_enable - enables PLL8
  */
-void usb_pll_vote_clk_enable(unsigned int clk_dummy)
+void usb_pll_vote_clk_enable(void)
 {
 	setbits_le32(BB_PLL_ENA_SC0_REG, BIT(0));
 
-	if (!clk_dummy)
-		while((readl(PLL_LOCK_DET_STATUS_REG) & BIT(0)) == 0);
+	while((readl(PLL_LOCK_DET_STATUS_REG) & BIT(0)) == 0);
 }
-
+#endif
 /**
  * uart_set_rate_mnd - configures divider M and D values
  *
@@ -56,6 +74,7 @@ static void uart_set_rate_mnd(unsigned int gsbi_port, unsigned int m,
 	clrbits_le32(GSBIn_UART_APPS_NS_REG(gsbi_port), BIT(7));
 }
 
+#ifdef CONFIG_IPQ806X_USB
 /**
  * usb_set_rate_mnd - configures divider M and D values
  *
@@ -83,7 +102,7 @@ static void usb_set_rate_mnd_utmi(unsigned int usb_port, unsigned int m,
 	/* Deassert MND reset. */
 	clrbits_le32(USB30_MOC_UTMI_CLK_NS, BIT(7));
 }
-
+#endif
 /**
  * uart_branch_clk_enable_reg - enables branch clock
  *
@@ -94,6 +113,7 @@ static void uart_branch_clk_enable_reg(unsigned int gsbi_port)
 	setbits_le32(GSBIn_UART_APPS_NS_REG(gsbi_port), BIT(9));
 }
 
+#ifdef CONFIG_IPQ806X_USB
 /**
  * usb_local_clock_enable - configures N value and enables root clocks
  *
@@ -113,7 +133,7 @@ static void usb_utmi_local_clock_enable(unsigned int usb_port, unsigned int n,
 	 */
 	reg_val = readl(reg);
 	reg_val &= ~(USB_clk_ns_mask);
-	usb_ns_val =  NS(BIT_POS_23,BIT_POS_16,n,m, 5, 4, 3, 1, 2, 0,3);
+	usb_ns_val =  NS(23,16,n,m, 5, 4, 3, 1, 2, 0,3);
 	reg_val |= (usb_ns_val & USB_clk_ns_mask);
 	writel(reg_val,reg);
 
@@ -152,7 +172,7 @@ static void usb_local_clock_enable(unsigned int usb_port, unsigned int n,
 	 */
 	reg_val = readl(reg);
 	reg_val &= ~(USB_clk_ns_mask);
-	usb_ns_val =  NS(BIT_POS_23,BIT_POS_16,n,m, 5, 4, 3, 1, 2, 0,3);
+	usb_ns_val =  NS(23,16,n,m, 5, 4, 3, 1, 2, 0,3);
 	reg_val |= (usb_ns_val & USB_clk_ns_mask);
 	writel(reg_val,reg);
 
@@ -203,6 +223,7 @@ static void usb_set_utmi_1_clk(unsigned int usb_port)
 {
 	setbits_le32(USB30_MOC_1_UTMI_CLK_CTL, BIT(4));
 }
+#endif
 
 /**
  * uart_local_clock_enable - configures N value and enables root clocks
@@ -223,7 +244,7 @@ static void uart_local_clock_enable(unsigned int gsbi_port, unsigned int n,
 	*/
 	reg_val = readl(reg); // REG(0x29D4+(0x20*((n)-1)))
 	reg_val &= ~(Uart_clk_ns_mask);
-	uart_ns_val =  NS(BIT_POS_31,BIT_POS_16,n,m, 5, 4, 3, 1, 2, 0,3);
+	uart_ns_val =  NS(31,16,n,m, 5, 4, 3, 1, 2, 0,3);
 	reg_val |= (uart_ns_val & Uart_clk_ns_mask);
 	writel(reg_val,reg);
 
@@ -251,6 +272,7 @@ static void uart_set_gsbi_clk(unsigned int gsbi_port)
 	setbits_le32(GSBIn_HCLK_CTL_REG(gsbi_port), BIT(4));
 }
 
+#ifdef CONFIG_IPQ806X_USB
 /**
  *
  * USB_clock_config - configures USB3.0 clocks
@@ -258,23 +280,24 @@ static void uart_set_gsbi_clk(unsigned int gsbi_port)
  * Configures USB dividers, enable root and branch clocks.
  */
 void usb_ss_core_clock_config(unsigned int usb_port, unsigned int m,
-		unsigned int n, unsigned int d, unsigned int clk_dummy)
+		unsigned int n, unsigned int d)
 {
 	usb_set_rate_mnd(usb_port, m, n);
-	usb_pll_vote_clk_enable(clk_dummy);
+	usb_pll_vote_clk_enable();
 	usb_local_clock_enable(usb_port, n, m);
 	usb_set_master_clk(usb_port);
 	usb_set_master_1_clk(usb_port);
 }
 
 void usb_ss_utmi_clock_config(unsigned int usb_port, unsigned int m,
-		unsigned int n, unsigned int d, unsigned int clk_dummy)
+		unsigned int n, unsigned int d)
 {
 	usb_set_rate_mnd_utmi(usb_port, m, n);
 	usb_utmi_local_clock_enable(usb_port, n, m);
 	usb_set_utmi_clk(usb_port);
 	usb_set_utmi_1_clk(usb_port);
 }
+#endif
 
 /**
  * uart_clock_config - configures UART clocks
@@ -282,10 +305,10 @@ void usb_ss_utmi_clock_config(unsigned int usb_port, unsigned int m,
  * Configures GSBI UART dividers, enable root and branch clocks.
  */
 void uart_clock_config(unsigned int gsbi_port, unsigned int m,
-		unsigned int n, unsigned int d, unsigned int clk_dummy)
+		unsigned int n, unsigned int d)
 {
 	uart_set_rate_mnd(gsbi_port, m, d);
-	uart_pll_vote_clk_enable(clk_dummy);
+	uart_pll_vote_clk_enable();
 	uart_local_clock_enable(gsbi_port, n, m);
 	uart_set_gsbi_clk(gsbi_port);
 }
@@ -311,12 +334,11 @@ static void i2c_set_rate_mnd(unsigned int gsbi_port, unsigned int m,
 /**
  * i2c_pll_vote_clk_enable - enables PLL8
  */
-void i2c_pll_vote_clk_enable(unsigned int clk_dummy)
+void i2c_pll_vote_clk_enable(void)
 {
 	setbits_le32(BB_PLL_ENA_SC0_REG, BIT(8));
 
-	if (!clk_dummy)
-		while((readl(PLL_LOCK_DET_STATUS_REG) & BIT(8)) == 0);
+	while((readl(PLL_LOCK_DET_STATUS_REG) & BIT(8)) == 0);
 }
 
 /**
@@ -348,7 +370,7 @@ static void i2c_local_clock_enable(unsigned int gsbi_port, unsigned int n,
 	*/
 	reg_val = readl(reg);
 	reg_val &= ~(I2C_clk_ns_mask);
-	i2c_ns_val =  NS(BIT_POS_23,BIT_POS_16,n,m, 5, 4, 3, 4, 2, 0, 3);
+	i2c_ns_val =  NS(23,16,n,m, 5, 4, 3, 4, 2, 0, 3);
 	reg_val |= (i2c_ns_val & I2C_clk_ns_mask);
 	writel(reg_val,reg);
 
@@ -382,15 +404,16 @@ static void i2c_set_gsbi_clk(unsigned int gsbi_port)
  * Configures GSBI I2C dividers, enable root and branch clocks.
  */
 void i2c_clock_config(unsigned int gsbi_port, unsigned int m,
-                unsigned int n, unsigned int d, unsigned int clk_dummy)
+                unsigned int n, unsigned int d)
 {
 	i2c_set_rate_mnd(gsbi_port, m, d);
-	i2c_pll_vote_clk_enable(clk_dummy);
+	i2c_pll_vote_clk_enable();
 	i2c_local_clock_enable(gsbi_port, n, m);
 	i2c_set_gsbi_clk(gsbi_port);
 }
 #endif
 
+#ifdef CONFIG_IPQ_NAND
 /**
  * nand_clock_config - configure NAND controller clocks
  *
@@ -405,6 +428,7 @@ void nand_clock_config(void)
 	/* Wait for clock to stabilize. */
 	udelay(10);
 }
+#endif
 
 #ifdef CONFIG_IPQ806X_PCI
 void pcie_clock_shutdown(clk_offset_t *pci_clk)
@@ -455,12 +479,11 @@ void pcie_clock_config(clk_offset_t *pci_clk)
 #endif /* CONFIG_IPQ806X_PCI */
 
 #ifdef CONFIG_IPQ_MMC
-void emmc_pll_vote_clk_enable(unsigned int clk_dummy)
+void emmc_pll_vote_clk_enable(void)
 {
 	setbits_le32(BB_PLL_ENA_SC0_REG, BIT(8));
 
-	if (!clk_dummy)
-		while((readl(PLL_LOCK_DET_STATUS_REG) & BIT(8)) == 0);
+	while((readl(PLL_LOCK_DET_STATUS_REG) & BIT(8)) == 0);
 }
 
 static void emmc_set_rate_mnd( unsigned int m, unsigned int n)
@@ -568,7 +591,7 @@ void emmc_clock_config(int mode)
 	if (mode == MMC_IDENTIFY_MODE) {
 		/*400 KHz pll8*/
 		emmc_set_rate_mnd(1, 240);
-		emmc_pll_vote_clk_enable(0);
+		emmc_pll_vote_clk_enable();
 		emmc_local_clock_enable(1, 240, 4, 3, 3);
 		emmc_clock_reset();
 		udelay(10);
@@ -576,7 +599,7 @@ void emmc_clock_config(int mode)
 	if (mode == MMC_DATA_TRANSFER_MODE) {
 		/*52 MHz pll8 */
 		emmc_set_rate_mnd(13, 32);
-		emmc_pll_vote_clk_enable(0);
+		emmc_pll_vote_clk_enable();
 		emmc_local_clock_enable(13, 32, 3, 3, 3);
 		emmc_clock_reset();
 		udelay(10);

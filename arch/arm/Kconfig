@@ -429,6 +429,14 @@ config ARCH_IPQ40xx
 	select SYS_GENERIC_BOARD
 	select QCA_COMMON
 
+config ARCH_IPQ806x
+	bool "QCA, IPQ806x"
+	select DM
+	select DM_SERIAL
+	select CPU_V7
+	select SYS_GENERIC_BOARD
+	select QCA_COMMON
+
 config ARCH_IPQ807x
 	bool "QCA, IPQ807x"
 	select DM
@@ -825,6 +833,7 @@ source "board/h2200/Kconfig"
 source "board/hisilicon/hikey/Kconfig"
 source "board/imx31_phycore/Kconfig"
 source "board/ipq40xx/Kconfig"
+source "board/ipq806x/Kconfig"
 source "board/ipq807x/Kconfig"
 source "board/isee/igep0033/Kconfig"
 source "board/maxbcm/Kconfig"
