@@ -650,6 +650,17 @@ gpio_func_data_t ap_dk06_1_c1_sw_gpio_bga[] = {
 		.gpio_od_en = GPIO_OD_DISABLE,
 		.gpio_pu_res = GPIO_PULL_RES2
 	},
+	{
+		/* overriding the default configuration of gpio52 */
+		.gpio = 52,
+		.func = 0,
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
 };
 
 gpio_func_data_t ap_dk07_1_c1_sw_gpio_bga[] = {
