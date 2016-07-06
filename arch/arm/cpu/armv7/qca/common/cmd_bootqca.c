@@ -11,18 +11,18 @@
  * GNU General Public License for more details.
  */
 
-#include <configs/ipq40xx_cdp.h>
+#include <configs/ipq40xx.h>
 #include <common.h>
 #include <command.h>
 #include <image.h>
 #include <nand.h>
 #include <errno.h>
-#include <asm/arch-ipq40xx/scm.h>
+#include <asm/arch-qcom-common/scm.h>
 #include <part.h>
 #include <linux/mtd/ubi.h>
-#include <asm/arch-ipq40xx/smem.h>
+#include <asm/arch-qcom-common/smem.h>
 #include <mmc.h>
-#include "ipq40xx_cdp.h"
+#include "ipq40xx.h"
 
 #define DLOAD_MAGIC_COOKIE0x10
 #define XMK_STR(x)#x
@@ -93,7 +93,7 @@ static int set_fs_bootargs(int *fs_on_nand)
 	char *bootargs;
 	unsigned int active_part = 0;
 
-#define nand_rootfs"ubi.mtd=" QCA_ROOT_FS_PART_NAME " root=mtd:ubi_rootfs rootfstype=squashfs"
+#define nand_rootfs "ubi.mtd=" QCA_ROOT_FS_PART_NAME " root=mtd:ubi_rootfs rootfstype=squashfs"
 
 	if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
 		if (((sfi->rootfs.offset == 0xBAD0FF5E) &&
@@ -258,8 +258,8 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 		 */
 		snprintf(runcmd, sizeof(runcmd),
 			 "nand device %d && "
-			 "set mtdids nand%d=nand%d && "
-			 "set mtdparts mtdparts=nand%d:0x%llx@0x%llx(fs),${msmparts} && "
+			 "setenv mtdids nand%d=nand%d && "
+			 "setenv mtdparts mtdparts=nand%d:0x%llx@0x%llx(fs),${msmparts} && "
 			 "ubi part fs && "
 			 "ubi read 0x%x kernel && ", gboard_param->spi_nand_available,
 			 gboard_param->spi_nand_available,
@@ -420,8 +420,8 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 		}
 
 		snprintf(runcmd, sizeof(runcmd),
-			 "set mtdids nand0=nand0 && "
-			 "set mtdparts mtdparts=nand0:0x%llx@0x%llx(fs),${msmparts} && "
+			 "setenv mtdids nand0=nand0 && "
+			 "setenv mtdparts mtdparts=nand0:0x%llx@0x%llx(fs),${msmparts} && "
 			 "ubi part fs && "
 			 "ubi read 0x%x kernel && ",
 			 sfi->rootfs.size, sfi->rootfs.offset,
@@ -436,8 +436,8 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 			}
 			snprintf(runcmd, sizeof(runcmd),
 				 "nand device %d && "
-				 "set mtdids nand%d=nand%d && "
-				 "set mtdparts mtdparts=nand%d:0x%llx@0x%llx(fs),${msmparts} && "
+				 "setenv mtdids nand%d=nand%d && "
+				 "setenv mtdparts mtdparts=nand%d:0x%llx@0x%llx(fs),${msmparts} && "
 				 "ubi part fs && "
 				 "ubi read 0x%x kernel && ",
 				 gboard_param->spi_nand_available,
@@ -535,7 +535,7 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	 * set fdt_high parameter so that u-boot will not load
 	 * dtb above CONFIG_IPQ40XX_FDT_HIGH region.
 	 */
-	if (run_command("set fdt_high " MK_STR(CONFIG_IPQ_FDT_HIGH) "\n", 0)
+	if (run_command("setenv fdt_high " MK_STR(CONFIG_IPQ_FDT_HIGH) "\n", 0)
 	    != CMD_RET_SUCCESS) {
 		return CMD_RET_FAILURE;
 	}

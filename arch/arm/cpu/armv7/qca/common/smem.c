@@ -61,24 +61,6 @@ struct qca_platfrom {
 	unsigned foundry_id;
 };
 
-typedef enum {
-	SMEM_SPINLOCK_ARRAY = 7,
-	SMEM_AARM_PARTITION_TABLE = 9,
-	SMEM_HW_SW_BUILD_ID = 137,
-	SMEM_USABLE_RAM_PARTITION_TABLE = 402,
-	SMEM_POWER_ON_STATUS_INFO = 403,
-	SMEM_IMAGE_VERSION_TABLE = 469,
-	SMEM_BOOT_FLASH_TYPE = 478,
-	SMEM_BOOT_FLASH_INDEX = 479,
-	SMEM_BOOT_FLASH_CHIP_SELECT = 480,
-	SMEM_BOOT_FLASH_BLOCK_SIZE = 481,
-	SMEM_BOOT_FLASH_DENSITY = 482,
-	SMEM_PARTITION_TABLE_OFFSET = 483,
-	SMEM_FIRST_VALID_TYPE = SMEM_SPINLOCK_ARRAY,
-	SMEM_LAST_VALID_TYPE = SMEM_PARTITION_TABLE_OFFSET,
-	SMEM_MAX_SIZE = SMEM_PARTITION_TABLE_OFFSET + 1,
-} smem_mem_type_t;
-
 struct smem_proc_comm {
 	unsigned command;
 	unsigned status;
@@ -225,6 +207,22 @@ int smem_ptable_init(void)
 	return 0;
 }
 
+/*
+ * smem_bootconfig_info - retrieve bootconfig flags
+ */
+int smem_bootconfig_info(void)
+{
+	unsigned ret;
+
+	ret = smem_read_alloc_entry(SMEM_BOOT_DUALPARTINFO,
+				    &qca_smem_bootconfig_info, sizeof(qca_smem_bootconfig_info_t));
+	if ((ret != 0) || (qca_smem_bootconfig_info.magic
+			   != _SMEM_DUAL_BOOTINFO_MAGIC))
+		return -ENOMSG;
+
+	return 0;
+}
+
 unsigned int get_rootfs_active_partition(void)
 {
 	int i;
@@ -252,7 +250,7 @@ unsigned int get_partition_table_offset(void)
 	return primary_mibib;
 }
 
-/**
+/*
  * smem_getpart - retreive partition start and size
  * @part_name: partition name
  * @start: location where the start offset is to be stored
@@ -282,7 +280,7 @@ int smem_getpart(char *part_name, uint32_t *start, uint32_t *size)
 	return 0;
 }
 
-/**
+/*
  * smem_get_boot_flash - retreive the boot flash info
  * @flash_type: location where the flash type is to be stored
  * @flash_index: location where the flash index is to be stored
@@ -369,7 +367,7 @@ unsigned int smem_get_board_platform_type()
 	return machid;
 }
 
-/**
+/*
  * smem_ptable_init - initializes RAM partition table from SMEM
  *
  */
@@ -394,7 +392,40 @@ int smem_ram_ptable_init(struct smem_ram_ptable *smem_ram_ptable)
 	return 1;
 }
 
+/*
+ * get nand block size by device id.
+ * dev_id is 0 for parallel nand.
+ * dev_id is 1 for spi nand.
+ */
+uint32_t get_nand_block_size(uint8_t dev_id)
+{
+	struct mtd_info *mtd;
+
+	mtd = &nand_info[dev_id];
+
+	return mtd->erasesize;
+}
+
+/*
+ * get flash block size based on partition name.
+ */
+static inline uint32_t get_flash_block_size(char *name,
+					    qca_smem_flash_info_t *smem)
+{
+	return (get_which_flash_param(name) == 1) ?
+		get_nand_block_size(0)
+		: smem->flash_block_size;
+}
+
 #define part_which_flash(p)    (((p)->attr & 0xff000000) >> 24)
+
+static inline uint32_t get_part_block_size(struct smem_ptn *p,
+					   qca_smem_flash_info_t *sfi)
+{
+        return (part_which_flash(p) == 1) ?
+		get_nand_block_size(0)
+		: sfi->flash_block_size;
+}
 
 void qca_set_part_entry(char *name, qca_smem_flash_info_t *smem,
 		qca_part_entry_t *part, uint32_t start, uint32_t size)
@@ -408,14 +439,12 @@ uint32_t qca_smem_get_flash_block_size(void)
 	return qca_smem_flash_info.flash_block_size;
 }
 
-
-char *qca_smem_part_to_mtdparts(char *mtdid)
+void qca_smem_part_to_mtdparts(char *mtdid)
 {
-#if 0
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 	int i, l;
 	int device_id = 0;
-	char *part = parts, *unit;
+	char *part = mtdid, *unit;
 	int init = 0;
 	uint32_t bsize;
 
@@ -427,7 +456,7 @@ char *qca_smem_part_to_mtdparts(char *mtdid)
 		bsize = get_part_block_size(p, sfi);
 
 		if (part_which_flash(p) && init == 0) {
-			device_id = (gboard_param->spi_nand_available == 1) ? 1 : 0;
+			device_id = 0; /* Hard coded as gboard_param is to be removed and nand is not enabled yet */
 			l = sprintf(part, ";nand%d:", device_id);
 			part += l;
 			init = 1;
@@ -459,13 +488,9 @@ char *qca_smem_part_to_mtdparts(char *mtdid)
 	}
 
 	if (i == 0)
-		return NULL;
+		mtdid = NULL;
 
-	*part = 0;	/* Remove the trailing comma */
-
-	return parts;
-#endif
-	return NULL; //fix_me
+	*(part-1) = 0;	/* Remove the trailing ',' character */
 }
 
 /*

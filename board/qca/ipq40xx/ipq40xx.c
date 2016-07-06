@@ -22,6 +22,8 @@
 #include <nand.h>
 #include <part.h>
 #include <asm/arch-qcom-common/smem.h>
+#include <asm/arch-qcom-common/scm.h>
+#include <jffs2/load_kernel.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -38,6 +40,8 @@ extern int nand_env_init(void);
 extern int nand_saveenv(void);
 extern void nand_env_relocate_spec(void);
 extern int ipq_spi_init(u16);
+extern int fdt_node_set_part_info(void *blob, int parent_offset,
+				  struct mtd_device *dev);
 /*
  * Don't have this as a '.bss' variable. The '.bss' and '.rel.dyn'
  * sections seem to overlap.
@@ -169,15 +173,20 @@ int board_init(void)
 			return ret;
 		}
 	}
-
-	if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
+	switch (sfi->flash_type) {
+	case SMEM_BOOT_NAND_FLASH:
 		nand_env_device = CONFIG_QPIC_NAND_NAND_INFO_IDX;
-	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
+		break;
+	case SMEM_BOOT_SPI_FLASH:
 		nand_env_device = CONFIG_IPQ_SPI_NOR_INFO_IDX;
-	} else if (sfi->flash_type != SMEM_BOOT_MMC_FLASH) {
+		break;
+	case SMEM_BOOT_MMC_FLASH:
+		break;
+	default:
 		printf("BUG: unsupported flash type : %d\n", sfi->flash_type);
 		BUG();
 	}
+
 
 	if (sfi->flash_type != SMEM_BOOT_MMC_FLASH) {
 		ret = smem_getpart("0:APPSBLENV", &start_blocks, &size_blocks);
@@ -190,19 +199,23 @@ int board_init(void)
 		board_env_size = ((loff_t) sfi->flash_block_size) * size_blocks;
 	}
 
-	if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
+	switch (sfi->flash_type) {
+        case SMEM_BOOT_NAND_FLASH:
 		board_env_range = CONFIG_ENV_SIZE_MAX;
-		BUG_ON(board_env_size < CONFIG_ENV_SIZE_MAX);
-	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
+                BUG_ON(board_env_size < CONFIG_ENV_SIZE_MAX);
+                break;
+        case SMEM_BOOT_SPI_FLASH:
 		board_env_range = board_env_size;
-		BUG_ON(board_env_size > CONFIG_ENV_SIZE_MAX);
+                BUG_ON(board_env_size > CONFIG_ENV_SIZE_MAX);
+                break;
 #ifdef CONFIG_QCA_MMC
-	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
+        case SMEM_BOOT_MMC_FLASH:
 		board_env_range = CONFIG_ENV_SIZE_MAX;
+                break;
 #endif
-	} else {
+        default:
 		printf("BUG: unsupported flash type : %d\n", sfi->flash_type);
-		BUG();
+                BUG();
 	}
 
 	if (sfi->flash_type != SMEM_BOOT_MMC_FLASH) {
@@ -291,6 +304,17 @@ void clear_l2cache_err(void)
 
 void reset_cpu(ulong addr)
 {
+}
+
+static void reset_crashdump(void)
+{
+        unsigned int magic_cookie = CLEAR_MAGIC;
+        unsigned int clear_info[] =
+		{ 1 /* Disable wdog debug */, 0 /* SDI enable*/, };
+        scm_call(SCM_SVC_BOOT, SCM_CMD_TZ_CONFIG_HW_FOR_RAM_DUMP_ID,
+		 (const void *)&clear_info, sizeof(clear_info), NULL, 0);
+        scm_call(SCM_SVC_BOOT, SCM_CMD_TZ_FORCE_DLOAD_ID, &magic_cookie,
+		 sizeof(magic_cookie), NULL, 0);
 }
 
 int dram_init(void)
@@ -502,12 +526,12 @@ void ipq_fdt_fixup_mtdparts(void *blob, struct flash_node_info *ni)
  * By default, u-boot will walk the dram bank info and populate the /memory
  * node; here, overwrite this behavior so we describe all of memory instead.
  */
-void ft_board_setup(void *blob, bd_t *bd)
+int ft_board_setup(void *blob, bd_t *bd)
 {
 	u64 memory_start = CONFIG_SYS_SDRAM_BASE;
 	u64 memory_size = gboard_param->ddr_size;
 	char *mtdparts = NULL;
-	char parts_str[256];
+	char parts_str[4096];
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 	struct flash_node_info nodes[] = {
 		{ "qcom,msm-nand", MTD_DEV_TYPE_NAND, 0 },
@@ -522,7 +546,8 @@ void ft_board_setup(void *blob, bd_t *bd)
 	ipq_fdt_mem_rsvd_fixup(blob);
 #endif
 	if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
-		mtdparts = "mtdparts=nand0";
+		sprintf(parts_str, "mtdparts=nand0");
+		mtdparts = parts_str;
 	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
 		/* Patch NOR block size and density for
 		 * generic probe case */
@@ -532,22 +557,19 @@ void ft_board_setup(void *blob, bd_t *bd)
 			sprintf(parts_str,
 				"mtdparts=nand1:0x%x@0(rootfs);spi0.0",
 				IPQ_NAND_ROOTFS_SIZE);
-			mtdparts = parts_str;
 		} else if (gboard_param->nor_nand_available &&
 			get_which_flash_param("rootfs") == 0) {
 			sprintf(parts_str,
 				"mtdparts=nand0:0x%x@0(rootfs);spi0.0",
 				IPQ_NAND_ROOTFS_SIZE);
-			mtdparts = parts_str;
-
 		} else {
-			mtdparts = "mtdparts=spi0.0";
+			sprintf(parts_str, "mtdparts=spi0.0");
 		}
+		mtdparts = parts_str;
 	}
 
-
 	if (mtdparts) {
-		mtdparts = qca_smem_part_to_mtdparts(mtdparts);
+		qca_smem_part_to_mtdparts(mtdparts);
 		if (mtdparts != NULL) {
 			debug("mtdparts = %s\n", mtdparts);
 			setenv("mtdparts", mtdparts);
@@ -557,13 +579,12 @@ void ft_board_setup(void *blob, bd_t *bd)
 		ipq_fdt_fixup_mtdparts(blob, nodes);
 	}
 	dcache_disable();
-	ipq40xx_set_ethmac_addr();
 	fdt_fixup_ethernet(blob);
 
 #ifdef CONFIG_QCA_MMC
         board_mmc_deinit();
 #endif
-
+	return 0;
 }
 
 #endif /* CONFIG_OF_BOARD_SETUP */

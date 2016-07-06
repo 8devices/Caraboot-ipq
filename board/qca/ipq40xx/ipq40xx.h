@@ -116,6 +116,25 @@ typedef struct {
 	const char *dtb_config_name[MAX_CONF_NAME];
 } __attribute__ ((__packed__)) board_ipq40xx_params_t;
 
+typedef enum {
+        SMEM_SPINLOCK_ARRAY = 7,
+        SMEM_AARM_PARTITION_TABLE = 9,
+        SMEM_HW_SW_BUILD_ID = 137,
+        SMEM_USABLE_RAM_PARTITION_TABLE = 402,
+        SMEM_POWER_ON_STATUS_INFO = 403,
+        SMEM_IMAGE_VERSION_TABLE = 469,
+        SMEM_BOOT_FLASH_TYPE = 478,
+        SMEM_BOOT_FLASH_INDEX = 479,
+        SMEM_BOOT_FLASH_CHIP_SELECT = 480,
+        SMEM_BOOT_FLASH_BLOCK_SIZE = 481,
+        SMEM_BOOT_FLASH_DENSITY = 482,
+        SMEM_PARTITION_TABLE_OFFSET = 483,
+        SMEM_BOOT_DUALPARTINFO = 484,
+        SMEM_FIRST_VALID_TYPE = SMEM_SPINLOCK_ARRAY,
+        SMEM_LAST_VALID_TYPE = SMEM_PARTITION_TABLE_OFFSET,
+        SMEM_MAX_SIZE = SMEM_PARTITION_TABLE_OFFSET + 1,
+} smem_mem_type_t;
+
 extern board_ipq40xx_params_t *gboard_param;
 unsigned int get_board_index(unsigned int machid);
 void qca_configure_gpio(gpio_func_data_t *gpio, uint count);

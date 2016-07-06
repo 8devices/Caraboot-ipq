@@ -228,6 +228,7 @@ struct ubi_notification {
 /* UBI descriptor given to users when they open UBI volumes */
 struct ubi_volume_desc;
 
+long long ubi_get_volume_size(char *volume);
 int ubi_get_device_info(int ubi_num, struct ubi_device_info *di);
 void ubi_get_volume_info(struct ubi_volume_desc *desc,
 			 struct ubi_volume_info *vi);

@@ -138,6 +138,9 @@ typedef struct {
 #define CONFIG_QPIC_NAND_NAND_INFO_IDX	0
 #define CONFIG_IPQ_SPI_NAND_INFO_IDX	1
 #define CONFIG_IPQ_SPI_NOR_INFO_IDX	2
+
+#define QCA_ROOT_FS_PART_NAME "rootfs"
+
 /*
  * SPI Flash Configs
  */
@@ -171,7 +174,15 @@ typedef struct {
 #define CONFIG_MTD_PARTITIONS
 #define CONFIG_CMD_MTDPARTS
 
-#define CONFIG_BOOTCOMMAND	"bootipq"
+#define CONFIG_CMD_UBI
+#define CONFIG_RBTREE
+#define CONFIG_CMD_BOOTZ
+#define CONFIG_SYS_BOOTM_LEN   (64 << 20)
+#define CONFIG_IPQ_FDT_HIGH     0x87000000
+#define CONFIG_OF_BOARD_SETUP 1
+#define CONFIG_FDT_FIXUP_PARTITIONS
+#define CONFIG_BOOTCOMMAND "bootipq"
+
 #define CONFIG_BOOTDELAY	2
 
 #endif /* _IPQ40XX_H */
