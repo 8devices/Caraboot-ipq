@@ -17,6 +17,9 @@
 	model ="QCA, IPQ40xx-DK01";
 	compatible = "qca,ipq40xx", "qca,ipq40xx-dk01";
 
+	machid = <0x8010000>;
+	config_name = "config@ap.dk01.1-c1";
+
 	aliases {
 		console = "/serial@78af000";
 	};

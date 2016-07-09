@@ -35,7 +35,7 @@
 #define CONFIG_NR_DRAM_BANKS            1
 #define CONFIG_SKIP_LOWLEVEL_INIT
 
-#define CONFIG_SYS_BOOTM_LEN  0x1000000
+#define CONFIG_SYS_BOOTM_LEN            (64 << 20)
 
 #define CONFIG_ENV_SIZE 0x2000
 #define CONFIG_ENV_SIZE_MAX             (256 << 10) /* 256 KB */
@@ -135,13 +135,20 @@
  * U-Boot Env Configs
  */
 #define CONFIG_OF_LIBFDT	1
+#define CONFIG_SYS_HUSH_PARSER
 
 /* NSS firmware loaded using bootm */
-#define CONFIG_BOOTCOMMAND  "bootm"
+#define CONFIG_BOOTCOMMAND  "bootipq"
 #define CONFIG_BOOTARGS "console=ttyMSM0,115200n8"
+#define QCA_ROOT_FS_PART_NAME "rootfs"
 
 #define CONFIG_BOOTDELAY	2
 
+#define CONFIG_CMD_MTDPARTS
+#define CONFIG_MTD_PARTITIONS
+
+#define CONFIG_CMD_UBI
+#define CONFIG_RBTREE
 
 #define CONFIG_CMD_BOOTZ
 

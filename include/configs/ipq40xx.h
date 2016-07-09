@@ -57,8 +57,8 @@
 
 #define CONFIG_IPQ40XX_ENV
 #define CONFIG_ENV_IS_IN_NAND
-#define CONFIG_EXTRA_ENV_SETTINGS                                       \
-				"fdtcontroladdr=0x84000000\0"
+
+#define CONFIG_OF_COMBINE 1
 
 #ifndef __ASSEMBLY__
 #include <compiler.h>

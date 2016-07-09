@@ -11,7 +11,6 @@
  * GNU General Public License for more details.
  */
 
-#include <configs/ipq40xx.h>
 #include <common.h>
 #include <command.h>
 #include <image.h>
@@ -22,7 +21,6 @@
 #include <linux/mtd/ubi.h>
 #include <asm/arch-qcom-common/smem.h>
 #include <mmc.h>
-#include "ipq40xx.h"
 
 #define DLOAD_MAGIC_COOKIE0x10
 #define XMK_STR(x)#x
@@ -34,7 +32,7 @@ DECLARE_GLOBAL_DATA_PTR;
 static qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 int ipq_fs_on_nand ;
 extern int nand_env_device;
-extern board_ipq40xx_params_t *gboard_param;
+
 #ifdef CONFIG_QCA_MMC
 static qca_mmc *host = &mmc_host;
 #endif
@@ -85,6 +83,17 @@ static int inline do_dumpipq_data(void)
 }
 #endif
 
+/* To get board params from Device Tree (to be implemented) */
+static unsigned int is_spi_nand_available (void)
+{
+	return 0; /* hard coded since no device tree entry */
+}
+
+static unsigned int is_nor_emmc_available (void)
+{
+	return 0;
+}
+
 /*
  * Set the root device and bootargs for mounting root filesystem.
  */
@@ -97,11 +106,10 @@ static int set_fs_bootargs(int *fs_on_nand)
 
 	if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
 		if (((sfi->rootfs.offset == 0xBAD0FF5E) &&
-		     (gboard_param->nor_emmc_available == 0)) ||
+		     (is_nor_emmc_available() == 0)) ||
 		    get_which_flash_param("rootfs")) {
 			bootargs = nand_rootfs;
 			*fs_on_nand = 1;
-			gboard_param->nor_nand_available = 1;
 			if (getenv("fsbootargs") == NULL)
 				setenv("fsbootargs", bootargs);
 		} else {
@@ -149,7 +157,7 @@ static int set_fs_bootargs(int *fs_on_nand)
 	return run_command("setenv bootargs ${bootargs} ${fsbootargs} rootwait", 0);
 }
 
-int config_select(unsigned int addr, const char **config, char *rcmd, int rcmd_size)
+int config_select(unsigned int addr, char *rcmd, int rcmd_size)
 {
 	/* Selecting a config name from the list of available
 	 * config names by passing them to the fit_conf_get_node()
@@ -158,13 +166,11 @@ int config_select(unsigned int addr, const char **config, char *rcmd, int rcmd_s
 	 * or board name based config is used.
 	 */
 
-	int i;
-	for (i = 0; i < MAX_CONF_NAME && config[i]; i++) {
-		if (fit_conf_get_node((void *)addr, config[i]) >= 0) {
-			snprintf(rcmd, rcmd_size, "bootm 0x%x#%s\n",
-				 addr, config[i]);
-			return 0;
-		}
+	const char *config = fdt_getprop(gd->fdt_blob, 0, "config_name", NULL);
+
+	if (fit_conf_get_node((void *)addr, config) >= 0) {
+		snprintf(rcmd, rcmd_size, "bootm 0x%x#%s\n", addr, config);
+		return 0;
 	}
 	printf("Config not availabale\n");
 	return -1;
@@ -261,10 +267,10 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 			 "setenv mtdids nand%d=nand%d && "
 			 "setenv mtdparts mtdparts=nand%d:0x%llx@0x%llx(fs),${msmparts} && "
 			 "ubi part fs && "
-			 "ubi read 0x%x kernel && ", gboard_param->spi_nand_available,
-			 gboard_param->spi_nand_available,
-			 gboard_param->spi_nand_available,
-			 gboard_param->spi_nand_available,
+			 "ubi read 0x%x kernel && ", is_spi_nand_available(),
+			 is_spi_nand_available(),
+			 is_spi_nand_available(),
+			 is_spi_nand_available(),
 			 sfi->rootfs.size, sfi->rootfs.offset,
 			 request);
 
@@ -277,7 +283,7 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 		kernel_img_info.kernel_load_size =
 			(unsigned int)ubi_get_volume_size("kernel");
 #ifdef CONFIG_QCA_MMC
-	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH || (gboard_param->nor_emmc_available == 1)) {
+	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH || (is_nor_emmc_available() == 1)) {
 		blk_dev = mmc_get_dev(host->dev_num);
 		if (smem_bootconfig_info() == 0) {
 			active_part = get_rootfs_active_partition();
@@ -331,8 +337,7 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 
 	dcache_enable();
 
-	ret = config_select(request, gboard_param->dtb_config_name,
-			    runcmd, sizeof(runcmd));
+	ret = config_select(request, runcmd, sizeof(runcmd));
 
 	if (debug)
 		printf(runcmd);
@@ -427,7 +432,7 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 			 sfi->rootfs.size, sfi->rootfs.offset,
 			 CONFIG_SYS_LOAD_ADDR);
 
-	} else if ((sfi->flash_type == SMEM_BOOT_SPI_FLASH) && (gboard_param->nor_emmc_available == 0)) {
+	} else if ((sfi->flash_type == SMEM_BOOT_SPI_FLASH) && (is_nor_emmc_available() == 0)) {
 		if ((sfi->rootfs.offset == 0xBAD0FF5E) ||
 		    get_which_flash_param("rootfs")) {
 			if (sfi->rootfs.offset == 0xBAD0FF5E) {
@@ -440,10 +445,10 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 				 "setenv mtdparts mtdparts=nand%d:0x%llx@0x%llx(fs),${msmparts} && "
 				 "ubi part fs && "
 				 "ubi read 0x%x kernel && ",
-				 gboard_param->spi_nand_available,
-				 gboard_param->spi_nand_available,
-				 gboard_param->spi_nand_available,
-				 gboard_param->spi_nand_available,
+				 is_spi_nand_available(),
+				 is_spi_nand_available(),
+				 is_spi_nand_available(),
+				 is_spi_nand_available(),
 				 sfi->rootfs.size, sfi->rootfs.offset,
 				 CONFIG_SYS_LOAD_ADDR);
 		} else {
@@ -456,7 +461,7 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 				 CONFIG_SYS_LOAD_ADDR, (uint)sfi->hlos.offset, (uint)sfi->hlos.size);
 		}
 #ifdef CONFIG_QCA_MMC
-	} else if ((sfi->flash_type == SMEM_BOOT_MMC_FLASH) || (gboard_param->nor_emmc_available == 1)) {
+	} else if ((sfi->flash_type == SMEM_BOOT_MMC_FLASH) || (is_nor_emmc_available() == 1)) {
 		if (debug) {
 			printf("Using MMC device\n");
 		}
@@ -498,7 +503,7 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 
 	ret = genimg_get_format((void *)CONFIG_SYS_LOAD_ADDR);
 	if (ret == IMAGE_FORMAT_FIT) {
-		ret = config_select(CONFIG_SYS_LOAD_ADDR, gboard_param->dtb_config_name,
+		ret = config_select(CONFIG_SYS_LOAD_ADDR,
 				    runcmd, sizeof(runcmd));
 	} else if (ret == IMAGE_FORMAT_LEGACY) {
 		snprintf(runcmd, sizeof(runcmd),
@@ -507,8 +512,8 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 		ret = genimg_get_format((void *)CONFIG_SYS_LOAD_ADDR +
 					sizeof(mbn_header_t));
 		if (ret == IMAGE_FORMAT_FIT) {
-			ret = config_select((CONFIG_SYS_LOAD_ADDR + sizeof(mbn_header_t)),
-					    gboard_param->dtb_config_name,
+			ret = config_select((CONFIG_SYS_LOAD_ADDR
+					     + sizeof(mbn_header_t)),
 					    runcmd, sizeof(runcmd));
 		} else if (ret == IMAGE_FORMAT_LEGACY) {
 			snprintf(runcmd, sizeof(runcmd),
