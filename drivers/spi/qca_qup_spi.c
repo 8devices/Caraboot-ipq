@@ -573,7 +573,7 @@ out:
 	return ret;
 }
 
-static int blsp_spi_write(struct ipq_spi_slave *ds, u8 *cmd_buffer,
+static int blsp_spi_write(struct ipq_spi_slave *ds, const u8 *cmd_buffer,
                                 unsigned int bytes)
 {
 	int length, ret;

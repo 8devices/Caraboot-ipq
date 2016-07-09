@@ -142,7 +142,7 @@ void __udelay(unsigned long usec)
 	} while (runcount < val);
 }
 
-inline unsigned long long gpt_to_sys_freq(unsigned long long gpt)
+static inline unsigned long long gpt_to_sys_freq(unsigned long long gpt)
 {
 	/*
 	 * get_timer() expects the timer increments to be in terms

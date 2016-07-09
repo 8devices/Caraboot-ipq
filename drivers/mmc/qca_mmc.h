@@ -115,4 +115,6 @@
 #define MCI_FIFODEPTH		16
 #define MCI_HFIFO_COUNT		(MCI_FIFODEPTH / 2)
 
+extern void emmc_clock_config(int mode);
+
 #endif  /*  __QCA_MMC_H_ */

@@ -111,7 +111,7 @@ int board_mmc_init(bd_t *bis)
 void board_nand_init(void)
 {
 
-	int node, ret;
+	int node;
 
 	node = fdtdec_next_compatible(gd->fdt_blob, 0,
 				      COMPAT_QCOM_QPIC_NAND);

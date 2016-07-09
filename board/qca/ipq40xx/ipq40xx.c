@@ -37,6 +37,7 @@ extern env_t *nand_env_ptr;
 extern int nand_env_init(void);
 extern int nand_saveenv(void);
 extern void nand_env_relocate_spec(void);
+extern int ipq_spi_init(u16);
 /*
  * Don't have this as a '.bss' variable. The '.bss' and '.rel.dyn'
  * sections seem to overlap.
@@ -94,6 +95,9 @@ static board_ipq40xx_params_t *get_board_param(unsigned int machid)
 int env_init(void)
 {
 	int ret;
+
+	ret = 0;
+
 	qca_smem_flash_info_t sfi;
 
 	smem_get_boot_flash(&sfi.flash_type,

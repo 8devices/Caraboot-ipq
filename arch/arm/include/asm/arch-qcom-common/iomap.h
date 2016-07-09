@@ -14,7 +14,6 @@
 #ifndef _PLATFORM_IPQ40XX_IOMAP_H_
 #define _PLATFORM_IPQ40XX_IOMAP_H_
 
-#include <configs/ipq40xx.h>
 #define CLK_CTL_BASE		0x01800000
 #define GCNT_BASE		0x004a1000
 #define TIMER_BASE		0x0B021000
