@@ -30,7 +30,6 @@
 #define CONFIG_SYS_CACHELINE_SIZE	64
 #define CONFIG_SKIP_LOWLEVEL_INIT
 #define CONFIG_SYS_HZ			1000
-
 #define CONFIG_IPQ40XX_UART
 #define CONFIG_CONS_INDEX		1
 
@@ -43,6 +42,7 @@
 #define CONFIG_SYS_PBSIZE		(CONFIG_SYS_CBSIZE + \
 						sizeof(CONFIG_SYS_PROMPT) + 16)
 
+#define HAVE_BLOCK_DEVICE
 #define CONFIG_SYS_SDRAM_BASE		0x80000000
 #define CONFIG_SYS_TEXT_BASE		0x87300000
 #define CONFIG_SYS_SDRAM_SIZE		0x10000000
@@ -109,6 +109,16 @@ typedef struct {
 #define CONFIG_INITRD_TAG		1
 #define CONFIG_SYS_HUSH_PARSER
 #define CONFIG_SYS_NULLDEV
+
+#define CONFIG_IPQ40XX_USB
+#ifdef CONFIG_IPQ40XX_USB
+#define CONFIG_USB_XHCI
+#define CONFIG_CMD_USB
+#define CONFIG_DOS_PARTITION
+#define CONFIG_USB_STORAGE
+#define CONFIG_SYS_USB_XHCI_MAX_ROOT_PORTS      2
+#define CONFIG_USB_MAX_CONTROLLER_COUNT         2
+#endif
 
 /* L1 cache line size is 64 bytes, L2 cache line size is 128 bytes
  * Cache flush and invalidation based on L1 cache, so the cache line

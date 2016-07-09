@@ -42,6 +42,7 @@
 #define CONFIG_SYS_MALLOC_LEN           (CONFIG_ENV_SIZE_MAX + (256 << 10))
 
 #define CONFIG_ENV_IS_NOWHERE 1
+#define HAVE_BLOCK_DEVICE
 /*
  * Size of malloc() pool
  */
@@ -144,6 +145,16 @@
 
 
 #define CONFIG_CMD_BOOTZ
+
+#define CONFIG_IPQ40XX_USB
+#ifdef CONFIG_IPQ40XX_USB
+#define CONFIG_USB_XHCI
+#define CONFIG_CMD_USB
+#define CONFIG_DOS_PARTITION
+#define CONFIG_USB_STORAGE
+#define CONFIG_SYS_USB_XHCI_MAX_ROOT_PORTS      2
+#define CONFIG_USB_MAX_CONTROLLER_COUNT         2
+#endif
 
 /* L1 cache line size is 64 bytes, L2 cache line size is 128 bytes
  * Cache flush and invalidation based on L1 cache, so the cache line
