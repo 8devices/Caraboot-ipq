@@ -110,8 +110,12 @@ typedef struct {
 #define CONFIG_SYS_HUSH_PARSER
 #define CONFIG_SYS_NULLDEV
 
-#define CONFIG_IPQ40XX_USB
-#ifdef CONFIG_IPQ40XX_USB
+/*
+ * USB Support
+ */
+
+#define CONFIG_IPQ_USB
+#ifdef CONFIG_IPQ_USB
 #define CONFIG_USB_XHCI
 #define CONFIG_CMD_USB
 #define CONFIG_DOS_PARTITION
