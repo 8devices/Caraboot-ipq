@@ -252,9 +252,10 @@ CONFIG_REQUIRE_SERIAL_CONSOLE=y
 # CONFIG_DM_THERMAL is not set
 
 #
-# TPM support
+# USB support
 #
-# CONFIG_USB is not set
+CONFIG_USB=y
+CONFIG_DM_USB=y
 
 #
 # Graphics support

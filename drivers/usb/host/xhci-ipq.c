@@ -20,144 +20,73 @@
  */
 
 #include <common.h>
+#include <dm.h>
 #include <usb.h>
+#include <linux/compat.h>
 #include <asm-generic/errno.h>
 #include <linux/usb/dwc3.h>
 #include "xhci.h"
 
-#define IPQ_XHCI_COUNT		0x2
-#define GCC_USB_RST_CTRL_1	0x181E038
-#define GCC_USB_RST_CTRL_2	0x181E01C
+/* Declare global data pointer */
+DECLARE_GLOBAL_DATA_PTR;
+
+struct ipq_xhci_platdata {
+	fdt_addr_t hcd_base;
+	unsigned int rst_ctrl;
+	unsigned int hs_only;
+};
 
 struct ipq_xhci {
+	struct ipq_xhci_platdata usb_plat;
+	struct xhci_ctrl ctrl;
+	struct udevice* dev;
 	struct xhci_hccr *hcd;
 	struct dwc3 *dwc3_reg;
-	unsigned int *gcc_rst_ctrl;
 };
-static struct ipq_xhci ipq[IPQ_XHCI_COUNT];
 
-int __board_usb_init(int index, enum usb_init_type init)
+void ipq_reset_usb_phy(struct ipq_xhci *ipq)
 {
-	return 0;
-}
+	unsigned int gcc_rst_ctrl;
+	struct ipq_xhci_platdata *platdata;
 
-int board_usb_init(int index, enum usb_init_type init)
-	__attribute__((weak, alias("__board_usb_init")));
+	platdata = dev_get_platdata(ipq->dev);
+	gcc_rst_ctrl = platdata->rst_ctrl;
 
-static void dwc3_set_mode(struct dwc3 *dwc3_reg, u32 mode)
-{
-	clrsetbits_le32(&dwc3_reg->g_ctl,
-			DWC3_GCTL_PRTCAPDIR(DWC3_GCTL_PRTCAP_OTG),
-			DWC3_GCTL_PRTCAPDIR(mode));
-}
-
-void ipq_reset_usb_phy(unsigned int *gcc_rst_ctrl)
-{
-	/* assert HS PHY POR reset */
-	setbits_le32(gcc_rst_ctrl, 0x10);
-	mdelay(10);
-
-	/* assert HS PHY SRIF reset */
-	setbits_le32(gcc_rst_ctrl, 0x4);
-	mdelay(10);
-
-	/* deassert HS PHY SRIF reset and program HS PHY registers */
-	clrbits_le32(gcc_rst_ctrl, 0x4);
-	mdelay(10);
-
-	/* de-assert USB3 HS PHY POR reset */
-	clrbits_le32(gcc_rst_ctrl, 0x10);
-	mdelay(10);
-
-	if (gcc_rst_ctrl == (unsigned int*)GCC_USB_RST_CTRL_1) {
-		/* assert SS PHY POR reset */
-		setbits_le32(gcc_rst_ctrl, 0x20);
+	if (gcc_rst_ctrl) {
+		/* assert HS PHY POR reset */
+		setbits_le32(gcc_rst_ctrl, 0x10);
 		mdelay(10);
 
-		/* deassert SS PHY POR reset */
-		clrbits_le32(gcc_rst_ctrl, 0x20);
+		/* assert HS PHY SRIF reset */
+		setbits_le32(gcc_rst_ctrl, 0x4);
+		mdelay(10);
+
+		/* deassert HS PHY SRIF reset and program HS PHY registers */
+		clrbits_le32(gcc_rst_ctrl, 0x4);
+		mdelay(10);
+
+		/* de-assert USB3 HS PHY POR reset */
+		clrbits_le32(gcc_rst_ctrl, 0x10);
+		mdelay(10);
+
+		if (!platdata->hs_only) {
+			/* assert SS PHY POR reset */
+			setbits_le32(gcc_rst_ctrl, 0x20);
+			mdelay(10);
+
+			/* deassert SS PHY POR reset */
+			clrbits_le32(gcc_rst_ctrl, 0x20);
+		}
 	}
 }
 
-void dwc3_reset_usb_phy(struct dwc3 *dwc3_reg, unsigned int *gcc_rst_ctrl)
-{
-	/* Assert USB3 PHY reset */
-	setbits_le32(&dwc3_reg->g_usb3pipectl[0], DWC3_GUSB3PIPECTL_PHYSOFTRST);
-
-	/* Assert USB2 PHY reset */
-	setbits_le32(&dwc3_reg->g_usb2phycfg, DWC3_GUSB2PHYCFG_PHYSOFTRST);
-
-	mdelay(100);
-
-	ipq_reset_usb_phy(gcc_rst_ctrl);
-
-	mdelay(100);
-
-	/* Clear USB3 PHY reset */
-	clrbits_le32(&dwc3_reg->g_usb3pipectl[0], DWC3_GUSB3PIPECTL_PHYSOFTRST);
-
-	/* Clear USB2 PHY reset */
-	clrbits_le32(&dwc3_reg->g_usb2phycfg, DWC3_GUSB2PHYCFG_PHYSOFTRST);
-}
-
-static void dwc3_core_soft_reset(struct dwc3 *dwc3_reg, unsigned int *gcc_rst_ctrl)
-{
-	/* Before Resetting PHY, put Core in Reset */
-	setbits_le32(&dwc3_reg->g_ctl, DWC3_GCTL_CORESOFTRESET);
-
-	dwc3_reset_usb_phy(dwc3_reg, gcc_rst_ctrl);
-
-	/* After PHYs are stable we can take Core out of reset state */
-	clrbits_le32(&dwc3_reg->g_ctl, DWC3_GCTL_CORESOFTRESET);
-}
-
-static int dwc3_core_init(struct dwc3 *dwc3_reg, unsigned int *gcc_rst_ctrl)
-{
-	u32 reg;
-	u32 revision;
-	unsigned int dwc3_hwparams1;
-
-	revision = readl(&dwc3_reg->g_snpsid);
-	/* This should read as U3 followed by revision number */
-	if ((revision & DWC3_GSNPSID_MASK) != 0x55330000) {
-		puts("this is not a DesignWare USB3 DRD Core\n");
-		return -1;
-	}
-
-	dwc3_core_soft_reset(dwc3_reg, gcc_rst_ctrl);
-
-	dwc3_hwparams1 = readl(&dwc3_reg->g_hwparams1);
-
-	reg = readl(&dwc3_reg->g_ctl);
-	reg &= ~DWC3_GCTL_SCALEDOWN_MASK;
-	reg &= ~DWC3_GCTL_DISSCRAMBLE;
-	switch (DWC3_GHWPARAMS1_EN_PWROPT(dwc3_hwparams1)) {
-	case DWC3_GHWPARAMS1_EN_PWROPT_CLK:
-		reg &= ~DWC3_GCTL_DSBLCLKGTNG;
-		break;
-	default:
-		debug("No power optimization available\n");
-	}
-
-	/*
-	 * WORKAROUND: DWC3 revisions <1.90a have a bug
-	 * where the device can fail to connect at SuperSpeed
-	 * and falls back to high-speed mode which causes
-	 * the device to enter a Connect/Disconnect loop
-	 */
-	if ((revision & DWC3_REVISION_MASK) < 0x190a)
-		reg |= DWC3_GCTL_U2RSTECN;
-
-	writel(reg, &dwc3_reg->g_ctl);
-
-	return 0;
-}
-
-static int ipq_xhci_core_init(struct ipq_xhci *ipq, unsigned int ipq_base)
+static int ipq_xhci_core_init(struct ipq_xhci *ipq)
 {
 	int ret = 0;
 
-	ret = dwc3_core_init(ipq->dwc3_reg, ipq->gcc_rst_ctrl);
+	ipq_reset_usb_phy(ipq);
+
+	ret = dwc3_core_init(ipq->dwc3_reg);
 	if (ret) {
 		debug("%s:failed to initialize core\n", __func__);
 		return ret;
@@ -174,57 +103,78 @@ static void ipq_xhci_core_exit(struct ipq_xhci *ipq)
 
 }
 
-int xhci_hcd_init(int index, struct xhci_hccr **hccr, struct xhci_hcor **hcor)
+static int xhci_usb_remove(struct udevice *dev)
 {
-	struct ipq_xhci *ctx;
-	unsigned int ipq_base;
-	int ret = 0;
+	int ret;
+	ret = xhci_deregister(dev);
 
-	if (index >= IPQ_XHCI_COUNT)
-		return -1;
-
-	if (index == 0) {
-		ctx = &ipq[0];
-		ipq_base = IPQ_XHCI_BASE_1;
-		ctx->gcc_rst_ctrl = (unsigned int*)GCC_USB_RST_CTRL_1;
-	} else {
-		ctx = &ipq[1];
-		ipq_base = IPQ_XHCI_BASE_2;
-		ctx->gcc_rst_ctrl = (unsigned int*)GCC_USB_RST_CTRL_2;
-	}
-
-	ctx->hcd = (struct xhci_hccr *)ipq_base;
-	ctx->dwc3_reg = (struct dwc3 *)((char *)(ctx->hcd) + DWC3_REG_OFFSET);
-
-	ret = board_usb_init(index, USB_INIT_HOST);
 	if (ret != 0) {
-		puts("Failed to initialize board for USB\n");
+		debug("%s:xhci deregistration failed\n", __func__);
 		return ret;
 	}
 
-	ret = ipq_xhci_core_init(ctx, ipq_base);
-	if (ret < 0) {
-		puts("Failed to initialize xhci\n");
-		return ret;
-	}
+	ipq_xhci_core_exit(dev_get_priv(dev));
 
-	*hccr = (struct xhci_hccr *)(ipq_base);
-	*hcor = (struct xhci_hcor *)((uint32_t) *hccr
-				+ HC_LENGTH(xhci_readl(&(*hccr)->cr_capbase)));
-
-	debug("ipq-xhci: init hccr %x and hcor %x hc_length %d\n",
-	      (uint32_t)*hccr, (uint32_t)*hcor,
-	      (uint32_t)HC_LENGTH(xhci_readl(&(*hccr)->cr_capbase)));
-
-	return ret;
+	return 0;
 }
 
-void xhci_hcd_stop(int index)
+static int xhci_usb_probe(struct udevice *dev)
 {
-	if (index >= IPQ_XHCI_COUNT) {
-		debug("ipq-xhci: index greater than xhci count\n");
-		return;
+	struct ipq_xhci *context;
+	struct ipq_xhci_platdata *platdata;
+	struct xhci_hcor *hcor;
+	int ret;
+
+	platdata = dev_get_platdata(dev);
+	context = dev_get_priv(dev);
+	context->hcd = (struct xhci_hccr *)platdata->hcd_base;
+	context->dev = dev;
+	context->dwc3_reg = (struct dwc3 *)((char *)(context->hcd) + DWC3_REG_OFFSET);
+	hcor = (struct xhci_hcor *)((uint32_t)context->hcd +
+			HC_LENGTH(xhci_readl(&context->hcd->cr_capbase)));
+
+	ret = ipq_xhci_core_init(context);
+
+	if (ret) {
+		puts("Error initializing the XHCI controller\n");
+		return -EINVAL;
 	}
 
-	ipq_xhci_core_exit(&ipq[index]);
+	return xhci_register(dev, context->hcd, hcor);
 }
+
+static int xhci_ofdata_to_platdata(struct udevice *dev)
+{
+	struct ipq_xhci_platdata *platdata;
+	const void *blob = gd->fdt_blob;
+
+	platdata = dev_get_platdata(dev);
+	platdata->hcd_base = dev_get_addr(dev);
+	if (platdata->hcd_base == FDT_ADDR_T_NONE) {
+		debug("Error getting DWC3 base address\n");
+		return -ENXIO;
+	}
+
+	platdata->rst_ctrl = fdtdec_get_int(blob, dev->of_offset, "rst_ctrl", 0);
+	platdata->hs_only = fdtdec_get_int(blob, dev->of_offset, "hs_only", 0);
+
+	return 0;
+}
+
+static const struct udevice_id xhci_match_ids[] = {
+	{ .compatible = "qca,dwc3-ipq" },
+	{}
+};
+
+U_BOOT_DRIVER(usb_xhci) = {
+	.name	= "xhci_ipq",
+	.id	= UCLASS_USB,
+	.of_match = xhci_match_ids,
+	.ofdata_to_platdata = xhci_ofdata_to_platdata,
+	.probe = xhci_usb_probe,
+	.remove = xhci_usb_remove,
+	.ops	= &xhci_usb_ops,
+	.platdata_auto_alloc_size = sizeof(struct ipq_xhci_platdata),
+	.priv_auto_alloc_size = sizeof(struct ipq_xhci),
+	.flags	= DM_FLAG_ALLOC_PRIV_DMA,
+};

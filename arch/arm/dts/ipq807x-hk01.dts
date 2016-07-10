@@ -21,6 +21,9 @@
 
 	aliases {
 		console = "/serial@78af000";
+		xhci0 = "/xhci@8a00000";
+		xhci1 = "/xhci@8c00000";
+
 	};
 };
 

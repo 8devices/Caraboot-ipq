@@ -28,5 +28,21 @@
 		gpt_freq_hz = <48000000>;
 		timer_load_val = <0x00FFFFFF 0xFFFFFFFF>;
 	};
+
+	xhci@8a00000 {
+		compatible = "qca,dwc3-ipq";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0x8a00000 0xcd00>;
+		rst_ctrl = <0x181E038 0x4>;
+	};
+
+	xhci@6000000 {
+		compatible = "qca,dwc3-ipq";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0x6000000 0xcd00>;
+		rst_ctrl = <0x181E01C 0x4>;
+	};
 };
 

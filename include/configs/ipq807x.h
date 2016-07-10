@@ -155,18 +155,15 @@
 /*
  * USB Support
  */
-#define CONFIG_IPQ_USB
-#ifdef CONFIG_IPQ_USB
+#define CONFIG_USB_XHCI_IPQ
+#ifdef CONFIG_USB_XHCI_IPQ
 #define CONFIG_USB_XHCI
+#define CONFIG_USB_XHCI_DWC3
 #define CONFIG_CMD_USB
 #define CONFIG_DOS_PARTITION
 #define CONFIG_USB_STORAGE
 #define CONFIG_SYS_USB_XHCI_MAX_ROOT_PORTS      2
 #define CONFIG_USB_MAX_CONTROLLER_COUNT         2
-
-#define IPQ_XHCI_BASE_1         		0x8A00000
-#define IPQ_XHCI_BASE_2         		0x8C00000
-
 #endif
 
 /* L1 cache line size is 64 bytes, L2 cache line size is 128 bytes
