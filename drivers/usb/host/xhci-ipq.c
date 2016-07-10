@@ -26,8 +26,6 @@
 #include "xhci.h"
 
 #define IPQ_XHCI_COUNT		0x2
-#define IPQ_XHCI_BASE_1 	0x8A00000
-#define IPQ_XHCI_BASE_2 	0x6000000
 #define GCC_USB_RST_CTRL_1	0x181E038
 #define GCC_USB_RST_CTRL_2	0x181E01C
 
