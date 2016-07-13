@@ -15,6 +15,7 @@
 #define SPI_NAND_DEV_H
 #define MTD_MAX_OOBFREE_ENTRIES_LARGE	32
 #define MTD_MAX_ECCPOS_ENTRIES_LARGE	640
+#define INT_MAX				((int)(~0U>>1))
 
 /* Flash opcodes. */
 #define IPQ40XX_SPINAND_CMD_WREN		0x06    /* Write enable */
@@ -29,6 +30,7 @@
 #define IPQ40XX_SPINAND_CMD_ERASE		0xD8    /* Block erase */
 #define IPQ40XX_SPINAND_CMD_RDID		0x9F    /* Read JEDEC ID */
 #define IPQ40XX_SPINAND_CMD_RESET		0xFF    /* reset nand flash */
+#define IPQ40XX_SPINAND_CMD_DIESELECT		0xC2    /* Die Select */
 
 /* Flash Protection register */
 #define IPQ40XX_SPINAND_PROTEC_REG		0xA0
@@ -73,9 +75,14 @@ struct spi_nand_flash_params {
 	u16 nr_sectors;
 	u32 oob_size;
 	u32 erase_size;
+	u8 no_of_dies;
+	int prev_die_id;
 	u8 protec_bpx;
+	u64 pages_per_die;
 	void (*norm_read_cmd) (u8 *cmd, int column);
 	int (*verify_ecc) (int status);
+	int (*die_select) (struct mtd_info *mtd,
+		struct spi_flash *flash, int die_id);
 	const char *name;
 };
 
