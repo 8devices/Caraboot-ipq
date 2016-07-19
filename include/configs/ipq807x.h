@@ -71,6 +71,13 @@
           text_base  --> |------------|
 */
 
+#define CONFIG_IPQ807x_I2C	1
+#ifdef CONFIG_IPQ807x_I2C
+#define CONFIG_SYS_I2C_QUP
+#define CONFIG_CMD_I2C
+#define CONFIG_DM_I2C
+#endif
+
 #define CONFIG_SYS_INIT_SP_ADDR 	(CONFIG_SYS_TEXT_BASE -\
 			CONFIG_SYS_MALLOC_LEN - CONFIG_ENV_SIZE -\
 			GENERATED_BD_INFO_SIZE)
