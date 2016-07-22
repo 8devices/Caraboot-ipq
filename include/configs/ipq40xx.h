@@ -130,7 +130,18 @@ typedef struct {
  * size is configured to 64 */
 #define CONFIG_SYS_CACHELINE_SIZE	64
 
+#define CONFIG_QCOM_BAM                 1
+/*
+ * NAND Flash Configs104
+ */
+
+/* CONFIG_QPIC_NAND: QPIC NAND in BAM mode107
+ * CONFIG_IPQ_NAND: QPIC NAND in FIFO/block mode.108
+ * BAM is enabled by default.109
+ */
+#define CONFIG_QPIC_NAND
 #define CONFIG_CMD_NAND
+#define CONFIG_SYS_NAND_ONFI_DETECTION
 
 #define CONFIG_SYS_MAX_NAND_DEVICE      (CONFIG_IPQ_MAX_NAND_DEVICE + \
 					CONFIG_IPQ_MAX_SPI_DEVICE)

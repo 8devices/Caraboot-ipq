@@ -23,6 +23,7 @@
 #include <part.h>
 #include <asm/arch-qcom-common/smem.h>
 #include <asm/arch-qcom-common/scm.h>
+#include <asm/arch-qcom-common/qpic_nand.h>
 #include <jffs2/load_kernel.h>
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -340,9 +341,33 @@ int dram_init(void)
 
 void board_nand_init(void)
 {
+	struct qpic_nand_init_config config;
+	gpio_func_data_t *gpio;
+
 #ifdef CONFIG_IPQ40XX_SPI
 	ipq_spi_init(CONFIG_IPQ_SPI_NOR_INFO_IDX);
 #endif
+
+	config.pipes.read_pipe = DATA_PRODUCER_PIPE;
+	config.pipes.write_pipe = DATA_CONSUMER_PIPE;
+	config.pipes.cmd_pipe = CMD_PIPE;
+
+	config.pipes.read_pipe_grp = DATA_PRODUCER_PIPE_GRP;
+	config.pipes.write_pipe_grp = DATA_CONSUMER_PIPE_GRP;
+	config.pipes.cmd_pipe_grp = CMD_PIPE_GRP;
+
+	config.bam_base = QPIC_BAM_CTRL_BASE;
+	config.nand_base = IPQ40xx_EBI2ND_BASE;
+	config.ee = QPIC_NAND_EE;
+	config.max_desc_len = QPIC_NAND_MAX_DESC_LEN;
+
+	gpio = gboard_param->nand_gpio;
+	if (gpio) {
+		qca_configure_gpio(gpio,
+				   gboard_param->nand_gpio_count);
+	}
+
+	qpic_nand_init(&config);
 }
 
 int board_eth_init(bd_t *bis)
@@ -570,7 +595,7 @@ int ft_board_setup(void *blob, bd_t *bd)
 
 	if (mtdparts) {
 		qca_smem_part_to_mtdparts(mtdparts);
-		if (mtdparts != NULL) {
+		if (mtdparts[0] != '\0') {
 			debug("mtdparts = %s\n", mtdparts);
 			setenv("mtdparts", mtdparts);
 		}

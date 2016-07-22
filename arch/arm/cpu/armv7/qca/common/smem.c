@@ -488,7 +488,7 @@ void qca_smem_part_to_mtdparts(char *mtdid)
 	}
 
 	if (i == 0)
-		mtdid = NULL;
+		*mtdid = '\0';
 
 	*(part-1) = 0;	/* Remove the trailing ',' character */
 }
