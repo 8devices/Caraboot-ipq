@@ -133,8 +133,6 @@ int ipq_spi_init(u16 idx)
 	int ret;
 	struct mtd_info *mtd;
 
-#define CONFIG_SF_DEFAULT_SPEED		(48 * 1000 * 1000)
-
 	flash = spi_flash_probe(CONFIG_SF_DEFAULT_BUS,
 				CONFIG_SF_DEFAULT_CS,
 				CONFIG_SF_DEFAULT_SPEED,
