@@ -213,4 +213,18 @@ typedef struct {
 
 #define CONFIG_BOOTDELAY	2
 
+#define CONFIG_LIB_UUID
+
+#define CONFIG_QCA_MMC  1
+
+#ifdef CONFIG_QCA_MMC
+#define CONFIG_MMC
+#define CONFIG_ENV_IS_IN_MMC
+#define CONFIG_CMD_MMC
+#define CONFIG_SDHCI_QCOM
+#define CONFIG_GENERIC_MMC
+#define CONFIG_EFI_PARTITION
+#define CONFIG_SYS_MMC_ENV_DEV  0
+#endif
+
 #endif /* _IPQ40XX_H */

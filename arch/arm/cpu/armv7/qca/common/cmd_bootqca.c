@@ -21,6 +21,7 @@
 #include <linux/mtd/ubi.h>
 #include <asm/arch-qcom-common/smem.h>
 #include <mmc.h>
+#include <part_efi.h>
 
 #define DLOAD_MAGIC_COOKIE0x10
 #define XMK_STR(x)#x
@@ -301,15 +302,18 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 		if (smem_bootconfig_info() == 0) {
 			active_part = get_rootfs_active_partition();
 			if (active_part) {
-				ret = find_part_efi(blk_dev, "0:HLOS_1", &disk_info);
+				ret = get_partition_info_efi_by_name(blk_dev,
+						"0:HLOS_1", &disk_info);
 			} else {
-				ret = find_part_efi(blk_dev, "0:HLOS", &disk_info);
+				ret = get_partition_info_efi_by_name(blk_dev,
+						"0:HLOS", &disk_info);
 			}
 		} else {
-			ret = find_part_efi(blk_dev, "0:HLOS", &disk_info);
+			ret = get_partition_info_efi_by_name(blk_dev,
+						"0:HLOS", &disk_info);
 		}
 
-		if (ret > 0) {
+		if (ret == 0) {
 			snprintf(runcmd, sizeof(runcmd), "mmc read 0x%x 0x%X 0x%X",
 				 CONFIG_SYS_LOAD_ADDR,
 				 (uint)disk_info.start, (uint)disk_info.size);
@@ -484,15 +488,18 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 		if (smem_bootconfig_info() == 0) {
 			active_part = get_rootfs_active_partition();
 			if (active_part) {
-				ret = find_part_efi(blk_dev, "0:HLOS_1", &disk_info);
+				ret = get_partition_info_efi_by_name(blk_dev,
+						"0:HLOS_1", &disk_info);
 			} else {
-				ret = find_part_efi(blk_dev, "0:HLOS", &disk_info);
+				ret = get_partition_info_efi_by_name(blk_dev,
+						"0:HLOS", &disk_info);
 			}
 		} else {
-			ret = find_part_efi(blk_dev, "0:HLOS", &disk_info);
+			ret = get_partition_info_efi_by_name(blk_dev,
+						"0:HLOS", &disk_info);
 		}
 
-		if (ret > 0) {
+		if (ret == 0) {
 			snprintf(runcmd, sizeof(runcmd), "mmc read 0x%x 0x%x 0x%x",
 				 CONFIG_SYS_LOAD_ADDR,
 				 (uint)disk_info.start, (uint)disk_info.size);

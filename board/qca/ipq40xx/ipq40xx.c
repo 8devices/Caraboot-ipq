@@ -29,6 +29,8 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+qca_mmc mmc_host;
+
 loff_t board_env_offset;
 loff_t board_env_range;
 loff_t board_env_size;
@@ -44,6 +46,12 @@ extern void nand_env_relocate_spec(void);
 extern int ipq_spi_init(u16);
 extern int fdt_node_set_part_info(void *blob, int parent_offset,
 				  struct mtd_device *dev);
+extern int mmc_env_init(void);
+extern void mmc_env_relocate_spec(void);
+extern int mmc_saveenv(void);
+extern env_t *mmc_env_ptr;
+extern char *mmc_env_name_spec;
+
 /*
  * Don't have this as a '.bss' variable. The '.bss' and '.rel.dyn'
  * sections seem to overlap.
@@ -650,9 +658,10 @@ int board_mmc_env_init(void)
 		}
 	}
 	blk_dev = mmc_get_dev(mmc_host.dev_num);
-	ret = find_part_efi(blk_dev, "0:APPSBLENV", &disk_info);
+	ret = get_partition_info_efi_by_name(blk_dev,
+				"0:APPSBLENV", &disk_info);
 
-	if (ret > 0) {
+	if (ret == 0) {
 		board_env_offset = disk_info.start * disk_info.blksz;
 		board_env_size = disk_info.size * disk_info.blksz;
 		board_env_range = board_env_size;

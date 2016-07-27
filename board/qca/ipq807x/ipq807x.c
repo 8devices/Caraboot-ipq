@@ -17,7 +17,7 @@
 #include <environment.h>
 
 #include "ipq807x.h"
-#include "../common/qca_common.h"
+#include <asm/arch-qcom-common/qca_common.h>
 #include <asm/arch-qcom-common/qpic_nand.h>
 #include <fdtdec.h>
 

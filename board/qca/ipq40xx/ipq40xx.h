@@ -16,6 +16,7 @@
 
 #include <configs/ipq40xx.h>
 #include <asm/arch-qcom-common/gpio.h>
+#include <asm/arch-qcom-common/qca_common.h>
 #include <asm/u-boot.h>
 #include <phy.h>
 
@@ -26,6 +27,7 @@
 #define MAX_CONF_NAME		5
 
 unsigned int smem_get_board_machtype(void);
+extern qca_mmc mmc_host;
 
 #define IPQ40XX_EDMA_DEV	1
 typedef struct {
