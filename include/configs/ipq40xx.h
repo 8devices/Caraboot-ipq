@@ -69,6 +69,7 @@
 
 #ifndef __ASSEMBLY__
 #include <compiler.h>
+
 extern loff_t board_env_offset;
 extern loff_t board_env_range;
 extern loff_t board_env_size;

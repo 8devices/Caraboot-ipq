@@ -12,8 +12,8 @@
  */
 
 #include <common.h>
-#include <asm/arch-qcom-common/clk.h>
-#include <asm/arch-ipq40xx/iomap.h>
+#include "clk.h"
+#include <asm/arch-qcom-common/iomap.h>
 #include <asm/io.h>
 #include <asm/errno.h>
 
