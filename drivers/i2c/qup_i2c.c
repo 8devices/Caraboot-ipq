@@ -16,10 +16,21 @@
 #include "qup_i2c.h"
 #include <asm/io.h>
 #include <asm/errno.h>
+#include <fdtdec.h>
+#include <dm/device.h>
+#include <dm/root.h>
+#include <mapmem.h>
+#include <dm.h>
+
+DECLARE_GLOBAL_DATA_PTR;
 
 static int i2c_base_addr;
 static int i2c_hw_initialized;
 static int i2c_board_initialized;
+
+struct i2c_qup_bus {
+	int *i2c_base_addr;
+};
 
 /*
  * Reset entire QUP and all mini cores
@@ -91,11 +102,9 @@ void config_i2c_mode(void)
 	writel(cfg, i2c_base_addr + QUP_IO_MODES_OFFSET);
 }
 
-void i2c_qca_board_init(void)
+void i2c_qca_board_init(struct i2c_qup_bus *i2c_bus)
 {
-	i2c_base_addr = gboard_param->i2c_cfg->i2c_base;
-	qca_configure_gpio(gboard_param->i2c_cfg->i2c_gpio, NO_OF_I2C_GPIOS);
-
+	/*Need to configure GPIO*/
 	/* Configure the I2C clock */
 	i2c_clock_config();
 
@@ -302,7 +311,7 @@ uint32_t i2c_write_read_tag(uchar chip, uint addr, int alen, int data_len)
 	return 0;
 }
 
-int i2c_read(uchar chip, uint addr, int alen, uchar *buffer, int len)
+int i2c_read_data(struct i2c_qup_bus *i2c_bus, uchar chip, uint addr, int alen, uchar *buffer, int len)
 {
 	int ret = 0;
 	int nack = 0;
@@ -312,12 +321,10 @@ int i2c_read(uchar chip, uint addr, int alen, uchar *buffer, int len)
 	int idx = 0;
 	int cfg;
 
-	i2c_base_addr = gboard_param->i2c_cfg->i2c_base;
-
 	config_i2c_state(QUP_STATE_RESET);
 
 	if (!i2c_board_initialized) {
-		i2c_qca_board_init();
+		i2c_qca_board_init(i2c_bus);
 	}
 
 	if (!i2c_hw_initialized) {
@@ -457,7 +464,7 @@ uint32_t i2c_frame_wr_tag(uchar chip, uint8_t data_len, int alen)
 	return tag;
 }
 
-int i2c_write(uchar chip, uint addr, int alen, uchar *buffer, int len)
+int i2c_write_data(struct i2c_qup_bus *i2c_bus, uchar chip, uint addr, int alen, uchar *buffer, int len)
 {
 	int ret = 0;
 	int nack = 0;
@@ -470,13 +477,11 @@ int i2c_write(uchar chip, uint addr, int alen, uchar *buffer, int len)
 	uint32_t *fifo;
 	uint32_t cfg;
 
-	i2c_base_addr = gboard_param->i2c_cfg->i2c_base;
-
 	/* Set to Reset State */
 	ret = config_i2c_state(QUP_STATE_RESET);
 
 	if (!i2c_board_initialized) {
-		i2c_qca_board_init();
+		i2c_qca_board_init(i2c_bus);
 	}
 
 	if (!i2c_hw_initialized) {
@@ -585,19 +590,58 @@ out:
 	return ret;
 }
 
-/*
- * Probe the given I2C chip address.
- * Returns 0 if a chip responded.
- */
-int i2c_probe(uchar chip)
+static int qup_i2c_xfer(struct udevice *bus, struct i2c_msg *msg,
+			int nmsgs)
 {
-	uchar buf;
+	struct i2c_qup_bus *i2c_bus = dev_get_priv(bus);
+	int ret;
 
-	/*send the third parameter alen as per the i2c slave*/
-	return i2c_read(chip, 0x0, 0x0, &buf, 0x1);
+	debug("i2c_xfer: %d messages\n", nmsgs);
+	for (; nmsgs > 0; nmsgs--, msg++) {
+		debug("i2c_xfer: chip=0x%x, len=0x%x\n", msg->addr, msg->len);
+		if (msg->flags & I2C_M_RD) {
+		ret = i2c_read_data(i2c_bus, msg->addr, 0, 0, msg->buf,
+					msg->len);
+		} else {
+			ret = i2c_write_data(i2c_bus, msg->addr, 0, 0, msg->buf,
+					msg->len);
+		}
+		if (ret) {
+			printf("i2c_write: error sending\n");
+			return -EREMOTEIO;
+		}
+	}
+	return 0;
 }
 
-void i2c_init(int speed, int slaveaddr)
+/* Probe to see if a chip is present. */
+static int qup_i2c_probe_chip(struct udevice *bus, uint chip_addr,
+				uint chip_flags)
 {
-	debug("i2c_init(speed=%u, slaveaddr=0x%x)\n", speed, slaveaddr);
+	uchar buf[1];
+
+	struct i2c_qup_bus *i2c_bus = dev_get_priv(bus);
+	buf[0] = 0;
+	i2c_bus->i2c_base_addr = (int *)dev_get_addr(bus);
+	i2c_base_addr = (int)i2c_bus->i2c_base_addr;
+
+	return i2c_read_data(i2c_bus, chip_addr , 0x0, 0x0, buf, 0x1);
 }
+
+static const struct dm_i2c_ops qup_i2c_ops = {
+	.xfer		= qup_i2c_xfer,
+        .probe_chip	= qup_i2c_probe_chip,
+};
+
+static const struct udevice_id qpic_ver_ids[] = {
+	{ .compatible = "qcom,qup-i2c"},
+	{ },
+};
+
+U_BOOT_DRIVER(i2c_qup) = {
+	.name   = "i2c_qup",
+	.id     = UCLASS_I2C,
+	.of_match = qpic_ver_ids,
+	.priv_auto_alloc_size = sizeof(struct i2c_qup_bus),
+	.ops    = &qup_i2c_ops,
+};

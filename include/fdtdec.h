@@ -172,6 +172,7 @@ enum fdt_compat_id {
 	COMPAT_INTEL_BAYTRAIL_FSP_MDP,	/* Intel FSP memory-down params */
 	COMPAT_QCOM_QPIC_NAND_V1_5_20,	/* Qualcomm QPIC NAND controller */
 	COMPAT_QCOM_QPIC_NAND_V1_4_20,	/* Qualcomm QPIC NAND controller */
+	COMPAT_QCOM_QUP_I2C,		/* Qualcomm QUP I2C controller */
 
 	COMPAT_COUNT,
 };

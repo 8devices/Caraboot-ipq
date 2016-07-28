@@ -51,5 +51,11 @@
 		#size-cells = <1>;
 		reg = <0x8c00000 0xcd00>;
 	};
-};
 
+	i2c0: i2c@78b6000 {
+		compatible = "qcom,qup-i2c";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x78b6000 0x600>;
+	};
+};
