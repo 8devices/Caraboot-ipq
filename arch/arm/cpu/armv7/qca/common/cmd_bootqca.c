@@ -27,6 +27,7 @@
 #define MK_STR(x)XMK_STR(x)
 
 static int debug = 0;
+static char mtdids[256];
 
 DECLARE_GLOBAL_DATA_PTR;
 static qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
@@ -110,6 +111,12 @@ static int set_fs_bootargs(int *fs_on_nand)
 		    get_which_flash_param("rootfs")) {
 			bootargs = nand_rootfs;
 			*fs_on_nand = 1;
+			snprintf(mtdids, sizeof(mtdids),
+				 "nand%d=nand%d,nand2=spi0.0",
+				 is_spi_nand_available(),
+				 is_spi_nand_available()
+				);
+
 			if (getenv("fsbootargs") == NULL)
 				setenv("fsbootargs", bootargs);
 		} else {
@@ -124,6 +131,9 @@ static int set_fs_bootargs(int *fs_on_nand)
 				bootargs = "rootfsname=rootfs";
 			}
 			*fs_on_nand = 0;
+
+			snprintf(mtdids, sizeof(mtdids), "nand2=spi0.0");
+
 			if (getenv("fsbootargs") == NULL)
 				setenv("fsbootargs", bootargs);
 		}
@@ -132,6 +142,9 @@ static int set_fs_bootargs(int *fs_on_nand)
 		if (getenv("fsbootargs") == NULL)
 			setenv("fsbootargs", bootargs);
 		*fs_on_nand = 1;
+
+		snprintf(mtdids, sizeof(mtdids), "nand0=nand0");
+
 #ifdef CONFIG_QCA_MMC
 	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
 		if (smem_bootconfig_info() == 0) {
@@ -325,6 +338,8 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 		kernel_img_info.kernel_load_size =  sfi->hlos.size;
 	}
 
+	setenv("mtdids", mtdids);
+
 	request += sizeof(mbn_header_t);
 
 	ret = scm_call(SCM_SVC_BOOT, KERNEL_AUTH_CMD, &kernel_img_info,
@@ -500,6 +515,8 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 	}
 
 	dcache_enable();
+
+	setenv("mtdids", mtdids);
 
 	ret = genimg_get_format((void *)CONFIG_SYS_LOAD_ADDR);
 	if (ret == IMAGE_FORMAT_FIT) {

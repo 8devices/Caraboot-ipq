@@ -90,7 +90,6 @@ void board_pci_init(void);
 typedef struct {
 	unsigned int machid;
 	unsigned int ddr_size;
-	const char *mtdids;
 	gpio_func_data_t *spi_nor_gpio;
 	unsigned int spi_nor_gpio_count;
 	gpio_func_data_t *nand_gpio;

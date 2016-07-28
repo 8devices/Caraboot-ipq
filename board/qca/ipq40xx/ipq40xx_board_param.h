@@ -935,7 +935,6 @@ board_ipq40xx_params_t board_params[] = {
 	{
 		.machid = MACH_TYPE_IPQ40XX_AP_DK01_1_S1,
 		.ddr_size = (128 << 20),
-		.mtdids = "nand2=spi0.0",
 		.console_uart_cfg = &uart1_console_uart_dk01,
 		.sw_gpio = ap_dk01_1_c2_sw_gpio_qfn,
 		.sw_gpio_count = ARRAY_SIZE(ap_dk01_1_c2_sw_gpio_qfn),
@@ -953,7 +952,6 @@ board_ipq40xx_params_t board_params[] = {
 	{
 		.machid = MACH_TYPE_IPQ40XX_AP_DK01_1_C1,
 		.ddr_size = (256 << 20),
-		.mtdids = "nand2=spi0.0",
 		.console_uart_cfg = &uart1_console_uart_dk01,
 		.sw_gpio = sw_gpio_qfn,
 		.sw_gpio_count = ARRAY_SIZE(sw_gpio_qfn),
@@ -971,7 +969,6 @@ board_ipq40xx_params_t board_params[] = {
 	{
 		.machid = MACH_TYPE_IPQ40XX_AP_DK01_1_C2,
 		.ddr_size = (256 << 20),
-		.mtdids = "nand1=nand1,nand2=spi0.0",
 		.console_uart_cfg = &uart1_console_uart_dk01,
 		.sw_gpio = ap_dk01_1_c2_sw_gpio_qfn,
 		.sw_gpio_count = ARRAY_SIZE(ap_dk01_1_c2_sw_gpio_qfn),
@@ -989,7 +986,6 @@ board_ipq40xx_params_t board_params[] = {
 	{
 		.machid = MACH_TYPE_IPQ40XX_AP_DK04_1_C1,
 		.ddr_size = (256 << 20),
-		.mtdids = "nand0=nand0,nand2=spi0.0",
 		//.spi_nor_gpio = spi_nor_bga,
 		//.spi_nor_gpio_count = ARRAY_SIZE(spi_nor_bga),
 		.nand_gpio = nand_gpio_bga,
@@ -1022,7 +1018,6 @@ board_ipq40xx_params_t board_params[] = {
 	{
 		.machid = MACH_TYPE_IPQ40XX_AP_DK04_1_C4,
 		.ddr_size = (256 << 20),
-		.mtdids = "nand0=nand0,nand2=spi0.0",
 		//.spi_nor_gpio = spi_nor_bga,
 		//.spi_nor_gpio_count = ARRAY_SIZE(spi_nor_bga),
 		.nand_gpio = nand_gpio_bga,
@@ -1055,7 +1050,6 @@ board_ipq40xx_params_t board_params[] = {
 	{
 		.machid = MACH_TYPE_IPQ40XX_AP_DK04_1_C2,
 		.ddr_size = (256 << 20),
-		.mtdids = "nand2=spi0.0",
 		//.uart_cfg = &uart2,
 		.console_uart_cfg = &uart1_console_uart_dk04,
 #ifdef CONFIG_IPQ40XX_I2C
@@ -1082,7 +1076,6 @@ board_ipq40xx_params_t board_params[] = {
 		.machid = MACH_TYPE_IPQ40XX_AP_DK04_1_C3,
 		.ddr_size = (256 << 20),
 		.console_uart_cfg = &uart1_console_uart_dk04,
-		.mtdids = "nand0=nand0,nand2=spi0.0",
 		//.spi_nor_gpio = spi_nor_bga,
 		//.spi_nor_gpio_count = ARRAY_SIZE(spi_nor_bga),
 		.nand_gpio = nand_gpio_bga,
@@ -1106,7 +1099,6 @@ board_ipq40xx_params_t board_params[] = {
 		.machid = MACH_TYPE_IPQ40XX_AP_DK06_1_C1,
 		.ddr_size = (256 << 20),
 		.console_uart_cfg = &uart1_console_uart_dk04,
-		.mtdids = "nand0=nand0,nand2=spi0.0",
 		//.spi_nor_gpio = spi_nor_bga,
 		//.spi_nor_gpio_count = ARRAY_SIZE(spi_nor_bga),
 		.nand_gpio = nand_gpio_bga,
@@ -1130,7 +1122,6 @@ board_ipq40xx_params_t board_params[] = {
 		.machid = MACH_TYPE_IPQ40XX_AP_DK07_1_C1,
 		.ddr_size = (512 << 20),
 		.console_uart_cfg = &uart1_console_uart_dk04,
-		.mtdids = "nand0=nand0,nand2=spi0.0",
 		//.spi_nor_gpio = spi_nor_bga,
 		//.spi_nor_gpio_count = ARRAY_SIZE(spi_nor_bga),
 		.nand_gpio = nand_gpio_bga,
@@ -1151,7 +1142,6 @@ board_ipq40xx_params_t board_params[] = {
 	{
 		.machid = MACH_TYPE_IPQ40XX_DB_DK01_1_C1,
 		.ddr_size = (256 << 20),
-		.mtdids = "nand2=spi0.0",
 		.console_uart_cfg = &uart1_console_uart_dk01,
 		.sw_gpio = sw_gpio_qfn,
 		.sw_gpio_count = ARRAY_SIZE(sw_gpio_qfn),
@@ -1169,7 +1159,6 @@ board_ipq40xx_params_t board_params[] = {
 	{
 		.machid = MACH_TYPE_IPQ40XX_DB_DK02_1_C1,
 		.ddr_size = (256 << 20),
-		.mtdids = "nand0=nand0,nand2=spi0.0",
 		.console_uart_cfg = &uart1_console_uart_dk04,
 		//.spi_nor_gpio = spi_nor_bga,
 		//.spi_nor_gpio_count = ARRAY_SIZE(spi_nor_bga),

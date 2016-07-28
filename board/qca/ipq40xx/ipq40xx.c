@@ -616,8 +616,8 @@ int ft_board_setup(void *blob, bd_t *bd)
 			debug("mtdparts = %s\n", mtdparts);
 			setenv("mtdparts", mtdparts);
 		}
-		setenv("mtdids", gboard_param->mtdids);
 
+		debug("MTDIDS: %s\n", getenv("mtdids"));
 		ipq_fdt_fixup_mtdparts(blob, nodes);
 	}
 	dcache_disable();
