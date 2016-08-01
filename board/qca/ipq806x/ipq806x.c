@@ -17,30 +17,10 @@
 #include <environment.h>
 #include <asm/arch-qcom-common/gsbi.h>
 #include <asm/arch-qcom-common/uart.h>
-#include <asm/arch-ipq806x/gpio.h>
 #include "ipq806x.h"
-#include "../common/qca_common.h"
+#include "qca_common.h"
 
 DECLARE_GLOBAL_DATA_PTR;
-
-gpio_func_data_t gsbi4_gpio[] = {
-
-	{
-		.gpio = 10,
-		.func = 1,
-		.pull = GPIO_NO_PULL,
-		.drvstr = GPIO_12MA,
-		.oe = GPIO_OE_ENABLE
-	},
-
-	{
-		.gpio = 11,
-		.func = 1,
-		.pull = GPIO_NO_PULL,
-		.drvstr = GPIO_12MA,
-		.oe = GPIO_OE_ENABLE
-	},
-};
 
 qca_mmc mmc_host;
 
@@ -91,21 +71,17 @@ int board_mmc_init(bd_t *bis)
 
 	return ret;
 }
-
-void ipq_configure_gpio(gpio_func_data_t *gpio, uint count)
-{
-	int i;
-
-	for (i = 0; i < count; i++) {
-		gpio_tlmm_config(gpio->gpio, gpio->func, gpio->out,
-				gpio->pull, gpio->drvstr, gpio->oe);
-		gpio++;
-	}
-}
-
 void qca_serial_init(struct ipq_serial_platdata *plat)
 {
-	ipq_configure_gpio(gsbi4_gpio, 2);
+	int serial_node, gpio_node;
+	serial_node = fdt_path_offset(gd->fdt_blob, "/serial");
+        if (serial_node < 0) {
+             return -1;
+        }
+
+        gpio_node = fdt_subnode_offset(gd->fdt_blob, serial_node, "serial_gpio");
+
+	qca_gpio_init(gpio_node);
 	writel(GSBI_PROTOCOL_CODE_I2C_UART <<
 			GSBI_CTRL_REG_PROTOCOL_CODE_S,
 			GSBI_CTRL_REG(GSBI4_BASE));

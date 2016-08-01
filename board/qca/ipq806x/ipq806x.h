@@ -17,15 +17,5 @@
 #include <configs/ipq806x.h>
 #include <asm/u-boot.h>
 
-typedef struct {
-        int gpio;
-        unsigned int func;
-        unsigned int out;
-        unsigned int pull;
-        unsigned int drvstr;
-        unsigned int oe;
-} gpio_func_data_t;
-
 #define GSBI4_BASE 0x16300000
-void ipq_configure_gpio(gpio_func_data_t *gpio, uint count);
 #endif /* _IPQ806X_H_ */

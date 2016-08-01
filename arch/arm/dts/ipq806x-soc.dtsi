@@ -24,6 +24,28 @@
 		m_value = <0x0C>;
 		n_value = <0x271>;
 		d_value = <0x139>;
+
+		serial_gpio {
+			gpio1 {
+				gpio = <10>;
+				func = <1>;
+				out = <0>;
+				pull = <0>;
+				drvstr = <5>;
+				oe = <1>;
+				};
+
+			gpio2 {
+				gpio = <11>;
+				func = <1>;
+				out = <0>;
+				pull = <0>;
+				drvstr = <5>;
+				oe = <1>;
+				};
+
+		};
+
 	};
 
 	timer {
