@@ -39,15 +39,25 @@
 #include <asm/arch-ipq40xx/iomap.h>
 #include "qca_qup_spi_bam.h"
 
+DECLARE_GLOBAL_DATA_PTR;
+
 /*
  * CS GPIO number array cs_gpio_array[port_num][cs_num]
  * cs_gpio_array[0][x] -- QUP0
  */
-static unsigned int cs_gpio_array[NUM_PORTS][NUM_CS] = {
+static unsigned int cs_gpio_array_dk01[NUM_PORTS][NUM_CS] = {
 	{
-		QUP0_SPI_CS_0, QUP0_SPI_CS_1,
+		QUP0_SPI_CS_0, QUP0_SPI_CS_1_DK01,
 	},
 };
+
+static unsigned int cs_gpio_array_dk04[NUM_PORTS][NUM_CS] = {
+	{
+		QUP0_SPI_CS_0, QUP0_SPI_CS_1_DK04,
+	},
+};
+
+static unsigned int (*cs_gpio_array)[NUM_CS] = cs_gpio_array_dk01;
 
 static int check_bit_state(uint32_t reg_addr, int bit_num, int val,
 							int us_delay)
@@ -323,6 +333,8 @@ struct spi_slave *spi_setup_slave(unsigned int bus, unsigned int cs,
 
 	if (ds->slave.cs == CONFIG_SF_SPI_NAND_CS) {
 		/* GPIO Configuration for SPI port */
+		if (gd->bd->bi_arch_number == MACH_TYPE_IPQ40XX_AP_DK04_1_C5)
+			cs_gpio_array = cs_gpio_array_dk04;
 		blsp_pin_config(ds->slave.bus, ds->slave.cs);
 		CS_change(ds->slave.bus, ds->slave.cs, CS_DEASSERT);
 	}

@@ -428,7 +428,8 @@ void board_nand_init(void)
 		(gboard_param->machid == MACH_TYPE_IPQ40XX_AP_DK04_1_C3) ||
 		(gboard_param->machid == MACH_TYPE_IPQ40XX_AP_DK06_1_C1) ||
 		(gboard_param->machid == MACH_TYPE_IPQ40XX_AP_DK07_1_C1) ||
-		(gboard_param->machid == MACH_TYPE_IPQ40XX_AP_DK04_1_C4)) {
+		(gboard_param->machid == MACH_TYPE_IPQ40XX_AP_DK04_1_C4) ||
+		(gboard_param->machid == MACH_TYPE_IPQ40XX_AP_DK04_1_C5)) {
 
 		struct qpic_nand_init_config config;
 		config.pipes.read_pipe = DATA_PRODUCER_PIPE;
@@ -453,13 +454,16 @@ void board_nand_init(void)
 			qca_configure_gpio(gpio,
 				gboard_param->spi_nor_gpio_count);
 		}
-		qpic_nand_init(&config);
+		if (gboard_param->nand_gpio)
+			qpic_nand_init(&config);
 	}
 #endif
 	if ((gboard_param->machid == MACH_TYPE_IPQ40XX_AP_DK01_1_C2) ||
-		(gboard_param->machid == MACH_TYPE_IPQ40XX_AP_DK05_1_C1)) {
+		(gboard_param->machid == MACH_TYPE_IPQ40XX_AP_DK05_1_C1) ||
+		(gboard_param->machid == MACH_TYPE_IPQ40XX_AP_DK04_1_C5)) {
 		spi_nand_init();
 	}
+
 #ifdef CONFIG_IPQ40XX_SPI
 	ipq_spi_init(CONFIG_IPQ_SPI_NOR_INFO_IDX);
 #endif
@@ -598,6 +602,7 @@ int board_eth_init(bd_t *bis)
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C4:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C1:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C3:
+	case MACH_TYPE_IPQ40XX_AP_DK04_1_C5:
 		mdelay(100);
 		writel(GPIO_OUT, GPIO_IN_OUT_ADDR(47));
 		ipq40xx_register_switch(ipq40xx_qca8075_phy_init);
