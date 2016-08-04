@@ -35,8 +35,6 @@ extern loff_t board_env_offset;
 extern loff_t board_env_range;
 extern loff_t board_env_size;
 
-extern int nand_env_init(void);
-extern void nand_env_relocate_spec(void);
 extern int ipq_spi_init(u16);
 extern int fdt_node_set_part_info(void *blob, int parent_offset,
 				  struct mtd_device *dev);
@@ -75,51 +73,6 @@ extern void mmc_env_relocate_spec(void);
 #define SCM_CMD_TZ_FORCE_DLOAD_ID 0x10
 #define BOOT_VERSION	0
 #define TZ_VERSION	1
-
-int env_init(void)
-{
-	int ret;
-
-	ret = 0;
-
-	qca_smem_flash_info_t sfi;
-
-	smem_get_boot_flash(&sfi.flash_type,
-				&sfi.flash_index,
-				&sfi.flash_chip_select,
-				&sfi.flash_block_size,
-				&sfi.flash_density);
-
-	if (sfi.flash_type != SMEM_BOOT_MMC_FLASH) {
-		ret = nand_env_init();
-#ifdef CONFIG_QCA_MMC
-	} else {
-		ret = mmc_env_init();
-#endif
-	}
-
-	return ret;
-}
-
-void env_relocate_spec(void)
-{
-	qca_smem_flash_info_t sfi;
-
-	smem_get_boot_flash(&sfi.flash_type,
-				&sfi.flash_index,
-				&sfi.flash_chip_select,
-				&sfi.flash_block_size,
-				&sfi.flash_density);
-
-	if (sfi.flash_type != SMEM_BOOT_MMC_FLASH) {
-		nand_env_relocate_spec();
-#ifdef CONFIG_QCA_MMC
-	} else {
-		mmc_env_relocate_spec();
-#endif
-	}
-
-};
 
 void qca_serial_init(struct ipq_serial_platdata *plat)
 {
