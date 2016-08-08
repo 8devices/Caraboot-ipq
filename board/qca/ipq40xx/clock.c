@@ -12,7 +12,7 @@
  */
 
 #include <common.h>
-#include "clk.h"
+#include <asm/arch-ipq40xx/clk.h>
 #include <asm/arch-qcom-common/iomap.h>
 #include <asm/io.h>
 #include <asm/errno.h>
