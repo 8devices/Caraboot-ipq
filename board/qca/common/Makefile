@@ -1,0 +1,1 @@
+obj-y += cmd_bootqca.o
