@@ -12,6 +12,7 @@
  */
 
 #include "skeleton.dtsi"
+#include <dt-bindings/qcom/gpio-ipq40xx.h>
 
 / {
 	serial@78af000 {

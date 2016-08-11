@@ -12,6 +12,7 @@
  */
 
 #include "skeleton.dtsi"
+#include <dt-bindings/qcom/gpio-ipq807x.h>
 
 / {
 

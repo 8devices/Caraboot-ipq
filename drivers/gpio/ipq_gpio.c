@@ -15,73 +15,39 @@
 #include <common.h>
 #include <asm/types.h>
 #include <fdtdec.h>
+#include <asm/arch-qcom-common/gpio.h>
 
 DECLARE_GLOBAL_DATA_PTR;
-
-static struct qca_gpio_config {
-	unsigned int gpio;
-	unsigned int func;
-	unsigned int out;
-	unsigned int pull;
-	unsigned int drvstr;
-	unsigned int oe;
-	unsigned int vm;
-	unsigned int od_en;
-	unsigned int pu_res;
-}gpio_config __attribute__((section(".data")));
-
-int qca_gpio_init(int offset)
-{
-	for (offset = fdt_first_subnode(gd->fdt_blob, offset); offset > 0;
-			offset = fdt_next_subnode(gd->fdt_blob, offset)) {
-
-		gpio_config.gpio	= fdtdec_get_uint(gd->fdt_blob, offset, "gpio", 0);
-		gpio_config.func	= fdtdec_get_uint(gd->fdt_blob, offset, "func", 0);
-		gpio_config.out		= fdtdec_get_uint(gd->fdt_blob, offset, "out", 0);
-		gpio_config.pull	= fdtdec_get_uint(gd->fdt_blob, offset, "pull", 0);
-		gpio_config.drvstr	= fdtdec_get_uint(gd->fdt_blob, offset, "drvstr", 0);
-		gpio_config.oe		= fdtdec_get_uint(gd->fdt_blob, offset, "oe", 0);
-		gpio_config.vm		= fdtdec_get_uint(gd->fdt_blob, offset, "vm", 0);
-		gpio_config.od_en	= fdtdec_get_uint(gd->fdt_blob, offset, "od_en", 0);
-		gpio_config.pu_res	= fdtdec_get_uint(gd->fdt_blob, offset, "pu_res", 0);
-
-		gpio_tlmm_config(gpio_config);
-	}
-	return 0;
-}
 
 /***********************************************************
 * Function description: configure GPIO functinality
 * Arguments :
-* unsigned int gpio - Gpio number
-* unsigned int func - Functionality number
-* unsigned int dir  - direction 0- i/p, 1- o/p
-* unsigned int pull - pull up/down, no pull range(0-3)
-* unsigned int drvstr - range (0 - 7)-> (2- 16)MA steps of 2
-* unsigned int oe - 0 - Disable, 1- Enable.
+* struct qca_gpio_config gpio_config - GPIO Configuration bits
 *
 * Return : None
 ************************************************************/
-void gpio_tlmm_config(struct qca_gpio_config gpio_config)
+void gpio_tlmm_config(struct qca_gpio_config *gpio_config)
 {
 	unsigned int val = 0;
-	val |= gpio_config.pull;
-	val |= gpio_config.func << 2;
-	val |= gpio_config.drvstr << 6;
-	val |= gpio_config.oe << 9;
-	val |= gpio_config.vm << 11;
-        val |= gpio_config.od_en << 12;
-        val |= gpio_config.pu_res << 13;
+	val |= gpio_config->pull;
+	val |= gpio_config->func << 2;
+	val |= gpio_config->drvstr << 6;
+	val |= gpio_config->oe << 9;
+	val |= gpio_config->vm << 11;
+	val |= gpio_config->od_en << 12;
+	val |= gpio_config->pu_res << 13;
 
-	unsigned int *addr = (unsigned int *)GPIO_CONFIG_ADDR(gpio_config.gpio);
+	unsigned int *addr =
+		(unsigned int *)GPIO_CONFIG_ADDR(gpio_config->gpio);
 	writel(val, addr);
 
 	/* Output value is only relevant if GPIO has been configured for fixed
-	 * output setting - i.e. func == 0 */
-	if (gpio_config.func == 0) {
-		addr = (unsigned int *)GPIO_IN_OUT_ADDR(gpio_config.gpio);
+	 * output setting - i.e. func == 0
+	 */
+	if (gpio_config->func == 0) {
+		addr = (unsigned int *)GPIO_IN_OUT_ADDR(gpio_config->gpio);
 		val = readl(addr);
-		val |= gpio_config.out << 1;
+		val |= gpio_config->out << 1;
 		writel(val, addr);
 	}
 
@@ -97,4 +63,35 @@ void gpio_set_value(unsigned int gpio, unsigned int out)
 	val &= ~(0x2);
 	val |= out << 1;
 	writel(val, addr);
+}
+
+int qca_gpio_init(int offset)
+{
+	struct qca_gpio_config gpio_config;
+
+	for (offset = fdt_first_subnode(gd->fdt_blob, offset); offset > 0;
+	     offset = fdt_next_subnode(gd->fdt_blob, offset)) {
+
+		gpio_config.gpio	= fdtdec_get_uint(gd->fdt_blob,
+							  offset, "gpio", 0);
+		gpio_config.func	= fdtdec_get_uint(gd->fdt_blob,
+							  offset, "func", 0);
+		gpio_config.out		= fdtdec_get_uint(gd->fdt_blob,
+							  offset, "out", 0);
+		gpio_config.pull	= fdtdec_get_uint(gd->fdt_blob,
+							  offset, "pull", 0);
+		gpio_config.drvstr	= fdtdec_get_uint(gd->fdt_blob,
+							  offset, "drvstr", 0);
+		gpio_config.oe		= fdtdec_get_uint(gd->fdt_blob,
+							  offset, "oe", 0);
+		gpio_config.vm		= fdtdec_get_uint(gd->fdt_blob,
+							  offset, "vm", 0);
+		gpio_config.od_en	= fdtdec_get_uint(gd->fdt_blob,
+							  offset, "od_en", 0);
+		gpio_config.pu_res	= fdtdec_get_uint(gd->fdt_blob,
+							  offset, "pu_res", 0);
+
+		gpio_tlmm_config(&gpio_config);
+	}
+	return 0;
 }

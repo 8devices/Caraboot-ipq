@@ -28,23 +28,52 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef GPIO_H
-#define GPIO_H
+#ifndef __DT_BINDINGS_IPQ40XX_GPIO_H__
+#define __DT_BINDINGS_IPQ40XX_GPIO_H__
 
-struct qca_gpio_config {
-	unsigned int gpio;
-	unsigned int func;
-	unsigned int out;
-	unsigned int pull;
-	unsigned int drvstr;
-	unsigned int oe;
-	unsigned int vm;
-	unsigned int od_en;
-	unsigned int pu_res;
-};
+/* GPIO TLMM: Direction */
+#define GPIO_INPUT	0
+#define GPIO_OUTPUT	1
 
-void gpio_tlmm_config(struct qca_gpio_config *gpio_config);
+/* GPIO TLMM: Output value */
+#define GPIO_OUT_LOW	0
+#define GPIO_OUT_HIGH	1
 
-void gpio_set_value(unsigned int gpio, unsigned int out);
+/* GPIO TLMM: Pullup/Pulldown */
+#define GPIO_NO_PULL	0
+#define GPIO_PULL_DOWN	1
+#define GPIO_PULL_UP	2
+#define GPIO_NOT_DEF	3
+
+/* GPIO TLMM: Drive Strength */
+#define GPIO_2MA	0
+#define GPIO_4MA	1
+#define GPIO_6MA	2
+#define GPIO_8MA	3
+#define GPIO_10MA	4
+#define GPIO_12MA	5
+#define GPIO_14MA	6
+#define GPIO_16MA	7
+
+/* GPIO TLMM: Status */
+#define GPIO_OE_DISABLE	0
+#define GPIO_OE_ENABLE	1
+
+/* GPIO VM */
+#define GPIO_VM_ENABLE	1
+#define GPIO_VM_DISABLE	0
+
+/* GPIO OD */
+#define GPIO_OD_ENABLE	1
+#define GPIO_OD_DISABLE	0
+
+/* GPIO PULLUP RES */
+#define GPIO_PULL_RES0	0
+#define GPIO_PULL_RES1	1
+#define GPIO_PULL_RES2	2
+#define GPIO_PULL_RES3	3
+
+#define GPIO_OUT	(1 << 1)
+#define GPIO_IN		(1 << 0)
 
 #endif

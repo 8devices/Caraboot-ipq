@@ -86,6 +86,10 @@
 #define CONFIG_SYS_PBSIZE               (CONFIG_SYS_CBSIZE + \
 						sizeof(CONFIG_SYS_PROMPT) + 16)
 
+#define TLMM_BASE			0x01000000
+#define GPIO_CONFIG_ADDR(x)		(TLMM_BASE + (x)*0x1000)
+#define GPIO_IN_OUT_ADDR(x)		(TLMM_BASE + 0x4 + (x)*0x1000)
+
 #define CONFIG_SYS_SDRAM_BASE           0x40000000
 #define CONFIG_SYS_TEXT_BASE            0x4AD00000
 #define CONFIG_SYS_SDRAM_SIZE           0x10000000
