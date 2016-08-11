@@ -1,0 +1,72 @@
+/*
+ * Copyright (c) 2016, The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+#include "skeleton.dtsi"
+
+/ {
+	serial@78af000 {
+		compatible = "qca,ipq-uartdm";
+		reg = <0x78af000 0x200>;
+		bit_rate = <0xff>;
+		id = <2>;
+	};
+
+	timer {
+		gcnt_base = <0x4a1000>;
+		gcnt_cntcv_lo = <0x4a2000>;
+		gcnt_cntcv_hi = <0x4a2004>;
+		gpt_freq_hz = <48000000>;
+		timer_load_val = <0x00FFFFFF 0xFFFFFFFF>;
+	};
+
+	spi {
+		status = "disabled";
+	};
+
+	nand@79B0000 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "qcom,qpic-nand.1.4.20";
+		reg = <0x79B0000 0x10000>;
+		status = "disabled";
+	};
+
+	sdhci@7824000 {
+		reg = <0x7824000 0x800>;
+		status = "disabled";
+	};
+
+	xhci@8a00000 {
+		compatible = "qca,dwc3-ipq";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0x8a00000 0xcd00>;
+		rst_ctrl = <0x181E038 0x4>;
+	};
+
+	xhci@6000000 {
+		compatible = "qca,dwc3-ipq";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0x6000000 0xcd00>;
+		rst_ctrl = <0x181E01C 0x4>;
+	};
+
+	i2c0: i2c@78b7000 {
+		compatible = "qcom,qup-i2c";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x78b7000 0x600>;
+	};
+};
+
