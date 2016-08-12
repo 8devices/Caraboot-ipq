@@ -77,7 +77,6 @@ static const char * const compat_names[COMPAT_COUNT] = {
 	COMPAT(COMPAT_INTEL_BAYTRAIL_FSP_MDP, "intel,baytrail-fsp-mdp"),
 	COMPAT(COMPAT_QCOM_QPIC_NAND_V1_5_20, "qcom,qpic-nand.1.5.20"),
 	COMPAT(COMPAT_QCOM_QPIC_NAND_V1_4_20, "qcom,qpic-nand.1.4.20"),
-	COMPAT(COMPAT_QCOM_QPIC_NAND_V1_4_20, "qcom,qpic-nand.1.4.20"),
 	COMPAT(QCOM_QUP_I2C, "qcom,qup-ip2c"),
 };
 
