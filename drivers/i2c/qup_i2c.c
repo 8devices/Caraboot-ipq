@@ -21,14 +21,7 @@
 #include <dm/root.h>
 #include <mapmem.h>
 #include <dm.h>
-
-#ifdef CONFIG_IPQ807x_I2C
-#include "../../board/qca/ipq807x/clk.h"
-#endif
-
-#ifdef CONFIG_IPQ40XX_I2C
-#include "../../board/qca/ipq40xx/clk.h"
-#endif
+#include <asm/arch-qcom-common/qca_common.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 

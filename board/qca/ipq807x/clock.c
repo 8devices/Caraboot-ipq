@@ -12,7 +12,7 @@
  */
 
 #include <common.h>
-#include "clk.h"
+#include <asm/arch-ipq807x/clk.h>
 
 #ifdef CONFIG_IPQ807x_I2C
 void i2c_clock_config(void)
