@@ -35,6 +35,7 @@
 #include <linux/sizes.h>
 #include <asm/arch-qcom-common/smem.h>
 #include <nand.h>
+#include "fdt_info.h"
 
 extern int nand_env_device;
 
@@ -413,7 +414,7 @@ static inline uint32_t get_flash_block_size(char *name,
 					    qca_smem_flash_info_t *smem)
 {
 	return (get_which_flash_param(name) == 1) ?
-		get_nand_block_size(0)
+		get_nand_block_size(is_spi_nand_available())
 		: smem->flash_block_size;
 }
 
@@ -423,7 +424,7 @@ static inline uint32_t get_part_block_size(struct smem_ptn *p,
 					   qca_smem_flash_info_t *sfi)
 {
         return (part_which_flash(p) == 1) ?
-		get_nand_block_size(0)
+		get_nand_block_size(is_spi_nand_available())
 		: sfi->flash_block_size;
 }
 
@@ -456,7 +457,7 @@ void qca_smem_part_to_mtdparts(char *mtdid)
 		bsize = get_part_block_size(p, sfi);
 
 		if (part_which_flash(p) && init == 0) {
-			device_id = 0; /* Hard coded as gboard_param is to be removed and nand is not enabled yet */
+			device_id = is_spi_nand_available();
 			l = sprintf(part, ";nand%d:", device_id);
 			part += l;
 			init = 1;

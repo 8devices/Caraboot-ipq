@@ -137,5 +137,4 @@ typedef enum {
 } smem_mem_type_t;
 
 unsigned int get_board_index(unsigned int machid);
-void qca_configure_gpio(gpio_func_data_t *gpio, uint count);
 #endif

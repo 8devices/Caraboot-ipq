@@ -23,9 +23,11 @@
 #include <asm/arch-qcom-common/smem.h>
 #include <asm/arch-qcom-common/scm.h>
 #include <asm/arch-qcom-common/qpic_nand.h>
+#include <asm/arch-qcom-common/gpio.h>
 #include <jffs2/load_kernel.h>
 #include <fdtdec.h>
 #include <asm/arch-qcom-common/uart.h>
+#include "fdt_info.h"
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -85,16 +87,6 @@ extern char *mmc_env_name_spec;
 #define BOOT_VERSION	0
 #define TZ_VERSION	1
 
-/* To get board params from Device Tree (to be implemented) */
-static unsigned int is_spi_nand_available (void)
-{
-	return 0; /* hard coded since no device tree entry */
-}
-
-static unsigned int is_nor_nand_available (void)
-{
-	return 0;
-}
 
 int env_init(void)
 {
@@ -280,8 +272,16 @@ int board_late_init(void)
 
 void qca_serial_init(struct ipq_serial_platdata *plat)
 {
-	writel(1, GCC_BLSP1_UART1_APPS_CBCR);
+	int node;
+	node = fdt_path_offset(gd->fdt_blob, "/serial/serial_gpio");
+	if (node < 0) {
+		printf("Could not find serial_gpio node\n");
+		return;
+	}
+
+	qca_gpio_init(node);
 }
+
 /*
  * This function is called in the very beginning.
  * Retreive the machtype info from SMEM and map the board specific
@@ -332,6 +332,9 @@ int dram_init(void)
 				gd->ram_size += rtable.parts[i].size;
 			}
 		}
+	} else {
+		gd->ram_size = fdtdec_get_uint(gd->fdt_blob, 0, "ddr_size", 256);
+		gd->ram_size *= (1024 * 1024);
 	}
 	return 0;
 }
@@ -339,13 +342,9 @@ int dram_init(void)
 void board_nand_init(void)
 {
 	struct qpic_nand_init_config config;
-	gpio_func_data_t *gpio;
-	int node;
+	int node, gpio_node;
 	fdt_addr_t nand_base;
 
-#ifdef CONFIG_IPQ40XX_SPI
-	ipq_spi_init(CONFIG_IPQ_SPI_NOR_INFO_IDX);
-#endif
 
 	node = fdtdec_next_compatible(gd->fdt_blob, 0,
 				      COMPAT_QCOM_QPIC_NAND_V1_4_20);
@@ -373,21 +372,25 @@ void board_nand_init(void)
 	config.nand_base = nand_base;
 	config.ee = QPIC_NAND_EE;
 	config.max_desc_len = QPIC_NAND_MAX_DESC_LEN;
-	qpic_nand_init(&config);
+
+	gpio_node = fdt_subnode_offset(gd->fdt_blob, node, "nand_gpio");
+	if (gpio_node >= 0) {
+		qca_gpio_init(gpio_node);
+		qpic_nand_init(&config);
+	}
+
+	gpio_node = fdt_path_offset(gd->fdt_blob, "/spi/spi_gpio");
+	if (gpio_node >= 0)
+		qca_gpio_init(gpio_node);
+
+#ifdef CONFIG_IPQ40XX_SPI
+	ipq_spi_init(CONFIG_IPQ_SPI_NOR_INFO_IDX);
+#endif
 }
 
 int board_eth_init(bd_t *bis)
 {
 	return 0;
-}
-
-void qca_configure_gpio(gpio_func_data_t *gpio, uint count)
-{
-	int i;
-
-	for (i = 0; i < count; i++) {
-		gpio++;
-	}
 }
 
 #ifdef CONFIG_OF_BOARD_SETUP
@@ -651,9 +654,26 @@ int board_mmc_env_init(void)
 int board_mmc_init(bd_t *bis)
 {
 	int ret;
+	int node, gpio_node;
+	fdt_addr_t base;
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 
-	mmc_host.base = MSM_SDC1_BASE;
+	node = fdt_path_offset(gd->fdt_blob, "/sdhci");
+	if (node < 0) {
+		printf("Could not find mmc-flash in device tree\n");
+		return -1;
+	}
+
+	gpio_node = fdt_subnode_offset(gd->fdt_blob, node, "mmc_gpio");
+	qca_gpio_init(gpio_node);
+
+	base = fdtdec_get_addr(gd->fdt_blob, node, "reg");
+	if (base == FDT_ADDR_T_NONE) {
+		printf("No valid MMC base address found in device tree\n");
+		return -1;
+        }
+
+	mmc_host.base = base;
 	mmc_host.clk_mode = MMC_IDENTIFY_MODE;
 	emmc_clock_config(mmc_host.clk_mode);
 

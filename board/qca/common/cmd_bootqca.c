@@ -22,6 +22,8 @@
 #include <asm/arch-qcom-common/smem.h>
 #include <mmc.h>
 #include <part_efi.h>
+#include <fdtdec.h>
+#include "fdt_info.h"
 
 #define DLOAD_MAGIC_COOKIE0x10
 #define XMK_STR(x)#x
@@ -85,17 +87,6 @@ static int inline do_dumpipq_data(void)
 }
 #endif
 
-/* To get board params from Device Tree (to be implemented) */
-static unsigned int is_spi_nand_available (void)
-{
-	return 0; /* hard coded since no device tree entry */
-}
-
-static unsigned int is_nor_emmc_available (void)
-{
-	return 0;
-}
-
 /*
  * Set the root device and bootargs for mounting root filesystem.
  */
@@ -112,6 +103,7 @@ static int set_fs_bootargs(int *fs_on_nand)
 		    get_which_flash_param("rootfs")) {
 			bootargs = nand_rootfs;
 			*fs_on_nand = 1;
+			fdt_setprop(gd->fdt_blob, 0, "nor_nand_available", fs_on_nand, sizeof(int));
 			snprintf(mtdids, sizeof(mtdids),
 				 "nand%d=nand%d,nand2=spi0.0",
 				 is_spi_nand_available(),
