@@ -15,11 +15,11 @@
 #define ___QCA_COMMON_H_
 #include <asm/u-boot.h>
 
-#ifdef CONFIG_IPQ807x_I2C
+#ifdef CONFIG_IPQ807x
 #include <asm/arch-ipq807x/clk.h>
 #endif
 
-#ifdef CONFIG_IPQ40XX_I2C
+#ifdef CONFIG_IPQ40xx
 #include <asm/arch-ipq40xx/clk.h>
 #endif
 

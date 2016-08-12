@@ -136,7 +136,6 @@ typedef enum {
         SMEM_MAX_SIZE = SMEM_PARTITION_TABLE_OFFSET + 1,
 } smem_mem_type_t;
 
-extern board_ipq40xx_params_t *gboard_param;
 unsigned int get_board_index(unsigned int machid);
 void qca_configure_gpio(gpio_func_data_t *gpio, uint count);
 #endif

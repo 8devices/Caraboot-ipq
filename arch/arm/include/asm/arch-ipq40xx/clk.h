@@ -11,8 +11,8 @@
  * GNU General Public License for more details.
  */
 
-#ifndef QCA_CLK_H
-#define QCA_CLK_H
+#ifndef IPQ40XX_CLK_H
+#define IPQ40XX_CLK_H
 
 #define MMC_IDENTIFY_MODE	0
 #define MMC_DATA_TRANSFER_MODE	1
@@ -96,4 +96,4 @@ void i2c0_configure_mux(void);
 
 int pcie_clock_enable(int clk_addr);
 void pcie_clock_disable(int clk_addr);
-#endif /*QCA_CLK_H*/
+#endif /*IPQ40XX_CLK_H*/

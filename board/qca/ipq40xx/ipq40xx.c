@@ -18,7 +18,6 @@
 #include <environment.h>
 #include <configs/ipq40xx.h>
 #include "ipq40xx.h"
-#include "ipq40xx_board_param.h"
 #include <nand.h>
 #include <part.h>
 #include <asm/arch-qcom-common/smem.h>
@@ -74,7 +73,6 @@ extern char *mmc_env_name_spec;
  * Moral of the story: Global variables that are written before
  * relocate_code() gets executed cannot be in '.bss'
  */
-board_ipq40xx_params_t *gboard_param = (board_ipq40xx_params_t *)0xbadb0ad;
 
 #define DLOAD_DISABLE 0x1
 #define RESERVE_ADDRESS_START 0x87B00000 /*TZAPPS, SMEM and TZ Regions */
@@ -86,25 +84,16 @@ board_ipq40xx_params_t *gboard_param = (board_ipq40xx_params_t *)0xbadb0ad;
 #define SCM_CMD_TZ_FORCE_DLOAD_ID 0x10
 #define BOOT_VERSION	0
 #define TZ_VERSION	1
-/*******************************************************
- Function description: Board specific initialization.
- I/P : None
- O/P : integer, 0 - no error.
 
-********************************************************/
-
-static board_ipq40xx_params_t *get_board_param(unsigned int machid)
+/* To get board params from Device Tree (to be implemented) */
+static unsigned int is_spi_nand_available (void)
 {
-	unsigned int index;
+	return 0; /* hard coded since no device tree entry */
+}
 
-	printf("machid: %x\n", machid);
-	for (index = 0; index < NUM_IPQ40XX_BOARDS; index++) {
-		if (machid == board_params[index].machid)
-			return &board_params[index];
-	}
-	BUG_ON(index == NUM_IPQ40XX_BOARDS);
-	printf("cdp: Invalid machine id 0x%x\n", machid);
-	for (;;);
+static unsigned int is_nor_nand_available (void)
+{
+	return 0;
 }
 
 int env_init(void)
@@ -161,7 +150,6 @@ int board_init(void)
 
 	gd->bd->bi_boot_params = QCA_BOOT_PARAMS_ADDR;
 	gd->bd->bi_arch_number = smem_get_board_platform_type();
-	gboard_param = get_board_param(gd->bd->bi_arch_number);
 
 	ret = smem_get_boot_flash(&sfi->flash_type,
 					&sfi->flash_index,
@@ -292,8 +280,6 @@ int board_late_init(void)
 
 void qca_serial_init(struct ipq_serial_platdata *plat)
 {
-	qca_configure_gpio(gboard_param->console_uart_cfg->dbg_uart_gpio,
-			NO_OF_DBG_UART_GPIOS);
 	writel(1, GCC_BLSP1_UART1_APPS_CBCR);
 }
 /*
@@ -304,8 +290,6 @@ void qca_serial_init(struct ipq_serial_platdata *plat)
  */
 int board_early_init_f(void)
 {
-	/*Retrieve the machid of the board from smem*/
-	gboard_param = get_board_param(smem_get_board_platform_type());
 	return 0;
 }
 
@@ -348,9 +332,6 @@ int dram_init(void)
 				gd->ram_size += rtable.parts[i].size;
 			}
 		}
-		gboard_param->ddr_size = gd->ram_size;
-	} else {
-		gd->ram_size = gboard_param->ddr_size;
 	}
 	return 0;
 }
@@ -392,13 +373,6 @@ void board_nand_init(void)
 	config.nand_base = nand_base;
 	config.ee = QPIC_NAND_EE;
 	config.max_desc_len = QPIC_NAND_MAX_DESC_LEN;
-
-	gpio = gboard_param->nand_gpio;
-	if (gpio) {
-		qca_configure_gpio(gpio,
-				   gboard_param->nand_gpio_count);
-	}
-
 	qpic_nand_init(&config);
 }
 
@@ -412,9 +386,6 @@ void qca_configure_gpio(gpio_func_data_t *gpio, uint count)
 	int i;
 
 	for (i = 0; i < count; i++) {
-		gpio_tlmm_config(gpio->gpio, gpio->func, gpio->out,
-			gpio->pull, gpio->drvstr, gpio->oe,
-			gpio->gpio_vm, gpio->gpio_od_en, gpio->gpio_pu_res);
 		gpio++;
 	}
 }
@@ -586,7 +557,7 @@ void ipq_fdt_fixup_mtdparts(void *blob, struct flash_node_info *ni)
 int ft_board_setup(void *blob, bd_t *bd)
 {
 	u64 memory_start = CONFIG_SYS_SDRAM_BASE;
-	u64 memory_size = gboard_param->ddr_size;
+	u64 memory_size = gd->ram_size;
 	char *mtdparts = NULL;
 	char parts_str[4096];
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
@@ -609,12 +580,12 @@ int ft_board_setup(void *blob, bd_t *bd)
 		/* Patch NOR block size and density for
 		 * generic probe case */
 		ipq_fdt_fixup_spi_nor_params(blob);
-		if (gboard_param->spi_nand_available &&
+		if (is_spi_nand_available() &&
 			get_which_flash_param("rootfs") == 0) {
 			sprintf(parts_str,
 				"mtdparts=nand1:0x%x@0(rootfs);spi0.0",
 				IPQ_NAND_ROOTFS_SIZE);
-		} else if (gboard_param->nor_nand_available &&
+		} else if (is_nor_nand_available() &&
 			get_which_flash_param("rootfs") == 0) {
 			sprintf(parts_str,
 				"mtdparts=nand0:0x%x@0(rootfs);spi0.0",
@@ -681,12 +652,6 @@ int board_mmc_init(bd_t *bis)
 {
 	int ret;
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
-
-	if (!gboard_param->mmc_gpio_count)
-		return 0;
-
-	qca_configure_gpio(gboard_param->mmc_gpio,
-			gboard_param->mmc_gpio_count);
 
 	mmc_host.base = MSM_SDC1_BASE;
 	mmc_host.clk_mode = MMC_IDENTIFY_MODE;
