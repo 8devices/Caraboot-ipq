@@ -154,9 +154,9 @@ SECTIONS
 	.dynsym _image_binary_end : { *(.dynsym) }
 	.dynbss : { *(.dynbss) }
 	.dynstr : { *(.dynstr*) }
-	.dynamic : { *(.dynamic*) }
+	/DISCARD/ : { *(.dynamic*) }
 	.plt : { *(.plt*) }
-	.interp : { *(.interp*) }
+	/DISCARD/ : { *(.interp*) }
 	.gnu.hash : { *(.gnu.hash) }
 	.gnu : { *(.gnu*) }
 	.ARM.exidx : { *(.ARM.exidx*) }
