@@ -35,6 +35,7 @@
 #include <linux/mtd/nand.h>
 #include <asm/arch-qcom-common/bam.h>
 #include <asm/arch-qcom-common/qpic_nand.h>
+#include <asm/arch-qcom-common/gpio.h>
 #include <fdtdec.h>
 #include <dm.h>
 
@@ -157,7 +158,7 @@ qpic_nand_check_status(struct mtd_info *mtd, uint32_t status)
 		if (status & NAND_FLASH_OP_ERR) {
 			erase_sts = qpic_nand_read_reg(
 					NAND_ERASED_CW_DETECT_STATUS, 0);
-			if ((erase_sts & 
+			if ((erase_sts &
 			    (1 << NAND_ERASED_CW_DETECT_STATUS_PAGE_ALL_ERASED))) {
 				/* Mask the OP ERROR. */
 				status &= ~NAND_FLASH_OP_ERR;
@@ -935,7 +936,7 @@ static int qpic_nand_block_isbad(struct mtd_info *mtd, loff_t offs)
 		return -EINVAL;
 
 	page = offs >> chip->page_shift;
-		
+
 	/* Read the bad block value from the flash.
 	 * Bad block value is stored in the first page of the block.
 	 */
@@ -1061,7 +1062,7 @@ qpic_nand_add_wr_page_cws_cmd_desc(struct mtd_info *mtd, struct cfg_params *cfg,
 		bam_add_one_desc(&bam,
 				 CMD_PIPE_INDEX,
 				 (unsigned char*)cmd_list_ptr_start,
-				 ((uint32_t)cmd_list_ptr - 
+				 ((uint32_t)cmd_list_ptr -
 				 (uint32_t)cmd_list_ptr_start),
 				 int_flag | BAM_DESC_CMD_FLAG | BAM_DESC_UNLOCK_FLAG);
 		num_desc += 2;
@@ -1365,7 +1366,7 @@ qpic_nand_non_onfi_probe(struct mtd_info *mtd)
 
 	/* Read the nand id. */
 	qpic_nand_fetch_id(mtd);
-	
+
 	qpic_nand_get_info(mtd, dev->id);
 
 	return;
@@ -2168,8 +2169,7 @@ qpic_nand_mtd_params(struct mtd_info *mtd)
 
 static struct nand_chip nand_chip[CONFIG_SYS_MAX_NAND_DEVICE];
 
-int
-qpic_nand_init(struct qpic_nand_init_config *config)
+void qpic_nand_init(void)
 {
 	struct mtd_info *mtd;
 	const struct udevice_id *of_match = qpic_ver_ids;
@@ -2178,6 +2178,8 @@ qpic_nand_init(struct qpic_nand_init_config *config)
 	struct qpic_nand_dev *dev;
 	size_t alloc_size;
 	unsigned char *buf;
+	struct qpic_nand_init_config config;
+	fdt_addr_t nand_base;
 
 	while (of_match->compatible) {
 		ret = fdt_node_offset_by_compatible(gd->fdt_blob, 0,
@@ -2195,11 +2197,45 @@ qpic_nand_init(struct qpic_nand_init_config *config)
 	chip = mtd->priv;
 	chip->priv = &qpic_nand_dev;
 
-	qpic_bam_init(config);
+	if (ret < 0) {
+		printf("Could not find nand-flash in device tree\n");
+		return;
+	}
+
+	nand_base = fdtdec_get_addr(gd->fdt_blob, ret, "reg");
+
+	if (nand_base == FDT_ADDR_T_NONE) {
+		printf("No valid NAND base address found in device tree\n");
+		return;
+        }
+
+	ret = fdt_subnode_offset(gd->fdt_blob, ret, "nand_gpio");
+
+	if (ret >= 0) {
+		qca_gpio_init(ret);
+	} else {
+		printf("Could not find subnode nand_gpio\n");
+		return;
+	}
+
+	config.pipes.read_pipe = DATA_PRODUCER_PIPE;
+	config.pipes.write_pipe = DATA_CONSUMER_PIPE;
+	config.pipes.cmd_pipe = CMD_PIPE;
+
+	config.pipes.read_pipe_grp = DATA_PRODUCER_PIPE_GRP;
+	config.pipes.write_pipe_grp = DATA_CONSUMER_PIPE_GRP;
+	config.pipes.cmd_pipe_grp = CMD_PIPE_GRP;
+
+	config.bam_base = QPIC_BAM_CTRL_BASE;
+	config.nand_base = nand_base;
+	config.ee = QPIC_NAND_EE;
+	config.max_desc_len = QPIC_NAND_MAX_DESC_LEN;
+
+	qpic_bam_init(&config);
 
 	ret = qpic_nand_onfi_probe(mtd);
 	if (ret < 0)
-		return ret;
+		return;
 	else if (ret > 0)
 		qpic_nand_non_onfi_probe(mtd);
 
@@ -2244,9 +2280,9 @@ qpic_nand_init(struct qpic_nand_init_config *config)
 		goto err_reg;
 	}
 	if (ret == 0)
-		return ret;
+		return;
 err_reg:
 	free(dev->buffers);
 err_buf:
-	return ret;
+	return;
 }

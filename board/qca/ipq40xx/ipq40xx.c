@@ -106,50 +106,15 @@ void reset_cpu(ulong addr)
 
 void board_nand_init(void)
 {
-	struct qpic_nand_init_config config;
-	int node, gpio_node;
-	fdt_addr_t nand_base;
+	int gpio_node;
 
-	node = fdtdec_next_compatible(gd->fdt_blob, 0,
-				      COMPAT_QCOM_QPIC_NAND_V1_4_20);
-
-	if (node < 0) {
-		printf("Could not find nand-flash in device tree\n");
-		return;
-	}
-
-	nand_base = fdtdec_get_addr(gd->fdt_blob, node, "reg");
-
-	if (nand_base == FDT_ADDR_T_NONE) {
-		printf("No valid NAND base address found in device tree\n");
-		return;
-        }
-	config.pipes.read_pipe = DATA_PRODUCER_PIPE;
-	config.pipes.write_pipe = DATA_CONSUMER_PIPE;
-	config.pipes.cmd_pipe = CMD_PIPE;
-
-	config.pipes.read_pipe_grp = DATA_PRODUCER_PIPE_GRP;
-	config.pipes.write_pipe_grp = DATA_CONSUMER_PIPE_GRP;
-	config.pipes.cmd_pipe_grp = CMD_PIPE_GRP;
-
-	config.bam_base = QPIC_BAM_CTRL_BASE;
-	config.nand_base = nand_base;
-	config.ee = QPIC_NAND_EE;
-	config.max_desc_len = QPIC_NAND_MAX_DESC_LEN;
-
-	gpio_node = fdt_subnode_offset(gd->fdt_blob, node, "nand_gpio");
-	if (gpio_node >= 0) {
-		qca_gpio_init(gpio_node);
-		qpic_nand_init(&config);
-	}
+	qpic_nand_init();
 
 	gpio_node = fdt_path_offset(gd->fdt_blob, "/spi/spi_gpio");
-	if (gpio_node >= 0)
+	if (gpio_node >= 0) {
 		qca_gpio_init(gpio_node);
-
-#ifdef CONFIG_IPQ40XX_SPI
-	ipq_spi_init(CONFIG_IPQ_SPI_NOR_INFO_IDX);
-#endif
+		ipq_spi_init(CONFIG_IPQ_SPI_NOR_INFO_IDX);
+	}
 }
 
 static void ipq40xx_edma_common_init(void)

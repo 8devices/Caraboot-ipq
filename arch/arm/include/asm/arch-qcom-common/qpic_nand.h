@@ -437,6 +437,6 @@ struct qpic_nand_dev {
 	unsigned char *zero_oob;
 };
 
-extern int qpic_nand_init(struct qpic_nand_init_config *config);
+void qpic_nand_init(void);
 
 #endif

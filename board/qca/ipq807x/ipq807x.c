@@ -108,41 +108,7 @@ int board_mmc_init(bd_t *bis)
 
 void board_nand_init(void)
 {
-
-	int node;
-	fdt_addr_t nand_base;
-
-	node = fdtdec_next_compatible(gd->fdt_blob, 0,
-				      COMPAT_QCOM_QPIC_NAND_V1_5_20);
-	if (node < 0) {
-		printf("Could not find nand-flash in device tree\n");
-		return;
-	}
-
-	nand_base = fdtdec_get_addr(gd->fdt_blob, node, "reg");
-
-	if (nand_base == FDT_ADDR_T_NONE) {
-		printf("No valid NAND base address found in device tree\n");
-		return;
-	}
-
-	struct qpic_nand_init_config config;
-
-	config.pipes.read_pipe = DATA_PRODUCER_PIPE;
-	config.pipes.write_pipe = DATA_CONSUMER_PIPE;
-	config.pipes.cmd_pipe = CMD_PIPE;
-
-	config.pipes.read_pipe_grp = DATA_PRODUCER_PIPE_GRP;
-	config.pipes.write_pipe_grp = DATA_CONSUMER_PIPE_GRP;
-	config.pipes.cmd_pipe_grp = CMD_PIPE_GRP;
-
-	config.bam_base = QPIC_BAM_CTRL_BASE;
-	config.nand_base = nand_base;
-	config.ee = QPIC_NAND_EE;
-	config.max_desc_len = QPIC_NAND_MAX_DESC_LEN;
-
-	qpic_nand_init(&config);
-
+	qpic_nand_init();
 }
 
 void board_pci_init(int id)
