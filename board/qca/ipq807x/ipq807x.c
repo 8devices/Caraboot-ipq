@@ -15,8 +15,6 @@
 #include <asm/global_data.h>
 #include <asm/io.h>
 #include <environment.h>
-
-#include "ipq807x.h"
 #include <asm/arch-qcom-common/qca_common.h>
 #include <asm/arch-qcom-common/qpic_nand.h>
 #include <asm/arch-qcom-common/uart.h>
@@ -27,30 +25,9 @@ DECLARE_GLOBAL_DATA_PTR;
 
 qca_mmc mmc_host;
 
-void enable_caches(void)
-{
-	icache_enable();
-}
-
-void disable_caches(void)
-{
-	icache_disable();
-}
-
-int board_init(void)
-{
-	return 0;
-}
-
 void qca_serial_init(struct ipq_serial_platdata *plat)
 {
 	writel(1, GCC_BLSP1_UART1_APPS_CBCR);
-}
-
-int dram_init(void)
-{
-	gd->ram_size = CONFIG_SYS_SDRAM_SIZE;
-	return 0;
 }
 
 unsigned long timer_read_counter(void)

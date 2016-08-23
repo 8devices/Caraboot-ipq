@@ -393,8 +393,8 @@ ulong getenv_hex(const char *varname, ulong default_val);
  * Return -1 if variable does not exist (default to true)
  */
 int getenv_yesno(const char *var);
-#ifdef CONFIG_IPQ40XX_ENV
-extern int      (*saveenv)(void);
+#if defined(CONFIG_IPQ40XX_ENV) || defined(CONFIG_IPQ807X_ENV)
+extern int (*saveenv)(void);
 #else
 int	saveenv	     (void);
 #endif

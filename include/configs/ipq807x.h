@@ -36,12 +36,6 @@
 #define CONFIG_SKIP_LOWLEVEL_INIT
 
 #define CONFIG_SYS_BOOTM_LEN            (64 << 20)
-
-#define CONFIG_ENV_SIZE 0x2000
-#define CONFIG_ENV_SIZE_MAX             (256 << 10) /* 256 KB */
-#define CONFIG_SYS_MALLOC_LEN           (CONFIG_ENV_SIZE_MAX + (256 << 10))
-
-#define CONFIG_ENV_IS_NOWHERE 1
 #define HAVE_BLOCK_DEVICE
 /*
  * Size of malloc() pool
@@ -96,9 +90,27 @@
 #define CONFIG_MAX_RAM_BANK_SIZE        CONFIG_SYS_SDRAM_SIZE
 #define CONFIG_SYS_LOAD_ADDR            (CONFIG_SYS_SDRAM_BASE + (64 << 20))
 
+#define QCA_KERNEL_START_ADDR		CONFIG_SYS_SDRAM_BASE
+#define QCA_DRAM_KERNEL_SIZE		CONFIG_SYS_SDRAM_SIZE
+#define QCA_BOOT_PARAMS_ADDR		(QCA_KERNEL_START_ADDR + 0x100)
+
 #define CONFIG_OF_COMBINE		1
 
 #define CONFIG_QCA_SMEM_BASE		0x4AB00000
+
+#ifndef __ASSEMBLY__
+#include <compiler.h>
+extern loff_t board_env_offset;
+#endif
+
+#define CONFIG_IPQ807X_ENV		1
+#define CONFIG_ENV_OFFSET		board_env_offset
+#define CONFIG_ENV_SIZE			0x2000
+#define CONFIG_ENV_SIZE_MAX		(256 << 10) /* 256 KB */
+#define CONFIG_SYS_MALLOC_LEN		(CONFIG_ENV_SIZE_MAX + (256 << 10))
+
+#define CONFIG_ENV_IS_IN_NAND		1
+
 /*
 * SPI Flash Configs
 */
@@ -141,6 +153,7 @@
 
 #define CONFIG_IPQ_NAND_NAND_INFO_IDX	0
 #define CONFIG_QPIC_NAND_NAND_INFO_IDX	0
+#define CONFIG_IPQ_SPI_NOR_INFO_IDX	2
 
 #define CONFIG_SCM_TZ64	1
 /*
