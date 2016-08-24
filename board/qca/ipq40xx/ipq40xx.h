@@ -136,5 +136,11 @@ typedef enum {
         SMEM_MAX_SIZE = SMEM_PARTITION_TABLE_OFFSET + 1,
 } smem_mem_type_t;
 
+/* Reserved-memory node names*/
+extern const char *rsvd_node;
+extern const char *del_node[];
+extern const add_node_t add_node[];
+
 unsigned int get_board_index(unsigned int machid);
+void reset_crashdump(void);
 #endif

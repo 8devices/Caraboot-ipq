@@ -16,6 +16,7 @@
 
 #include <configs/ipq807x.h>
 #include <asm/u-boot.h>
+#include <asm/arch-qcom-common/qca_common.h>
 
 /*
  * GCC-SDCC Registers
@@ -47,5 +48,12 @@ typedef enum {
         SMEM_LAST_VALID_TYPE = SMEM_PARTITION_TABLE_OFFSET,
         SMEM_MAX_SIZE = SMEM_PARTITION_TABLE_OFFSET + 1,
 } smem_mem_type_t;
+
+/* Reserved-memory node names*/
+extern const char *rsvd_node;
+extern const char *del_node[];
+extern const add_node_t add_node[];
+
+void reset_crashdump(void);
 
 #endif /* _IPQ807X_H_ */

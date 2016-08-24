@@ -31,48 +31,28 @@ DECLARE_GLOBAL_DATA_PTR;
 
 qca_mmc mmc_host;
 
+const char *rsvd_node = "/reserved-memory";
+const char *del_node[] = {"rsvd1",
+			  "rsvd2",
+			  "wifi_dump",
+			  NULL};
+const add_node_t add_node[] = {
+	{
+		.nodename = "rsvd1",
+		.val[0] = htonl(RESERVE_ADDRESS_START),
+		.val[1] = htonl(RESERVE_ADDRESS_SIZE)
+	},
+	{
+	}
+};
+
 extern loff_t board_env_offset;
 extern loff_t board_env_range;
 extern loff_t board_env_size;
 
 extern int ipq_spi_init(u16);
-extern int fdt_node_set_part_info(void *blob, int parent_offset,
-				  struct mtd_device *dev);
 extern int mmc_env_init(void);
 extern void mmc_env_relocate_spec(void);
-
-/*
- * Don't have this as a '.bss' variable. The '.bss' and '.rel.dyn'
- * sections seem to overlap.
- *
- * $ arm-none-linux-gnueabi-objdump -h u-boot
- * . . .
- *  8 .rel.dyn      00004ba8  40630b0c  40630b0c  00038b0c  2**2
- *                  CONTENTS, ALLOC, LOAD, READONLY, DATA
- *  9 .bss          0000559c  40630b0c  40630b0c  00000000  2**3
- *                  ALLOC
- * . . .
- *
- * board_early_init_f() initializes this variable, resulting in one
- * of the relocation entries present in '.rel.dyn' section getting
- * corrupted. Hence, when relocate_code()'s 'fixrel' executes, it
- * patches a wrong address, which incorrectly modifies some global
- * variable resulting in a crash.
- *
- * Moral of the story: Global variables that are written before
- * relocate_code() gets executed cannot be in '.bss'
- */
-
-#define DLOAD_DISABLE 0x1
-#define RESERVE_ADDRESS_START 0x87B00000 /*TZAPPS, SMEM and TZ Regions */
-#define RESERVE_ADDRESS_SIZE 0x500000
-
-#define SET_MAGIC 0x1
-#define CLEAR_MAGIC 0x0
-#define SCM_CMD_TZ_CONFIG_HW_FOR_RAM_DUMP_ID 0x9
-#define SCM_CMD_TZ_FORCE_DLOAD_ID 0x10
-#define BOOT_VERSION	0
-#define TZ_VERSION	1
 
 void qca_serial_init(struct ipq_serial_platdata *plat)
 {
@@ -90,10 +70,10 @@ void reset_cpu(ulong addr)
 {
 }
 
-static void reset_crashdump(void)
+void reset_crashdump(void)
 {
-        unsigned int magic_cookie = CLEAR_MAGIC;
-        unsigned int clear_info[] =
+	unsigned int magic_cookie = CLEAR_MAGIC;
+	unsigned int clear_info[] =
 		{ 1 /* Disable wdog debug */, 0 /* SDI enable*/, };
         scm_call(SCM_SVC_BOOT, SCM_CMD_TZ_CONFIG_HW_FOR_RAM_DUMP_ID,
 		 (const void *)&clear_info, sizeof(clear_info), NULL, 0);
@@ -153,233 +133,6 @@ int board_eth_init(bd_t *bis)
 {
 	return 0;
 }
-
-#ifdef CONFIG_OF_BOARD_SETUP
-struct flash_node_info {
-	const char *compat;	/* compatible string */
-	int type;		/* mtd flash type */
-	int idx;		/* flash index */
-};
-
-int ipq_fdt_fixup_spi_nor_params(void *blob)
-{
-	int nodeoff, ret;
-	qca_smem_flash_info_t sfi;
-	uint32_t val;
-
-	/* Get flash parameters from smem */
-	smem_get_boot_flash(&sfi.flash_type,
-				&sfi.flash_index,
-				&sfi.flash_chip_select,
-				&sfi.flash_block_size,
-				&sfi.flash_density);
-	nodeoff = fdt_node_offset_by_compatible(blob, -1, "n25q128a11");
-
-	if (nodeoff < 0) {
-		printf("ipq: fdt fixup unable to find compatible node\n");
-		return nodeoff;
-	}
-
-	val = cpu_to_fdt32(sfi.flash_block_size);
-	ret = fdt_setprop(blob, nodeoff, "sector-size",
-			&val, sizeof(uint32_t));
-	if (ret) {
-		printf("%s: unable to set sector size\n", __func__);
-		return -1;
-	}
-
-	val = cpu_to_fdt32(sfi.flash_density);
-	ret = fdt_setprop(blob, nodeoff, "density",
-			&val, sizeof(uint32_t));
-	if (ret) {
-		printf("%s: unable to set density\n", __func__);
-		return -1;
-	}
-
-	return 0;
-}
-
-void ipq_fdt_mem_rsvd_fixup(void *blob)
-{
-	u32 val[2], dload;
-	int nodeoff, ret;
-	dload = htonl(DLOAD_DISABLE);
-	val[0] = htonl(RESERVE_ADDRESS_START);
-	val[1] = htonl(RESERVE_ADDRESS_SIZE);
-
-	/* Reserve only the TZ and SMEM memory region and free the rest */
-	nodeoff = fdt_path_offset(blob, "/reserved-memory/rsvd2");
-	if (nodeoff < 0) {
-		debug("ipq: fdt fixup unable to find compatible node\n");
-		return;
-	}
-	ret = fdt_del_node(blob, nodeoff);
-	if (ret != 0) {
-		debug("ipq: fdt fixup unable to delete node\n");
-		return;
-	}
-	nodeoff = fdt_path_offset(blob, "/reserved-memory/wifi_dump");
-	if (nodeoff < 0) {
-		debug("ipq: fdt fixup unable to find compatible node\n");
-		return;
-	}
-	ret = fdt_del_node(blob, nodeoff);
-	if (ret != 0) {
-		debug("ipq: fdt fixup unable to delete node\n");
-		return;
-	}
-	nodeoff = fdt_path_offset(blob, "/reserved-memory/rsvd1");
-	if (nodeoff < 0) {
-		debug("ipq: fdt fixup unable to find compatible node\n");
-		return;
-	}
-	ret = fdt_setprop(blob, nodeoff, "reg", val, sizeof(val));
-	if (ret != 0) {
-		debug("ipq: fdt fixup unable to find compatible node\n");
-		return;
-	}
-
-	/* Set the dload_status to DLOAD_DISABLE */
-	nodeoff = fdt_path_offset(blob, "/soc/qca,scm_restart_reason");
-	if (nodeoff < 0) {
-		debug("ipq: fdt fixup unable to find compatible node\n");
-		return;
-	}
-	ret = fdt_setprop(blob, nodeoff, "dload_status", &dload, sizeof(dload));
-	if (ret != 0) {
-		debug("ipq: fdt fixup unable to find compatible node\n");
-		return;
-	}
-	reset_crashdump();
-}
-
-void ipq_fdt_fixup_version(void *blob)
-{
-	int nodeoff, ret;
-	char ver[OEM_VERSION_STRING_LENGTH + VERSION_STRING_LENGTH + 1];
-
-	nodeoff = fdt_node_offset_by_compatible(blob, -1, "qcom,ipq40xx");
-
-	if (nodeoff < 0) {
-		debug("ipq: fdt fixup unable to find compatible node\n");
-		return;
-	}
-
-	if (!smem_get_build_version(ver, sizeof(ver), BOOT_VERSION)) {
-		debug("BOOT Build Version:  %s\n", ver);
-		ret = fdt_setprop(blob, nodeoff, "boot_version",
-				ver, strlen(ver));
-		if (ret)
-			debug("%s: unable to set Boot version\n", __func__);
-	}
-
-	if (!smem_get_build_version(ver, sizeof(ver), TZ_VERSION)) {
-		debug("TZ Build Version:  %s\n", ver);
-		ret = fdt_setprop(blob, nodeoff, "tz_version",
-				ver, strlen(ver));
-		if (ret)
-			debug("%s: unable to set TZ version\n", __func__);
-	}
-}
-
-void ipq_fdt_fixup_mtdparts(void *blob, struct flash_node_info *ni)
-{
-	struct mtd_device *dev;
-	char *parts;
-	int noff;
-
-	parts = getenv("mtdparts");
-	if (!parts)
-		return;
-
-	if (mtdparts_init() != 0)
-		return;
-
-	for (; ni->compat; ni++) {
-		noff = fdt_node_offset_by_compatible(blob, -1, ni->compat);
-		while (noff != -FDT_ERR_NOTFOUND) {
-			dev = device_find(ni->type, ni->idx);
-			if (dev) {
-				if (fdt_node_set_part_info(blob, noff, dev))
-					return; /* return on error */
-			}
-
-			/* Jump to next flash node */
-			noff = fdt_node_offset_by_compatible(blob, noff,
-							     ni->compat);
-		}
-	}
-}
-/*
- * For newer kernel that boot with device tree (3.14+), all of memory is
- * described in the /memory node, including areas that the kernel should not be
- * touching.
- *
- * By default, u-boot will walk the dram bank info and populate the /memory
- * node; here, overwrite this behavior so we describe all of memory instead.
- */
-int ft_board_setup(void *blob, bd_t *bd)
-{
-	u64 memory_start = CONFIG_SYS_SDRAM_BASE;
-	u64 memory_size = gd->ram_size;
-	char *mtdparts = NULL;
-	char parts_str[4096];
-	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
-	struct flash_node_info nodes[] = {
-		{ "qcom,msm-nand", MTD_DEV_TYPE_NAND, 0 },
-		{ "spinand,mt29f", MTD_DEV_TYPE_NAND, 1 },
-		{ "n25q128a11", MTD_DEV_TYPE_NAND, 2 },
-		{ NULL, 0, -1 },	/* Terminator */
-	};
-
-	fdt_fixup_memory_banks(blob, &memory_start, &memory_size, 1);
-	ipq_fdt_fixup_version(blob);
-#ifndef CONFIG_QCA_APPSBL_DLOAD
-	ipq_fdt_mem_rsvd_fixup(blob);
-#endif
-	if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
-		sprintf(parts_str, "mtdparts=nand0");
-		mtdparts = parts_str;
-	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
-		/* Patch NOR block size and density for
-		 * generic probe case */
-		ipq_fdt_fixup_spi_nor_params(blob);
-		if (is_spi_nand_available() &&
-			get_which_flash_param("rootfs") == 0) {
-			sprintf(parts_str,
-				"mtdparts=nand1:0x%x@0(rootfs);spi0.0",
-				IPQ_NAND_ROOTFS_SIZE);
-		} else if (is_nor_nand_available() &&
-			get_which_flash_param("rootfs") == 0) {
-			sprintf(parts_str,
-				"mtdparts=nand0:0x%x@0(rootfs);spi0.0",
-				IPQ_NAND_ROOTFS_SIZE);
-		} else {
-			sprintf(parts_str, "mtdparts=spi0.0");
-		}
-		mtdparts = parts_str;
-	}
-
-	if (mtdparts) {
-		qca_smem_part_to_mtdparts(mtdparts);
-		if (mtdparts[0] != '\0') {
-			debug("mtdparts = %s\n", mtdparts);
-			setenv("mtdparts", mtdparts);
-		}
-
-		debug("MTDIDS: %s\n", getenv("mtdids"));
-		ipq_fdt_fixup_mtdparts(blob, nodes);
-	}
-	dcache_disable();
-	fdt_fixup_ethernet(blob);
-
-#ifdef CONFIG_QCA_MMC
-        board_mmc_deinit();
-#endif
-	return 0;
-}
-
-#endif /* CONFIG_OF_BOARD_SETUP */
 
 #ifdef CONFIG_QCA_MMC
 int board_mmc_env_init(void)

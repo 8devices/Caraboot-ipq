@@ -25,6 +25,11 @@ DECLARE_GLOBAL_DATA_PTR;
 
 qca_mmc mmc_host;
 
+const char *rsvd_node = "/reserved-memory";
+const char *del_node[] = {"uboot",
+			  "sbl"};
+const add_node_t add_node[] = {};
+
 void qca_serial_init(struct ipq_serial_platdata *plat)
 {
 	writel(1, GCC_BLSP1_UART1_APPS_CBCR);
@@ -38,6 +43,11 @@ unsigned long timer_read_counter(void)
 void reset_cpu(unsigned long a)
 {
 	while(1);
+}
+
+void reset_crashdump(void)
+{
+	return;
 }
 
 void emmc_clock_config(int mode)

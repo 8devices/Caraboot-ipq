@@ -30,6 +30,12 @@ typedef struct {
 	int dev_num;
 } qca_mmc;
 
+/* Reserved-memory node names and register value*/
+typedef struct {
+	const char *nodename;
+	u32 val[2];
+} add_node_t;
+
 int qca_mmc_init(bd_t *, qca_mmc *);
 void board_mmc_deinit(void);
 

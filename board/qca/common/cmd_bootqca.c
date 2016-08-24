@@ -365,6 +365,9 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 		return CMD_RET_FAILURE;
 	}
 
+#ifndef CONFIG_QCA_APPSBL_DLOAD
+	reset_crashdump();
+#endif
 	return CMD_RET_SUCCESS;
 }
 
@@ -545,6 +548,10 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 		dcache_disable();
 		return CMD_RET_FAILURE;
 	}
+
+#ifndef CONFIG_QCA_APPSBL_DLOAD
+	reset_crashdump();
+#endif
 	return CMD_RET_SUCCESS;
 }
 
