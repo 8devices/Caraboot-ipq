@@ -28,6 +28,8 @@
  * #define CONFIG_RUMI
  */
 
+#define CONFIG_BOARD_EARLY_INIT_F
+#define CONFIG_BOARD_LATE_INIT
 #define CONFIG_SYS_NO_FLASH
 #define CONFIG_SYS_CACHELINE_SIZE   64
 
@@ -169,6 +171,7 @@ extern loff_t board_env_offset;
 
 #define CONFIG_BOOTDELAY	2
 
+#define CONFIG_MTD_DEVICE
 #define CONFIG_CMD_MTDPARTS
 #define CONFIG_MTD_PARTITIONS
 
@@ -176,6 +179,27 @@ extern loff_t board_env_offset;
 #define CONFIG_RBTREE
 
 #define CONFIG_CMD_BOOTZ
+
+#define CONFIG_OF_BOARD_SETUP
+
+#ifdef CONFIG_OF_BOARD_SETUP
+#define DLOAD_DISABLE		0x1
+#define RESERVE_ADDRESS_START	0x4AB00000 /*TZAPPS, SMEM and TZ Regions */
+#define RESERVE_ADDRESS_SIZE	0x5500000
+
+/*
+ * Below Configs need to be updated after enabling reset_crashdump
+ * Included now to avoid build failure
+ */
+#define SET_MAGIC				0x1
+#define CLEAR_MAGIC				0x0
+#define SCM_CMD_TZ_CONFIG_HW_FOR_RAM_DUMP_ID	0x9
+#define SCM_CMD_TZ_FORCE_DLOAD_ID		0x10
+#define BOOT_VERSION				0
+#define TZ_VERSION				1
+#endif
+
+#define CONFIG_FDT_FIXUP_PARTITIONS
 
 /*
  * USB Support
