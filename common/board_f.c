@@ -59,6 +59,7 @@
 #endif
 #include <dm/root.h>
 #include <linux/compiler.h>
+#include <generated/asm-offsets.h>
 
 /*
  * Pointer to initial global data area
@@ -533,6 +534,7 @@ static int reserve_board(void)
 			gd->start_addr_sp -= 0x40;
 
 		gd->start_addr_sp -= sizeof(bd_t);
+		gd->start_addr_sp = ALIGN(gd->start_addr_sp, 16);
 		gd->bd = (bd_t *)map_sysmem(gd->start_addr_sp, sizeof(bd_t));
 		memset(gd->bd, '\0', sizeof(bd_t));
 		debug("Reserving %zu Bytes for Board Info at: %08lx\n",
@@ -552,7 +554,7 @@ static int setup_machine(void)
 
 static int reserve_global_data(void)
 {
-	gd->start_addr_sp -= sizeof(gd_t);
+	gd->start_addr_sp -= GENERATED_GBL_DATA_SIZE;
 	gd->new_gd = (gd_t *)map_sysmem(gd->start_addr_sp, sizeof(gd_t));
 	debug("Reserving %zu Bytes for Global Data at: %08lx\n",
 			sizeof(gd_t), gd->start_addr_sp);

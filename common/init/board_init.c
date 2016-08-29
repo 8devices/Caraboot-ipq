@@ -8,6 +8,7 @@
  */
 
 #include <common.h>
+#include <generated/asm-offsets.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 #define STACK_MARKER_LEN 32
@@ -40,8 +41,7 @@ ulong board_init_f_mem(ulong top)
 	/* Leave space for the stack we are running with now */
 	top -= 0x40;
 
-	top -= sizeof(struct global_data);
-	top = ALIGN(top, 16);
+	top -= GENERATED_GBL_DATA_SIZE;
 	gd_ptr = (struct global_data *)top;
 #ifdef _USE_MEMCPY
 	memset(gd_ptr, '\0', sizeof(*gd));
