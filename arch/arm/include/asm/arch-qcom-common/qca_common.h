@@ -23,6 +23,15 @@
 #include <asm/arch-ipq40xx/clk.h>
 #endif
 
+
+#ifdef CONFIG_IPQ806x
+#include <asm/arch-ipq806x/clock.h>
+#endif
+
+struct ipq_i2c_platdata {
+	int type;
+};
+
 typedef struct {
 	uint base;
 	uint clk_mode;

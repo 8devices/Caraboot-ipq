@@ -48,6 +48,21 @@
 #define ALWAYS_ON_CLK_BRANCH_ENA(i)         ((i) << 8)
 #define CLK_BRANCH_ENA(i)                   ((i) << 4)
 
+#define MSM_CLK_CTL_BASE	0x00900000
+#define REG(off)	(MSM_CLK_CTL_BASE + (off))
+
+#define BIT_POS_23	23
+#define BIT_POS_16	16
+#define BIT_POS_6 	6
+#define BIT_POS_0	0
+#define I2C_en_mask	BIT(11)
+#define I2C_clk_ns_mask	(BM(BIT_POS_23, BIT_POS_16) | BM(BIT_POS_6, BIT_POS_0))
+
+#define GSBIn_QUP_APPS_MD_REG(n)	REG(0x29C8+(0x20*((n)-1)))
+#define GSBIn_QUP_APPS_NS_REG(n)	REG(0x29CC+(0x20*((n)-1)))
+
+void i2c_clock_config(void);
+
 /* Uart specific clock settings */
 
 void uart_pll_vote_clk_enable(void);
