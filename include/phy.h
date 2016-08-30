@@ -51,6 +51,7 @@ typedef enum {
 	PHY_INTERFACE_MODE_RGMII_TXID,
 	PHY_INTERFACE_MODE_RTBI,
 	PHY_INTERFACE_MODE_XGMII,
+	PHY_INTERFACE_MODE_PSGMII,
 	PHY_INTERFACE_MODE_NONE,	/* Must be last */
 
 	PHY_INTERFACE_MODE_COUNT,
@@ -70,6 +71,7 @@ static const char *phy_interface_strings[] = {
 	[PHY_INTERFACE_MODE_RGMII_TXID]		= "rgmii-txid",
 	[PHY_INTERFACE_MODE_RTBI]		= "rtbi",
 	[PHY_INTERFACE_MODE_XGMII]		= "xgmii",
+	[PHY_INTERFACE_MODE_PSGMII]		= "psgmii",
 	[PHY_INTERFACE_MODE_NONE]		= "",
 };
 
