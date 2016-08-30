@@ -19,7 +19,8 @@
 #include "ipq40xx_ess_sw.h"
 #include "ipq40xx.h"
 
-extern board_ipq40xx_params_t *gboard_param;
+DECLARE_GLOBAL_DATA_PTR;
+
 static inline void ipq40xx_ess_sw_rd(u32 addr, u32 * data)
 {
 	*data = readl((void __iomem *)(IPQ40XX_NSS_BASE + addr));
@@ -65,7 +66,7 @@ int ipq40xx_ess_sw_init(ipq40xx_edma_board_cfg_t *cfg)
 					S17_TX_FLOW_EN |
 					S17_RX_FLOW_EN);
 
-	switch(gboard_param->machid) {
+	switch(gd->bd->bi_arch_number) {
 	case MACH_TYPE_IPQ40XX_AP_DK01_1_S1:
 	case MACH_TYPE_IPQ40XX_AP_DK01_1_C1:
 	case MACH_TYPE_IPQ40XX_AP_DK01_1_C2:
@@ -132,7 +133,7 @@ int ipq40xx_ess_sw_init(ipq40xx_edma_board_cfg_t *cfg)
 		break;
 	default:
 		printf("ess cfg not supported for %x machid\n",
-						gboard_param->machid);
+					gd->bd->bi_arch_number);
 		return -1;
 	}
 	mdelay(1);

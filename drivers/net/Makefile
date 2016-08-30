@@ -5,6 +5,8 @@
 # SPDX-License-Identifier:	GPL-2.0+
 #
 
+ccflags-y += -I$(srctree)/board/qca/ipq40xx -I$(srctree)/board/qca/common
+
 obj-$(CONFIG_PPC4xx_EMAC) += 4xx_enet.o
 obj-$(CONFIG_ALTERA_TSE) += altera_tse.o
 obj-$(CONFIG_ARMADA100_FEC) += armada100_fec.o
@@ -72,3 +74,8 @@ obj-$(CONFIG_FSL_MC_ENET) += fsl-mc/
 obj-$(CONFIG_FSL_MC_ENET) += ldpaa_eth/
 obj-$(CONFIG_FSL_MEMAC) += fm/memac_phy.o
 obj-$(CONFIG_VSC9953) += vsc9953.o
+obj-$(CONFIG_IPQ40XX_EDMA) += ipq40xx/ipq40xx_edma_eth.o
+obj-$(CONFIG_IPQ40XX_ESS) += ipq40xx/ipq40xx_ess_sw.o
+obj-$(CONFIG_QCA8075_PHY) += ipq40xx/ipq40xx_qca8075.o
+obj-$(CONFIG_QCA8033_PHY) += ipq40xx/ipq40xx_qca8033.o
+obj-$(CONFIG_IPQ40XX_MDIO) += ipq40xx/ipq40xx_mdio.o

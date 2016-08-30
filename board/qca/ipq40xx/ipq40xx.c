@@ -26,6 +26,10 @@
 #include <fdtdec.h>
 #include <asm/arch-qcom-common/uart.h>
 #include "fdt_info.h"
+#include <asm/arch-ipq40xx/ess/ipq40xx_edma.h>
+#include <phy.h>
+#include "ipq40xx_edma_eth.h"
+#include "qca_common.h"
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -53,6 +57,12 @@ extern loff_t board_env_size;
 extern int ipq_spi_init(u16);
 extern int mmc_env_init(void);
 extern void mmc_env_relocate_spec(void);
+
+extern int ipq40xx_edma_init(ipq40xx_edma_board_cfg_t *edma_cfg);
+extern int ipq40xx_qca8075_phy_init(struct ipq40xx_eth_dev *cfg);
+extern int ipq40xx_qca8033_phy_init(struct ipq40xx_eth_dev *cfg);
+extern void ipq40xx_register_switch(
+	int (*sw_init)(struct ipq40xx_eth_dev *cfg));
 
 void qca_serial_init(struct ipq_serial_platdata *plat)
 {
@@ -129,9 +139,85 @@ void board_nand_init(void)
 #endif
 }
 
+static void ipq40xx_edma_common_init(void)
+{
+	writel(1, GCC_ESS_BCR);
+	mdelay(10);
+	writel(0, GCC_ESS_BCR);
+	mdelay(100);
+
+	writel(1, GCC_MDIO_AHB_CBCR);
+	writel(MDIO_CTRL_0_DIV(0xff) |
+		MDIO_CTRL_0_MDC_MODE |
+		MDIO_CTRL_0_GPHY(0xa), MDIO_CTRL_0_REG);
+}
+
 int board_eth_init(bd_t *bis)
 {
-	return 0;
+	u32 status;
+	int gpio_node, node, len;
+	ipq40xx_edma_board_cfg_t* edma_cfg =
+		(ipq40xx_edma_board_cfg_t*)malloc(sizeof(ipq40xx_edma_board_cfg_t));
+
+	gpio_node = fdt_path_offset(gd->fdt_blob, "/ess-switch/sw_gpio");
+	if (gpio_node >= 0)
+		qca_gpio_init(gpio_node);
+
+	ipq40xx_edma_common_init();
+	switch (gd->bd->bi_arch_number) {
+	case MACH_TYPE_IPQ40XX_AP_DK01_1_S1:
+	case MACH_TYPE_IPQ40XX_AP_DK01_1_C2:
+		/* 8075 out of reset */
+		mdelay(100);
+		gpio_set_value(62, 1);
+		ipq40xx_register_switch(ipq40xx_qca8075_phy_init);
+		break;
+	case MACH_TYPE_IPQ40XX_AP_DK01_1_C1:
+		/* 8075 out of reset */
+		mdelay(100);
+		gpio_set_value(59, 1);
+		ipq40xx_register_switch(ipq40xx_qca8075_phy_init);
+		break;
+	case MACH_TYPE_IPQ40XX_AP_DK04_1_C4:
+	case MACH_TYPE_IPQ40XX_AP_DK04_1_C1:
+	case MACH_TYPE_IPQ40XX_AP_DK04_1_C3:
+		/* 8075 out of reset */
+		mdelay(100);
+		gpio_set_value(47, 1);
+		ipq40xx_register_switch(ipq40xx_qca8075_phy_init);
+		break;
+	case MACH_TYPE_IPQ40XX_AP_DK04_1_C2:
+		/* 8075 out of reset */
+		mdelay(100);
+		gpio_set_value(67, 1);
+		ipq40xx_register_switch(ipq40xx_qca8075_phy_init);
+		break;
+	case MACH_TYPE_IPQ40XX_AP_DK06_1_C1:
+		/* 8075 out of reset */
+		mdelay(100);
+		gpio_set_value(19, 1);
+		ipq40xx_register_switch(ipq40xx_qca8075_phy_init);
+		break;
+	case MACH_TYPE_IPQ40XX_AP_DK07_1_C1:
+		/* 8075 out of reset */
+		mdelay(100);
+		gpio_set_value(41, 1);
+		ipq40xx_register_switch(ipq40xx_qca8075_phy_init);
+		break;
+	default:
+		break;
+	}
+	node = fdt_path_offset(gd->fdt_blob, "/edma_cfg");
+	if (node < 0) {
+		printf("Error: edma_cfg not specified in dts");
+		return -1;
+	}
+	edma_cfg->unit = fdtdec_get_uint(gd->fdt_blob, node, "unit", 0);
+	edma_cfg->phy = fdtdec_get_uint(gd->fdt_blob, node, "phy", 0);
+	strcpy(edma_cfg->phy_name, fdt_getprop(gd->fdt_blob, node, "phy_name", &len));
+
+	status = ipq40xx_edma_init(edma_cfg);
+	return status;
 }
 
 #ifdef CONFIG_QCA_MMC
