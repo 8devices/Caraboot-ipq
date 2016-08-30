@@ -533,6 +533,7 @@ qpic_nand_onfi_save_params(struct mtd_info *mtd,
 
 	dev->page_size = param_page->data_per_pg;
 	mtd->writesize = dev->page_size;
+	mtd->writebufsize =  mtd->writesize;
 	dev->block_size = param_page->pgs_per_blk * (dev->page_size);
 	mtd->erasesize = dev->block_size;
 	dev->num_blocks = param_page->blks_per_LUN;
