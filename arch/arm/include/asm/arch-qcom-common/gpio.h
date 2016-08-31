@@ -47,6 +47,8 @@ void gpio_tlmm_config(struct qca_gpio_config *gpio_config);
 
 void gpio_set_value(unsigned int gpio, unsigned int out);
 
+int gpio_get_value(unsigned int gpio);
+
 int qca_gpio_init(int offset);
 
 #endif
