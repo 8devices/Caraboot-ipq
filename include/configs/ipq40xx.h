@@ -238,6 +238,21 @@ typedef struct {
 
 #define CONFIG_LIB_UUID
 
+/*
+ * CRASH DUMP ENABLE
+ */
+
+#define CONFIG_QCA_APPSBL_DLOAD	1
+
+#ifdef CONFIG_QCA_APPSBL_DLOAD
+#define CONFIG_CMD_TFTPPUT
+/* We will be uploading very big files */
+#undef CONFIG_NET_RETRY_COUNT
+#define CONFIG_NET_RETRY_COUNT	500
+
+#endif
+
+
 #define CONFIG_QCA_MMC  1
 
 #ifdef CONFIG_QCA_MMC

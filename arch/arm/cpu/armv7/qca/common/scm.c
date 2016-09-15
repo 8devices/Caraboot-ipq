@@ -266,7 +266,7 @@ int __qca_scm_call_armv8_32(u32 x0, u32 x1, u32 x2, u32 x3, u32 x4, u32 x5,
 
 
 /**
- * qca_scm_call() - Invoke a syscall in the secure world
+ * scm_call_64() - Invoke a syscall in the secure world
  *  <at> svc_id: service identifier
  *  <at> cmd_id: command identifier
  *  <at> fn_id: The function ID for this syscall
@@ -275,7 +275,7 @@ int __qca_scm_call_armv8_32(u32 x0, u32 x1, u32 x2, u32 x3, u32 x4, u32 x5,
  * Sends a command to the SCM and waits for the command to finish processing.
  *
  */
-static int qca_scm_call(u32 svc_id, u32 cmd_id, struct qca_scm_desc *desc)
+static int scm_call_64(u32 svc_id, u32 cmd_id, struct qca_scm_desc *desc)
 {
 	int arglen = desc->arginfo & 0xf;
 	int ret;
@@ -313,7 +313,7 @@ void __attribute__ ((noreturn)) jump_kernel64(void *kernel_entry,
 	desc.args[1] = sizeof(param);
 
 	printf("Jumping to AARCH64 kernel via monitor\n");
-	ret = qca_scm_call(SCM_ARCH64_SWITCH_ID, SCM_EL1SWITCH_CMD_ID,
+	ret = scm_call_64(SCM_ARCH64_SWITCH_ID, SCM_EL1SWITCH_CMD_ID,
 		&desc);
 
 	printf("Can't boot kernel: %d\n", ret);
@@ -321,3 +321,19 @@ void __attribute__ ((noreturn)) jump_kernel64(void *kernel_entry,
 }
 
 #endif
+
+int qca_scm_call(u32 svc_id, u32 cmd_id, void *buf, size_t len)
+{
+	struct qca_scm_desc desc = {0};
+	int ret = 0;
+
+	desc.arginfo = QCA_SCM_ARGS(2, SCM_READ_OP);
+	desc.args[0] = buf;
+	desc.args[1] = len;
+#ifdef CONFIG_SCM_TZ64
+	ret = scm_call_64(svc_id, cmd_id, &desc);
+#else
+	ret = scm_call(svc_id, cmd_id, NULL, 0, buf, len);
+#endif
+	return ret;
+}

@@ -90,11 +90,31 @@ struct scm_response {
 int scm_init(void);
 extern int scm_call(u32 svc_id, u32 cmd_id, const void *cmd_buf, size_t cmd_len,
 		void *resp_buf, size_t resp_len);
+extern int qca_scm_call(u32 svc_id, u32 cmd_id, void *buf, size_t len);
 
-#ifdef CONFIG_SCM_TZ64
+#define MAX_QCA_SCM_RETS		3
+#define MAX_QCA_SCM_ARGS		10
+#define SCM_READ_OP			1
 
-#define QCA_SCM_SIP_FNID(s, c) (((((s) & 0xFF) << 8) | \
-			((c) & 0xFF)) | 0x02000000)
+/**
+ * struct qca_scm_desc
+ *  <at> arginfo: Metadata describi`ng the arguments in args[]
+ *  <at> args: The array of arguments for the secure syscall
+ *  <at> ret: The values returned by the secure syscall
+ *  <at> extra_arg_buf: The buffer containing extra arguments
+                        (that don't fit in available registers)
+ *  <at> x5: The 4rd argument to the secure syscall or physical address of
+                extra_arg_buf
+ */
+struct qca_scm_desc {
+	u32 arginfo;
+	u32 args[MAX_QCA_SCM_ARGS];
+	u32 ret[MAX_QCA_SCM_RETS];
+
+	/* private */
+	void *extra_arg_buf;
+	u64 x5;
+};
 
 #define QCA_SCM_ARGS_IMPL(num, a, b, c, d, e, f, g, h, i, j, ...) (\
 			(((a) & 0xff) << 4) | \
@@ -111,6 +131,11 @@ extern int scm_call(u32 svc_id, u32 cmd_id, const void *cmd_buf, size_t cmd_len,
 
 #define QCA_SCM_ARGS(...) QCA_SCM_ARGS_IMPL(__VA_ARGS__, \
 			0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+
+#ifdef CONFIG_SCM_TZ64
+
+#define QCA_SCM_SIP_FNID(s, c) (((((s) & 0xFF) << 8) | \
+			((c) & 0xFF)) | 0x02000000)
 
 #define QCA_MAX_ARG_LEN	5
 
@@ -131,32 +156,8 @@ typedef struct {
 #define SCM_EL1SWITCH_CMD_ID	0xf
 
 #define SCM_NULL_OP 0
-#define	SCM_READ_OP 1
 #define	SCM_RW_OP   2
 #define	SCM_BUF_VAL 3
-
-#define MAX_QCA_SCM_RETS		3
-#define MAX_QCA_SCM_ARGS		10
-
-/**
- * struct qca_scm_desc
- *  <at> arginfo: Metadata describi`ng the arguments in args[]
- *  <at> args: The array of arguments for the secure syscall
- *  <at> ret: The values returned by the secure syscall
- *  <at> extra_arg_buf: The buffer containing extra arguments
-			(that don't fit in available registers)
- *  <at> x5: The 4rd argument to the secure syscall or physical address of
-		extra_arg_buf
- */
-struct qca_scm_desc {
-	u32 arginfo;
-	u32 args[MAX_QCA_SCM_ARGS];
-	u32 ret[MAX_QCA_SCM_RETS];
-
-	/* private */
-	void *extra_arg_buf;
-	u64 x5;
-};
 
 void __attribute__ ((noreturn)) jump_kernel64(void *kernel_entry,
 		void *fdt_addr);

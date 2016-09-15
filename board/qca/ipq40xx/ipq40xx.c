@@ -52,6 +52,12 @@ const add_node_t add_node[] = {
 	}
 };
 
+struct dumpinfo_t dumpinfo[] = {
+	{ "EBICS0.BIN", 0x80000000, 0x10000000, 0 },
+};
+
+int dump_entries = ARRAY_SIZE(dumpinfo);
+
 extern loff_t board_env_offset;
 extern loff_t board_env_range;
 extern loff_t board_env_size;

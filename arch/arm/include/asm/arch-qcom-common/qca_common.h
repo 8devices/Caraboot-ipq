@@ -39,6 +39,15 @@ typedef struct {
 int qca_mmc_init(bd_t *, qca_mmc *);
 void board_mmc_deinit(void);
 
+struct dumpinfo_t{
+	char name[16]; /* use only file name in 8.3 format */
+	uint32_t start;
+	uint32_t size;
+	int is_aligned_access; /* non zero represent 4 byte access */
+};
+extern struct dumpinfo_t dumpinfo[];
+extern int dump_entries;
+
 #define MSM_SDC1_BASE		0x7824000
 #define MMC_IDENTIFY_MODE	0
 #define MMC_DATA_TRANSFER_MODE	1

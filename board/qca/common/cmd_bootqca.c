@@ -25,7 +25,7 @@
 #include <fdtdec.h>
 #include "fdt_info.h"
 
-#define DLOAD_MAGIC_COOKIE0x10
+#define DLOAD_MAGIC_COOKIE 0x10
 #define XMK_STR(x)#x
 #define MK_STR(x)XMK_STR(x)
 
@@ -60,6 +60,55 @@ typedef struct {
 } kernel_img_info_t;
 
 kernel_img_info_t kernel_img_info;
+
+static int do_dumpqca_data(cmd_tbl_t *cmdtp, int flag, int argc,
+					char *const argv[])
+{
+	char runcmd[128];
+	char *serverip = NULL;
+	/* dump to root of TFTP server if none specified */
+	char *dumpdir;
+	uint32_t memaddr;
+	int indx;
+
+	if (argc == 2) {
+		serverip = argv[1];
+		printf("Using given serverip %s\n", serverip);
+		setenv("serverip", serverip);
+	} else {
+		serverip = getenv("serverip");
+		if (serverip != NULL) {
+			printf("Using serverip from env %s\n", serverip);
+	} else {
+			printf("\nServer ip not found, run dhcp or configure\n");
+			return CMD_RET_FAILURE;
+		}
+	}
+	if ((dumpdir = getenv("dumpdir")) != NULL) {
+		printf("Using directory %s in TFTP server\n", dumpdir);
+	} else {
+		dumpdir = "";
+		printf("Env 'dumpdir' not set. Using / dir in TFTP server\n");
+	}
+
+	for (indx = 0; indx < dump_entries; indx++) {
+		printf("\nProcessing %s:", dumpinfo[indx].name);
+		memaddr = dumpinfo[indx].start;
+
+		snprintf(runcmd, sizeof(runcmd), "tftpput 0x%x 0x%x %s/%s",
+			memaddr, dumpinfo[indx].size,
+			dumpdir,  dumpinfo[indx].name);
+
+		if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
+			return CMD_RET_FAILURE;
+		udelay(10000); /* give some delay for server */
+	}
+	return CMD_RET_SUCCESS;
+}
+
+U_BOOT_CMD(dumpipq_data, 2, 0, do_dumpqca_data,
+	"dumpipq_data crashdump collection from memory",
+	"dumpipq_data [serverip] - Crashdump collection from memory vi tftp\n");
 
 /**
  * Inovke the dump routine and in case of failure, do not stop unless the user
@@ -202,14 +251,12 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 
 #ifdef CONFIG_QCA_APPSBL_DLOAD
 
-	ret = scm_call(SCM_SVC_BOOT, SCM_SVC_RD, NULL,
-		       0, (void *)&val, sizeof(val));
+	ret = qca_scm_call(SCM_SVC_BOOT, SCM_SVC_RD, (void *)&val, sizeof(val));
 	/* check if we are in download mode */
 	if (val == DLOAD_MAGIC_COOKIE) {
 		/* clear the magic and run the dump command */
 		val = 0x0;
-		ret = scm_call(SCM_SVC_BOOT, SCM_SVC_WR,
-			       (void *)&val, sizeof(val), NULL, 0);
+		ret = qca_scm_call(SCM_SVC_BOOT, SCM_SVC_WR, (void *)&val, sizeof(val));
 		if (ret)
 			printf ("Error in reseting the Magic cookie\n");
 
@@ -338,8 +385,8 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 
 	request += sizeof(mbn_header_t);
 
-	ret = scm_call(SCM_SVC_BOOT, KERNEL_AUTH_CMD, &kernel_img_info,
-		       sizeof(kernel_img_info_t), NULL, 0);
+	ret = qca_scm_call(SCM_SVC_BOOT, KERNEL_AUTH_CMD,
+			(void *)&kernel_img_info, sizeof(kernel_img_info_t));
 
 	if (ret) {
 		printf("Kernel image authentication failed \n");
@@ -388,14 +435,12 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 	if (argc == 2 && strncmp(argv[1], "debug", 5) == 0)
 		debug = 1;
 #ifdef CONFIG_QCA_APPSBL_DLOAD
-	ret = scm_call(SCM_SVC_BOOT, SCM_SVC_RD, NULL,
-		       0, (void *)&val, sizeof(val));
+	ret = qca_scm_call(SCM_SVC_BOOT, SCM_SVC_RD, (void *)&val, sizeof(val));
 	/* check if we are in download mode */
 	if (val == DLOAD_MAGIC_COOKIE) {
 		/* clear the magic and run the dump command */
 		val = 0x0;
-		ret = scm_call(SCM_SVC_BOOT, SCM_SVC_WR,
-			       (void *)&val, sizeof(val), NULL, 0);
+		ret = qca_scm_call(SCM_SVC_BOOT, SCM_SVC_WR, (void *)&val, sizeof(val));
 		if (ret)
 			printf ("Error in reseting the Magic cookie\n");
 
@@ -568,8 +613,7 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 		return CMD_RET_FAILURE;
 	}
 
-	ret = scm_call(SCM_SVC_FUSE, QFPROM_IS_AUTHENTICATE_CMD,
-		       NULL, 0, &buf, sizeof(char));
+	ret = qca_scm_call(SCM_SVC_FUSE, QFPROM_IS_AUTHENTICATE_CMD, &buf, sizeof(char));
 
 	if (ret == 0 && buf == 1) {
 		return do_boot_signedimg(cmdtp, flag, argc, argv);
