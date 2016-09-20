@@ -47,7 +47,7 @@ typedef struct smem_pmic_type
 	unsigned pmic_die_revision;
 }pmic_type;
 
-struct qca_platfrom {
+struct qca_platform {
 	unsigned  format;
 	unsigned id;
 	unsigned version;
@@ -199,7 +199,7 @@ int smem_ptable_init(void)
 		return -ENOMSG;
 
 	if (smem_ptable.magic[0] != _SMEM_PTABLE_MAGIC_1 ||
-	    smem_ptable.magic[1] != _SMEM_PTABLE_MAGIC_2)
+		smem_ptable.magic[1] != _SMEM_PTABLE_MAGIC_2)
 		return -ENOMSG;
 
 	debug("smem ptable found: ver: %d len: %d\n",
@@ -216,9 +216,10 @@ int smem_bootconfig_info(void)
 	unsigned ret;
 
 	ret = smem_read_alloc_entry(SMEM_BOOT_DUALPARTINFO,
-				    &qca_smem_bootconfig_info, sizeof(qca_smem_bootconfig_info_t));
-	if ((ret != 0) || (qca_smem_bootconfig_info.magic
-			   != _SMEM_DUAL_BOOTINFO_MAGIC))
+			&qca_smem_bootconfig_info, sizeof(qca_smem_bootconfig_info_t));
+	if ((ret != 0) ||
+		(qca_smem_bootconfig_info.magic_start != _SMEM_DUAL_BOOTINFO_MAGIC_START) ||
+		(qca_smem_bootconfig_info.magic_end != _SMEM_DUAL_BOOTINFO_MAGIC_END))
 		return -ENOMSG;
 
 	return 0;
@@ -263,6 +264,7 @@ unsigned int get_partition_table_offset(void)
 int smem_getpart(char *part_name, uint32_t *start, uint32_t *size)
 {
 	unsigned i;
+	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 	struct smem_ptn *p;
 
 	for (i = 0; i < smem_ptable.len; i++) {
@@ -276,7 +278,17 @@ int smem_getpart(char *part_name, uint32_t *start, uint32_t *size)
 	p = &smem_ptable.parts[i];
 
 	*start = p->start;
-	*size = p->size;
+
+	if (p->size == (~0u)) {
+		/*
+		 * Partition size is 'till end of device', calculate
+		 * appropriately
+		 */
+		*size = (nand_info[nand_env_device].size /
+			 sfi->flash_block_size) - p->start;
+	} else {
+		*size = p->size;
+	}
 
 	return 0;
 }
@@ -355,17 +367,63 @@ int smem_get_build_version(char *version_name, int buf_size, int index)
 
 unsigned int smem_get_board_platform_type()
 {
-	struct qca_platfrom platform_type;
+	struct qca_platform platform_type;
+	struct smem_machid_info machid_info;
+	unsigned smem_status;
 	unsigned int machid = 0;
+
+	smem_status = smem_read_alloc_entry(SMEM_MACHID_INFO_LOCATION,
+			&machid_info, sizeof(machid_info));
+	if (!smem_status) {
+		machid = machid_info.machid;
+		return machid;
+	}
+
 	smem_read_alloc_entry(SMEM_HW_SW_BUILD_ID, &platform_type,
-		sizeof(struct qca_platfrom));
+			sizeof(struct qca_platform));
 
 	machid = ((platform_type.hw_platform << 24) |
-		((SOCINFO_VERSION_MAJOR(platform_type.platform_version)) << 16) |
-		((SOCINFO_VERSION_MINOR(platform_type.platform_version)) << 8) |
-		(platform_type.hw_platform_subtype));
+			((SOCINFO_VERSION_MAJOR(platform_type.platform_version)) << 16) |
+			((SOCINFO_VERSION_MINOR(platform_type.platform_version)) << 8) |
+			(platform_type.hw_platform_subtype));
 
 	return machid;
+}
+
+int ipq_smem_get_socinfo_cpu_type(uint32_t *cpu_type)
+{
+	int smem_status;
+	struct qca_platform platform_type;
+
+	smem_status = smem_read_alloc_entry(SMEM_HW_SW_BUILD_ID,
+			&platform_type, sizeof(struct qca_platform));
+
+	if (!smem_status) {
+		*cpu_type = platform_type.id;
+		debug("smem: socinfo - cpu type = %d\n",*cpu_type);
+	} else {
+		printf("smem: Get socinfo failed\n");
+	}
+
+	return smem_status;
+}
+
+int ipq_smem_get_socinfo_version(uint32_t *version)
+{
+	int smem_status;
+	struct qca_platform platform_type;
+
+	smem_status = smem_read_alloc_entry(SMEM_HW_SW_BUILD_ID,
+			&platform_type, sizeof(struct qca_platform));
+
+	if (!smem_status) {
+		*version = platform_type.version;
+		debug("smem: socinfo - version = 0x%x\n",*version);
+	} else {
+		printf("smem: Get socinfo failed\n");
+	}
+
+	return smem_status;
 }
 
 /*
@@ -517,16 +575,28 @@ int do_smeminfo(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 	int i;
+	uint32_t bsize;
 
-	printf(	"flash_type:		0x%x\n"
-		"flash_index:		0x%x\n"
-		"flash_chip_select:	0x%x\n"
-		"flash_block_size:	0x%x\n"
-		"flash_density:		0x%x\n"
-		"partition table offset	0x%x\n",
-			sfi->flash_type, sfi->flash_index,
-			sfi->flash_chip_select, sfi->flash_block_size,
-			sfi->flash_density, get_partition_table_offset());
+	if(sfi->flash_density != 0) {
+		printf(	"flash_type:		0x%x\n"
+			"flash_index:		0x%x\n"
+			"flash_chip_select:	0x%x\n"
+			"flash_block_size:	0x%x\n"
+			"flash_density:		0x%x\n"
+			"partition table offset	0x%x\n",
+				sfi->flash_type, sfi->flash_index,
+				sfi->flash_chip_select, sfi->flash_block_size,
+				sfi->flash_density, get_partition_table_offset());
+	} else {
+		printf(	"flash_type:		0x%x\n"
+			"flash_index:		0x%x\n"
+			"flash_chip_select:	0x%x\n"
+			"flash_block_size:	0x%x\n"
+			"partition table offset	0x%x\n",
+				sfi->flash_type, sfi->flash_index,
+				sfi->flash_chip_select, sfi->flash_block_size,
+				get_partition_table_offset());
+	}
 
 	if (smem_ptable.len > 0) {
 		printf("%-3s: " smem_ptn_name_fmt " %10s %16s %16s\n",
@@ -538,12 +608,21 @@ int do_smeminfo(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	for (i = 0; i < smem_ptable.len; i++) {
 		struct smem_ptn *p = &smem_ptable.parts[i];
 		loff_t psize;
+		bsize = get_part_block_size(p, sfi);
 
-		psize = ((loff_t)p->size) * sfi->flash_block_size;
+		if (p->size == (~0u)) {
+			/*
+			 * Partition size is 'till end of device', calculate
+			 * appropriately
+			 */
+			psize = nand_info[nand_env_device].size
+				- (((loff_t)p->start) * bsize);
+		} else {
+			psize = ((loff_t)p->size) * bsize;
+		}
 
 		printf("%3d: " smem_ptn_name_fmt " 0x%08x %#16llx %#16llx\n",
-			i, p->name, p->attr, ((loff_t)p->start) *
-			sfi->flash_block_size, psize);
+		       i, p->name, p->attr, ((loff_t)p->start) * bsize, psize);
 	}
 	return 0;
 }

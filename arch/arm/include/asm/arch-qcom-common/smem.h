@@ -123,18 +123,23 @@ struct per_part_info
 	uint32_t upgraded;
 };
 
-#define NUM_ALT_PARTITION 3
+#define NUM_ALT_PARTITION 8
 typedef struct
 {
-#define _SMEM_DUAL_BOOTINFO_MAGIC       0xA5A3A1A0
+#define _SMEM_DUAL_BOOTINFO_MAGIC_START		0xA3A2A1A0
+#define _SMEM_DUAL_BOOTINFO_MAGIC_END		0xB3B2B1B0
+
 	/* Magic number for identification when reading from flash */
-	uint32_t magic;
+	uint32_t magic_start;
 	/* upgradeinprogress indicates to attempting the upgrade */
-	uint32_t    upgradeinprogress;
+	uint32_t    age;
 	/* numaltpart indicate number of alt partitions */
 	uint32_t    numaltpart;
 
 	struct per_part_info per_part_entry[NUM_ALT_PARTITION];
+
+	uint32_t magic_end;
+
 } qca_smem_bootconfig_info_t;
 
 extern qca_smem_bootconfig_info_t qca_smem_bootconfig_info;
@@ -143,5 +148,6 @@ int smem_bootconfig_info(void);
 unsigned int get_rootfs_active_partition(void);
 unsigned int get_mibib_active_partition(void);
 void qca_smem_part_to_mtdparts(char *mtdid);
-
+int ipq_smem_get_socinfo_cpu_type(uint32_t *cpu_type);
+int ipq_smem_get_socinfo_version(uint32_t *version);
 #endif
