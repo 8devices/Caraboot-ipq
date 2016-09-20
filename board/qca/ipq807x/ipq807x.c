@@ -162,3 +162,8 @@ void board_pci_init(int id)
 
 	return ;
 }
+
+int ipq_fdt_fixup_socinfo(void *blob)
+{
+	return 0;
+}

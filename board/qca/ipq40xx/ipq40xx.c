@@ -344,3 +344,8 @@ void board_pci_deinit(void)
 	pcie_clock_disable(GCC_PCIE_AXI_S_CBCR);
 	pcie_clock_disable(GCC_PCIE_AHB_CBCR);
 }
+
+int ipq_fdt_fixup_socinfo(void *blob)
+{
+	return 0;
+}

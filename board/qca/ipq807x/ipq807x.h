@@ -59,5 +59,6 @@ extern const add_node_t add_node[];
 
 void reset_crashdump(void);
 void board_pci_init(int id);
+int ipq_fdt_fixup_socinfo(void *blob);
 
 #endif /* _IPQ807X_H_ */

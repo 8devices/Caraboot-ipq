@@ -79,12 +79,14 @@ int ipq_fdt_fixup_spi_nor_params(void *blob)
 		return -1;
 	}
 
-	val = cpu_to_fdt32(sfi.flash_density);
-	ret = fdt_setprop(blob, nodeoff, "density",
-			&val, sizeof(uint32_t));
-	if (ret) {
-		printf("fdt-fixup: unable to set density(%d)\n", ret);
-		return -1;
+	if (sfi.flash_density != 0) {
+		val = cpu_to_fdt32(sfi.flash_density);
+		ret = fdt_setprop(blob, nodeoff, "density",
+				&val, sizeof(uint32_t));
+		if (ret) {
+			printf("fdt-fixup: unable to set density(%d)\n", ret);
+			return -1;
+		}
 	}
 
 	return 0;
@@ -258,6 +260,7 @@ int ft_board_setup(void *blob, bd_t *bd)
 		debug("MTDIDS: %s\n", getenv("mtdids"));
 		ipq_fdt_fixup_mtdparts(blob, nodes);
 	}
+	ipq_fdt_fixup_socinfo(blob);
 	dcache_disable();
 	fdt_fixup_ethernet(blob);
 

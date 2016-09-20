@@ -16,6 +16,7 @@
 
 #include <configs/ipq806x.h>
 #include <asm/u-boot.h>
+#include <asm/arch-qcom-common/qca_common.h>
 
 #define GSBI4_BASE 0x16300000
 
@@ -44,5 +45,10 @@ typedef enum {
 	SMEM_MAX_SIZE = SMEM_PARTITION_TABLE_OFFSET + 1,
 } smem_mem_type_t;
 
+/* Reserved-memory node names*/
+extern const char *rsvd_node;
+extern const char *del_node[];
+extern const add_node_t add_node[];
 void reset_crashdump(void);
+int ipq_fdt_fixup_socinfo(void *blob);
 #endif /* _IPQ806X_H_ */

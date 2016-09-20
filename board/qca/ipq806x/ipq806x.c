@@ -18,12 +18,18 @@
 #include <asm/arch-qcom-common/gsbi.h>
 #include <asm/arch-qcom-common/uart.h>
 #include <asm/arch-qcom-common/gpio.h>
+#include <asm/arch-qcom-common/smem.h>
 #include "ipq806x.h"
 #include "qca_common.h"
 
 DECLARE_GLOBAL_DATA_PTR;
 
 qca_mmc mmc_host;
+
+int nand_env_device = 0;
+const char *rsvd_node = "/reserved-memory";
+const char *del_node[] = {NULL};
+const add_node_t add_node[] = {};
 
 unsigned long timer_read_counter(void)
 {
@@ -74,9 +80,32 @@ void qca_serial_init(struct ipq_serial_platdata *plat)
 			GSBI_CTRL_REG_PROTOCOL_CODE_S,
 			GSBI_CTRL_REG(GSBI4_BASE));
 
-	if(!(plat->m_value == -1) || ( plat->n_value == -1) || (plat->d_value == -1))
+	if (!(plat->m_value == -1) || ( plat->n_value == -1) || (plat->d_value == -1))
 		uart_clock_config(plat->port_id,
 				plat->m_value,
 				plat->n_value,
 				plat->d_value);
+}
+
+int ipq_fdt_fixup_socinfo(void *blob)
+{
+	uint32_t cpu_type;
+	int nodeoff, ret;
+
+	ret = ipq_smem_get_socinfo_cpu_type(&cpu_type);
+	if (ret) {
+		printf("ipq: fdt fixup cannot get socinfo\n");
+		return ret;
+	}
+	nodeoff = fdt_node_offset_by_compatible(blob, -1, "qcom,ipq8064");
+
+	if (nodeoff < 0) {
+		printf("ipq: fdt fixup cannot find compatible node\n");
+		return nodeoff;
+	}
+	ret = fdt_setprop(blob, nodeoff, "cpu_type",
+			&cpu_type, sizeof(cpu_type));
+	if (ret)
+		printf("%s: cannot set cpu type %d\n", __func__, ret);
+	return ret;
 }
