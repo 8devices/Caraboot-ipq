@@ -33,6 +33,8 @@
 #endif
 #endif /* !DO_DEPS_ONLY */
 
+#define CONFIG_IPQ806X
+
 #define CONFIG_SYS_NO_FLASH
 #define CONFIG_SYS_CACHELINE_SIZE   64
 #define CONFIG_IPQ806X_ENV
@@ -71,38 +73,41 @@
 #define CONFIG_ENV_SIZE			0x10000 /* 64 KB */
 #define CONFIG_ENV_SIZE_MAX             (256 << 10) /* 256 KB */
 #define CONFIG_SYS_MALLOC_LEN           (CONFIG_ENV_SIZE_MAX + (256 << 10))
-#define CONFIG_ENV_IS_NOWHERE 1
+#define CONFIG_ENV_IS_NOWHERE		1
 
 /*
  * select serial console configuration
  */
-#define CONFIG_CONS_INDEX               1
+#define CONFIG_CONS_INDEX		1
 
 /* allow to overwrite serial and ethaddr */
 #define CONFIG_ENV_OVERWRITE
-#define CONFIG_BAUDRATE                 115200
-#define CONFIG_SYS_BAUDRATE_TABLE       {4800, 9600, 19200, 38400, 57600,\
-								115200}
+#define CONFIG_BAUDRATE			115200
+#define CONFIG_SYS_BAUDRATE_TABLE	{4800, 9600, 19200, 38400, 57600,\
+	115200}
 
-#define V_PROMPT                        "(IPQ) # "
+#define V_PROMPT			"(IPQ) # "
 #ifndef CONFIG_SYS_PROMPT
-#define CONFIG_SYS_PROMPT               V_PROMPT
+#define CONFIG_SYS_PROMPT		V_PROMPT
 #endif
-#define CONFIG_SYS_CBSIZE               (512 * 2) /* Console I/O Buffer Size */
+#define CONFIG_SYS_CBSIZE		(512 * 2) /* Console I/O Buffer Size */
 
-#define CONFIG_SYS_INIT_SP_ADDR 	(CONFIG_SYS_TEXT_BASE - CONFIG_SYS_MALLOC_LEN - CONFIG_ENV_SIZE - GENERATED_BD_INFO_SIZE)
-#define CONFIG_SYS_MAXARGS              16
-#define CONFIG_SYS_PBSIZE               (CONFIG_SYS_CBSIZE + \
-						sizeof(CONFIG_SYS_PROMPT) + 16)
+#define CONFIG_SYS_INIT_SP_ADDR		(CONFIG_SYS_TEXT_BASE - CONFIG_SYS_MALLOC_LEN - CONFIG_ENV_SIZE - GENERATED_BD_INFO_SIZE)
+#define CONFIG_SYS_MAXARGS		16
+#define CONFIG_SYS_PBSIZE		(CONFIG_SYS_CBSIZE + \
+		sizeof(CONFIG_SYS_PROMPT) + 16)
 
-#define CONFIG_SYS_SDRAM_BASE           0x40000000
-#define CONFIG_SYS_TEXT_BASE            0x41200000
-#define CONFIG_SYS_SDRAM_SIZE           0x10000000
-#define CONFIG_MAX_RAM_BANK_SIZE        CONFIG_SYS_SDRAM_SIZE
-#define CONFIG_SYS_LOAD_ADDR            (CONFIG_SYS_SDRAM_BASE + (64 << 20))
+#define CONFIG_SYS_SDRAM_BASE		0x40000000
+#define CONFIG_SYS_TEXT_BASE		0x41200000
+#define CONFIG_SYS_SDRAM_SIZE		0x10000000
+#define CONFIG_MAX_RAM_BANK_SIZE	CONFIG_SYS_SDRAM_SIZE
+#define CONFIG_SYS_LOAD_ADDR		(CONFIG_SYS_SDRAM_BASE + (64 << 20))
 
-#define CONFIG_OF_COMBINE	 	1
+#define QCA_KERNEL_START_ADDR		CONFIG_SYS_SDRAM_BASE
+#define QCA_BOOT_PARAMS_ADDR		(QCA_KERNEL_START_ADDR + 0x100)
+#define CONFIG_QCA_SMEM_BASE		CONFIG_SYS_SDRAM_BASE + 0x1000000
 
+#define CONFIG_OF_COMBINE		1
 
 /*
  * I2C Configs
@@ -136,18 +141,15 @@
 #define CONFIG_EFI_PARTITION
 #define CONFIG_GENERIC_MMC
 #define CONFIG_ENV_IS_IN_MMC
-#define CONFIG_SYS_MMC_ENV_DEV  0
+#define CONFIG_SYS_MMC_ENV_DEV		0
 #endif
+
+#define QCA_ROOT_FS_PART_NAME		"rootfs"
 
 #ifndef __ASSEMBLY__
 #include <compiler.h>
 
-#define CONFIG_QCA_SMEM_BASE	CONFIG_SYS_SDRAM_BASE + 0x1000000
 #endif /* __ASSEMBLY__ */
-
-#ifndef CONFIG_CMD_MEMORY
-#define CONFIG_CMD_MEMORY
-#endif
 
 #ifndef CONFIG_FIT
 #define CONFIG_FIT
@@ -158,10 +160,43 @@
 /*Support for Compressed DTB image*/
 #ifdef CONFIG_FIT
 #define CONFIG_DTB_COMPRESSION
-#define CONFIG_DTB_LOAD_MAXLEN 0x100000
+#define CONFIG_DTB_LOAD_MAXLEN		0x100000
 #endif
 
-#define CONFIG_OF_LIBFDT	1
+/*NAND Flash Configs*/
+#define CONFIG_CMD_NAND
+#define CONFIG_SYS_NAND_SELF_INIT
+
+#define CONFIG_IPQ_MAX_SPI_DEVICE	1
+#define CONFIG_IPQ_MAX_NAND_DEVICE	1
+
+#define CONFIG_SYS_MAX_NAND_DEVICE	(CONFIG_IPQ_MAX_NAND_DEVICE + \
+		CONFIG_IPQ_MAX_SPI_DEVICE)
+
+#define CONFIG_IPQ_NAND_NAND_INFO_IDX	0
+#define CONFIG_IPQ_SPI_NAND_INFO_IDX	1
+
+#define CONFIG_NAND_FLASH_INFO_IDX	CONFIG_IPQ_NAND_NAND_INFO_IDX
+#define CONFIG_SPI_FLASH_INFO_IDX	CONFIG_IPQ_SPI_NAND_INFO_IDX
+
+#define CONFIG_FDT_FIXUP_PARTITIONS
+
+#define CONFIG_MTD_DEVICE
+#define CONFIG_MTD_PARTITIONS
+#define CONFIG_CMD_MTDPARTS
+
+/*for ubi*/
+#define CONFIG_CMD_UBI
+#define CONFIG_RBTREE
+
+#define CONFIG_OF_LIBFDT		1
+#define CONFIG_OF_BOARD_SETUP		1
+
+#ifdef CONFIG_OF_BOARD_SETUP
+#define DLOAD_DISABLE			1
+#define BOOT_VERSION			0
+#define TZ_VERSION			1
+#endif
 
 /* L1 cache line size is 64 bytes, L2 cache line size is 128 bytes
  * Cache flush and invalidation based on L1 cache, so the cache line
@@ -174,10 +209,16 @@
 /*#define CONFIG_IPQ_REPORT_L2ERR*/
 
 /*
-* Location in IMEM which contains the physical address of
-* 4K page allocated from kernel for storing the crashdump data
-*/
+ * Location in IMEM which contains the physical address of
+ * 4K page allocated from kernel for storing the crashdump data
+ */
 #define CONFIG_IPQ_KERNEL_CRASHDUMP_ADDRESS 0x2A03F658
+
+/*
+ * CRASH DUMP ENABLE
+ */
+
+#define CONFIG_QCA_APPSBL_DLOAD 1
 
 #define TLMM_BASE_ADDR      0x00800000
 #define GPIO_CONFIG_ADDR(x) (TLMM_BASE_ADDR + 0x1000 + (x)*0x10)

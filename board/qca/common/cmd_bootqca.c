@@ -61,6 +61,8 @@ typedef struct {
 
 kernel_img_info_t kernel_img_info;
 
+char dtb_config_name[64];
+
 static int do_dumpqca_data(cmd_tbl_t *cmdtp, int flag, int argc,
 					char *const argv[])
 {
@@ -154,9 +156,10 @@ static int set_fs_bootargs(int *fs_on_nand)
 			*fs_on_nand = 1;
 			fdt_setprop(gd->fdt_blob, 0, "nor_nand_available", fs_on_nand, sizeof(int));
 			snprintf(mtdids, sizeof(mtdids),
-				 "nand%d=nand%d,nand2=spi0.0",
+				 "nand%d=nand%d,nand%d=spi0.0",
 				 is_spi_nand_available(),
-				 is_spi_nand_available()
+				 is_spi_nand_available(),
+				CONFIG_SPI_FLASH_INFO_IDX
 				);
 
 			if (getenv("fsbootargs") == NULL)
@@ -174,7 +177,7 @@ static int set_fs_bootargs(int *fs_on_nand)
 			}
 			*fs_on_nand = 0;
 
-			snprintf(mtdids, sizeof(mtdids), "nand2=spi0.0");
+			snprintf(mtdids, sizeof(mtdids), "nand%d=spi0.0", CONFIG_SPI_FLASH_INFO_IDX);
 
 			if (getenv("fsbootargs") == NULL)
 				setenv("fsbootargs", bootargs);
@@ -221,10 +224,19 @@ int config_select(unsigned int addr, char *rcmd, int rcmd_size)
 	 * or board name based config is used.
 	 */
 
+	int soc_version = 0;
 	const char *config = fdt_getprop(gd->fdt_blob, 0, "config_name", NULL);
 
+	sprintf((char *)dtb_config_name, "%s", config);
+
+	ipq_smem_get_socinfo_version((uint32_t *)&soc_version);
+	if(SOCINFO_VERSION_MAJOR(soc_version) >= 2) {
+		sprintf((char *)dtb_config_name, "v%d.0-%s",
+			SOCINFO_VERSION_MAJOR(soc_version), dtb_config_name);
+	}
+
 	if (fit_conf_get_node((void *)addr, config) >= 0) {
-		snprintf(rcmd, rcmd_size, "bootm 0x%x#%s\n", addr, config);
+		snprintf(rcmd, rcmd_size, "bootm 0x%x#%s\n", addr, dtb_config_name);
 		return 0;
 	}
 	printf("Config not availabale\n");
@@ -284,9 +296,11 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 	/* check the smem info to see which flash used for booting */
 	if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
 		if (debug) {
-			printf("Using nand device 2\n");
+			printf("Using nand device %d\n", CONFIG_SPI_FLASH_INFO_IDX);
 		}
-		run_command("nand device 2", 0);
+		sprintf(runcmd, "nand device %d", CONFIG_SPI_FLASH_INFO_IDX);
+		run_command(runcmd, 0);
+
 	} else if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
 		if (debug) {
 			printf("Using nand device 0\n");

@@ -30,6 +30,10 @@ typedef volatile unsigned char	vu_char;
 
 #if defined(CONFIG_IPQ40XX)
 #include <../board/qca/ipq40xx/ipq40xx.h>
+
+#elif defined(CONFIG_IPQ806X)
+#include <../board/qca/ipq806x/ipq806x.h>
+
 #elif defined(CONFIG_IPQ_RUMI)
 #include <../board/qca/ipq807x/ipq807x.h>
 #endif
@@ -393,7 +397,7 @@ ulong getenv_hex(const char *varname, ulong default_val);
  * Return -1 if variable does not exist (default to true)
  */
 int getenv_yesno(const char *var);
-#if defined(CONFIG_IPQ40XX_ENV) || defined(CONFIG_IPQ807X_ENV)
+#if defined(CONFIG_IPQ40XX_ENV) || defined(CONFIG_IPQ807X_ENV) || defined(CONFIG_IPQ806X_ENV)
 extern int (*saveenv)(void);
 #else
 int	saveenv	     (void);

@@ -17,6 +17,7 @@
 #include <environment.h>
 #include <asm/arch-qcom-common/gsbi.h>
 #include <asm/arch-qcom-common/uart.h>
+#include <asm/arch-qcom-common/gpio.h>
 #include "ipq806x.h"
 #include "qca_common.h"
 
@@ -24,31 +25,14 @@ DECLARE_GLOBAL_DATA_PTR;
 
 qca_mmc mmc_host;
 
-void enable_caches(void)
-{
-	icache_enable();
-}
-
-void disable_caches(void)
-{
-	icache_disable();
-}
-
-
-int board_init(void)
-{
-	return 0;
-}
-
-int dram_init(void)
-{
-	gd->ram_size = CONFIG_SYS_SDRAM_SIZE;
-	return 0;
-}
-
 unsigned long timer_read_counter(void)
 {
 	return 0;
+}
+
+void reset_crashdump(void)
+{
+	return;
 }
 
 void reset_cpu(unsigned long a)
@@ -70,6 +54,10 @@ int board_mmc_init(bd_t *bis)
 	ret = qca_mmc_init(bis, &mmc_host);
 
 	return ret;
+}
+void board_nand_init(void)
+{
+	/* TODO: To be filled */
 }
 void qca_serial_init(struct ipq_serial_platdata *plat)
 {

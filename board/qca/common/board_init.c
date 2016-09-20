@@ -54,10 +54,6 @@ int board_init(void)
 				  &sfi->flash_chip_select,
 				  &sfi->flash_block_size,
 				  &sfi->flash_density);
-	if (ret < 0) {
-		printf("cdp: get boot flash failed\n");
-		return ret;
-	}
 
 	/*
 	 * Should be inited, before env_relocate() is called,
@@ -70,12 +66,14 @@ int board_init(void)
 			return ret;
 		}
 	}
+
+#ifndef CONFIG_ENV_IS_NOWHERE
 	switch (sfi->flash_type) {
 	case SMEM_BOOT_NAND_FLASH:
-		nand_env_device = CONFIG_QPIC_NAND_NAND_INFO_IDX;
+		nand_env_device = CONFIG_NAND_FLASH_INFO_IDX;
 		break;
 	case SMEM_BOOT_SPI_FLASH:
-		nand_env_device = CONFIG_IPQ_SPI_NOR_INFO_IDX;
+		nand_env_device = CONFIG_SPI_FLASH_INFO_IDX;
 		break;
 	case SMEM_BOOT_MMC_FLASH:
 		break;
@@ -125,6 +123,8 @@ int board_init(void)
 		env_name_spec = mmc_env_name_spec;
 #endif
 	}
+
+#endif
 	return 0;
 }
 

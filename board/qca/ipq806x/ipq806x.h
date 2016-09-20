@@ -19,6 +19,8 @@
 
 #define GSBI4_BASE 0x16300000
 
+#define KERNEL_AUTH_CMD                 0x7
+
 typedef enum {
 	SMEM_SPINLOCK_ARRAY = 7,
 	SMEM_AARM_PARTITION_TABLE = 9,
@@ -42,4 +44,5 @@ typedef enum {
 	SMEM_MAX_SIZE = SMEM_PARTITION_TABLE_OFFSET + 1,
 } smem_mem_type_t;
 
+void reset_crashdump(void);
 #endif /* _IPQ806X_H_ */

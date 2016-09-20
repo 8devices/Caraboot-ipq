@@ -26,6 +26,9 @@
 #endif
 #define MAX_CONF_NAME		5
 #define GCC_BLSP1_UART1_APPS_CBCR       0x0180203c
+
+#define KERNEL_AUTH_CMD		0x13
+
 unsigned int smem_get_board_machtype(void);
 extern qca_mmc mmc_host;
 
