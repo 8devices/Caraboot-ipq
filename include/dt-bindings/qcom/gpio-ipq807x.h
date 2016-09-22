@@ -59,4 +59,18 @@
 #define GPIO_OE_DISABLE	0
 #define GPIO_OE_ENABLE	1
 
+/* GPIO VM */
+#define GPIO_VM_ENABLE	1
+#define GPIO_VM_DISABLE	0
+
+/* GPIO OD */
+#define GPIO_OD_ENABLE	1
+#define GPIO_OD_DISABLE	0
+
+/* GPIO PULLUP RES */
+#define GPIO_PULL_RES0	0
+#define GPIO_PULL_RES1	1
+#define GPIO_PULL_RES2	2
+#define GPIO_PULL_RES3	3
+
 #endif

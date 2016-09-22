@@ -215,6 +215,13 @@ extern loff_t board_env_offset;
 #define CONFIG_USB_MAX_CONTROLLER_COUNT         2
 #endif
 
+#define CONFIG_PCI_IPQ
+#define PCI_MAX_DEVICES	2
+#ifdef CONFIG_PCI_IPQ
+#define CONFIG_PCI
+#define CONFIG_CMD_PCI
+#define CONFIG_PCI_SCAN_SHOW
+#endif
 /* L1 cache line size is 64 bytes, L2 cache line size is 128 bytes
  * Cache flush and invalidation based on L1 cache, so the cache line
  * size is configured to 64 */

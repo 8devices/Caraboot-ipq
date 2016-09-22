@@ -55,5 +55,6 @@ extern const char *del_node[];
 extern const add_node_t add_node[];
 
 void reset_crashdump(void);
+void board_pci_init(int id);
 
 #endif /* _IPQ807X_H_ */
