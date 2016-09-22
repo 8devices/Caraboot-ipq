@@ -68,5 +68,20 @@
 		#size-cells = <0>;
 		reg = <0x78b7000 0x600>;
 	};
+
+	pci@40000000 {
+		compatible = "qcom,ipq40xx-pcie";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0x40000000 0xf1d
+			0x80000 0x2000
+			0x40000f20 0xa8
+			0x40300000 0xd00000
+			0x40100000 0x100000
+			0x0181D010 0x4>;
+		reg-names = "pci_dbi", "parf", "elbi", "axi_bars",
+				"axi_conf", "pci_rst";
+		perst_gpio = <38>;
+	};
 };
 

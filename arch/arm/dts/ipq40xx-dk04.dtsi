@@ -22,6 +22,7 @@
 		xhci0 = "/xhci@8a00000";
 		xhci1 = "/xhci@6000000";
 		i2c0 = "/i2c@78b7000";
+		pci0 = "/pci@40000000";
 	};
 
 	serial@78af000 {
@@ -413,6 +414,46 @@
 		/* Based on the enum for PSGMII phy interface from include/phy.h */
 		phy = <13>;
 		phy_name = "IPQ MDIO0";
+	};
+
+	pci@40000000 {
+		pci_gpio {
+			gpio1 {
+				gpio = <38>;
+				func = <0>;
+				out = <GPIO_OUT_HIGH>;
+				pull = <GPIO_PULL_DOWN>;
+				drvstr = <GPIO_2MA>;
+				oe = <GPIO_OE_ENABLE>;
+				vm = <GPIO_VM_ENABLE>;
+				od_en = <GPIO_OD_DISABLE>;
+				pu_res = <GPIO_PULL_RES2>;
+			};
+
+			gpio2 {
+				gpio = <40>;
+				func = <0>;
+				out = <GPIO_OUT_LOW>;
+				pull = <GPIO_PULL_UP>;
+				drvstr = <GPIO_2MA>;
+				oe = <GPIO_OE_DISABLE>;
+				vm = <GPIO_VM_ENABLE>;
+				od_en = <GPIO_OD_DISABLE>;
+				pu_res = <GPIO_PULL_RES2>;
+			};
+
+			gpio3 {
+				gpio = <39>;
+				func = <0>;
+				out = <GPIO_OUT_HIGH>;
+				pull = <GPIO_PULL_UP>;
+				drvstr = <GPIO_2MA>;
+				oe = <GPIO_OE_ENABLE>;
+				vm = <GPIO_VM_ENABLE>;
+				od_en = <GPIO_OD_DISABLE>;
+				pu_res = <GPIO_PULL_RES2>;
+			};
+		};
 	};
 };
 
