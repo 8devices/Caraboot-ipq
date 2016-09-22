@@ -249,4 +249,11 @@ typedef struct {
 #define CONFIG_SYS_MMC_ENV_DEV  0
 #endif
 
+#define CONFIG_PCI_IPQ
+#define PCI_MAX_DEVICES	1
+#ifdef CONFIG_PCI_IPQ
+#define CONFIG_PCI
+#define CONFIG_CMD_PCI
+#define CONFIG_PCI_SCAN_SHOW
+#endif
 #endif /* _IPQ40XX_H */

@@ -417,6 +417,7 @@
 	};
 
 	pci@40000000 {
+		status = "ok";
 		pci_gpio {
 			gpio1 {
 				gpio = <38>;

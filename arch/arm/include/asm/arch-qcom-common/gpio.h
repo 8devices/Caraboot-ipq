@@ -53,4 +53,8 @@ int gpio_get_value(unsigned int gpio);
 
 int qca_gpio_init(int offset);
 
+/* GPIO TLMM: Output value */
+#define GPIO_OUT_LOW	0
+#define GPIO_OUT_HIGH	1
+
 #endif

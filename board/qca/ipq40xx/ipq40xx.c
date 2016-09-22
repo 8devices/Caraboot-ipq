@@ -305,12 +305,13 @@ static void pcie_clock_init()
 
 }
 
-void board_pci_init()
+void board_pci_init(int id)
 {
-	int i;
 	int node, gpio_node;
+	char name[16];
 
-	node = fdt_path_offset(gd->fdt_blob, "pci0");
+	sprintf(name, "pci%d", id);
+	node = fdt_path_offset(gd->fdt_blob, name);
 	if (node < 0) {
 		printf("Could not find PCI in device tree\n");
 		return;
