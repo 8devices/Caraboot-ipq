@@ -19,6 +19,7 @@
 #include <nand.h>
 #include <part.h>
 #include <asm/arch-qcom-common/smem.h>
+#include <asm/arch-ipq40xx/clk.h>
 #include <asm/arch-qcom-common/scm.h>
 #include <asm/arch-qcom-common/qpic_nand.h>
 #include <asm/arch-qcom-common/gpio.h>
@@ -292,35 +293,9 @@ void board_mmc_deinit(void)
 }
 #endif
 
-#ifdef CONFIG_IPQ40XX_PCI
-void pcie_config_gpio(pcie_params_t *cfg, int enable)
-{
-	int i;
-	gpio_func_data_t *gpio_data;
-	gpio_data = cfg->pci_gpio;
 
-	for (i = 0; i < cfg->pci_gpio_count; i++) {
-		if (enable)
-			gpio_tlmm_config(gpio_data->gpio, gpio_data->func,
-					gpio_data->out, gpio_data->pull,
-					gpio_data->drvstr, gpio_data->oe,
-					gpio_data->gpio_vm, gpio_data->gpio_od_en,
-					gpio_data->gpio_pu_res);
-		else
-			gpio_tlmm_config(gpio_data->gpio, gpio_data->func,
-					GPIO_OUT_LOW, GPIO_NO_PULL,
-					GPIO_2MA, GPIO_OE_DISABLE,
-					GPIO_VM_DISABLE, GPIO_OD_DISABLE,
-					gpio_data->gpio_pu_res);
-		gpio_data++;
-	}
-}
-
-void pcie_controller_reset(int id)
+static void pcie_clock_init()
 {
-	uint32_t val;
-	pcie_params_t *cfg;
-	cfg = &gboard_param->pcie_cfg[id];
 
 	/* Enable PCIE CLKS */
 	pcie_clock_enable(GCC_PCIE_SLEEP_CBCR);
@@ -328,215 +303,27 @@ void pcie_controller_reset(int id)
 	pcie_clock_enable(GCC_PCIE_AXI_S_CBCR);
 	pcie_clock_enable(GCC_PCIE_AHB_CBCR);
 
-	/* Assert cc_pcie20_core_ares */
-	writel(PCIE_RST_CTRL_PIPE_ARES, cfg->pcie_rst);
-
-	/* Assert cc_pcie20_core_sticky_area */
-	val = readl(cfg->pcie_rst);
-	val |= PCIE_RST_CTRL_PIPE_STICKY_ARES;
-	writel(val, cfg->pcie_rst);
-
-	/* Assert cc_pcie20_phy_ahb_ares */
-	val = readl(cfg->pcie_rst);
-	val |= PCIE_RST_CTRL_PIPE_PHY_AHB_ARES;
-	writel(val, cfg->pcie_rst);
-
-	gpio_set_value(PCIE_RST_GPIO, GPIO_OUT_LOW);
-
-	/* Assert cc_pcie20_mstr_axi_ares */
-	val = readl(cfg->pcie_rst);
-	val |= PCIE_RST_CTRL_AXI_M_ARES;
-	writel(val, cfg->pcie_rst);
-
-	/* Assert cc_pcie20_mstr_sticky_ares */
-	val = readl(cfg->pcie_rst);
-	val |= PCIE_RST_CTRL_AXI_M_STICKY_ARES;
-	writel(val, cfg->pcie_rst);
-
-	/* Assert cc_pcie20_slv_axi_ares */
-	val = readl(cfg->pcie_rst);
-	val |= PCIE_RST_CTRL_AXI_S_ARES;
-	writel(val, cfg->pcie_rst);
-
-	/* Assert cc_pcie20_ahb_ares;  */
-	val = readl(cfg->pcie_rst);
-	val |= PCIE_RST_CTRL_AHB_ARES;
-	writel(val, cfg->pcie_rst);
-
-	/* DeAssert cc_pcie20_phy_ahb_ares  */
-	val = readl(cfg->pcie_rst);
-	val &= ~(PCIE_RST_CTRL_AHB_ARES);
-	writel(val, cfg->pcie_rst);
-
-	/* DeAssert cc_pcie20_pciephy_phy_ares*/
-	val = readl(cfg->pcie_rst);
-	val &= ~(PCIE_RST_CTRL_PIPE_ARES);
-	writel(val, cfg->pcie_rst);
-
-	/* DeAssert cc_pcie20_core_sticky_ares */
-	val = readl(cfg->pcie_rst);
-	val &= ~(PCIE_RST_CTRL_PIPE_STICKY_ARES);
-	writel(val, cfg->pcie_rst);
-
-	mdelay(5);
-
-	gpio_set_value(PCIE_RST_GPIO, GPIO_OUT_HIGH);
-
-	/* DeAssert cc_pcie20_mstr_axi_ares */
-	val = readl(cfg->pcie_rst);
-	val &= ~(PCIE_RST_CTRL_AXI_M_ARES);
-	writel(val, cfg->pcie_rst);
-
-	/* DeAssert cc_pcie20_mstr_axi_ares */
-	val = readl(cfg->pcie_rst);
-	val &= ~(PCIE_RST_CTRL_AXI_M_STICKY_ARES);
-	writel(val, cfg->pcie_rst);
-
-	/* DeAssert cc_pcie20_slv_axi_ares */
-	val = readl(cfg->pcie_rst);
-	val &= ~(PCIE_RST_CTRL_AXI_S_ARES);
-	writel(val, cfg->pcie_rst);
-
-	/* DeAssert cc_pcie20_ahb_ares */
-	val = readl(cfg->pcie_rst);
-	val &= ~(PCIE_RST_CTRL_PIPE_PHY_AHB_ARES);
-	writel(val, cfg->pcie_rst);
-}
-
-static void ipq_pcie_config_controller(int id)
-{
-	pcie_params_t 	*cfg;
-	cfg = &gboard_param->pcie_cfg[id];
-
-	/*
-	 * program and enable address translation region 0 (device config
-	 * address space); region type config;
-	 * axi config address range to device config address range
-	 */
-	writel(0, cfg->pcie20 + PCIE20_PLR_IATU_VIEWPORT);
-
-	writel(4, cfg->pcie20 + PCIE20_PLR_IATU_CTRL1);
-	writel((1 << 31), cfg->pcie20 + PCIE20_PLR_IATU_CTRL2);
-	writel(cfg->axi_conf , cfg->pcie20 + PCIE20_PLR_IATU_LBAR);
-	writel(0, cfg->pcie20 + PCIE20_PLR_IATU_UBAR);
-	writel((cfg->axi_conf + PCIE_AXI_CONF_SIZE - 1),
-				cfg->pcie20 + PCIE20_PLR_IATU_LAR);
-	writel(MSM_PCIE_DEV_CFG_ADDR,
-				cfg->pcie20 + PCIE20_PLR_IATU_LTAR);
-	writel(0, cfg->pcie20 + PCIE20_PLR_IATU_UTAR);
-
-	/*
-	 * program and enable address translation region 2 (device resource
-	 * address space); region type memory;
-	 * axi device bar address range to device bar address range
-	 */
-	writel(2, cfg->pcie20 + PCIE20_PLR_IATU_VIEWPORT);
-
-	writel(0, cfg->pcie20 + PCIE20_PLR_IATU_CTRL1);
-	writel((1 << 31), cfg->pcie20 + PCIE20_PLR_IATU_CTRL2);
-	writel(cfg->axi_bar_start, cfg->pcie20 + PCIE20_PLR_IATU_LBAR);
-	writel(0, cfg->pcie20 + PCIE20_PLR_IATU_UBAR);
-	writel((cfg->axi_bar_start + cfg->axi_bar_size
-		- PCIE_AXI_CONF_SIZE - 1), cfg->pcie20 + PCIE20_PLR_IATU_LAR);
-	writel(cfg->axi_bar_start, cfg->pcie20 + PCIE20_PLR_IATU_LTAR);
-	writel(0, cfg->pcie20 + PCIE20_PLR_IATU_UTAR);
-
-	/* 1K PCIE buffer setting */
-	writel(0x3, cfg->pcie20 + PCIE20_AXI_MSTR_RESP_COMP_CTRL0);
-	writel(0x1, cfg->pcie20 + PCIE20_AXI_MSTR_RESP_COMP_CTRL1);
-}
-
-void pcie_linkup(int id)
-{
-	int j, val;
-	pcie_params_t 		*cfg;
-	cfg = &gboard_param->pcie_cfg[id];
-
-	pcie_clock_enable(GCC_PCIE_SLEEP_CBCR);
-	pcie_clock_enable(GCC_PCIE_AXI_M_CBCR);
-	pcie_clock_enable(GCC_PCIE_AXI_S_CBCR);
-	pcie_clock_enable(GCC_PCIE_AHB_CBCR);
-
-	pcie_controller_reset(id);
-	mdelay(200);
-
-	writel(SLV_ADDR_SPACE_SZ, cfg->parf + PARF_SLV_ADDR_SPACE_SIZE);
-	mdelay(100);
-
-	writel(0x0, cfg->pcie20 + PCIE_0_PORT_FORCE_REG);
-	val = (L1_ENTRANCE_LATENCY(3) |
-		L0_ENTRANCE_LATENCY(3) |
-		COMMON_CLK_N_FTS(128) |
-		ACK_N_FTS(128));
-	writel(val, cfg->pcie20 + PCIE_0_ACK_F_ASPM_CTRL_REG);
-
-	val = (FAST_TRAINING_SEQ(128) |
-		NUM_OF_LANES(2) |
-		DIRECT_SPEED_CHANGE);
-	writel(val, cfg->pcie20 + PCIE_0_GEN2_CTRL_REG);
-	writel(PCI_TYPE0_BUS_MASTER_EN,
-		cfg->pcie20 + PCIE_0_TYPE0_STATUS_COMMAND_REG_1);
-
-	writel(DBI_RO_WR_EN, cfg->pcie20 + PCIE_0_MISC_CONTROL_1_REG);
-	writel(0x0002FD7F, cfg->pcie20 + 0x84);
-
-	val = (PCIE_CAP_ASPM_OPT_COMPLIANCE |
-		PCIE_CAP_LINK_BW_NOT_CAP |
-		PCIE_CAP_DLL_ACTIVE_REP_CAP |
-		PCIE_CAP_L1_EXIT_LATENCY(4) |
-		PCIE_CAP_L0S_EXIT_LATENCY(4) |
-		PCIE_CAP_MAX_LINK_WIDTH(1) |
-		PCIE_CAP_MAX_LINK_SPEED(1));
-	writel(val, cfg->pcie20 + PCIE_0_LINK_CAPABILITIES_REG);
-
-	writel(PCIE_CAP_CPL_TIMEOUT_DISABLE,
-		cfg->pcie20 + PCIE_0_DEVICE_CONTROL2_DEVICE_STATUS2_REG);
-
-	writel(0x10110008, cfg->pcie20 + PCIE_0_TYPE0_LINK_CONTROL_LINK_STATUS_REG_1);
-
-	writel(LTSSM_EN, cfg->parf + PCIE_0_PCIE20_PARF_LTSSM);
-
-	mdelay(200);
-
-	for (j = 0; j < 400; j++) {
-		val = readl(cfg->pcie20 + PCIE_0_TYPE0_LINK_CONTROL_LINK_STATUS_REG_1);
-		if (val & (1 << 29)) {
-			printf("PCI%d Link Intialized\n", id);
-			cfg->linkup = 1;
-			break;
-		}
-		udelay(100);
-	}
-	ipq_pcie_config_controller(id);
 }
 
 void board_pci_init()
 {
 	int i;
-	pcie_params_t *cfg;
+	int node, gpio_node;
 
-	for (i = 0; i < PCI_MAX_DEVICES; i++) {
-		cfg = &gboard_param->pcie_cfg[i];
-		pcie_config_gpio(cfg, ENABLE);
-
-		pcie_controller_reset(i);
-
-		pcie_linkup(i);
+	node = fdt_path_offset(gd->fdt_blob, "pci0");
+	if (node < 0) {
+		printf("Could not find PCI in device tree\n");
+		return;
 	}
+	gpio_node = fdt_subnode_offset(gd->fdt_blob, node, "pci_gpio");
+	if (gpio_node >= 0)
+		qca_gpio_init(gpio_node);
+
+	pcie_clock_init();
 }
 
 void board_pci_deinit(void)
 {
-	int i;
-	pcie_params_t 		*cfg;
-
-	for (i = 0; i < PCI_MAX_DEVICES; i++) {
-		cfg = &gboard_param->pcie_cfg[i];
-
-		writel(1, cfg->parf + PCIE20_PARF_PHY_CTRL);
-
-		pcie_config_gpio(cfg, DISABLE);
-	}
 
 	/* Disable PCIE CLKS */
 	pcie_clock_disable(GCC_PCIE_SLEEP_CBCR);
@@ -544,4 +331,3 @@ void board_pci_deinit(void)
 	pcie_clock_disable(GCC_PCIE_AXI_S_CBCR);
 	pcie_clock_disable(GCC_PCIE_AHB_CBCR);
 }
-#endif /* CONFIG_IPQ40XX_PCI */

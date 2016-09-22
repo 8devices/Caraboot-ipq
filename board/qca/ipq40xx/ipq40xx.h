@@ -70,7 +70,6 @@ typedef struct {
 #endif
 
 #ifdef CONFIG_IPQ40XX_PCI
-#define PCI_MAX_DEVICES	1
 
 typedef struct {
 	gpio_func_data_t	*pci_gpio;
@@ -85,8 +84,8 @@ typedef struct {
 	int			linkup;
 } pcie_params_t;
 
-void board_pci_init(void);
 #endif /* CONFIG_IPQ40XX_PCI */
+void board_pci_init(void);
 
 /* Board specific parameters */
 typedef struct {
