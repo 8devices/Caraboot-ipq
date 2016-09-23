@@ -45,5 +45,12 @@
 	spi {
 		status = "ok";
 	};
+
+	edma_cfg {
+		unit = <0>;
+		/* Based on the enum for PSGMII phy interface from include/phy.h */
+		phy = <13>;
+		phy_name = "IPQ MDIO0";
+	};
 };
 
