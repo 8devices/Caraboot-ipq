@@ -191,6 +191,10 @@ typedef struct {
 #define CONFIG_SF_DEFAULT_SPEED	(48 * 1000 * 1000)
 #define CONFIG_SPI_FLASH_BAR    1
 
+#define CONFIG_ENV_OVERWRITE
+#define CONFIG_CMD_PING
+#define CONFIG_CMD_DHCP
+#define CONFIG_IPQ40XX_ESS	1
 #define CONFIG_IPQ40XX_EDMA     1
 #define CONFIG_NET_RETRY_COUNT          5
 #define CONFIG_SYS_RX_ETH_BUFFER        16

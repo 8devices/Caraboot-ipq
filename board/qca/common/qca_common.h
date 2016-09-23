@@ -25,6 +25,9 @@ typedef struct {
 int qca_mmc_init(bd_t *, qca_mmc *);
 void board_mmc_deinit(void);
 
+int get_eth_mac_address(uchar *enetaddr, uint no_of_macs);
+void set_ethmac_addr(void);
+
 #define MSM_SDC1_BASE		0x7824000
 #define MMC_IDENTIFY_MODE	0
 #define MMC_DATA_TRANSFER_MODE	1

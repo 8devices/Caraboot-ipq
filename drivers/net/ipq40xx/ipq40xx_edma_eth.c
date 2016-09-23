@@ -22,6 +22,7 @@
 #include <asm/arch-ipq40xx/ess/ipq40xx_edma.h>
 #include "ipq40xx_edma_eth.h"
 #include "ipq40xx.h"
+#include "qca_common.h"
 #ifdef DEBUG
 #define debugf(fmt, args...) printf(fmt, ##args);
 #else
@@ -832,8 +833,8 @@ int ipq40xx_edma_init(ipq40xx_edma_board_cfg_t *edma_cfg)
 	memset(c_info, 0, (sizeof(c_info) * IPQ40XX_EDMA_DEV));
 	memset(enet_addr, 0, sizeof(enet_addr));
 	/* Getting the MAC address from ART partition */
-	 ret = -1;
-	/* ret = get_eth_mac_address(enet_addr, IPQ40XX_EDMA_DEV); */
+	ret = get_eth_mac_address(enet_addr, IPQ40XX_EDMA_DEV);
+
 	/*
 	 * Register EDMA as single ethernet
 	 * interface.

@@ -31,6 +31,8 @@
 #ifndef GPIO_H
 #define GPIO_H
 
+#define GPIO_OUT	(1 << 1)
+
 struct qca_gpio_config {
 	unsigned int gpio;
 	unsigned int func;
