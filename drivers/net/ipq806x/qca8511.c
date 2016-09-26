@@ -17,6 +17,7 @@
  * All definitions in this file are operating system independent!
  */
 
+#include <common.h>
 #include <miiphy.h>
 #include <asm/arch-ipq806x/athrs17_phy.h>
 #include <asm/arch-ipq806x/qca8511.h>

@@ -272,9 +272,9 @@ int do_ar8xxx_dump(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]) {
 		struct athrs17_regmap *section = &regmap[i];
 
 		for (reg = section->start; reg <= section->end; reg += sizeof(uint32_t)) {
-			ipq_gmac_board_cfg_t *gmac_tmp_cfg = gboard_param->gmac_cfg;
+			ipq_gmac_board_cfg_t *gmac_tmp_cfg = gmac_cfg;
 			uint32_t val = athrs17_reg_read(gmac_tmp_cfg, reg);
-			printf("%03zu: %08zu\n", reg, val);
+			printf("%03zx: %08zx\n", reg, val);
 		}
 	}
 

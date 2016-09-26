@@ -79,3 +79,6 @@ obj-$(CONFIG_IPQ40XX_ESS) += ipq40xx/ipq40xx_ess_sw.o
 obj-$(CONFIG_QCA8075_PHY) += ipq40xx/ipq40xx_qca8075.o
 obj-$(CONFIG_QCA8033_PHY) += ipq40xx/ipq40xx_qca8033.o
 obj-$(CONFIG_IPQ40XX_MDIO) += ipq40xx/ipq40xx_mdio.o
+obj-$(CONFIG_IPQ_SNPS_GMAC) += ipq806x/ipq_gmac_eth.o
+obj-$(CONFIG_IPQ_SWITCH_ATHRS17) += ipq806x/athrs17_phy.o
+obj-$(CONFIG_IPQ_SWITCH_QCA8511) += ipq806x/qca8511.o

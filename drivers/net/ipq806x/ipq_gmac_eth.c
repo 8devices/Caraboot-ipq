@@ -15,17 +15,15 @@
 #include <net.h>
 #include <asm-generic/errno.h>
 #include <asm/io.h>
-#include <asm/arch-ipq806x/msm_ipq806x_gmac.h>
-#include <asm/arch-ipq806x/gpio.h>
 #include <malloc.h>
 #include <phy.h>
 #include <miiphy.h>
 #include <linux/compat.h>
-#include <asm/arch-ipq806x/nss/clock.h>
-#include <asm/arch-ipq806x/nss/nss_reg.h>
-#include <asm/arch-ipq806x/gpio.h>
-#include <asm/arch-ipq806x/clock.h>
+#include <fdtdec.h>
+#include <asm/arch-ipq806x/clk.h>
 #include <asm/arch-ipq806x/ipq_gmac.h>
+#include <asm/arch-ipq806x/msm_ipq806x_gmac.h>
+#include <asm/arch-qcom-common/gpio.h>
 
 #define ipq_info	printf
 #define ipq_dbg		printf
@@ -33,12 +31,19 @@
 #define DESC_FLUSH_SIZE	(((DESC_SIZE + (CONFIG_SYS_CACHELINE_SIZE - 1)) \
 			/ CONFIG_SYS_CACHELINE_SIZE) * \
 			(CONFIG_SYS_CACHELINE_SIZE))
-static struct ipq_eth_dev *ipq_gmac_macs[IPQ_GMAC_NMACS];
+
+uchar ipq_def_enetaddr[6] = {0x00, 0x03, 0x7F, 0xAB, 0xBD, 0xDA};
+
+static struct ipq_eth_dev *ipq_gmac_macs[CONFIG_IPQ_NO_MACS];
 static int (*ipq_switch_init)(ipq_gmac_board_cfg_t *cfg);
 static struct ipq_forced_mode get_params;
-static struct bitbang_nodes *bb_nodes[IPQ_GMAC_NMACS];
+static struct bitbang_nodes *bb_nodes[CONFIG_IPQ_NO_MACS];
 static void ipq_gmac_mii_clk_init(struct ipq_eth_dev *priv, uint clk_div,
 				ipq_gmac_board_cfg_t *gmac_cfg);
+
+extern ipq_gmac_board_cfg_t gmac_cfg[];
+
+DECLARE_GLOBAL_DATA_PTR;
 
 void ipq_register_switch(int(*sw_init)(ipq_gmac_board_cfg_t *cfg))
 {
@@ -244,7 +249,7 @@ static int ipq_gmac_rx_desc_setup(struct ipq_eth_dev  *priv)
 		rxdesc = priv->desc_rx[i];
 		rxdesc->length |= ((ETH_MAX_FRAME_LEN << DescSize1Shift) &
 					DescSize1Mask);
-		rxdesc->buffer1 = virt_to_phys(NetRxPackets[i]);
+		rxdesc->buffer1 = virt_to_phys(net_rx_packets[i]);
 		rxdesc->data1 = (unsigned long)priv->desc_rx[(i + 1) %
 				NO_OF_RX_DESC];
 
@@ -540,11 +545,10 @@ static int ipq_eth_recv(struct eth_device *dev)
 
 
 		invalidate_dcache_range(
-			(unsigned long)(NetRxPackets[priv->next_rx]),
-			(unsigned long)(NetRxPackets[priv->next_rx]) +
+			(unsigned long)(net_rx_packets[priv->next_rx]),
+			(unsigned long)(net_rx_packets[priv->next_rx]) +
 			PKTSIZE_ALIGN);
-
-		NetReceive(NetRxPackets[priv->next_rx], length - 4);
+		net_process_received_packet(net_rx_packets[priv->next_rx], length - 4);
 
 
 		rxdesc->length = ((ETH_MAX_FRAME_LEN << DescSize1Shift) &
@@ -554,7 +558,7 @@ static int ipq_eth_recv(struct eth_device *dev)
 					RxDescEndOfRing : 0;
 		rxdesc->length |= RxDescChain;
 
-		rxdesc->buffer1 = virt_to_phys(NetRxPackets[priv->next_rx]);
+		rxdesc->buffer1 = virt_to_phys(net_rx_packets[priv->next_rx]);
 
 		priv->next_rx = (priv->next_rx + 1) % NO_OF_RX_DESC;
 
@@ -714,19 +718,19 @@ static void ipq_gmac_mii_clk_init(struct ipq_eth_dev *priv, uint clk_div,
 int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 {
 	static int sw_init_done = 0;
-	struct eth_device *dev[IPQ_GMAC_NMACS];
+	struct eth_device *dev[CONFIG_IPQ_NO_MACS];
 	uint clk_div_val;
-	uchar enet_addr[IPQ_GMAC_NMACS * 6];
+	uchar enet_addr[CONFIG_IPQ_NO_MACS * 6];
 	uchar *mac_addr;
 	char ethaddr[32] = "ethaddr";
 	char mac[64];
 	int i;
 	int ret;
-
+	int gmac_gpio_node = 0, ar8033_gpio_node = 0, offset = 0;
 	memset(enet_addr, 0, sizeof(enet_addr));
 
 	/* Getting the MAC address from ART partition */
-	ret = get_eth_mac_address(enet_addr, IPQ_GMAC_NMACS);
+	ret = get_eth_mac_address(enet_addr, CONFIG_IPQ_NO_MACS);
 
 	for (i = 0; gmac_cfg_is_valid(gmac_cfg); gmac_cfg++, i++) {
 
@@ -756,7 +760,7 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 		 * is invalid.
 		 */
 		if ((ret < 0) ||
-		    (!is_valid_ether_addr(&enet_addr[i * 6]))) {
+		    (!is_valid_ethaddr(&enet_addr[i * 6]))) {
 			memcpy(&dev[i]->enetaddr[0], ipq_def_enetaddr, 6);
 			dev[i]->enetaddr[5] = gmac_cfg->unit & 0xff;
 		} else {
@@ -850,12 +854,19 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 		if (bb_nodes[i] == NULL)
 			goto failed;
 		memset(bb_nodes[i], 0, sizeof(struct bitbang_nodes));
-		bb_nodes[i]->mdio = gboard_param->gmac_gpio[0].gpio;
-		bb_nodes[i]->mdc = gboard_param->gmac_gpio[1].gpio;
-		bb_miiphy_buses[i].priv = bb_nodes[i];
-		strncpy(bb_miiphy_buses[i].name, gmac_cfg->phy_name,
-					sizeof(bb_miiphy_buses[i].name));
-		miiphy_register(bb_miiphy_buses[i].name, bb_miiphy_read, bb_miiphy_write);
+
+		gmac_gpio_node = fdt_path_offset(gd->fdt_blob, "/gmac/gmac_gpio");
+		if (gmac_gpio_node >= 0) {
+			offset = fdt_first_subnode(gd->fdt_blob, gmac_gpio_node);
+			bb_nodes[i]->mdio = fdtdec_get_uint(gd->fdt_blob, offset, "gpio", 0);
+
+			offset = fdt_next_subnode(gd->fdt_blob, offset);
+			bb_nodes[i]->mdc = fdtdec_get_uint(gd->fdt_blob, offset, "gpio", 0);
+			bb_miiphy_buses[i].priv = bb_nodes[i];
+			strncpy(bb_miiphy_buses[i].name, gmac_cfg->phy_name,
+						sizeof(bb_miiphy_buses[i].name));
+			miiphy_register(bb_miiphy_buses[i].name, bb_miiphy_read, bb_miiphy_write);
+		}
 
 		eth_register(dev[i]);
 
@@ -871,9 +882,9 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 
 	/* set the mac address in environment for unconfigured GMAC */
 	if (ret >= 0) {
-		for (; i < IPQ_GMAC_NMACS; i++) {
+		for (; i < CONFIG_IPQ_NO_MACS; i++) {
 			mac_addr = &enet_addr[i * 6];
-			if (is_valid_ether_addr(mac_addr)) {
+			if (is_valid_ethaddr(mac_addr)) {
 				/*
 				 * U-Boot uses these to patch the 'local-mac-address'
 				 * dts entry for the ethernet entries, which in turn
@@ -889,11 +900,18 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 		}
 	}
 
-	if (gboard_param->ar8033_gpio) {
+	ar8033_gpio_node = fdt_path_offset(gd->fdt_blob, "/ar8033_gpio");
+
+	if (ar8033_gpio_node != 0) {
 		bb_nodes[i] = malloc(sizeof(struct bitbang_nodes));
 		memset(bb_nodes[i], 0, sizeof(struct bitbang_nodes));
-		bb_nodes[i]->mdio = gboard_param->ar8033_gpio[0].gpio;
-		bb_nodes[i]->mdc = gboard_param->ar8033_gpio[1].gpio;
+
+		offset = fdt_first_subnode(gd->fdt_blob, ar8033_gpio_node);
+		bb_nodes[i]->mdio = fdtdec_get_uint(gd->fdt_blob, offset, "gpio", 0);
+
+		offset = fdt_next_subnode(gd->fdt_blob, offset);
+		bb_nodes[i]->mdc = fdtdec_get_uint(gd->fdt_blob, offset, "gpio", 0);
+
 		bb_miiphy_buses[i].priv = bb_nodes[i];
 		strncpy(bb_miiphy_buses[i].name, "8033",
 				sizeof(bb_miiphy_buses[i].name));
@@ -903,7 +921,7 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 	return 0;
 
 failed:
-	for (i = 0; i < IPQ_GMAC_NMACS; i++) {
+	for (i = 0; i < CONFIG_IPQ_NO_MACS; i++) {
 		if (bb_nodes[i])
 			free(bb_nodes[i]);
 		if (dev[i]) {
@@ -1006,11 +1024,20 @@ static int ipq_eth_bb_init(struct bb_miiphy_bus *bus)
 static int ipq_eth_bb_mdio_active(struct bb_miiphy_bus *bus)
 {
 	struct bitbang_nodes *bb_node = bus->priv;
+	struct qca_gpio_config gmac_gpio_config = {0};
 
-	gpio_tlmm_config(bb_node->mdio, 0,
-			GPIO_OUTPUT, GPIO_NO_PULL, GPIO_8MA, 1);
-	gpio_tlmm_config(bb_node->mdc, 0,
-			GPIO_OUTPUT, GPIO_NO_PULL, GPIO_8MA, 1);
+	gmac_gpio_config.gpio = bb_node->mdio;
+	gmac_gpio_config.func = 0;
+	gmac_gpio_config.out = GPIO_OUTPUT;
+	gmac_gpio_config.pull = GPIO_NO_PULL;
+	gmac_gpio_config.drvstr = GPIO_8MA;
+	gmac_gpio_config.oe = 1;
+
+	gpio_tlmm_config(&gmac_gpio_config);
+
+	gmac_gpio_config.gpio = bb_node->mdc;
+
+	gpio_tlmm_config(&gmac_gpio_config);
 
 	return 0;
 }
@@ -1018,12 +1045,23 @@ static int ipq_eth_bb_mdio_active(struct bb_miiphy_bus *bus)
 static int ipq_eth_bb_mdio_tristate(struct bb_miiphy_bus *bus)
 {
 	struct bitbang_nodes *bb_node = bus->priv;
+	struct qca_gpio_config gmac_gpio_config = {0};
 
-	gpio_tlmm_config(bb_node->mdio, 0,
-			GPIO_INPUT, GPIO_NO_PULL, GPIO_8MA, 0);
-	gpio_tlmm_config(bb_node->mdc, 0,
-			GPIO_OUTPUT, GPIO_NO_PULL, GPIO_8MA, 1);
+	gmac_gpio_config.gpio = bb_node->mdio;
+	gmac_gpio_config.func = 0;
+	gmac_gpio_config.out = GPIO_INPUT;
+	gmac_gpio_config.pull = GPIO_NO_PULL;
+	gmac_gpio_config.drvstr = GPIO_8MA;
+	gmac_gpio_config.oe = 0;
 
+	gpio_tlmm_config(&gmac_gpio_config);
+
+
+	gmac_gpio_config.gpio = bb_node->mdc;
+	gmac_gpio_config.out = GPIO_OUTPUT;
+	gmac_gpio_config.oe = 1;
+
+	gpio_tlmm_config(&gmac_gpio_config);
 	return 0;
 }
 
@@ -1106,7 +1144,7 @@ static int ipq_eth_unregister(void)
 	int i;
 	struct eth_device *dev;
 
-	for (i = 0; i < IPQ_GMAC_NMACS; i++) {
+	for (i = 0; i < CONFIG_IPQ_NO_MACS; i++) {
 		if (bb_nodes[i])
 			free(bb_nodes[i]);
 		if (ipq_gmac_macs[i]) {
@@ -1132,7 +1170,7 @@ static int do_force_eth_speed(cmd_tbl_t *cmdtp, int flag, int argc,
 	if (argc != 3)
 		return CMD_RET_USAGE;
 
-	ipq_gmac_board_cfg_t *gmac_tmp_cfg = gboard_param->gmac_cfg;
+	ipq_gmac_board_cfg_t *gmac_tmp_cfg = gmac_cfg;
 
 	if (strict_strtoul(argv[1], 16, (unsigned long *)&phy_addr) < 0) {
 		ipq_info("Invalid Phy addr configured\n");
@@ -1167,7 +1205,7 @@ static int do_force_eth_speed(cmd_tbl_t *cmdtp, int flag, int argc,
 	get_params.is_forced = 1;
 	get_params.miiwrite_done = 1;
 	ipq_eth_unregister();
-	status = ipq_gmac_init(gboard_param->gmac_cfg);
+	status = ipq_gmac_init(gmac_cfg);
 
 	return status;
 }
