@@ -12,7 +12,7 @@
  */
 
 /dts-v1/;
-#include "ipq807x-hk01.dtsi"
+#include "ipq807x-soc.dtsi"
 #include <dt-bindings/qcom/gpio-ipq807x.h>
 / {
 	model ="QCA, IPQ807x-HK01";
