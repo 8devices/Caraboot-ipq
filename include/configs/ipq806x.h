@@ -156,11 +156,72 @@
 #define CONFIG_SYS_MMC_ENV_DEV		0
 #endif
 
+<<<<<<< HEAD
 #define QCA_ROOT_FS_PART_NAME		"rootfs"
+=======
+/*
+ * CRASH DUMP ENABLE
+ */
+
+#define CONFIG_QCA_APPSBL_DLOAD 1
+#ifdef CONFIG_QCA_APPSBL_DLOAD
+#define CONFIG_CMD_TFTPPUT
+/* We will be uploading very big files */
+#undef CONFIG_NET_RETRY_COUNT
+#define CONFIG_NET_RETRY_COUNT 500
+#endif
+>>>>>>> 26ff960... ipq806x : Enable crashdump support
 
 #ifndef __ASSEMBLY__
 #include <compiler.h>
 
+<<<<<<< HEAD
+=======
+/*
+ * XXX XXX Please do not instantiate this structure. XXX XXX
+ * This is just a convenience to avoid
+ *      - adding #defines for every new reservation
+ *      - updating the multiple associated defines like smem base,
+ *        kernel start etc...
+ *      - re-calculation of the defines if the order changes or
+ *        some reservations are deleted
+ * For new reservations just adding a member to the structure should
+ * suffice.
+ * Ensure that the size of this structure matches with the definition
+ * of the following IPQ806x compile time definitions
+ *      PHYS_OFFSET     (linux-sources/arch/arm/mach-msm/Kconfig)
+ *      zreladdr        (linux-sources/arch/arm/mach-msm/Makefile.boot)
+ *      CONFIG_SYS_INIT_SP_ADDR defined above should point to the bottom.
+ *      MSM_SHARED_RAM_PHYS (linux-sources/arch/arm/mach-msm/board-ipq806x.c)
+ *
+ */
+
+#if !defined(DO_DEPS_ONLY) || defined(DO_SOC_DEPS_ONLY)
+typedef struct {
+	uint8_t nss[16 * 1024 * 1024];
+	uint8_t smem[2 * 1024 * 1024];
+#ifdef CONFIG_IPQ_APPSBL_DLOAD
+	uint8_t uboot[1 * 1024 * 1024];
+	uint8_t nsstcmdump[128 * 1024];
+	uint8_t sbl3[384 * 1024];
+	uint8_t plcfwdump[512*1024];
+	uint8_t wlanfwdump[(1 * 1024 * 1024) - GENERATED_GBL_DATA_SIZE];
+	uint8_t init_stack[GENERATED_GBL_DATA_SIZE];
+#endif
+} __attribute__ ((__packed__)) ipq_mem_reserve_t;
+
+/* Convenience macros for the above convenience structure :-) */
+#define IPQ_MEM_RESERVE_SIZE(x)         sizeof(((ipq_mem_reserve_t *)0)->x)
+#define IPQ_MEM_RESERVE_BASE(x)         \
+	(CONFIG_SYS_SDRAM_BASE + \
+	((uint32_t)&(((ipq_mem_reserve_t *)0)->x)))
+#endif
+
+#define IPQ_NSSTCM_DUMP_ADDR            (IPQ_MEM_RESERVE_BASE(nsstcmdump))
+#define IPQ_TEMP_DUMP_ADDR              (IPQ_MEM_RESERVE_BASE(nsstcmdump))
+
+#define CONFIG_QCA_SMEM_BASE	CONFIG_SYS_SDRAM_BASE + 0x1000000
+>>>>>>> 26ff960... ipq806x : Enable crashdump support
 #endif /* __ASSEMBLY__ */
 
 #ifndef CONFIG_FIT

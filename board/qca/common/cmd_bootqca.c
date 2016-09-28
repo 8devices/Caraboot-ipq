@@ -97,6 +97,17 @@ static int do_dumpqca_data(cmd_tbl_t *cmdtp, int flag, int argc,
 		printf("\nProcessing %s:", dumpinfo[indx].name);
 		memaddr = dumpinfo[indx].start;
 
+		if (dumpinfo[indx].is_aligned_access) {
+			snprintf(runcmd, sizeof(runcmd), "cp.l 0x%x 0x%x 0x%x",
+				memaddr, IPQ_TEMP_DUMP_ADDR,
+				dumpinfo[indx].size);
+
+			if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
+				return CMD_RET_FAILURE;
+
+			memaddr = IPQ_TEMP_DUMP_ADDR;
+		}
+
 		snprintf(runcmd, sizeof(runcmd), "tftpput 0x%x 0x%x %s/%s",
 			memaddr, dumpinfo[indx].size,
 			dumpdir,  dumpinfo[indx].name);
@@ -243,11 +254,35 @@ int config_select(unsigned int addr, char *rcmd, int rcmd_size)
 	return -1;
 }
 
-static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+void dump_func()
 {
 #ifdef CONFIG_QCA_APPSBL_DLOAD
 	uint64_t etime;
+#endif
+	etime = get_timer_masked() + (10 * CONFIG_SYS_HZ);
+	printf("\nCrashdump magic found."
+		"\nHit any key within 10s to stop dump activity...");
+	while (!tstc()) {       /* while no incoming data */
+		if (get_timer_masked() >= etime) {
+			if (do_dumpipq_data() == CMD_RET_FAILURE)
+				return CMD_RET_FAILURE;
+			break;
+		}
+	}
+	/* reset the system, some images might not be loaded
+	 * when crashmagic is found
+	 */
+	run_command("reset", 0);
+	return;
+}
+
+
+static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+{
+#ifdef CONFIG_QCA_APPSBL_DLOAD
 	volatile u32 val;
+	unsigned long * dmagic1 = (unsigned long *) 0x2A03F000;
+	unsigned long * dmagic2 = (unsigned long *) 0x2A03F004;
 #endif
 	char runcmd[256];
 	int ret;
@@ -264,30 +299,24 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 #ifdef CONFIG_QCA_APPSBL_DLOAD
 
 	ret = qca_scm_call(SCM_SVC_BOOT, SCM_SVC_RD, (void *)&val, sizeof(val));
-	/* check if we are in download mode */
-	if (val == DLOAD_MAGIC_COOKIE) {
-		/* clear the magic and run the dump command */
-		val = 0x0;
-		ret = qca_scm_call(SCM_SVC_BOOT, SCM_SVC_WR, (void *)&val, sizeof(val));
-		if (ret)
-			printf ("Error in reseting the Magic cookie\n");
-
-		etime = get_timer_masked() + (10 * CONFIG_SYS_HZ);
-
-		printf("\nCrashdump magic found."
-		       "\nHit any key within 10s to stop dump activity...");
-		while (!tstc()) {       /* while no incoming data */
-			if (get_timer_masked() >= etime) {
-				if (do_dumpipq_data() == CMD_RET_FAILURE)
-					return CMD_RET_FAILURE;
-				break;
-			}
+	if (ret) {
+		if (*dmagic1 == 0xE47B337D && *dmagic2 == 0x0501CAB0) {
+			/* clear the magic and run the dump command */
+			*dmagic1 = 0;
+			*dmagic2 = 0;
+			dump_func();
 		}
-
-		/* reset the system, some images might not be loaded
-		 * when crashmagic is found
-		 */
-		run_command("reset", 0);
+	}
+	else {
+		/* check if we are in download mode */
+		if (val == DLOAD_MAGIC_COOKIE) {
+			/* clear the magic and run the dump command */
+			val = 0x0;
+			ret = qca_scm_call(SCM_SVC_BOOT, SCM_SVC_WR, (void *)&val, sizeof(val));
+			if (ret)
+				printf ("Error in reseting the Magic cookie\n");
+			dump_func();
+		}
 	}
 #endif
 	if ((ret = set_fs_bootargs(&ipq_fs_on_nand)))
@@ -435,8 +464,9 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
 #ifdef CONFIG_QCA_APPSBL_DLOAD
-	uint64_t etime;
 	volatile u32 val;
+	unsigned long * dmagic1 = (unsigned long *) 0x2A03F000;
+	unsigned long * dmagic2 = (unsigned long *) 0x2A03F004;
 #endif
 	int ret;
 	char runcmd[256];
@@ -450,30 +480,26 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 		debug = 1;
 #ifdef CONFIG_QCA_APPSBL_DLOAD
 	ret = qca_scm_call(SCM_SVC_BOOT, SCM_SVC_RD, (void *)&val, sizeof(val));
-	/* check if we are in download mode */
-	if (val == DLOAD_MAGIC_COOKIE) {
+	if (ret) {
+		if (*dmagic1 == 0xE47B337D && *dmagic2 == 0x0501CAB0) {
 		/* clear the magic and run the dump command */
-		val = 0x0;
-		ret = qca_scm_call(SCM_SVC_BOOT, SCM_SVC_WR, (void *)&val, sizeof(val));
-		if (ret)
-			printf ("Error in reseting the Magic cookie\n");
-
-		etime = get_timer_masked() + (10 * CONFIG_SYS_HZ);
-
-		printf("\nCrashdump magic found."
-		       "\nHit any key within 10s to stop dump activity...");
-		while (!tstc()) {       /* while no incoming data */
-			if (get_timer_masked() >= etime) {
-				if (do_dumpipq_data() == CMD_RET_FAILURE)
-					return CMD_RET_FAILURE;
-				break;
-			}
+			*dmagic1 = 0;
+			*dmagic2 = 0;
+			dump_func();
 		}
-		/* reset the system, some images might not be loaded
-		 * when crashmagic is found
-		 */
-		run_command("reset", 0);
 	}
+	else {
+		/* check if we are in download mode */
+		if (val == DLOAD_MAGIC_COOKIE) {
+			/* clear the magic and run the dump command */
+			val = 0x0;
+			ret = qca_scm_call(SCM_SVC_BOOT, SCM_SVC_WR, (void *)&val, sizeof(val));
+			if (ret)
+				printf ("Error in reseting the Magic cookie\n");
+			dump_func();
+		}
+	}
+
 #endif
 
 	if ((ret = set_fs_bootargs(&ipq_fs_on_nand)))
