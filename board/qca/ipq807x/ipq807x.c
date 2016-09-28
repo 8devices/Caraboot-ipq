@@ -31,6 +31,11 @@ const char *del_node[] = {"uboot",
 			  "sbl"};
 const add_node_t add_node[] = {};
 
+struct dumpinfo_t dumpinfo[] = {
+	{ "EBICS0.BIN", 0x40000000, 0x10000000, 0 },
+};
+int dump_entries = ARRAY_SIZE(dumpinfo);
+
 void qca_serial_init(struct ipq_serial_platdata *plat)
 {
 	writel(1, GCC_BLSP1_UART1_APPS_CBCR);

@@ -223,6 +223,21 @@ extern loff_t board_env_offset;
 #define CONFIG_CMD_PCI
 #define CONFIG_PCI_SCAN_SHOW
 #endif
+
+/*
+ * CRASH DUMP ENABLE
+ */
+
+#define CONFIG_QCA_APPSBL_DLOAD 0
+
+#ifdef CONFIG_QCA_APPSBL_DLOAD
+#define CONFIG_CMD_TFTPPUT
+/* We will be uploading very big files */
+#undef CONFIG_NET_RETRY_COUNT
+#define CONFIG_NET_RETRY_COUNT  500
+
+#endif
+
 /* L1 cache line size is 64 bytes, L2 cache line size is 128 bytes
  * Cache flush and invalidation based on L1 cache, so the cache line
  * size is configured to 64 */
