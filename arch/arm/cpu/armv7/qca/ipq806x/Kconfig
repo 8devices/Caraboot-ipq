@@ -1,3 +1,0 @@
-config ARCH_IPQ806x
-	bool "QCA IPQ806x SPECIFIC IPs"
-

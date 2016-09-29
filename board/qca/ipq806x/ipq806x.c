@@ -21,6 +21,7 @@
 #include <asm/arch-qcom-common/gpio.h>
 #include <asm/arch-qcom-common/smem.h>
 #include <asm/arch-ipq806x/msm_ipq806x_gmac.h>
+#include <asm/arch-ipq806x/clk.h>
 #include "ipq806x.h"
 #include "qca_common.h"
 
