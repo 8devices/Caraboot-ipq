@@ -23,6 +23,7 @@
 #include <asm/arch-qcom-common/scm.h>
 #include <asm/arch-qcom-common/qpic_nand.h>
 #include <asm/arch-qcom-common/gpio.h>
+#include <asm/arch-qcom-common/iomap.h>
 #include <jffs2/load_kernel.h>
 #include <fdtdec.h>
 #include <asm/arch-qcom-common/uart.h>
@@ -77,10 +78,6 @@ void qca_serial_init(struct ipq_serial_platdata *plat)
 	qca_gpio_init(node);
 }
 
-void reset_cpu(ulong addr)
-{
-}
-
 void reset_crashdump(void)
 {
 	unsigned int magic_cookie = CLEAR_MAGIC;
@@ -90,6 +87,15 @@ void reset_crashdump(void)
 		 (const void *)&clear_info, sizeof(clear_info), NULL, 0);
         scm_call(SCM_SVC_BOOT, SCM_CMD_TZ_FORCE_DLOAD_ID, &magic_cookie,
 		 sizeof(magic_cookie), NULL, 0);
+}
+
+void reset_cpu(ulong addr)
+{
+	/* Clear Debug sw entry register */
+	reset_crashdump();
+	/* clear ps-hold bit to reset the soc */
+	writel(0, GCNT_PSHOLD);
+	while (1);
 }
 
 void board_nand_init(void)
