@@ -124,6 +124,7 @@ typedef struct {
 #define CONFIG_INITRD_TAG		1
 #define CONFIG_SYS_HUSH_PARSER
 #define CONFIG_SYS_NULLDEV
+#define CONFIG_CMD_XIMG
 
 /*
  * USB Support

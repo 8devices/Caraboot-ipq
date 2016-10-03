@@ -163,6 +163,7 @@ extern loff_t board_env_offset;
  */
 #define CONFIG_OF_LIBFDT	1
 #define CONFIG_SYS_HUSH_PARSER
+#define CONFIG_CMD_XIMG
 
 /* NSS firmware loaded using bootm */
 #define CONFIG_BOOTCOMMAND  "bootipq"

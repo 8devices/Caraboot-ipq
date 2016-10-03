@@ -153,6 +153,7 @@
 #define CONFIG_FIT
 #endif
 #define CONFIG_SYS_NULLDEV
+#define CONFIG_CMD_XIMG
 
 /*Support for Compressed DTB image*/
 #ifdef CONFIG_FIT
