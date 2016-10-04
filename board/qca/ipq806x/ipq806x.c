@@ -15,13 +15,16 @@
 #include <asm/global_data.h>
 #include <asm/io.h>
 #include <environment.h>
+#include <fdtdec.h>
 #include <asm/arch-qcom-common/gsbi.h>
 #include <asm/arch-qcom-common/uart.h>
 #include <asm/arch-qcom-common/gpio.h>
 #include <asm/arch-qcom-common/smem.h>
+#include <asm/arch-ipq806x/msm_ipq806x_gmac.h>
 #include "ipq806x.h"
 #include "qca_common.h"
 
+ipq_gmac_board_cfg_t gmac_cfg[CONFIG_IPQ_NO_MACS];
 DECLARE_GLOBAL_DATA_PTR;
 
 qca_mmc mmc_host;
@@ -65,6 +68,116 @@ void board_nand_init(void)
 {
 	/* TODO: To be filled */
 }
+
+int board_eth_init(bd_t *bis)
+{
+	int status;
+	int gmac_gpio_node = 0, storm_switch_gpio_node = 0;
+	int ak01_reset_gpio_node = 0, ak01_config_gpio_node = 0;
+	int gmac_cfg_node = 0, offset = 0;
+	unsigned int machid;
+	int loop = 0, inner_loop = 0;
+	int phy_name_len = 0;
+	unsigned int tmp_phy_array[8] = {0};
+	char *phy_name_ptr = NULL;
+
+	gmac_cfg_node = fdt_path_offset(gd->fdt_blob, "/gmac/gmac_cfg");
+	if (gmac_cfg_node >= 0) {
+		for (offset = fdt_first_subnode(gd->fdt_blob, gmac_cfg_node);
+			offset > 0;
+			offset = fdt_next_subnode(gd->fdt_blob, offset) , loop++) {
+
+			gmac_cfg[loop].base = fdtdec_get_uint(gd->fdt_blob,
+					offset, "base", 0);
+
+			gmac_cfg[loop].unit = fdtdec_get_uint(gd->fdt_blob,
+					offset, "unit", 0);
+
+			gmac_cfg[loop].is_macsec = fdtdec_get_uint(gd->fdt_blob,
+					offset, "is_macsec", 0);
+
+			gmac_cfg[loop].mac_pwr0 = fdtdec_get_uint(gd->fdt_blob,
+					offset, "mac_pwr0", 0);
+
+			gmac_cfg[loop].mac_pwr1 = fdtdec_get_uint(gd->fdt_blob,
+					offset, "mac_pwr1", 0);
+
+			gmac_cfg[loop].mac_conn_to_phy = fdtdec_get_uint(gd->fdt_blob,
+					offset, "mac_conn_to_phy", 0);
+
+			gmac_cfg[loop].phy = fdtdec_get_uint(gd->fdt_blob,
+					offset, "phy_interface_type", 0);
+
+			gmac_cfg[loop].phy_addr.count = fdtdec_get_uint(gd->fdt_blob,
+					offset, "phy_address_count", 0);
+
+			fdtdec_get_int_array(gd->fdt_blob, offset, "phy_address",
+					tmp_phy_array, gmac_cfg[loop].phy_addr.count);
+
+			for(inner_loop = 0; inner_loop < gmac_cfg[loop].phy_addr.count;
+					inner_loop++){
+				gmac_cfg[loop].phy_addr.addr[inner_loop] =
+					(char)tmp_phy_array[inner_loop];
+			}
+
+			phy_name_ptr = (char*)fdt_getprop(gd->fdt_blob, offset,
+					"phy_name", &phy_name_len);
+
+			strncpy(gmac_cfg[loop].phy_name, phy_name_ptr, phy_name_len);
+
+		}
+	}
+	gmac_cfg[loop].unit = -1;
+
+	storm_switch_gpio_node = fdt_path_offset(gd->fdt_blob,
+						"/storm_switch_gpio");
+	if (storm_switch_gpio_node) {
+		qca_gpio_init(storm_switch_gpio_node);
+	}
+
+	ipq_gmac_common_init(gmac_cfg);
+
+	gmac_gpio_node = fdt_path_offset(gd->fdt_blob, "/gmac/gmac_gpio");
+	if (gmac_gpio_node) {
+		qca_gpio_init(gmac_gpio_node);
+	}
+	/*
+	 * Register the swith driver routines before
+	 * initializng the GMAC
+	 */
+	machid = fdtdec_get_uint(gd->fdt_blob, 0, "machid", 0);
+
+	switch (machid) {
+		case MACH_TYPE_IPQ806X_AP160_2XX:
+			ipq_register_switch(ipq_qca8511_init);
+			break;
+
+		case MACH_TYPE_IPQ806X_AK01_1XX:
+			ak01_reset_gpio_node = fdt_path_offset(gd->fdt_blob, "/ak01_gmac_reset_gpio");
+			if (ak01_reset_gpio_node){
+				qca_gpio_init(ak01_reset_gpio_node);
+			}
+
+			mdelay(100);
+
+			ak01_config_gpio_node = fdt_path_offset(gd->fdt_blob, "/ak01_gmac_config_gpio");
+			if (ak01_config_gpio_node){
+				qca_gpio_init(ak01_config_gpio_node);
+			};
+
+			ipq_register_switch(NULL);
+			break;
+
+		default:
+			ipq_register_switch(ipq_athrs17_init);
+			break;
+	}
+	ipq_register_switch(ipq_athrs17_init);
+
+	status = ipq_gmac_init(gmac_cfg);
+	return status;
+}
+
 void qca_serial_init(struct ipq_serial_platdata *plat)
 {
 	int serial_node, gpio_node;

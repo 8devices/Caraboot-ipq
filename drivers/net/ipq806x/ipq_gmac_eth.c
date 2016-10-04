@@ -24,6 +24,7 @@
 #include <asm/arch-ipq806x/ipq_gmac.h>
 #include <asm/arch-ipq806x/msm_ipq806x_gmac.h>
 #include <asm/arch-qcom-common/gpio.h>
+#include <dt-bindings/qcom/gpio-ipq806x.h>
 
 #define ipq_info	printf
 #define ipq_dbg		printf

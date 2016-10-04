@@ -17,10 +17,56 @@
 #include <configs/ipq806x.h>
 #include <asm/u-boot.h>
 #include <asm/arch-qcom-common/qca_common.h>
+#include "phy.h"
 
-#define GSBI4_BASE 0x16300000
+#define GSBI4_BASE		0x16300000
+#define GMAC_AHB_RESET		0x903E24
 
 #define KERNEL_AUTH_CMD                 0x7
+
+typedef struct {
+	uint count;
+	u8 addr[7];
+} ipq_gmac_phy_addr_t;
+
+typedef struct {
+	uint base;
+	int unit;
+	uint is_macsec;
+	uint mac_pwr0;
+	uint mac_pwr1;
+	uint mac_conn_to_phy;
+	phy_interface_t phy;
+	ipq_gmac_phy_addr_t phy_addr;
+	const char phy_name[MDIO_NAME_LEN];
+} ipq_gmac_board_cfg_t;
+
+#define gmac_board_cfg(_b, _sec, _p, _p0, _p1, _mp, _pn, ...)           \
+{                                                                       \
+	.base                   = NSS_GMAC##_b##_BASE,                  \
+	.unit                   = _b,                                   \
+	.is_macsec              = _sec,                                 \
+	.phy                    = PHY_INTERFACE_MODE_##_p,              \
+	.phy_addr               = { .count = _pn, { __VA_ARGS__ } },    \
+	.mac_pwr0               = _p0,                                  \
+	.mac_pwr1               = _p1,                                  \
+	.mac_conn_to_phy        = _mp,                                  \
+	.phy_name               = "IPQ MDIO"#_b                         \
+}
+
+extern ipq_gmac_board_cfg_t gmac_cfg[];
+static inline int gmac_cfg_is_valid(ipq_gmac_board_cfg_t *cfg)
+{
+	/*
+	 * 'cfg' is valid if and only if
+	 *      unit number is non-negative and less than CONFIG_IPQ_NO_MACS.
+	 *      'cfg' pointer lies within the array range of
+	 *              board_ipq806x_params_t->gmac_cfg[]
+	 */
+	return ((cfg >= &gmac_cfg[0]) &&
+			(cfg < &gmac_cfg[CONFIG_IPQ_NO_MACS]) &&
+			(cfg->unit >= 0) && (cfg->unit < CONFIG_IPQ_NO_MACS));
+}
 
 typedef enum {
 	SMEM_SPINLOCK_ARRAY = 7,

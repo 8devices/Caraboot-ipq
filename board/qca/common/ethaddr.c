@@ -43,9 +43,9 @@ int get_eth_mac_address(uchar *enetaddr, uint no_of_macs)
 #endif
 	if (sfi->flash_type != SMEM_BOOT_MMC_FLASH) {
 		if (qca_smem_flash_info.flash_type == SMEM_BOOT_SPI_FLASH)
-			flash_type = CONFIG_IPQ_SPI_NOR_INFO_IDX;
+			flash_type = CONFIG_SPI_FLASH_INFO_IDX;
 		else if (qca_smem_flash_info.flash_type == SMEM_BOOT_NAND_FLASH)
-			flash_type = CONFIG_IPQ_NAND_NAND_INFO_IDX;
+			flash_type = CONFIG_NAND_FLASH_INFO_IDX;
 		else {
 			printf("Unknown flash type\n");
 			return -EINVAL;

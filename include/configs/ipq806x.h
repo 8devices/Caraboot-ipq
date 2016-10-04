@@ -55,12 +55,24 @@
 #undef CONFIG_CMD_IMI
 #undef CONFIG_CMD_IMLS
 #undef CONFIG_CMD_NFS		        /* NFS support */
-#undef CONFIG_CMD_NET		        /* network support */
-#undef CONFIG_CMD_DHCP
+#define CONFIG_CMD_NET		        /* network support */
+#define CONFIG_CMD_DHCP
 #undef CONFIG_SYS_MAX_FLASH_SECT
 #define CONFIG_NR_DRAM_BANKS            1
 #define CONFIG_SKIP_LOWLEVEL_INIT
 #define CONFIG_CMD_PING
+
+#define CONFIG_IPQ_SNPS_GMAC
+#define CONFIG_MII
+#define CONFIG_CMD_MII
+#define CONFIG_BITBANGMII
+#define CONFIG_BITBANGMII_MULTI
+
+#define CONFIG_IPQ_SWITCH_ATHRS17
+#define CONFIG_IPQ_SWITCH_QCA8511
+
+#define CONFIG_SYS_RX_ETH_BUFFER        8
+#define CONFIG_IPQ_NO_MACS		4
 
 #undef CONFIG_BOARD_EARLY_INIT_F
 
