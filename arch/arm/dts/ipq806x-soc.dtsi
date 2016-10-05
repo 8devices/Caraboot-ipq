@@ -202,6 +202,129 @@
 				phy_name = "IPQ MDIO2";
 			};
 		};
+	};
+
+	nand@1A600000 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "qcom,ebi2-nand";
+		reg = <0x1A600000 0x10000>,
+			<0x1AC00000 0x10000>;
+		reg-names = "EBI2_CR", "EBI2ND";
+		status = "ok";
+		nand_gpio {
+			gpio34 {
+				gpio = <34>;
+				func = <1>;
+				pull = <GPIO_NO_PULL>;
+				drvstr = <GPIO_10MA>;
+				oe = <GPIO_OE_ENABLE>;
+			};
+
+			gpio35 {
+				gpio = <35>;
+				func = <1>;
+				pull = <GPIO_NO_PULL>;
+				drvstr = <GPIO_10MA>;
+				oe = <GPIO_OE_ENABLE>;
+			};
+
+			gpio36 {
+				gpio = <36>;
+				func = <1>;
+				pull = <GPIO_NO_PULL>;
+				drvstr = <GPIO_10MA>;
+				oe = <GPIO_OE_ENABLE>;
+			};
+
+			gpio37 {
+				gpio = <37>;
+				func = <1>;
+				pull = <GPIO_NO_PULL>;
+				drvstr = <GPIO_10MA>;
+				oe = <GPIO_OE_ENABLE>;
+			};
+
+			gpio38 {
+				gpio = <38>;
+				func = <1>;
+				pull = <GPIO_NO_PULL>;
+				drvstr = <GPIO_10MA>;
+				oe = <GPIO_OE_ENABLE>;
+			};
+
+			gpio39 {
+				gpio = <39>;
+				func = <1>;
+				pull = <GPIO_NO_PULL>;
+				drvstr = <GPIO_10MA>;
+				oe = <GPIO_OE_ENABLE>;
+			};
+
+			gpio40 {
+				gpio = <40>;
+				func = <1>;
+				pull = <GPIO_KEEPER>;
+				drvstr = <GPIO_10MA>;
+				oe = <GPIO_OE_ENABLE>;
+			};
+
+			gpio41 {
+				gpio = <41>;
+				func = <1>;
+				pull = <GPIO_KEEPER>;
+				drvstr = <GPIO_10MA>;
+				oe = <GPIO_OE_ENABLE>;
+			};
+
+			gpio42 {
+				gpio = <42>;
+				func = <1>;
+				pull = <GPIO_KEEPER>;
+				drvstr = <GPIO_10MA>;
+				oe = <GPIO_OE_ENABLE>;
+			};
+
+			gpio43 {
+				gpio = <43>;
+				func = <1>;
+				pull = <GPIO_KEEPER>;
+				drvstr = <GPIO_10MA>;
+				oe = <GPIO_OE_ENABLE>;
+			};
+
+			gpio44 {
+				gpio = <44>;
+				func = <1>;
+				pull = <GPIO_KEEPER>;
+				drvstr = <GPIO_10MA>;
+				oe = <GPIO_OE_ENABLE>;
+			};
+
+			gpio45 {
+				gpio = <45>;
+				func = <1>;
+				pull = <GPIO_KEEPER>;
+				drvstr = <GPIO_10MA>;
+				oe = <GPIO_OE_ENABLE>;
+			};
+
+			gpio46 {
+				gpio = <46>;
+				func = <1>;
+				pull = <GPIO_KEEPER>;
+				drvstr = <GPIO_10MA>;
+				oe = <GPIO_OE_ENABLE>;
+			};
+
+			gpio47 {
+				gpio = <47>;
+				func = <1>;
+				pull = <GPIO_KEEPER>;
+				drvstr = <GPIO_10MA>;
+				oe = <GPIO_OE_ENABLE>;
+			};
+		};
 
 	};
 };
