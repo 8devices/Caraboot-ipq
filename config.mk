@@ -36,6 +36,14 @@ endif
 ifneq ($(CONFIG_SYS_SOC),)
 SOC := $(CONFIG_SYS_SOC:"%"=%)
 endif
+ifeq ($(CONFIG_OF_COMBINE),)
+ifneq ($(CONFIG_OF_SEPERATE),)
+OBJCOPYFLAGS += -j .text -j .secure_text -j .rodata -j .hash -j .data -j .got -j .got.plt -j .u_boot_list
+endif
+else
+OBJCOPYFLAGS += -j .text -j .secure_text -j .rodata -j .hash -j .data -j .got -j .got.plt -j .u_boot_list -j .dtb
+endif
+
 
 # Some architecture config.mk files need to know what CPUDIR is set to,
 # so calculate CPUDIR before including ARCH/SOC/CPU config.mk files.
