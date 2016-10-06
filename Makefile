@@ -771,6 +771,7 @@ ifneq ($(BUILD_ROM),)
 ALL-$(CONFIG_X86_RESET_VECTOR) += u-boot.rom
 endif
 
+ALL-$(CONFIG_MBN_HEADER) += u-boot.mbn
 # enable combined SPL/u-boot/dtb rules for tegra
 ifneq ($(CONFIG_TEGRA),)
 ifeq ($(CONFIG_SPL),y)
@@ -876,6 +877,12 @@ u-boot.bin: u-boot FORCE
 	$(call if_changed,objcopy)
 	$(call DO_STATIC_RELA,$<,$@,$(CONFIG_SYS_TEXT_BASE))
 	$(BOARD_SIZE_CHECK)
+
+quiet_cmd_mkheader = MKHEADER $@
+cmd_mkheader = $(PYTHON) tools/mkheader.py $(CONFIG_SYS_TEXT_BASE) $(CONFIG_IPQ_APPSBL_IMG_TYPE) $< $@
+
+u-boot.mbn: u-boot.bin
+		$(call if_changed,mkheader)
 
 u-boot.ldr:	u-boot
 		$(CREATE_LDR_ENV)
