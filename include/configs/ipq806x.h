@@ -156,9 +156,7 @@
 #define CONFIG_SYS_MMC_ENV_DEV		0
 #endif
 
-<<<<<<< HEAD
 #define QCA_ROOT_FS_PART_NAME		"rootfs"
-=======
 /*
  * CRASH DUMP ENABLE
  */
@@ -170,13 +168,10 @@
 #undef CONFIG_NET_RETRY_COUNT
 #define CONFIG_NET_RETRY_COUNT 500
 #endif
->>>>>>> 26ff960... ipq806x : Enable crashdump support
 
 #ifndef __ASSEMBLY__
 #include <compiler.h>
 
-<<<<<<< HEAD
-=======
 /*
  * XXX XXX Please do not instantiate this structure. XXX XXX
  * This is just a convenience to avoid
@@ -200,7 +195,7 @@
 typedef struct {
 	uint8_t nss[16 * 1024 * 1024];
 	uint8_t smem[2 * 1024 * 1024];
-#ifdef CONFIG_IPQ_APPSBL_DLOAD
+#ifdef CONFIG_QCA_APPSBL_DLOAD
 	uint8_t uboot[1 * 1024 * 1024];
 	uint8_t nsstcmdump[128 * 1024];
 	uint8_t sbl3[384 * 1024];
@@ -221,7 +216,6 @@ typedef struct {
 #define IPQ_TEMP_DUMP_ADDR              (IPQ_MEM_RESERVE_BASE(nsstcmdump))
 
 #define CONFIG_QCA_SMEM_BASE	CONFIG_SYS_SDRAM_BASE + 0x1000000
->>>>>>> 26ff960... ipq806x : Enable crashdump support
 #endif /* __ASSEMBLY__ */
 
 #ifndef CONFIG_FIT
