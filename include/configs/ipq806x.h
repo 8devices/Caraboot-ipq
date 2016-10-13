@@ -259,6 +259,8 @@ typedef struct {
 #define CONFIG_MTD_PARTITIONS
 #define CONFIG_CMD_MTDPARTS
 
+#define CONFIG_BOOTDELAY 2
+
 /*for ubi*/
 #define CONFIG_CMD_UBI
 #define CONFIG_RBTREE
