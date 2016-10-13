@@ -98,14 +98,17 @@ static int do_dumpqca_data(cmd_tbl_t *cmdtp, int flag, int argc,
 		memaddr = dumpinfo[indx].start;
 
 		if (dumpinfo[indx].is_aligned_access) {
-			snprintf(runcmd, sizeof(runcmd), "cp.l 0x%x 0x%x 0x%x",
-				memaddr, IPQ_TEMP_DUMP_ADDR,
-				dumpinfo[indx].size);
+			if (IPQ_TEMP_DUMP_ADDR) {
+				snprintf(runcmd, sizeof(runcmd), "cp.l 0x%x 0x%x 0x%x", memaddr,
+						IPQ_TEMP_DUMP_ADDR, dumpinfo[indx].size);
+				if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
+					return CMD_RET_FAILURE;
 
-			if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
-				return CMD_RET_FAILURE;
-
-			memaddr = IPQ_TEMP_DUMP_ADDR;
+				memaddr = IPQ_TEMP_DUMP_ADDR;
+			} else {
+				printf("%s  needs aligned access and temp address is not defined. Skipping...", dumpinfo[indx].name);
+				continue;
+			}
 		}
 
 		snprintf(runcmd, sizeof(runcmd), "tftpput 0x%x 0x%x %s/%s",

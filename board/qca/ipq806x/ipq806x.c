@@ -65,16 +65,6 @@ struct dumpinfo_t dumpinfo[] = {
 };
 int dump_entries = ARRAY_SIZE(dumpinfo);
 
-void enable_caches(void)
-{
-	icache_enable();
-}
-
-void disable_caches(void)
-{
-	icache_disable();
-}
-
 unsigned long timer_read_counter(void)
 {
 	return 0;
