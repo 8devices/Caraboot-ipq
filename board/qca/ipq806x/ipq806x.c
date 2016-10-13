@@ -30,7 +30,6 @@ DECLARE_GLOBAL_DATA_PTR;
 
 qca_mmc mmc_host;
 
-int nand_env_device = 0;
 const char *rsvd_node = "/reserved-memory";
 const char *del_node[] = {NULL};
 const add_node_t add_node[] = {};

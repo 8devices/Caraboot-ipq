@@ -92,7 +92,6 @@
 #define CONFIG_ENV_SIZE			0x10000 /* 64 KB */
 #define CONFIG_ENV_SIZE_MAX             (256 << 10) /* 256 KB */
 #define CONFIG_SYS_MALLOC_LEN           (CONFIG_ENV_SIZE_MAX + (256 << 10))
-#define CONFIG_ENV_IS_NOWHERE		1
 
 /*
  * select serial console configuration
@@ -198,6 +197,8 @@
  *
  */
 
+extern loff_t board_env_offset;
+
 #if !defined(DO_DEPS_ONLY) || defined(DO_SOC_DEPS_ONLY)
 typedef struct {
 	uint8_t nss[16 * 1024 * 1024];
@@ -261,6 +262,9 @@ typedef struct {
 
 #define CONFIG_BOOTDELAY 2
 #define CONFIG_BOARD_LATE_INIT
+
+#define CONFIG_ENV_IS_IN_NAND
+#define CONFIG_ENV_OFFSET board_env_offset
 
 /*for ubi*/
 #define CONFIG_CMD_UBI
