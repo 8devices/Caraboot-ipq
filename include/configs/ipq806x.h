@@ -260,6 +260,7 @@ typedef struct {
 #define CONFIG_CMD_MTDPARTS
 
 #define CONFIG_BOOTDELAY 2
+#define CONFIG_BOARD_LATE_INIT
 
 /*for ubi*/
 #define CONFIG_CMD_UBI
