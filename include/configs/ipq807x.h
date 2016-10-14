@@ -238,6 +238,7 @@ extern loff_t board_env_offset;
 #undef CONFIG_NET_RETRY_COUNT
 #define CONFIG_NET_RETRY_COUNT  500
 
+#define IPQ_TEMP_DUMP_ADDR 0
 #endif
 
 /* L1 cache line size is 64 bytes, L2 cache line size is 128 bytes

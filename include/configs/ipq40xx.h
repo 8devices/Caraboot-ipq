@@ -251,6 +251,7 @@ typedef struct {
 #undef CONFIG_NET_RETRY_COUNT
 #define CONFIG_NET_RETRY_COUNT	500
 
+#define IPQ_TEMP_DUMP_ADDR 0
 #endif
 
 
