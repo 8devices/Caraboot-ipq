@@ -21,6 +21,14 @@ enum ipq_nand_layout {
 	IPQ_NAND_LAYOUT_MAX
 };
 
-int ipq_nand_init(enum ipq_nand_layout layout, int variant);
+struct ipq_nand {
+	unsigned int qpic_nand_init_config;
+	unsigned int ebi2cr_regs;
+	unsigned int ebi2nd_regs;
+	enum ipq_nand_layout layout;
+	int variant;
+};
+
+int ipq_nand_init(struct ipq_nand *ipq_nand);
 
 #endif

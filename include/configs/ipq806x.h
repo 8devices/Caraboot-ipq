@@ -240,6 +240,8 @@ typedef struct {
 
 /*NAND Flash Configs*/
 #define CONFIG_CMD_NAND
+#define CONFIG_IPQ_NAND
+#define CONFIG_SYS_NAND_ONFI_DETECTION
 #define CONFIG_SYS_NAND_SELF_INIT
 
 #define CONFIG_IPQ_MAX_SPI_DEVICE	1

@@ -21,6 +21,10 @@
 #include <asm/errno.h>
 #include <asm/arch-qcom-common/nand.h>
 #include <asm/arch-qcom-common/ebi2.h>
+#include <fdtdec.h>
+#include <dm.h>
+
+DECLARE_GLOBAL_DATA_PTR;
 
 /*
  * MTD, NAND and the IPQ806x NAND controller uses various terms to
@@ -927,7 +931,7 @@ static void ipq_nand_read_oobcopy(struct mtd_info *mtd, struct mtd_oob_ops *ops)
 		return;
 
 	read_ooblen = ops->ooblen - ops->oobretlen;
-	ooblen = MIN(read_ooblen, dev->oob_per_page);
+	ooblen = (read_ooblen < dev->oob_per_page ? read_ooblen : dev->oob_per_page);
 
 	if (read_ooblen < dev->oob_per_page)
 		memcpy(ops->oobbuf + ops->oobretlen, dev->pad_oob, ooblen);
@@ -949,7 +953,7 @@ static void ipq_nand_read_datcopy(struct mtd_info *mtd, struct mtd_oob_ops *ops)
 		return;
 
 	read_datlen = ops->len - ops->retlen;
-	datlen = MIN(read_datlen, mtd->writesize);
+	datlen = (read_datlen < mtd->writesize ? read_datlen : mtd->writesize);
 
 	if (read_datlen < mtd->writesize)
 		memcpy(ops->datbuf + ops->retlen, dev->pad_dat, datlen);
@@ -969,7 +973,7 @@ static int ipq_nand_read_oob(struct mtd_info *mtd, loff_t from,
 	int ret = 0;
 
 	/* We don't support MTD_OOB_PLACE as of yet. */
-	if (ops->mode == MTD_OOB_PLACE)
+	if (ops->mode == MTD_OPS_PLACE_OOB)
 		return -ENOSYS;
 
 	/* Check for reads past end of device */
@@ -982,7 +986,7 @@ static int ipq_nand_read_oob(struct mtd_info *mtd, loff_t from,
 	if (ops->ooboffs != 0)
 		return -EINVAL;
 
-	if (ops->mode == MTD_OOB_RAW)
+	if (ops->mode == MTD_OPS_RAW)
 		ipq_enter_raw_mode(mtd);
 
 	start = from >> chip->page_shift;
@@ -1026,7 +1030,7 @@ static int ipq_nand_read(struct mtd_info *mtd, loff_t from, size_t len,
 	int ret;
 	struct mtd_oob_ops ops;
 
-	ops.mode = MTD_OOB_AUTO;
+	ops.mode = MTD_OPS_AUTO_OOB;
 	ops.len = len;
 	ops.retlen = 0;
 	ops.ooblen = 0;
@@ -1177,7 +1181,7 @@ static void ipq_nand_write_oobinc(struct mtd_info *mtd, struct mtd_oob_ops *ops)
 		return;
 
 	write_ooblen = ops->ooblen - ops->oobretlen;
-	ooblen = MIN(write_ooblen, dev->oob_per_page);
+	ooblen = (write_ooblen < dev->oob_per_page ? write_ooblen : dev->oob_per_page);
 
 	ops->oobretlen += ooblen;
 }
@@ -1193,7 +1197,7 @@ static int ipq_nand_write_oob(struct mtd_info *mtd, loff_t to,
 	int ret = 0;
 
 	/* We don't support MTD_OOB_PLACE as of yet. */
-	if (ops->mode == MTD_OOB_PLACE)
+	if (ops->mode == MTD_OPS_PLACE_OOB)
 		return -ENOSYS;
 
 	/* Check for writes past end of device. */
@@ -1212,7 +1216,7 @@ static int ipq_nand_write_oob(struct mtd_info *mtd, loff_t to,
 	if (ops->datbuf == NULL)
 		return -EINVAL;
 
-	if (ops->mode == MTD_OOB_RAW)
+	if (ops->mode == MTD_OPS_RAW)
 		ipq_enter_raw_mode(mtd);
 
 	start = to >> chip->page_shift;
@@ -1250,7 +1254,7 @@ static int ipq_nand_write(struct mtd_info *mtd, loff_t to, size_t len,
 	int ret;
 	struct mtd_oob_ops ops;
 
-	ops.mode = MTD_OOB_AUTO;
+	ops.mode = MTD_OPS_AUTO_OOB;
 	ops.len = len;
 	ops.retlen = 0;
 	ops.ooblen = 0;
@@ -1278,7 +1282,7 @@ static int ipq_nand_block_isbad(struct mtd_info *mtd, loff_t offs)
 	if (offs & (mtd->erasesize - 1))
 		return -EINVAL;
 
-	ops.mode = MTD_OOB_RAW;
+	ops.mode = MTD_OPS_RAW;
 	ops.len = 0;
 	ops.retlen = 0;
 	ops.ooblen = 1;
@@ -1307,7 +1311,7 @@ static int ipq_nand_block_markbad(struct mtd_info *mtd, loff_t offs)
 	if (offs & (mtd->erasesize - 1))
 		return -EINVAL;
 
-	ops.mode = MTD_OOB_RAW;
+	ops.mode = MTD_OPS_RAW;
 	ops.len = mtd->writesize;
 	ops.retlen = 0;
 	ops.ooblen = mtd->oobsize;
@@ -1670,18 +1674,16 @@ int ipq_nand_scan(struct mtd_info *mtd)
 	mtd->type = MTD_NANDFLASH;
 	mtd->flags = MTD_CAP_NANDFLASH;
 
-	mtd->erase = ipq_nand_erase;
-	mtd->point = NULL;
-	mtd->unpoint = NULL;
-	mtd->read = ipq_nand_read;
-	mtd->write = ipq_nand_write;
-	mtd->read_oob = ipq_nand_read_oob;
-	mtd->write_oob = ipq_nand_write_oob;
-	mtd->lock = NULL;
-	mtd->unlock = NULL;
-	mtd->block_isbad = ipq_nand_block_isbad;
-	mtd->block_markbad = ipq_nand_block_markbad;
-	mtd->sync = ipq_nand_sync;
+	mtd->_erase = ipq_nand_erase;
+	mtd->_read = ipq_nand_read;
+	mtd->_write = ipq_nand_write;
+	mtd->_read_oob = ipq_nand_read_oob;
+	mtd->_write_oob = ipq_nand_write_oob;
+	mtd->_lock = NULL;
+	mtd->_unlock = NULL;
+	mtd->_block_isbad = ipq_nand_block_isbad;
+	mtd->_block_markbad = ipq_nand_block_markbad;
+	mtd->_sync = ipq_nand_sync;
 
 	mtd->ecclayout = NULL;
 
@@ -1917,7 +1919,7 @@ exit:
 
 static struct nand_chip nand_chip[CONFIG_SYS_MAX_NAND_DEVICE];
 
-void ipq40xx_bam_reset(struct ebi2nd_regs *regs)
+void qpic_bam_reset(struct ebi2nd_regs *regs)
 {
 	uint32_t count = 0;
 	uint32_t nand_debug;
@@ -1965,7 +1967,7 @@ void ipq40xx_bam_reset(struct ebi2nd_regs *regs)
 /*
  * Initialize controller and register as an MTD device.
  */
-int ipq_nand_init(enum ipq_nand_layout layout, int variant)
+int ipq_nand_init (struct ipq_nand *ipq_nand)
 {
 	uint32_t status;
 	struct nand_chip *chip;
@@ -1976,22 +1978,21 @@ int ipq_nand_init(enum ipq_nand_layout layout, int variant)
 	mtd = &nand_info[CONFIG_IPQ_NAND_NAND_INFO_IDX];
 	mtd->priv = &nand_chip[0];
 
-	ipq_nand_dev.variant = variant;
+	ipq_nand_dev.variant = ipq_nand->variant;
 
-	if (variant == QCOM_NAND_IPQ) {
-		regs = ipq_nand_dev.regs =
-				(struct ebi2nd_regs *) IPQ806x_EBI2ND_BASE;
-	} else {
-		regs = ipq_nand_dev.regs =
-				(struct ebi2nd_regs *) IPQ40xx_EBI2ND_BASE;
+	regs = ipq_nand_dev.regs =
+			(struct ebi2nd_regs *) ipq_nand->ebi2nd_regs;
+
+	if (ipq_nand_dev.variant == QCOM_NAND_QPIC) {
+
 		/* Reset QPIC BAM */
-		ipq40xx_bam_reset(regs);
+		qpic_bam_reset(regs);
 	}
 
 	chip = mtd->priv;
 	chip->priv = &ipq_nand_dev;
 
-	if (variant == QCOM_NAND_QPIC) {
+	if (ipq_nand_dev.variant == QCOM_NAND_QPIC) {
 		/* bypass XPU */
 		writel(0x1, &regs->qpic_nand_mpu_bypass);
 
@@ -2013,7 +2014,7 @@ int ipq_nand_init(enum ipq_nand_layout layout, int variant)
 	}
 
 	/* Set some sane HW configuration, for ID read. */
-	ipq_nand_hw_config(mtd, ipq_configs[layout][0]);
+	ipq_nand_hw_config(mtd, ipq_configs[ipq_nand->layout][0]);
 
 	/* Reset Flash Memory */
 	ret = ipq_exec_cmd(mtd, IPQ_CMD_RESET_DEVICE, &status);
@@ -2029,7 +2030,7 @@ int ipq_nand_init(enum ipq_nand_layout layout, int variant)
 		return ret;
 	}
 
-	ret = ipq_nand_post_scan_init(mtd, layout);
+	ret = ipq_nand_post_scan_init(mtd, ipq_nand->layout);
 	if (ret < 0)
 		return ret;
 
@@ -2065,6 +2066,23 @@ static int do_ipq_nand_cmd(cmd_tbl_t *cmdtp, int flag,
 {
 	int ret;
 	enum ipq_nand_layout layout;
+	int node, gpio_node;
+	u32 *nand_base;
+	struct ipq_nand ipq_nand;
+	int len;
+
+	node = fdt_path_offset(gd->fdt_blob, "nand");
+	if (node < 0) {
+		printf("Could not find nand-flash in device tree\n");
+		return;
+	}
+
+	nand_base = fdt_getprop(gd->fdt_blob, node, "reg", &len);
+
+	if (nand_base == FDT_ADDR_T_NONE) {
+		printf("No valid NAND base address found in device tree\n");
+		return;
+	}
 
 	if (argc != 2)
 		return CMD_RET_USAGE;
@@ -2084,11 +2102,12 @@ static int do_ipq_nand_cmd(cmd_tbl_t *cmdtp, int flag,
 
 	nand_curr_device = -1;
 
-#if defined CONFIG_IPQ806X
-	ret = ipq_nand_init(layout, QCOM_NAND_IPQ);
-#elif defined CONFIG_IPQ40XX
-	ret = ipq_nand_init(layout, QCOM_NAND_QPIC);
-#endif
+	memset(&ipq_nand, 0, sizeof(ipq_nand));
+	ipq_nand.ebi2cr_regs = fdt32_to_cpu(nand_base[0]);
+	ipq_nand.ebi2nd_regs = fdt32_to_cpu(nand_base[2]);
+	ipq_nand.layout = layout;
+	ipq_nand.variant = QCOM_NAND_IPQ;
+	ret = ipq_nand_init(&ipq_nand);
 	if (ret < 0)
 		return CMD_RET_FAILURE;
 

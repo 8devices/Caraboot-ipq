@@ -23,6 +23,7 @@
 #define GSBIn_HCLK_CTL_REG(n)                   (MSM_CLK_CTL_BASE + 0x29C0 + (0x20*((n)-1)))
 #define BB_PLL_ENA_SC0_REG                      (MSM_CLK_CTL_BASE + 0x34C0)
 #define PLL_LOCK_DET_STATUS_REG                 (MSM_CLK_CTL_BASE + 0x03420)
+#define EBI2_CLK_CTL_REG                 	(MSM_CLK_CTL_BASE + 0x03B00)
 
 #define MN_MODE_DUAL_EDGE                       0x2
 
@@ -43,6 +44,9 @@
                 ((void *)(0x903CBC + ((n) * 0x20)))
 #define GMACSEC_CORE_RESET(n)   \
                 ((void *)(0x903E28 + ((n - 1) * 4)))
+
+#define ALWAYS_ON_CLK_BRANCH_ENA(i)         ((i) << 8)
+#define CLK_BRANCH_ENA(i)                   ((i) << 4)
 
 /* Uart specific clock settings */
 

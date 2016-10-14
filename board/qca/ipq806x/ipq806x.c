@@ -21,6 +21,8 @@
 #include <asm/arch-qcom-common/gpio.h>
 #include <asm/arch-qcom-common/smem.h>
 #include <asm/arch-ipq806x/msm_ipq806x_gmac.h>
+#include <linux/mtd/ipq_nand.h>
+#include <asm/arch-qcom-common/nand.h>
 #include <asm/arch-ipq806x/clk.h>
 #include "ipq806x.h"
 #include "qca_common.h"
@@ -96,7 +98,36 @@ int board_mmc_init(bd_t *bis)
 }
 void board_nand_init(void)
 {
-	/* TODO: To be filled */
+	int node, gpio_node;
+	u32 *nand_base;
+	struct ipq_nand ipq_nand;
+	int len;
+
+	node = fdt_path_offset(gd->fdt_blob, "nand");
+
+	if (node < 0) {
+		printf("NAND : Not found, skipping initialization\n");
+		return;
+	}
+
+	nand_base = fdt_getprop(gd->fdt_blob, node, "reg", &len);
+
+	if (nand_base == FDT_ADDR_T_NONE) {
+		printf("No valid NAND base address found in device tree\n");
+		return;
+        }
+
+	gpio_node = fdt_subnode_offset(gd->fdt_blob, node, "nand_gpio");
+	if (gpio_node >= 0) {
+		nand_clock_config();
+		memset(&ipq_nand, 0, sizeof(ipq_nand));
+		ipq_nand.ebi2cr_regs = fdt32_to_cpu(nand_base[0]);
+		ipq_nand.ebi2nd_regs = fdt32_to_cpu(nand_base[2]);
+		ipq_nand.layout = IPQ_NAND_LAYOUT_LINUX;
+		ipq_nand.variant = QCOM_NAND_IPQ;
+		qca_gpio_init(gpio_node);
+		ipq_nand_init(&ipq_nand);
+	}
 }
 
 int board_eth_init(bd_t *bis)
