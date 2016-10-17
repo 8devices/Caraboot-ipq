@@ -231,6 +231,7 @@ int ft_board_setup(void *blob, bd_t *bd)
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 	struct flash_node_info nodes[] = {
 		{ "qcom,msm-nand", MTD_DEV_TYPE_NAND, 0 },
+		{ "qcom,qcom_nand", MTD_DEV_TYPE_NAND, 0 },
 		{ "spinand,mt29f", MTD_DEV_TYPE_NAND, 1 },
 		{ "n25q128a11", MTD_DEV_TYPE_NAND, 2 },
 		{ NULL, 0, -1 },	/* Terminator */
