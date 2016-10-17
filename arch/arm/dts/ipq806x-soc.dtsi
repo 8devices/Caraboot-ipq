@@ -17,6 +17,11 @@
 / {
 	config_name = "config@1";
 
+	config {
+		bootdelay = <2>;
+		bootcmd = "bootipq";
+	};
+
 	serial@16340000 {
 		status = "disabled";
 		compatible = "qca,ipq-uartdm";
