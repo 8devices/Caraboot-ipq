@@ -14,14 +14,13 @@
 /dts-v1/;
 #include "ipq806x-soc.dtsi"
 / {
-	model ="QCA, IPQ806x-AP148";
-	compatible = "qca,ipq806x", "qca,ipq806x-ap148";
-	machid = <4704>;
-	config_name = "config@ap148";
+	model ="QCA, IPQ806x-AP145";
+	compatible = "qca,ipq806x", "qca,ipq806x-ap145";
+	machid = <4810>;
+	config_name = "config@ap145";
 
 	aliases {
 		console = "/serial@16340000";
-		nand = "/nand@1A600000";
 	};
 
 	serial@16340000 {

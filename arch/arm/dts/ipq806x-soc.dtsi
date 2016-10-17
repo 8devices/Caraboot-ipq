@@ -18,6 +18,7 @@
 	config_name = "config@1";
 
 	serial@16340000 {
+		status = "disabled";
 		compatible = "qca,ipq-uartdm";
 		reg = <0x16340000 0x200>;
 		gsbi_base = <0x16300000>;
@@ -31,23 +32,55 @@
 			gpio1 {
 				gpio = <10>;
 				func = <1>;
-				out = <0>;
-				pull = <0>;
-				drvstr = <5>;
-				oe = <1>;
-				};
+				out = <GPIO_OUT_LOW>;
+				pull = <GPIO_NO_PULL>;
+				drvstr = <GPIO_12MA>;
+				oe = <GPIO_OE_ENABLE>;
+			};
 
 			gpio2 {
 				gpio = <11>;
 				func = <1>;
-				out = <0>;
-				pull = <0>;
-				drvstr = <5>;
-				oe = <1>;
-				};
+				out = <GPIO_OUT_LOW>;
+				pull = <GPIO_NO_PULL>;
+				drvstr = <GPIO_12MA>;
+				oe = <GPIO_OE_ENABLE>;
+			};
 
 		};
 
+	};
+
+	serial@12490000 {
+		status = "disabled";
+		compatible = "qca,ipq-uartdm";
+		reg = <0x12490000 0x200>;
+		gsbi_base = <0x12480000>;
+		id = <2>;
+		bit_rate = <0xCC>;
+		m_value = <0x0C>;
+		n_value = <0x271>;
+		d_value = <0x139>;
+
+		serial_gpio {
+			gpio1 {
+				gpio = <22>;
+				func = <1>;
+				out = <GPIO_OUT_LOW>;
+				pull = <GPIO_NO_PULL>;
+				drvstr = <GPIO_12MA>;
+				oe = <GPIO_OE_ENABLE>;
+			};
+
+			gpio2 {
+				gpio = <23>;
+				func = <1>;
+				out = <GPIO_OUT_LOW>;
+				pull = <GPIO_NO_PULL>;
+				drvstr = <GPIO_12MA>;
+				oe = <GPIO_OE_ENABLE>;
+			};
+		};
 	};
 
 	timer {
