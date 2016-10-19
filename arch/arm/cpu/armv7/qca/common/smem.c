@@ -47,8 +47,8 @@ typedef struct smem_pmic_type
 	unsigned pmic_die_revision;
 }pmic_type;
 
-struct qca_platform {
-	unsigned  format;
+typedef struct qca_platform_v1 {
+	unsigned format;
 	unsigned id;
 	unsigned version;
 	char     build_id[BUILD_ID_LEN];
@@ -58,8 +58,17 @@ struct qca_platform {
 	unsigned platform_version;
 	unsigned accessory_chip;
 	unsigned hw_platform_subtype;
+}qca_platform_v1;
+
+typedef struct qca_platform_v2 {
+	qca_platform_v1 v1;
 	pmic_type pmic_info[3];
 	unsigned foundry_id;
+}qca_platform_v2;
+
+union qca_platform {
+	qca_platform_v1 v1;
+	qca_platform_v2 v2;
 };
 
 struct smem_proc_comm {
@@ -365,44 +374,61 @@ int smem_get_build_version(char *version_name, int buf_size, int index)
 	return ret;
 }
 
+unsigned int smem_read_platform_type(union qca_platform *platform_type)
+{
+	unsigned status;
+
+	status = smem_read_alloc_entry(SMEM_HW_SW_BUILD_ID, platform_type,
+				       sizeof(qca_platform_v1));
+	if (status) {
+		debug("smem: Mapping platform type failed. Retrying...\n");
+		status = smem_read_alloc_entry(SMEM_HW_SW_BUILD_ID,
+					       platform_type,
+					       sizeof(qca_platform_v2));
+		if (status)
+			printf("smem: Mapping platform type"
+			       "failed permanently.\n");
+	}
+	return status;
+}
+
 unsigned int smem_get_board_platform_type()
 {
-	struct qca_platform platform_type;
+	union qca_platform platform_type;
 	struct smem_machid_info machid_info;
-	unsigned smem_status;
 	unsigned int machid = 0;
 
-	smem_status = smem_read_alloc_entry(SMEM_MACHID_INFO_LOCATION,
-			&machid_info, sizeof(machid_info));
-	if (!smem_status) {
+	if (!smem_read_alloc_entry(SMEM_MACHID_INFO_LOCATION,
+				   &machid_info, sizeof(machid_info))) {
 		machid = machid_info.machid;
 		return machid;
 	}
 
-	smem_read_alloc_entry(SMEM_HW_SW_BUILD_ID, &platform_type,
-			sizeof(struct qca_platform));
+	if (!smem_read_alloc_entry(SMEM_HW_SW_BUILD_ID,
+				  &platform_type, sizeof(qca_platform_v2))) {
+		machid = ((platform_type.v1.hw_platform << 24) |
+			  ((SOCINFO_VERSION_MAJOR(platform_type.v1.platform_version)) << 16) |
+			  ((SOCINFO_VERSION_MINOR(platform_type.v1.platform_version)) << 8) |
+			  (platform_type.v1.hw_platform_subtype));
 
-	machid = ((platform_type.hw_platform << 24) |
-			((SOCINFO_VERSION_MAJOR(platform_type.platform_version)) << 16) |
-			((SOCINFO_VERSION_MINOR(platform_type.platform_version)) << 8) |
-			(platform_type.hw_platform_subtype));
-
-	return machid;
+		return machid;
+	}
+	printf("smem: Failed to fetch the board machid.\n");
+	return 0;
 }
 
 int ipq_smem_get_socinfo_cpu_type(uint32_t *cpu_type)
 {
-	int smem_status;
-	struct qca_platform platform_type;
+	unsigned int smem_status;
+	union qca_platform platform_type;
 
-	smem_status = smem_read_alloc_entry(SMEM_HW_SW_BUILD_ID,
-			&platform_type, sizeof(struct qca_platform));
+	smem_status = smem_read_platform_type(&platform_type);
 
 	if (!smem_status) {
-		*cpu_type = platform_type.id;
+		*cpu_type = platform_type.v1.id;
 		debug("smem: socinfo - cpu type = %d\n",*cpu_type);
 	} else {
-		printf("smem: Get socinfo failed\n");
+		printf("smem: Get socinfo - cpu type failed\n");
 	}
 
 	return smem_status;
@@ -410,17 +436,16 @@ int ipq_smem_get_socinfo_cpu_type(uint32_t *cpu_type)
 
 int ipq_smem_get_socinfo_version(uint32_t *version)
 {
-	int smem_status;
-	struct qca_platform platform_type;
+	unsigned int smem_status;
+	union qca_platform platform_type;
 
-	smem_status = smem_read_alloc_entry(SMEM_HW_SW_BUILD_ID,
-			&platform_type, sizeof(struct qca_platform));
+	smem_status = smem_read_platform_type(&platform_type);
 
 	if (!smem_status) {
-		*version = platform_type.version;
+		*version = platform_type.v1.version;
 		debug("smem: socinfo - version = 0x%x\n",*version);
 	} else {
-		printf("smem: Get socinfo failed\n");
+		printf("smem: Get socinfo - version failed\n");
 	}
 
 	return smem_status;
