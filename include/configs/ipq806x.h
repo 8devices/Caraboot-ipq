@@ -91,7 +91,7 @@
 
 #define CONFIG_ENV_SIZE			0x10000 /* 64 KB */
 #define CONFIG_ENV_SIZE_MAX             (256 << 10) /* 256 KB */
-#define CONFIG_SYS_MALLOC_LEN           (CONFIG_ENV_SIZE_MAX + (256 << 10))
+#define CONFIG_SYS_MALLOC_LEN           (CONFIG_ENV_SIZE_MAX + (512 << 10))
 
 /*
  * select serial console configuration
