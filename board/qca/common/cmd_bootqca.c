@@ -245,14 +245,17 @@ int config_select(unsigned int addr, char *rcmd, int rcmd_size)
 
 	ipq_smem_get_socinfo_version((uint32_t *)&soc_version);
 	if(SOCINFO_VERSION_MAJOR(soc_version) >= 2) {
-		sprintf((char *)dtb_config_name, "v%d.0-%s",
-			SOCINFO_VERSION_MAJOR(soc_version), dtb_config_name);
+		sprintf(dtb_config_name + strlen("config@"), "v%d.0-%s",
+			SOCINFO_VERSION_MAJOR(soc_version),
+			config + strlen("config@"));
 	}
 
 	if (fit_conf_get_node((void *)addr, config) >= 0) {
-		snprintf(rcmd, rcmd_size, "bootm 0x%x#%s\n", addr, dtb_config_name);
+		snprintf(rcmd, rcmd_size, "bootm 0x%x#%s\n",
+			 addr, dtb_config_name);
 		return 0;
 	}
+
 	printf("Config not availabale\n");
 	return -1;
 }
