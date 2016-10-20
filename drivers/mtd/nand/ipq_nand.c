@@ -1476,6 +1476,7 @@ int ipq_nand_get_info_onfi(struct mtd_info *mtd)
 	hw2memcpy(p, &regs->buffn_acc[0], sizeof(struct nand_onfi_params));
 
 	mtd->writesize = le32_to_cpu(p->byte_per_page);
+	mtd->writebufsize = mtd->writesize;
 	mtd->erasesize = le32_to_cpu(p->pages_per_block) * mtd->writesize;
 	mtd->oobsize = le16_to_cpu(p->spare_bytes_per_page);
 	mtd->size = (uint64_t)le32_to_cpu(p->blocks_per_lun) * (mtd->erasesize);
