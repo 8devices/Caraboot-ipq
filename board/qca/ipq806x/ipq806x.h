@@ -16,6 +16,7 @@
 
 #include <configs/ipq806x.h>
 #include <asm/u-boot.h>
+#include <asm/arch-ipq806x/clk.h>
 #include <asm/arch-qcom-common/qca_common.h>
 #include "phy.h"
 
@@ -23,6 +24,23 @@
 #define GMAC_AHB_RESET		0x903E24
 
 #define KERNEL_AUTH_CMD                 0x7
+
+#define MSM_TMR_BASE        0x0200A000
+
+#define APCS_WDT0_EN        (MSM_TMR_BASE + 0x0040)
+#define APCS_WDT0_RST       (MSM_TMR_BASE + 0x0038)
+#define APCS_WDT0_BARK_TIME (MSM_TMR_BASE + 0x004C)
+#define APCS_WDT0_BITE_TIME (MSM_TMR_BASE + 0x005C)
+
+#define APCS_WDT0_CPU0_WDOG_EXPIRED_ENABLE (MSM_CLK_CTL_BASE + 0x3820)
+
+/* Watchdog bite time set to default reset value */
+#define RESET_WDT_BITE_TIME 0x31F3
+
+/* Watchdog bark time value is kept larger than the watchdog timeout
+ * of 0x31F3, effectively disabling the watchdog bark interrupt
+ */
+#define RESET_WDT_BARK_TIME (5 * RESET_WDT_BITE_TIME)
 
 typedef struct {
 	uint count;

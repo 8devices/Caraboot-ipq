@@ -78,8 +78,18 @@ void reset_crashdump(void)
 
 void reset_cpu(unsigned long a)
 {
+	printf("\nResetting with watch dog!\n");
+
+	writel(0, APCS_WDT0_EN);
+	writel(1, APCS_WDT0_RST);
+	writel(RESET_WDT_BARK_TIME, APCS_WDT0_BARK_TIME);
+	writel(RESET_WDT_BITE_TIME, APCS_WDT0_BITE_TIME);
+	writel(1, APCS_WDT0_EN);
+	writel(1, APCS_WDT0_CPU0_WDOG_EXPIRED_ENABLE);
+
 	while(1);
 }
+
 void emmc_clock_config(int mode)
 {
 	/* TODO: To be filled */
