@@ -21,6 +21,7 @@
 
 	aliases {
 		console = "/serial@12490000";
+		nand = "/nand@1A600000";
 	};
 
 	serial@12490000 {
