@@ -917,6 +917,9 @@ int fit_check_ramdisk(const void *fit, int os_noffset,
 int calculate_hash(const void *data, int data_len, const char *algo,
 			uint8_t *value, int *value_len);
 
+int bootm_load_os(bootm_headers_t *images, unsigned long *load_end,
+		  int boot_progress);
+
 /*
  * At present we only support signing on the host, and verification on the
  * device

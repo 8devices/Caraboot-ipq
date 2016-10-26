@@ -1569,6 +1569,10 @@ int fit_image_load(bootm_headers_t *images, ulong addr,
 	uint8_t os;
 	const char *prop_name;
 	int ret;
+#if defined(CONFIG_DTB_COMPRESSION)
+	bootm_headers_t fdt = {0};
+#endif
+	uint8_t comp_type = IH_COMP_NONE;
 
 	fit = map_sysmem(addr, 0);
 	fit_uname = fit_unamep ? *fit_unamep : NULL;
@@ -1650,11 +1654,13 @@ int fit_image_load(bootm_headers_t *images, ulong addr,
 		return -ENOEXEC;
 	}
 #endif
+#if !defined(CONFIG_DTB_COMPRESSION)
 	if (image_type == IH_TYPE_FLATDT &&
 	    !fit_image_check_comp(fit, noffset, IH_COMP_NONE)) {
 		puts("FDT image is compressed");
 		return -EPROTONOSUPPORT;
 	}
+#endif
 
 	bootstage_mark(bootstage_id + BOOTSTAGE_SUB_CHECK_ALL);
 	type_ok = fit_image_check_type(fit, noffset, image_type) ||
@@ -1691,10 +1697,30 @@ int fit_image_load(bootm_headers_t *images, ulong addr,
 	}
 	len = (ulong)size;
 
-	/* verify that image data is a proper FDT blob */
-	if (image_type == IH_TYPE_FLATDT && fdt_check_header(buf)) {
-		puts("Subimage data is not a FDT");
-		return -ENOEXEC;
+#if defined(CONFIG_DTB_COMPRESSION)
+	if (!fit_image_get_comp(fit, noffset, &comp_type)
+				&& (comp_type != IH_COMP_NONE)) {
+		printf("   %s %s image found\n",
+		       genimg_get_comp_name(comp_type), prop_name);
+		if (fit_image_get_load(fit, noffset,
+				       &load) != 0) {
+			printf("ERROR: load address not found for "
+			       "compressed %s..\n", prop_name);
+			return -EFAULT;
+		} else {
+			fdt.os.comp = comp_type;
+			fdt.os.type = IH_TYPE_FLATDT;
+			printf("   %s load address is: 0x%08x\n", prop_name,
+			       (unsigned int)load);
+		}
+	}
+#endif
+	if (comp_type == IH_COMP_NONE) {
+		/* verify that image data is a proper FDT blob */
+		if (image_type == IH_TYPE_FLATDT && fdt_check_header(buf)) {
+			puts("Subimage data is not a FDT");
+			return -ENOEXEC;
+		}
 	}
 
 	bootstage_mark(bootstage_id + BOOTSTAGE_SUB_GET_DATA_OK);
@@ -1722,7 +1748,6 @@ int fit_image_load(bootm_headers_t *images, ulong addr,
 	} else if (load_op != FIT_LOAD_OPTIONAL_NON_ZERO || load) {
 		ulong image_start, image_end;
 		ulong load_end;
-		void *dst;
 
 		/*
 		 * move image data to the load address,
@@ -1741,8 +1766,27 @@ int fit_image_load(bootm_headers_t *images, ulong addr,
 		printf("   Loading %s from 0x%08lx to 0x%08lx\n",
 		       prop_name, data, load);
 
-		dst = map_sysmem(load, len);
+#if defined(CONFIG_DTB_COMPRESSION)
+		if (comp_type != IH_COMP_NONE) {
+			fdt.os.image_start = (ulong)data;
+			fdt.os.image_len = len;
+			fdt.os.load = load;
+			if (!bootm_load_os(&fdt, &load_end, 1)) {
+				/*
+				 * verify that uncompressed image
+				 * data is a proper FDT blob
+				 * */
+				if (fdt_check_header((char *)load) != 0) {
+					printf("Error: Uncompresed FIT Subimage"
+					       " data is not a %s", prop_name);
+					return -ENOEXEC;
+				}
+			}
+		}
+#else
+		void *dst = map_sysmem(load, len);
 		memmove(dst, buf, len);
+#endif
 		data = load;
 	}
 	bootstage_mark(bootstage_id + BOOTSTAGE_SUB_LOAD);

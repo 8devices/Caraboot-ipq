@@ -334,6 +334,11 @@ int bootm_decomp_image(int comp, ulong load, ulong image_start, int type,
 	*load_end = load;
 	print_decomp_msg(comp, type, load == image_start);
 
+#if defined(CONFIG_DTB_COMPRESSION)
+	if(type == IH_TYPE_FLATDT)
+		unc_len = CONFIG_DTB_LOAD_MAXLEN;
+#endif
+
 	/*
 	 * Load the image to the right place, decompressing if needed. After
 	 * this, image_len will be set to the number of uncompressed bytes
@@ -413,8 +418,8 @@ int bootm_decomp_image(int comp, ulong load, ulong image_start, int type,
 }
 
 #ifndef USE_HOSTCC
-static int bootm_load_os(bootm_headers_t *images, unsigned long *load_end,
-			 int boot_progress)
+int bootm_load_os(bootm_headers_t *images, unsigned long *load_end,
+		  int boot_progress)
 {
 	image_info_t os = images->os;
 	ulong load = os.load;
@@ -437,8 +442,10 @@ static int bootm_load_os(bootm_headers_t *images, unsigned long *load_end,
 	}
 	flush_cache(load, (*load_end - load) * sizeof(ulong));
 
-	debug("   kernel loaded at 0x%08lx, end = 0x%08lx\n", load, *load_end);
-	bootstage_mark(BOOTSTAGE_ID_KERNEL_LOADED);
+	debug("   %s loaded at 0x%08lx, end = 0x%08lx\n",
+	      genimg_get_type_name(os.type), load, *load_end);
+	if (os.type == IH_TYPE_KERNEL)
+		bootstage_mark(BOOTSTAGE_ID_KERNEL_LOADED);
 
 	no_overlap = (os.comp == IH_COMP_NONE && load == image_start);
 
