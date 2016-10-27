@@ -807,7 +807,6 @@ board_ipq40xx_params_t board_params[] = {
 #endif
 		.spi_nand_available = 0,
 		.nor_nand_available = 0,
-		.nor_emmc_available = 0,
 		.dtb_config_name = { "config@4", "config@ap.dk01.1-s1" },
 	},
 	{
@@ -824,7 +823,6 @@ board_ipq40xx_params_t board_params[] = {
 #endif
 		.spi_nand_available = 0,
 		.nor_nand_available = 0,
-		.nor_emmc_available = 0,
 		.dtb_config_name = { "config@4", "config@ap.dk01.1-c1" },
 	},
 	{
@@ -841,7 +839,6 @@ board_ipq40xx_params_t board_params[] = {
 #endif
 		.spi_nand_available = 1,
 		.nor_nand_available = 0,
-		.nor_emmc_available = 0,
 		.dtb_config_name = { "config@5", "config@ap.dk01.1-c2" },
 	},
 	{
@@ -868,7 +865,6 @@ board_ipq40xx_params_t board_params[] = {
 		.mmc_gpio_count = ARRAY_SIZE(mmc_ap_dk04),
 		.spi_nand_available = 0,
 		.nor_nand_available = 0,
-		.nor_emmc_available = 0,
 		.dtb_config_name = { "config@1", "config@ap.dk04.1-c1" },
 	},
 	{
@@ -895,7 +891,6 @@ board_ipq40xx_params_t board_params[] = {
 		.mmc_gpio_count = ARRAY_SIZE(mmc_ap_dk04),
 		.spi_nand_available = 0,
 		.nor_nand_available = 0,
-		.nor_emmc_available = 0,
 		.dtb_config_name = { "config@8", "config@ap.dk04.1-c4" },
 	},
 	{
@@ -920,7 +915,6 @@ board_ipq40xx_params_t board_params[] = {
 		.mmc_gpio_count = ARRAY_SIZE(mmc_ap_dk04),
 		.spi_nand_available = 0,
 		.nor_nand_available = 0,
-		.nor_emmc_available = 0,
 		.dtb_config_name = { "config@2", "config@ap.dk04.1-c2" },
 	},
 	{
@@ -943,7 +937,6 @@ board_ipq40xx_params_t board_params[] = {
 		.mmc_gpio_count = ARRAY_SIZE(mmc_ap_dk04),
 		.spi_nand_available = 0,
 		.nor_nand_available = 0,
-		.nor_emmc_available = 1,
 		.dtb_config_name = { "config@3", "config@ap.dk04.1-c3" },
 	},
 	{
@@ -966,7 +959,6 @@ board_ipq40xx_params_t board_params[] = {
 		//.mmc_gpio_count = ARRAY_SIZE(mmc_ap_dk04),
 		.spi_nand_available = 0,
 		.nor_nand_available = 0,
-		.nor_emmc_available = 0,
 		.dtb_config_name = { "config@9", "config@ap.dk06.1-c1" },
 	},
 	{
@@ -987,7 +979,6 @@ board_ipq40xx_params_t board_params[] = {
 #endif
 		.spi_nand_available = 0,
 		.nor_nand_available = 1,
-		.nor_emmc_available = 0,
 		.dtb_config_name = { "config@10", "config@ap.dk07.1-c1" },
 	},
 	{
@@ -1004,7 +995,6 @@ board_ipq40xx_params_t board_params[] = {
 #endif
 		.spi_nand_available = 0,
 		.nor_nand_available = 0,
-		.nor_emmc_available = 0,
 		.dtb_config_name = { "config@6", "config@db.dk01.1-c1" },
 	},
 	{
@@ -1029,7 +1019,6 @@ board_ipq40xx_params_t board_params[] = {
 		//.mmc_gpio_count = ARRAY_SIZE(mmc_ap_dk04),
 		.spi_nand_available = 0,
 		.nor_nand_available = 0,
-		.nor_emmc_available = 0,
 		.dtb_config_name = { "config@7", "config@db.dk02.1-c1" },
 	},
 	{
@@ -1046,7 +1035,6 @@ board_ipq40xx_params_t board_params[] = {
 #endif
 		.spi_nand_available = 0,
 		.nor_nand_available = 0,
-		.nor_emmc_available = 0,
 		.dtb_config_name = { "", "" },
 	},
 };

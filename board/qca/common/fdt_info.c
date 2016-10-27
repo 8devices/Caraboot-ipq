@@ -25,8 +25,3 @@ unsigned int is_nor_nand_available(void)
 {
 	return fdtdec_get_uint(gd->fdt_blob, 0, "nor_nand_available", 0);
 }
-
-unsigned int is_nor_emmc_available(void)
-{
-	return fdtdec_get_uint(gd->fdt_blob, 0, "nor_emmc_available", 0);
-}
