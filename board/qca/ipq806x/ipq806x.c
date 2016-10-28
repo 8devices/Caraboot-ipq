@@ -252,17 +252,24 @@ int board_eth_init(bd_t *bis)
 void qca_serial_init(struct ipq_serial_platdata *plat)
 {
 	int serial_node, gpio_node;
-	serial_node = fdt_path_offset(gd->fdt_blob, "/serial");
+	unsigned gsbi_base;
+
+	serial_node = fdt_path_offset(gd->fdt_blob, "console");
         if (serial_node < 0) {
-             return -1;
+             return;
         }
 
-        gpio_node = fdt_subnode_offset(gd->fdt_blob, serial_node, "serial_gpio");
+        gpio_node = fdt_subnode_offset(gd->fdt_blob,
+				       serial_node, "serial_gpio");
+	gsbi_base = fdtdec_get_uint(gd->fdt_blob,
+				    serial_node, "gsbi_base", 0);
+	if (!gsbi_base)
+		return;
 
 	qca_gpio_init(gpio_node);
 	writel(GSBI_PROTOCOL_CODE_I2C_UART <<
 			GSBI_CTRL_REG_PROTOCOL_CODE_S,
-			GSBI_CTRL_REG(GSBI4_BASE));
+			GSBI_CTRL_REG(gsbi_base));
 
 	if (!(plat->m_value == -1) || ( plat->n_value == -1) || (plat->d_value == -1))
 		uart_clock_config(plat->port_id,
