@@ -483,7 +483,7 @@ void pcie_clock_config(clk_offset_t *pci_clk)
 }
 #endif /* CONFIG_IPQ806X_PCI */
 
-#ifdef CONFIG_IPQ_MMC
+#ifdef CONFIG_QCA_MMC
 void emmc_pll_vote_clk_enable(void)
 {
 	setbits_le32(BB_PLL_ENA_SC0_REG, BIT(8));
