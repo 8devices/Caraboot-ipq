@@ -248,6 +248,10 @@ extern loff_t board_env_offset;
 #define IPQ_TEMP_DUMP_ADDR 0
 #endif
 
+#define CONFIG_QCA_KERNEL_CRASHDUMP_ADDRESS	0x08605FFF
+#define CONFIG_CPU_CONTEXT_DUMP_SIZE		2048
+#define CONFIG_TLV_DUMP_SIZE			2048
+
 /* L1 cache line size is 64 bytes, L2 cache line size is 128 bytes
  * Cache flush and invalidation based on L1 cache, so the cache line
  * size is configured to 64 */
