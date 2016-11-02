@@ -856,7 +856,7 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 			goto failed;
 		memset(bb_nodes[i], 0, sizeof(struct bitbang_nodes));
 
-		gmac_gpio_node = fdt_path_offset(gd->fdt_blob, "/gmac/gmac_gpio");
+		gmac_gpio_node = fdt_path_offset(gd->fdt_blob, "gmac_gpio");
 		if (gmac_gpio_node >= 0) {
 			offset = fdt_first_subnode(gd->fdt_blob, gmac_gpio_node);
 			bb_nodes[i]->mdio = fdtdec_get_uint(gd->fdt_blob, offset, "gpio", 0);

@@ -96,150 +96,188 @@
 		timer_load_val = <0x00000000 0xFFFFFFFF>;
 	};
 
-	gmac {
-		gmac_gpio {
-			gpio0 {
-				gpio = <0>;
-				func = <1>;
-				pull = <GPIO_NO_PULL>;
-				drvstr = <GPIO_8MA>;
-				oe = <GPIO_OE_DISABLE>;
-			};
-
-			gpio1 {
-				gpio = <1>;
-				func = <1>;
-				pull = <GPIO_NO_PULL>;
-				drvstr = <GPIO_8MA>;
-				oe = <GPIO_OE_ENABLE>;
-			};
-
-			gpio51 {
-				gpio = <51>;
-				func = <2>;
-				pull = <GPIO_NO_PULL>;
-				drvstr = <GPIO_8MA>;
-				oe = <GPIO_OE_DISABLE>;
-			};
-
-			gpio52 {
-				gpio = <52>;
-				func = <2>;
-				pull = <GPIO_NO_PULL>;
-				drvstr = <GPIO_8MA>;
-				oe = <GPIO_OE_DISABLE>;
-			};
-
-			gpio59 {
-				gpio = <59>;
-				func = <2>;
-				pull = <GPIO_NO_PULL>;
-				drvstr = <GPIO_8MA>;
-				oe = <GPIO_OE_DISABLE>;
-			};
-
-			gpio60 {
-				gpio = <60>;
-				func = <2>;
-				pull = <GPIO_NO_PULL>;
-				drvstr = <GPIO_8MA>;
-				oe = <GPIO_OE_DISABLE>;
-			};
-
-			gpio61 {
-				gpio = <61>;
-				func = <2>;
-				pull = <GPIO_NO_PULL>;
-				drvstr = <GPIO_8MA>;
-				oe = <GPIO_OE_DISABLE>;
-			};
-
-			gpio62 {
-				gpio = <62>;
-				func = <2>;
-				pull = <GPIO_NO_PULL>;
-				drvstr = <GPIO_8MA>;
-				oe = <GPIO_OE_DISABLE>;
-			};
-
-			gpio27 {
-				gpio = <27>;
-				func = <2>;
-				pull = <GPIO_NO_PULL>;
-				drvstr = <GPIO_8MA>;
-				oe = <GPIO_OE_ENABLE>;
-			};
-
-			gpio28 {
-				gpio = <28>;
-				func = <2>;
-				pull = <GPIO_NO_PULL>;
-				drvstr = <GPIO_8MA>;
-				oe = <GPIO_OE_ENABLE>;
-			};
-
-			gpio29 {
-				gpio = <29>;
-				func = <2>;
-				pull = <GPIO_NO_PULL>;
-				drvstr = <GPIO_8MA>;
-				oe = <GPIO_OE_ENABLE>;
-			};
-
-			gpio30 {
-				gpio = <30>;
-				func = <2>;
-				pull = <GPIO_NO_PULL>;
-				drvstr = <GPIO_8MA>;
-				oe = <GPIO_OE_ENABLE>;
-			};
-
-			gpio31 {
-				gpio = <31>;
-				func = <2>;
-				pull = <GPIO_NO_PULL>;
-				drvstr = <GPIO_8MA>;
-				oe = <GPIO_OE_ENABLE>;
-			};
-
-			gpio32 {
-				gpio = <32>;
-				func = <2>;
-				pull = <GPIO_NO_PULL>;
-				drvstr = <GPIO_8MA>;
-				oe = <GPIO_OE_ENABLE>;
-			};
+	gmac0_gpio {
+		gpio0 {
+			gpio = <0>;
+			func = <1>;
+			pull = <GPIO_NO_PULL>;
+			drvstr = <GPIO_8MA>;
+			oe = <GPIO_OE_DISABLE>;
 		};
 
-		gmac_cfg {
-			gmac_count = <2>;
-
-			gmac1_cfg {
-				base = <0x37200000>;
-				unit = <1>;
-				is_macsec = <1>;
-				mac_pwr0 = <0x00080000>;
-				mac_pwr1 = <0x00040000>;
-				mac_conn_to_phy = <0>;
-				phy_interface_type = <7>;
-				phy_address_count = <1>;
-				phy_address = <4>;
-				phy_name = "IPQ MDIO1";
-			};
-
-			gmac2_cfg {
-				base = <0x37400000>;
-				unit = <2>;
-				is_macsec = <1>;
-				mac_pwr0 = <0x00080000>;
-				mac_pwr1 = <0x00040000>;
-				mac_conn_to_phy = <0>;
-				phy_interface_type = <2>;
-				phy_address_count = <4>;
-				phy_address = <0 1 2 3>;
-				phy_name = "IPQ MDIO2";
-			};
+		gpio1 {
+			gpio = <1>;
+			func = <1>;
+			pull = <GPIO_NO_PULL>;
+			drvstr = <GPIO_8MA>;
+			oe = <GPIO_OE_ENABLE>;
 		};
+
+		gpio2 {
+			gpio = <2>;
+			func = <0>;
+			pull = <GPIO_NO_PULL>;
+			drvstr = <GPIO_8MA>;
+			oe = <GPIO_OE_DISABLE>;
+		};
+
+		gpio66 {
+			gpio = <66>;
+			func = <0>;
+			pull = <GPIO_NO_PULL>;
+			drvstr = <GPIO_16MA>;
+			oe = <GPIO_OE_DISABLE>;
+		};
+
+	};
+
+	gmac1_gpio {
+		gpio0 {
+			gpio = <0>;
+			func = <1>;
+			pull = <GPIO_NO_PULL>;
+			drvstr = <GPIO_8MA>;
+			oe = <GPIO_OE_DISABLE>;
+		};
+
+		gpio1 {
+			gpio = <1>;
+			func = <1>;
+			pull = <GPIO_NO_PULL>;
+			drvstr = <GPIO_8MA>;
+			oe = <GPIO_OE_ENABLE>;
+		};
+
+		gpio51 {
+			gpio = <51>;
+			func = <2>;
+			pull = <GPIO_NO_PULL>;
+			drvstr = <GPIO_8MA>;
+			oe = <GPIO_OE_DISABLE>;
+		};
+
+		gpio52 {
+			gpio = <52>;
+			func = <2>;
+			pull = <GPIO_NO_PULL>;
+			drvstr = <GPIO_8MA>;
+			oe = <GPIO_OE_DISABLE>;
+		};
+
+		gpio59 {
+			gpio = <59>;
+			func = <2>;
+			pull = <GPIO_NO_PULL>;
+			drvstr = <GPIO_8MA>;
+			oe = <GPIO_OE_DISABLE>;
+		};
+
+		gpio60 {
+			gpio = <60>;
+			func = <2>;
+			pull = <GPIO_NO_PULL>;
+			drvstr = <GPIO_8MA>;
+			oe = <GPIO_OE_DISABLE>;
+		};
+
+		gpio61 {
+			gpio = <61>;
+			func = <2>;
+			pull = <GPIO_NO_PULL>;
+			drvstr = <GPIO_8MA>;
+			oe = <GPIO_OE_DISABLE>;
+		};
+
+		gpio62 {
+			gpio = <62>;
+			func = <2>;
+			pull = <GPIO_NO_PULL>;
+			drvstr = <GPIO_8MA>;
+			oe = <GPIO_OE_DISABLE>;
+		};
+
+		gpio27 {
+			gpio = <27>;
+			func = <2>;
+			pull = <GPIO_NO_PULL>;
+			drvstr = <GPIO_8MA>;
+			oe = <GPIO_OE_ENABLE>;
+		};
+
+		gpio28 {
+			gpio = <28>;
+			func = <2>;
+			pull = <GPIO_NO_PULL>;
+			drvstr = <GPIO_8MA>;
+			oe = <GPIO_OE_ENABLE>;
+		};
+
+		gpio29 {
+			gpio = <29>;
+			func = <2>;
+			pull = <GPIO_NO_PULL>;
+			drvstr = <GPIO_8MA>;
+			oe = <GPIO_OE_ENABLE>;
+		};
+
+		gpio30 {
+			gpio = <30>;
+			func = <2>;
+			pull = <GPIO_NO_PULL>;
+			drvstr = <GPIO_8MA>;
+			oe = <GPIO_OE_ENABLE>;
+		};
+
+		gpio31 {
+			gpio = <31>;
+			func = <2>;
+			pull = <GPIO_NO_PULL>;
+			drvstr = <GPIO_8MA>;
+			oe = <GPIO_OE_ENABLE>;
+		};
+
+		gpio32 {
+			gpio = <32>;
+			func = <2>;
+			pull = <GPIO_NO_PULL>;
+			drvstr = <GPIO_8MA>;
+			oe = <GPIO_OE_ENABLE>;
+		};
+	};
+
+	gmac3_gpio {
+		gpio0 {
+			gpio = <0>;
+			func = <1>;
+			pull = <GPIO_NO_PULL>;
+			drvstr = <GPIO_8MA>;
+			oe = <GPIO_OE_DISABLE>;
+		};
+
+		gpio1 {
+			gpio = <1>;
+			func = <1>;
+			pull = <GPIO_NO_PULL>;
+			drvstr = <GPIO_8MA>;
+			oe = <GPIO_OE_ENABLE>;
+		};
+
+		gpio2 {
+			gpio = <2>;
+			func = <0>;
+			pull = <GPIO_NO_PULL>;
+			drvstr = <GPIO_8MA>;
+			oe = <GPIO_OE_DISABLE>;
+		};
+
+		gpio32 {
+			gpio = <32>;
+			func = <0>;
+			pull = <GPIO_PULL_UP>;
+			drvstr = <GPIO_8MA>;
+			oe = <GPIO_OE_DISABLE>;
+		};
+
 	};
 
 	nand@1A600000 {
@@ -247,7 +285,7 @@
 		#size-cells = <0>;
 		compatible = "qcom,ebi2-nand";
 		reg = <0x1A600000 0x10000>,
-			<0x1AC00000 0x10000>;
+		    <0x1AC00000 0x10000>;
 		reg-names = "EBI2_CR", "EBI2ND";
 		status = "ok";
 		nand_gpio {

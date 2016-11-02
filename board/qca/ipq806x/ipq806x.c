@@ -152,7 +152,7 @@ int board_eth_init(bd_t *bis)
 	unsigned int tmp_phy_array[8] = {0};
 	char *phy_name_ptr = NULL;
 
-	gmac_cfg_node = fdt_path_offset(gd->fdt_blob, "/gmac/gmac_cfg");
+	gmac_cfg_node = fdt_path_offset(gd->fdt_blob, "/gmac_cfg");
 	if (gmac_cfg_node >= 0) {
 		for (offset = fdt_first_subnode(gd->fdt_blob, gmac_cfg_node);
 			offset > 0;
@@ -208,7 +208,7 @@ int board_eth_init(bd_t *bis)
 
 	ipq_gmac_common_init(gmac_cfg);
 
-	gmac_gpio_node = fdt_path_offset(gd->fdt_blob, "/gmac/gmac_gpio");
+	gmac_gpio_node = fdt_path_offset(gd->fdt_blob, "gmac_gpio");
 	if (gmac_gpio_node) {
 		qca_gpio_init(gmac_gpio_node);
 	}
