@@ -438,7 +438,7 @@ static int ath_gmac_check_link(ath_gmac_mac_t *mac)
 
 	if(!mac->link) {
 		printf("%s link down\n",mac->dev->name);
-		return 0;
+		return 1;
 	}
 
 	switch (speed)
@@ -489,7 +489,7 @@ static int ath_gmac_check_link(ath_gmac_mac_t *mac)
 
 	ath_gmac_set_mac_duplex(mac,duplex);
 
-	return 1;
+	return 0;
 }
 
 /*
@@ -502,8 +502,9 @@ static int ath_gmac_clean_rx(struct eth_device *dev, bd_t * bd)
 	ath_gmac_desc_t *fr;
 	ath_gmac_mac_t *mac = (ath_gmac_mac_t*)dev->priv;
 
-	if (!ath_gmac_check_link(mac))
-		return 0;
+	if (ath_gmac_check_link(mac)) {
+		return -1;
+	}
 
 	mac->next_rx = 0;
 
@@ -520,7 +521,7 @@ static int ath_gmac_clean_rx(struct eth_device *dev, bd_t * bd)
 	ath_gmac_reg_wr(mac, ATH_DMA_RX_CTRL, ATH_RXE);	/* rx start */
 	udelay(1000 * 1000);
 
-	return 1;
+	return 0;
 
 }
 

@@ -37,7 +37,7 @@ extern int ath_ddr_find_size(void);
 #	define prmsg	printf
 #	define args		void
 #	define board_str(a)				\
-	printf(a " - Dragonfly 1.%d", ath_reg_rd		\
+	printf(a " - Dragonfly 1.%d\n", ath_reg_rd		\
 			(RST_REVISION_ID_ADDRESS) & 0xf)
 #endif
 
