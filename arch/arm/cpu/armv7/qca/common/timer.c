@@ -137,12 +137,18 @@ void __udelay(unsigned long usec)
 	unsigned long long last;
 	unsigned long long runcount;
 
-	val = (usec * GPT_FREQ);
+	if (usec == 0)
+		return;
+
+	val = (usec * GPT_FREQ_KHZ) / 1000;
+	if (val == 0 )
+		val = 1; /* Wait for atleast 1 tick */
+
 	last = read_counter();
 	do {
 		now = read_counter();
 		if (last > now)
-			runcount = (GPT_FREQ - last) + now;
+			runcount = (TIMER_LOAD_VAL - last) + now;
 		else
 			runcount = now - last;
 	} while (runcount < val);
@@ -177,7 +183,7 @@ ulong get_timer_masked(void)
 		/* move stamp forward with absolute diff ticks */
 	} else {
 		/* we have overflow of the count down timer */
-		timestamp += now + (TIMER_LOAD_VAL - lastinc);
+		timestamp += now + (gpt_to_sys_freq(TIMER_LOAD_VAL) - lastinc);
 	}
 	lastinc = now;
 
