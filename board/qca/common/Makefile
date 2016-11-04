@@ -1,4 +1,5 @@
 obj-y := cmd_bootqca.o
+obj-y += cmd_blowsecfuse.o
 obj-y += fdt_info.o
 obj-y += board_init.o
 ifndef CONFIG_ENV_IS_NOWHERE
