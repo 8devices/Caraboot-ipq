@@ -100,6 +100,8 @@
 
 #define CONFIG_QCA_SMEM_BASE		0x4AB00000
 
+#define CONFIG_IPQ_NO_MACS		1
+
 #ifndef __ASSEMBLY__
 #include <compiler.h>
 extern loff_t board_env_offset;
