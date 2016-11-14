@@ -198,6 +198,8 @@
  */
 
 extern loff_t board_env_offset;
+extern loff_t board_env_range;
+extern loff_t board_env_size;
 
 #if !defined(DO_DEPS_ONLY) || defined(DO_SOC_DEPS_ONLY)
 typedef struct {
@@ -237,6 +239,25 @@ typedef struct {
 #define CONFIG_DTB_COMPRESSION
 #define CONFIG_DTB_LOAD_MAXLEN		0x100000
 #endif
+
+/*
+ * SPI Flash Configs
+ */
+#define CONFIG_QCA_SPI
+#define CONFIG_SPI_FLASH
+#define CONFIG_CMD_SF
+#define CONFIG_SPI_FLASH_STMICRO
+#define CONFIG_SPI_FLASH_SPANSION
+#define CONFIG_SPI_FLASH_MACRONIX
+#define CONFIG_SPI_FLASH_WINBOND
+
+#define CONFIG_SF_DEFAULT_BUS 0
+#define CONFIG_SF_DEFAULT_CS 0
+#define CONFIG_SF_DEFAULT_SPEED         (48 * 1000 * 1000)
+#define CONFIG_SF_DEFAULT_MODE SPI_MODE_0
+
+#define CONFIG_SPI_FLASH_BAR
+
 
 /*NAND Flash Configs*/
 #define CONFIG_CMD_NAND

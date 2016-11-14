@@ -408,5 +408,56 @@
 		reg = <0x16380000 0x500>;
 		clock-frequency  = <24000>;
 	};
-};
 
+	spi {
+		spi0 {
+			mosi_miso_clk {
+
+				gpio18_MOSI {
+					gpio = <18>;
+					func = <1>;
+					out  = <GPIO_INPUT>;
+					pull = <GPIO_PULL_DOWN>;
+					drvstr = <GPIO_10MA>;
+					oe = <GPIO_OE_DISABLE>;
+
+				};
+
+				gpio19_MISO {
+					gpio = <19>;
+					func = <1>;
+					out  = <GPIO_INPUT>;
+					pull = <GPIO_PULL_DOWN>;
+					drvstr = <GPIO_10MA>;
+					oe = <GPIO_OE_DISABLE>;
+
+				};
+
+				gpio21_CLK {
+					gpio = <21>;
+					func = <1>;
+					out  = <GPIO_INPUT>;
+					pull = <GPIO_PULL_DOWN>;
+					drvstr = <GPIO_16MA>;
+					oe = <GPIO_OE_DISABLE>;
+
+				};
+			};
+
+			cs0 {
+
+				gpio20_CS {
+					gpio = <20>;
+					func = <0>;
+					out  = <GPIO_OUTPUT>;
+					pull = <GPIO_PULL_UP>;
+					drvstr = <GPIO_10MA>;
+					oe = <GPIO_OE_ENABLE>;
+
+				};
+			};
+
+		};
+
+	};
+};

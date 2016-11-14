@@ -179,7 +179,6 @@ typedef struct {
  * SPI Flash Configs
  */
 
-#define CONFIG_IPQ40XX_SPI
 #define CONFIG_QCA_SPI
 #define CONFIG_SPI_FLASH
 #define CONFIG_CMD_SF

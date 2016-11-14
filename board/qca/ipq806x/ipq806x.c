@@ -66,6 +66,8 @@ struct dumpinfo_t dumpinfo[] = {
 };
 int dump_entries = ARRAY_SIZE(dumpinfo);
 
+extern int ipq_spi_init(u16);
+
 unsigned long timer_read_counter(void)
 {
 	return 0;
@@ -117,14 +119,14 @@ void board_nand_init(void)
 
 	if (node < 0) {
 		printf("NAND : Not found, skipping initialization\n");
-		return;
+		goto spi_init;
 	}
 
 	nand_base = fdt_getprop(gd->fdt_blob, node, "reg", &len);
 
 	if (nand_base == FDT_ADDR_T_NONE) {
 		printf("No valid NAND base address found in device tree\n");
-		return;
+		goto spi_init;
         }
 
 	gpio_node = fdt_subnode_offset(gd->fdt_blob, node, "nand_gpio");
@@ -138,6 +140,10 @@ void board_nand_init(void)
 		qca_gpio_init(gpio_node);
 		ipq_nand_init(&ipq_nand);
 	}
+
+spi_init:
+	if(!(gsbi_pin_config(CONFIG_SF_DEFAULT_BUS, CONFIG_SF_DEFAULT_CS)))
+		ipq_spi_init(CONFIG_SPI_FLASH_INFO_IDX);
 }
 
 int board_eth_init(bd_t *bis)
