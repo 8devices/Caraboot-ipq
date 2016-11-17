@@ -468,6 +468,7 @@ extern flash_info_t *flash_get_info(ulong base);
 #define FLASH_STM32F4	0x00F2		/* STM32F4 Embedded Flash */
 #define FLASH_STM32F1	0x00F3		/* STM32F1 Embedded Flash */
 
+#define FLASH_M25P64    0x00F2
 #define FLASH_UNKNOWN	0xFFFF		/* unknown flash type			*/
 
 
