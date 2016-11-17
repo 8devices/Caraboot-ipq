@@ -16,6 +16,5 @@
 
 unsigned int is_spi_nand_available(void);
 unsigned int is_nor_nand_available(void);
-unsigned int is_nor_emmc_available(void);
 
 #endif

@@ -163,9 +163,7 @@ static int set_fs_bootargs(int *fs_on_nand)
 #define nand_rootfs "ubi.mtd=" QCA_ROOT_FS_PART_NAME " root=mtd:ubi_rootfs rootfstype=squashfs"
 
 	if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
-		if (((sfi->rootfs.offset == 0xBAD0FF5E) &&
-		     (is_nor_emmc_available() == 0)) ||
-		    get_which_flash_param("rootfs")) {
+		if (get_which_flash_param("rootfs")) {
 			bootargs = nand_rootfs;
 			*fs_on_nand = 1;
 			fdt_setprop(gd->fdt_blob, 0, "nor_nand_available", fs_on_nand, sizeof(int));
@@ -385,7 +383,9 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 		kernel_img_info.kernel_load_size =
 			(unsigned int)ubi_get_volume_size("kernel");
 #ifdef CONFIG_QCA_MMC
-	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH || (is_nor_emmc_available() == 1)) {
+	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH ||
+			((sfi->flash_type == SMEM_BOOT_SPI_FLASH) &&
+			(sfi->rootfs.offset == 0xBAD0FF5E))) {
 		blk_dev = mmc_get_dev(host->dev_num);
 		if (smem_bootconfig_info() == 0) {
 			active_part = get_rootfs_active_partition();
@@ -537,13 +537,9 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 			 sfi->rootfs.size, sfi->rootfs.offset,
 			 CONFIG_SYS_LOAD_ADDR);
 
-	} else if ((sfi->flash_type == SMEM_BOOT_SPI_FLASH) && (is_nor_emmc_available() == 0)) {
-		if ((sfi->rootfs.offset == 0xBAD0FF5E) ||
-		    get_which_flash_param("rootfs")) {
-			if (sfi->rootfs.offset == 0xBAD0FF5E) {
-				sfi->rootfs.offset = 0;
-				sfi->rootfs.size = IPQ_NAND_ROOTFS_SIZE;
-			}
+	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH &&
+			(sfi->rootfs.offset != 0xBAD0FF5E)) {
+		if (get_which_flash_param("rootfs")) {
 			snprintf(runcmd, sizeof(runcmd),
 				 "nand device %d && "
 				 "setenv mtdids nand%d=nand%d && "
@@ -566,7 +562,9 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 				 CONFIG_SYS_LOAD_ADDR, (uint)sfi->hlos.offset, (uint)sfi->hlos.size);
 		}
 #ifdef CONFIG_QCA_MMC
-	} else if ((sfi->flash_type == SMEM_BOOT_MMC_FLASH) || (is_nor_emmc_available() == 1)) {
+	} else if ((sfi->flash_type == SMEM_BOOT_MMC_FLASH) ||
+			((sfi->flash_type == SMEM_BOOT_SPI_FLASH) &&
+			(sfi->rootfs.offset == 0xBAD0FF5E))) {
 		if (debug) {
 			printf("Using MMC device\n");
 		}
