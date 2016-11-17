@@ -52,6 +52,10 @@ do {									\
 #undef CONFIG_MTD_UBI_DEBUG_MSG_BLD
 #define CONFIG_MTD_UBI_DEBUG_DISABLE_BGT
 
+#if !defined(CONFIG_MTD_UBI_BEB_LIMIT)
+#define CONFIG_MTD_UBI_BEB_LIMIT	20
+#endif
+
 /* build.c */
 #define get_device(...)
 #define put_device(...)

@@ -27,6 +27,18 @@
 #define add_wait_queue(...)	do { } while (0)
 #define remove_wait_queue(...)	do { } while (0)
 
+/*
+ * Multiplies an integer by a fraction, while avoiding unnecessary
+ * overflow or loss of precision.
+ */
+#define mult_frac(x, numer, denom)(			\
+{							\
+	typeof(x) quot = (x) / (denom);			\
+	typeof(x) rem  = (x) % (denom);			\
+	(quot * (numer)) + ((rem * (numer)) / (denom));	\
+}							\
+)
+
 #define KERNEL_VERSION(a,b,c)	(((a) << 16) + ((b) << 8) + (c))
 
 /*
