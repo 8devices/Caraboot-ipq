@@ -64,6 +64,11 @@
 #ifdef CONFIG_AVR32
 #include <asm/arch/mmu.h>
 #endif
+#if defined(CONFIG_MIPS) && defined(CONFIG_MACH_QCA956x)
+int ath_set_tuning_caps(void);
+#else
+#define ath_set_tuning_caps()   /* nothing */
+#endif
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -949,6 +954,9 @@ init_fnc_t init_sequence_r[] = {
 #endif
 #if defined(CONFIG_SPARC)
 	prom_init,
+#endif
+#if defined(CONFIG_MIPS) && defined(CONFIG_MACH_QCA956x)
+	ath_set_tuning_caps,
 #endif
 	run_main_loop,
 };

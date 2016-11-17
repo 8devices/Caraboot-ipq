@@ -11,6 +11,14 @@
 #include <asm/asm.h>
 #include <asm/regdef.h>
 #include <asm/mipsregs.h>
+#ifdef CONFIG_ATH_SOC
+#       include <atheros.h>
+#include <asm/addrspace.h>
+#else
+#       include <ar7240_soc.h>
+#       define ATH_SPI_CLOCK    0xbf000004
+#endif
+
 
 #ifndef CONFIG_SYS_MIPS_CACHE_MODE
 #define CONFIG_SYS_MIPS_CACHE_MODE CONF_CM_CACHABLE_NONCOHERENT
@@ -59,6 +67,9 @@
 	.globl _start
 	.text
 _start:
+#if defined(CONFIG_ATH_SOC)
+#ifndef COMPRESSED_UBOOT
+#if !defined(CONFIG_MACH_QCA956x)
 	/* U-boot entry point */
 	b	reset
 	 nop
@@ -112,8 +123,105 @@ _start:
 1:	b	1b
 	 nop
 
+#endif
 	.align 4
 reset:
+#if !defined(CONFIG_ATH_NAND_BR)
+        /*
+         * Clearing CP0 registers - This is generally required for the MIPS-24k
+         * core used by Atheros.
+         */
+        mtc0    zero, $0
+        mtc0    zero, $1
+        mtc0    zero, $2
+        mtc0    zero, $3
+        mtc0    zero, $4
+        mtc0    zero, $5
+        mtc0    zero, $6
+        mtc0    zero, $7
+        mtc0    zero, $8
+        mtc0    zero, $9
+        mtc0    zero, $10
+        mtc0    zero, $11
+        li      t0, 0x10000004
+        mtc0    t0, $12
+        mtc0    zero, $13
+        mtc0    zero, $14
+        mtc0    zero, $15
+        mtc0    zero, $16
+
+#if defined(CONFIG_MACH_QCA955x)
+/*
+ * Workaround recommnded by MIPS for the Scorpion Freeze issue
+ */
+#define CONFIG_SCO_JRCD         1
+#define CONFIG_SCO_IAGN         !CONFIG_SCO_JRCD
+
+#if CONFIG_SCO_IAGN && CONFIG_SCO_JRCD
+#error Both CONFIG_SCO_IAGN and CONFIG_SCO_JRCD set
+#endif
+
+#if CONFIG_SCO_JRCD
+        /*
+         * JR Cache Prediction Disable. Disables JR target address prediction.
+         * Bit [0], CP0 Register 16, Select 6
+         *      0 - JR cache target address prediction is enabled.
+         *      1 - JR cache target address prediction is not enabled.
+         */
+        mfc0    t0,     $16,    6
+        li      t1,     (1 << 0)
+        or      t0,     t0,     t1
+        mtc0    t0,     $16,    6
+#endif
+
+#if CONFIG_SCO_IAGN
+        /*
+         * Bit [25], CP0 Register 16, Select 7
+         * Selective control of out-of-order behavior: issue ALU-side or
+         * load/store-side instructions (respectively) in program order.
+         */
+        mfc0    t0,     $16,    7
+        li      t1,     (1 << 25)
+        or      t0,     t0,     t1
+        mtc0    t0,     $16,    7
+#endif
+#endif /* CONFIG_MACH_QCA955x */
+
+#define pref_on         0
+
+#if pref_on
+#define prefetch_val    3
+        mfc0    t0,     $16,    7
+        li      t1,     ~(3 << 11)
+        and     t0,     t0,     t1
+        li      t1,     (prefetch_val << 11)
+        or      t0,     t0,     t1
+        mtc0    t0,     $16,    7
+#endif
+
+#if !defined(CONFIG_WASP_SUPPORT)
+        mtc0    zero, $17
+#endif
+        mtc0    zero, $18
+        mtc0    zero, $19
+#if !defined(CONFIG_WASP_SUPPORT)
+        mtc0    zero, $20
+        mtc0    zero, $21
+        mtc0    zero, $22
+#endif
+#ifndef CONFIG_HORNET_EMU
+        mtc0    zero, $23
+#endif
+        mtc0    zero, $24
+        mtc0    zero, $25
+        mtc0    zero, $26
+        mtc0    zero, $27
+        mtc0    zero, $28
+#if defined(CONFIG_WASP_SUPPORT) || defined(CONFIG_MACH_QCA955x) || defined(CONFIG_MACH_QCA953x) || defined(CONFIG_MACH_QCA956x)
+        mtc0    zero, $29       # C0_TagHi
+        mtc0    zero, $28, 2    # C0_DTagLo
+        mtc0    zero, $29, 2    # C0_DTagHi
+#endif
 
 	/* Clear watch registers */
 	MTC0	zero, CP0_WATCHLO
@@ -134,6 +242,9 @@ reset:
 	mtc0	t0, CP0_CONFIG
 #endif
 
+#endif /* !defined(CONFIG_ATH_NAND_BR) */
+#endif /* #ifndef COMPRESSED_UBOOT */
+#endif /* defined(CONFIG_ATH_SOC) */
 	/*
 	 * Initialize $gp, force pointer sized alignment of bal instruction to
 	 * forbid the compiler to put nop's between bal and _gp. This is
@@ -146,11 +257,85 @@ reset:
 1:
 	PTR_L	gp, 0(ra)
 
+#if defined(CONFIG_ATH_SOC)
+#if (defined(CONFIG_MACH_HORNET) && defined(CONFIG_HORNET_1_1_WAR)) || defined(CONFIG_MACH_QCA956x)
+/**************************************************************************/
+/*
+ * WAR: Hornet 1.1 currently need a reset once we boot to let the resetb has
+ *      enough time to stable, so that trigger reset at 1st boot, system team
+ *      is investigaing the issue, will remove in short
+ */
+
+do_reset_normal:
+
+    li  t7, 0xbd000000
+    lw  t8, 0(t7)            // t8 : value of 0xb8050024
+    li  t9, 0x12345678
+    sw  t9, 0(t7)
+    bne t8, t9, do_reset      // if 0xb8050024 == 0x19 , go to do_cpld
+    nop
+    b normal_path
+
+do_reset:
+    li t7, 0xb806001c       // load reset register 0x1806001c
+    lw t8, 0(t7)
+    li t9, 0x1000000        // bit24, fullchip reset
+    or t8, t8, t9         // t8:  set bit 18
+    sw t8, 0(t7)
+do_reset_loop:
+    b   do_reset_loop
+    nop
+normal_path:
+#endif /* CONFIG_MACH_HORNET */
+#endif /* CONFIG_ATH_SOC */
+
+
 #ifndef CONFIG_SKIP_LOWLEVEL_INIT
 	/* Initialize any external memory */
 	PTR_LA	t9, lowlevel_init
 	jalr	t9
 	 nop
+
+#if defined(CONFIG_ATH_SOC)
+#if defined(CONFIG_MACH_HORNET)
+        la      t9, hornet_ddr_init
+        jalr    t9
+        nop
+        nop
+#endif
+
+        la      t0, rel_start
+        j       t0
+        nop
+
+rel_start:
+
+#if defined(CONFIG_AR7100) || defined(CONFIG_AR7240) || defined(CONFIG_ATHEROS)
+        /* REMAP_DISABLE */
+        li      a0,     KSEG1ADDR(ATH_SPI_CLOCK)
+#if defined(CONFIG_MACH_QCA955x) || defined(CONFIG_MACH_QCA953x) || defined(CONFIG_MACH_QCA956x)
+        li      t0,     0x246
+#elif defined(CONFIG_WASP_SUPPORT)
+        li      t0,     0x243
+#else
+        li      t0,     0x43
+#endif
+        sw      t0,     0(a0)
+#endif
+
+#if defined(CONFIG_AR9100) && defined(CFG_HOWL_1_2)
+        /* Disable remap for parallel flash */
+        li      t7, AR9100_FLASH_CONFIG;
+        lw      t8, 0(t7);
+        li      t9, 0xffbf0000;
+        and     t8, t8, t9;
+        li      t9, 0x22fc;
+        or      t8, t8, t9;
+        li      t9, 0xffcfffff; /* scale = 0 */
+        and     t8, t8, t9;
+        sw      t8, 0(t7);
+#endif
+#endif /* CONFIG_ATH_SOC */
 
 	/* Initialize caches... */
 	PTR_LA	t9, mips_cache_reset
@@ -164,7 +349,11 @@ reset:
 
 	/* Set up temporary stack */
 	PTR_LI	t0, -16
-	PTR_LI	t1, CONFIG_SYS_INIT_SP_ADDR
+#if !defined( CONFIG_ATH_SOC)
+	PTR_LI  t1, CONFIG_SYS_INIT_SP_ADDR
+#else
+	PTR_LI  t1, CFG_INIT_SRAM_SP_OFFSET
+#endif
 	and	sp, t1, t0		# force 16 byte alignment
 	PTR_SUB	sp, sp, GD_SIZE		# reserve space for gd
 	and	sp, sp, t0		# force 16 byte alignment
@@ -188,6 +377,10 @@ reset:
 	sw	sp, 0(t0)
 #endif
 
+#if defined(CONFIG_MACH_QCA956x)
+	/* Initialize boot_flags to zero */
+	move	a0, zero
+#endif
 	PTR_LA	t9, board_init_f
 	jr	t9
 	 move	ra, zero

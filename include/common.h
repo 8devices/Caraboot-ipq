@@ -24,6 +24,7 @@ typedef volatile unsigned char	vu_char;
 #include <asm/ptrace.h>
 #include <stdarg.h>
 #include <linux/kernel.h>
+
 #if defined(CONFIG_PCI) && defined(CONFIG_4xx)
 #include <pci.h>
 #endif
