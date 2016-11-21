@@ -72,6 +72,48 @@ int dump_entries_s = dump_entries_n;
 
 extern int ipq_spi_init(u16);
 
+pci_clk_offset_t pcie_0_clk = {
+	.aclk_ctl = PCIE_0_ACLK_CTL,
+	.pclk_ctl = PCIE_0_PCLK_CTL,
+	.hclk_ctl = PCIE_0_HCLK_CTL,
+	.aux_clk_ctl = PCIE_0_AUX_CLK_CTL,
+	.alt_ref_clk_ns = PCIE_0_ALT_REF_CLK_NS,
+	.alt_ref_clk_acr = PCIE_0_ALT_REF_CLK_ACR,
+	.aclk_fs = PCIE_0_ACLK_FS,
+	.pclk_fs = PCIE_0_PCLK_FS,
+	.parf_phy_refclk = PCIE20_0_PARF_PHY_REFCLK
+};
+
+pci_clk_offset_t pcie_1_clk = {
+	.aclk_ctl = PCIE_1_ACLK_CTL,
+	.pclk_ctl = PCIE_1_PCLK_CTL,
+	.hclk_ctl = PCIE_1_HCLK_CTL,
+	.aux_clk_ctl = PCIE_1_AUX_CLK_CTL,
+	.alt_ref_clk_ns = PCIE_1_ALT_REF_CLK_NS,
+	.alt_ref_clk_acr = PCIE_1_ALT_REF_CLK_ACR,
+	.aclk_fs = PCIE_1_ACLK_FS,
+	.pclk_fs = PCIE_1_PCLK_FS,
+	.parf_phy_refclk = PCIE20_1_PARF_PHY_REFCLK
+};
+
+pci_clk_offset_t pcie_2_clk = {
+	.aclk_ctl = PCIE_2_ACLK_CTL,
+	.pclk_ctl = PCIE_2_PCLK_CTL,
+	.hclk_ctl = PCIE_2_HCLK_CTL,
+	.aux_clk_ctl = PCIE_2_AUX_CLK_CTL,
+	.alt_ref_clk_ns = PCIE_2_ALT_REF_CLK_NS,
+	.alt_ref_clk_acr = PCIE_2_ALT_REF_CLK_ACR,
+	.aclk_fs = PCIE_2_ACLK_FS,
+	.pclk_fs = PCIE_2_PCLK_FS,
+	.parf_phy_refclk = PCIE20_2_PARF_PHY_REFCLK
+};
+
+enum pcie_id {
+	PCIE_0,
+	PCIE_1,
+	PCIE_2,
+};
+
 unsigned long timer_read_counter(void)
 {
 	return 0;
@@ -314,6 +356,20 @@ void qca_serial_init(struct ipq_serial_platdata *plat)
 			GSBI_CTRL_REG_PROTOCOL_CODE_S,
 			GSBI_CTRL_REG(gsbi_base));
 
+}
+void board_pcie_clock_init(int id)
+{
+	switch(id) {
+		case PCIE_0:
+			pcie_clock_config(&pcie_0_clk);
+			break;
+		case PCIE_1:
+			pcie_clock_config(&pcie_1_clk);
+			break;
+		case PCIE_2:
+			pcie_clock_config(&pcie_2_clk);
+			break;
+	}
 }
 
 void board_pci_init(int id)
