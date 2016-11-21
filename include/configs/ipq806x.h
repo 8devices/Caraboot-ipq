@@ -130,11 +130,11 @@
 /*
  * I2C Configs
  */
-#undef CONFIG_IPQ806X_I2C
-
+#define CONFIG_IPQ806X_I2C		1
 #ifdef CONFIG_IPQ806X_I2C
+#define CONFIG_SYS_I2C_QUP
 #define CONFIG_CMD_I2C
-#define CONFIG_SYS_I2C_SPEED		0
+#define CONFIG_DM_I2C
 #endif
 
 /*

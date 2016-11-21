@@ -63,7 +63,7 @@
 #define NACK_BIT_SHIFT				3
 
 #define QUP_CONFIG_MINI_CORE_I2C		(2 << 8)
-#define I2C_BIT_WORD				0x7
+#define I2C_BIT_WORD				0xF
 #define INPUT_FIFO_MODE				(0x0 << 12)
 #define OUTPUT_FIFO_MODE			(0x0 << 10)
 #define INPUT_BLOCK_MODE			(0x01 << 12)
@@ -71,7 +71,7 @@
 #define PACK_EN					(0x01 << 15)
 #define UNPACK_EN				(0x01 << 14)
 #define OUTPUT_BIT_SHIFT_EN			(0x01 << 16)
-#define ERROR_FLAGS_EN				0x3C
+#define ERROR_FLAGS_EN				0x7C
 #define I2C_MASTER_STATUS_CLEAR			0xFFFFFC
 #define QUP_DATA_AVAILABLE_FOR_READ		(1 << 5)
 #define OUTPUT_SERVICE_FLAG			(1 << 8)
@@ -89,7 +89,10 @@
 
 #define I2C_WRITE				0x0
 #define I2C_READ				0x1
-#define QUP_I2C_START_SEQ			0x81
+#define QUP_I2C_DATA_SEQ			(0x2 << 8)
+#define QUP_I2C_RECV_SEQ			(0x4 << 8)
+#define QUP_I2C_SLAVE_READ			(0x1)
+#define QUP_I2C_START_SEQ			(0x1 << 8)
 #define QUP_I2C_DATA_WRITE_SEQ			0x82
 #define QUP_I2C_DATA_WRITE_AND_STOP_SEQ		0x83
 #define QUP_I2C_DATA_READ_SEQ			0x85
@@ -119,3 +122,6 @@ enum dir {
 #define QUP_INPUT_CLK_TCXO		19200
 #define QUP_INPUT_CLK			QUP_INPUT_CLK_TCXO
 #define I2C_INPUT_CLK_TCXO_DIV4		((I2C_INPUT_CLK_TCXO)/4)
+
+#define qup_v1	0
+#define qup_v2	1

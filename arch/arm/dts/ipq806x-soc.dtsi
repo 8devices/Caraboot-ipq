@@ -401,7 +401,12 @@
 				oe = <GPIO_OE_ENABLE>;
 			};
 		};
+	};
 
+	i2c: i2c@16380000 {
+		compatible = "qcom,i2c-qup-v1.1.1";
+		reg = <0x16380000 0x500>;
+		clock-frequency  = <24000>;
 	};
 };
 

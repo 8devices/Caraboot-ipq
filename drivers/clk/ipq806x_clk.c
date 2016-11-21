@@ -13,7 +13,37 @@
 
 #include <common.h>
 #include <asm/io.h>
+
 #include <asm/arch-ipq806x/clk.h>
+
+#define MSM_CLK_CTL_BASE			0x00900000
+#define GSBIn_UART_APPS_MD_REG(n)		(MSM_CLK_CTL_BASE + 0x29D0 + (0x20*((n)-1)))
+#define GSBIn_UART_APPS_NS_REG(n)		(MSM_CLK_CTL_BASE + 0x29D4 + (0x20*((n)-1)))
+#define GSBIn_HCLK_CTL_REG(n)			(MSM_CLK_CTL_BASE + 0x29C0 + (0x20*((n)-1)))
+#define BB_PLL_ENA_SC0_REG			(MSM_CLK_CTL_BASE + 0x34C0)
+#define PLL_LOCK_DET_STATUS_REG			(MSM_CLK_CTL_BASE + 0x03420)
+
+#define MN_MODE_DUAL_EDGE 			0x2
+
+#define BM(m, l)				(((((unsigned int)-1) << (31-m)) >> (31-m+l)) << l)
+#define BVAL(m, l, val)				(((val) << l) & BM(m, l))
+
+#define Uart_clk_ns_mask			(BM(31, 16) | BM(6, 0))
+#define Uart_en_mask				BIT(11)
+#define MD16(m, n)				(BVAL(31, 16, m) | BVAL(15, 0, ~(n)))
+
+/* NS Registers */
+#define NS(n_msb, n_lsb, n, m, mde_lsb, d_msb, d_lsb, d, s_msb, s_lsb, s) \
+	(BVAL(n_msb, n_lsb, ~(n-m)) \
+	 | (BVAL((mde_lsb+1), mde_lsb, MN_MODE_DUAL_EDGE) * !!(n)) \
+	 | BVAL(d_msb, d_lsb, (d-1)) | BVAL(s_msb, s_lsb, s))
+
+#ifdef CONFIG_IPQ806X_I2C
+unsigned int gsbi_port = 4;
+unsigned int GSBI_I2C_CLK_M = 1;
+unsigned int GSBI_I2C_CLK_N = 4;
+unsigned int GSBI_I2C_CLK_D = 2;
+#endif
 
 /**
  * uart_pll_vote_clk_enable - enables PLL8
@@ -298,13 +328,12 @@ void uart_clock_config(unsigned int gsbi_port, unsigned int m,
  * Sets the M, D parameters of the divider to generate the GSBI QUP
  * apps clock.
  */
-static void i2c_set_rate_mnd(unsigned int gsbi_port, unsigned int m,
-                unsigned int n)
+static void i2c_set_rate_mnd(void)
 {
 	/* Assert MND reset. */
 	setbits_le32(GSBIn_QUP_APPS_NS_REG(gsbi_port), BIT(7));
 	/* Program M and D values. */
-	writel(MD16(m, n), GSBIn_QUP_APPS_MD_REG(gsbi_port));
+	writel(MD16(GSBI_I2C_CLK_M, GSBI_I2C_CLK_D), GSBIn_QUP_APPS_MD_REG(gsbi_port));
 	/* Deassert MND reset. */
 	clrbits_le32(GSBIn_QUP_APPS_NS_REG(gsbi_port), BIT(7));
 }
@@ -324,7 +353,7 @@ void i2c_pll_vote_clk_enable(void)
  *
  * Enables branch clock for GSBI I2C port.
  */
-static void i2c_branch_clk_enable_reg(unsigned int gsbi_port)
+static void i2c_branch_clk_enable_reg(void)
 {
 	setbits_le32(GSBIn_QUP_APPS_NS_REG(gsbi_port), BIT(9));
 }
@@ -335,8 +364,7 @@ static void i2c_branch_clk_enable_reg(unsigned int gsbi_port)
  * Sets the N parameter of the divider and enables root clock and
  * branch clocks for GSBI I2C port.
  */
-static void i2c_local_clock_enable(unsigned int gsbi_port, unsigned int n,
-                                        unsigned int m)
+static void i2c_local_clock_enable(void)
 {
 	unsigned int reg_val, i2c_ns_val;
 	void *const reg = (void *)GSBIn_QUP_APPS_NS_REG(gsbi_port);
@@ -348,7 +376,7 @@ static void i2c_local_clock_enable(unsigned int gsbi_port, unsigned int n,
 	*/
 	reg_val = readl(reg);
 	reg_val &= ~(I2C_clk_ns_mask);
-	i2c_ns_val =  NS(23,16,n,m, 5, 4, 3, 4, 2, 0, 3);
+	i2c_ns_val =  NS(23,16,GSBI_I2C_CLK_N, GSBI_I2C_CLK_M, 5, 4, 3, 4, 2, 0, 3);
 	reg_val |= (i2c_ns_val & I2C_clk_ns_mask);
 	writel(reg_val,reg);
 
@@ -365,13 +393,13 @@ static void i2c_local_clock_enable(unsigned int gsbi_port, unsigned int n,
 	/* Enable root. */
 	reg_val |= I2C_en_mask;
 	writel(reg_val, reg);
-	i2c_branch_clk_enable_reg(gsbi_port);
+	i2c_branch_clk_enable_reg();
 }
 
 /**
  * i2c_set_gsbi_clk - enables HCLK for I2C GSBI port
  */
-static void i2c_set_gsbi_clk(unsigned int gsbi_port)
+static void i2c_set_gsbi_clk(void)
 {
 	setbits_le32(GSBIn_HCLK_CTL_REG(gsbi_port), BIT(4));
 }
@@ -381,13 +409,12 @@ static void i2c_set_gsbi_clk(unsigned int gsbi_port)
  *
  * Configures GSBI I2C dividers, enable root and branch clocks.
  */
-void i2c_clock_config(unsigned int gsbi_port, unsigned int m,
-                unsigned int n, unsigned int d)
+void i2c_clock_config(void)
 {
-	i2c_set_rate_mnd(gsbi_port, m, d);
+	i2c_set_rate_mnd();
 	i2c_pll_vote_clk_enable();
-	i2c_local_clock_enable(gsbi_port, n, m);
-	i2c_set_gsbi_clk(gsbi_port);
+	i2c_local_clock_enable();
+	i2c_set_gsbi_clk();
 }
 #endif
 
