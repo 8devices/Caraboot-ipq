@@ -408,6 +408,36 @@
 		clock-frequency  = <24000>;
 	};
 
+	pci@1b500000 {
+		compatible = "qcom,ipq806x-pcie";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0x1b500000 0xf1d
+			0x1b600000 0x2000
+			0x1b502000 0xa8
+			0x08000000 0x08000000
+			0x0ff00000 0x100000
+			0x009022DC 0x40>;
+		reg-names = "pci_dbi", "parf", "elbi", "axi_bars",
+				"axi_conf", "pci_rst";
+		perst_gpio = <3>;
+	};
+
+	pci@1b700000 {
+		compatible = "qcom,ipq806x-pcie";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0x1b700000 0xf1d
+			0x1b800000 0x2000
+			0x1b702000 0xa8
+			0x2E000000 0x04000000
+			0x31f00000 0x100000
+			0x00903A9C 0x40>;
+		reg-names = "pci_dbi", "parf", "elbi", "axi_bars",
+				"axi_conf", "pci_rst";
+		perst_gpio = <48>;
+	};
+
 	spi {
 		spi0 {
 			mosi_miso_clk {
