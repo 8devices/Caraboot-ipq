@@ -163,8 +163,13 @@
 #define __CONFIG_BOARD_NAME ap152
 #define CONFIG_BOARD_NAME "ap152"
 
+#define CONFIG_PCI_CONFIG_DATA_IN_OTP
+
 #if defined(CONFIG_CUS249) || defined(CONFIG_TB753)
 #else
+#define CONFIG_PCI 1
+#define CONFIG_CMD_PCI
+#define CONFIG_PCI_SCAN_SHOW
 #define CONFIG_USB 1
 #endif
 
