@@ -63,7 +63,8 @@
 #define NACK_BIT_SHIFT				3
 
 #define QUP_CONFIG_MINI_CORE_I2C		(2 << 8)
-#define I2C_BIT_WORD				0xF
+#define I2C_BIT_WORD_V1				0xF
+#define I2C_BIT_WORD_V2				0x7
 #define INPUT_FIFO_MODE				(0x0 << 12)
 #define OUTPUT_FIFO_MODE			(0x0 << 10)
 #define INPUT_BLOCK_MODE			(0x01 << 12)
@@ -92,7 +93,8 @@
 #define QUP_I2C_DATA_SEQ			(0x2 << 8)
 #define QUP_I2C_RECV_SEQ			(0x4 << 8)
 #define QUP_I2C_SLAVE_READ			(0x1)
-#define QUP_I2C_START_SEQ			(0x1 << 8)
+#define QUP_I2C_START_SEQ_V1			(0x1 << 8)
+#define QUP_I2C_START_SEQ_V2			0x81
 #define QUP_I2C_DATA_WRITE_SEQ			0x82
 #define QUP_I2C_DATA_WRITE_AND_STOP_SEQ		0x83
 #define QUP_I2C_DATA_READ_SEQ			0x85

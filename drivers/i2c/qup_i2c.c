@@ -30,6 +30,8 @@ static int i2c_hw_initialized;
 static int i2c_board_initialized;
 static int io_mode;
 static int clk_en;
+static int qup_n_val;
+static int qup_i2c_start_seq;
 
 struct i2c_qup_bus {
 	int *i2c_base_addr;
@@ -104,10 +106,22 @@ void config_i2c_mode(void)
 	writel(cfg | io_mode, i2c_base_addr + QUP_IO_MODES_OFFSET);
 }
 
+/*
+ * Configure sda and sck gpios.
+ */
+void config_i2c_gpio(void)
+{
+	int gpio_node;
+
+	gpio_node = fdt_path_offset(gd->fdt_blob, "/i2c0/i2c_gpio");
+	if (gpio_node >= 0) {
+		qca_gpio_init(gpio_node);
+	}
+}
+
 void i2c_qca_board_init(struct i2c_qup_bus *i2c_bus)
 {
-	/*Need to configure GPIO*/
-	/* Configure the I2C clock */
+	config_i2c_gpio();
 	i2c_clock_config();
 	i2c_hw_initialized = 0;
 	i2c_board_initialized = 1;
@@ -118,7 +132,7 @@ void i2c_qup_mini_core_init(void)
 	int cfg;
 
 	cfg = readl(i2c_base_addr + QUP_CONFIG_OFFSET);
-	cfg |= (QUP_CONFIG_MINI_CORE_I2C) | (I2C_BIT_WORD);
+	cfg |= (QUP_CONFIG_MINI_CORE_I2C) | (qup_n_val);
 
 	writel(cfg, i2c_base_addr + QUP_CONFIG_OFFSET);
 
@@ -270,7 +284,7 @@ uint32_t i2c_write_read_offset(uchar chip, int alen)
 	uint32_t *fifo;
 
 	fifo = (uint32_t *) (i2c_base_addr + QUP_OUTPUT_FIFO_OFFSET);
-	tag = QUP_I2C_START_SEQ;
+	tag = qup_i2c_start_seq;
 	tag |= ((QUP_I2C_ADDR(chip)) | (I2C_WRITE)) << 8;
 	tag |= QUP_I2C_DATA_WRITE_SEQ << 16;
 	tag |= alen << 24;
@@ -290,7 +304,7 @@ uint32_t i2c_write_read_tag(uchar chip, uint addr, int alen, int data_len)
 		/* based on the slave send msb 8 bits or lsb 8 bits first */
 		tag = QUP_I2C_DATA(addr);
 		tag |= QUP_I2C_DATA(addr >> 8) << 8;
-		tag |= QUP_I2C_START_SEQ << 16;
+		tag |= qup_i2c_start_seq << 16;
 		tag |= ((QUP_I2C_ADDR(chip)) | (I2C_READ)) << 24;
 		writel(tag, fifo);
 
@@ -300,7 +314,7 @@ uint32_t i2c_write_read_tag(uchar chip, uint addr, int alen, int data_len)
 		writel(tag, fifo);
 	} else if (alen == 1) {
 		tag = QUP_I2C_DATA(addr);
-		tag |= QUP_I2C_START_SEQ << 8;
+		tag |= qup_i2c_start_seq << 8;
 		tag |= ((QUP_I2C_ADDR(chip)) | (I2C_READ)) << 16;
 		tag |= (QUP_I2C_DATA_READ_AND_STOP_SEQ << 24);
 		writel(tag, fifo);
@@ -309,7 +323,7 @@ uint32_t i2c_write_read_tag(uchar chip, uint addr, int alen, int data_len)
 		tag |= data_len;
 		writel(tag, fifo);
 	} else if (alen == 0) {
-		tag |= QUP_I2C_START_SEQ;
+		tag |= qup_i2c_start_seq;
 		tag |= ((QUP_I2C_ADDR(chip)) | (I2C_READ)) << 8;
 		tag |= (QUP_I2C_DATA_READ_AND_STOP_SEQ << 16);
 		tag |= data_len << 24;
@@ -462,7 +476,7 @@ int i2c_read_data_qup_v1(struct i2c_qup_bus *i2c_bus, uchar chip, uint addr, int
 	writel(cfg, i2c_base_addr + QUP_I2C_MASTER_CLK_CTL_OFFSET);
 
 	/* Send a write request to the chip */
-	writel((QUP_I2C_START_SEQ | QUP_I2C_ADDR(chip)),
+	writel((qup_i2c_start_seq | QUP_I2C_ADDR(chip)),
 		i2c_base_addr + QUP_OUTPUT_FIFO_OFFSET);
 
 	writel((QUP_I2C_DATA_SEQ | QUP_I2C_DATA(addr)),
@@ -480,7 +494,7 @@ int i2c_read_data_qup_v1(struct i2c_qup_bus *i2c_bus, uchar chip, uint addr, int
 		goto out;
 
 	/* Send read request */
-	writel((QUP_I2C_START_SEQ | (QUP_I2C_ADDR(chip)| QUP_I2C_SLAVE_READ)),
+	writel((qup_i2c_start_seq | (QUP_I2C_ADDR(chip)| QUP_I2C_SLAVE_READ)),
 		i2c_base_addr + QUP_OUTPUT_FIFO_OFFSET);
 
 	writel((QUP_I2C_RECV_SEQ | len),
@@ -546,7 +560,7 @@ uint32_t i2c_frame_wr_tag(uchar chip, uint8_t data_len, int alen)
 {
 	uint32_t tag;
 
-	tag = QUP_I2C_START_SEQ;
+	tag = qup_i2c_start_seq;
 	tag |= (((QUP_I2C_ADDR(chip)) | (I2C_WRITE)) << 8);
 	tag |= (QUP_I2C_DATA_WRITE_AND_STOP_SEQ << 16);
 	tag |= (data_len + alen) << 24;
@@ -716,10 +730,14 @@ void qca_i2c_plat_data(struct udevice *bus)
 	if (plat-> type == qup_v1) {
 		io_mode = (INPUT_FIFO_MODE | OUTPUT_FIFO_MODE | OUTPUT_BIT_SHIFT_EN);
 		clk_en = (QUP_APP_CLK_ON_EN | QUP_CORE_CLK_ON_EN);
+		qup_n_val = I2C_BIT_WORD_V1;
+		qup_i2c_start_seq = QUP_I2C_START_SEQ_V1;
 	}
 	else {
 		io_mode = (INPUT_FIFO_MODE | OUTPUT_FIFO_MODE | PACK_EN | UNPACK_EN);
 		clk_en = (QUP_APP_CLK_ON_EN | QUP_CORE_CLK_ON_EN | QUP_FIFO_CLK_GATE_EN);
+		qup_n_val = I2C_BIT_WORD_V2;
+		qup_i2c_start_seq = QUP_I2C_START_SEQ_V2;
 	}
 }
 
