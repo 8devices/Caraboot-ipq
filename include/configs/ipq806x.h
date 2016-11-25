@@ -151,9 +151,9 @@
 /*
  * MMC Configs
  */
-#undef CONFIG_IPQ_MMC
+#undef CONFIG_QCA_MMC
 
-#ifdef CONFIG_IPQ_MMC
+#ifdef CONFIG_QCA_MMC
 #define CONFIG_CMD_MMC
 #define CONFIG_MMC
 #define CONFIG_EFI_PARTITION
@@ -297,7 +297,9 @@ typedef struct {
  * Location in IMEM which contains the physical address of
  * 4K page allocated from kernel for storing the crashdump data
  */
-#define CONFIG_IPQ_KERNEL_CRASHDUMP_ADDRESS 0x2A03F658
+#define CONFIG_QCA_KERNEL_CRASHDUMP_ADDRESS	*((unsigned int *)0x2A03F658)
+#define CONFIG_CPU_CONTEXT_DUMP_SIZE		2048
+#define CONFIG_TLV_DUMP_SIZE			2048
 
 /*
  * CRASH DUMP ENABLE
