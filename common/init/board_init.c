@@ -8,7 +8,6 @@
  */
 
 #include <common.h>
-#include <generated/asm-offsets.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 #define STACK_MARKER_LEN 32
