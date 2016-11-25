@@ -325,9 +325,6 @@ int qca_mmc_init(bd_t *bis, qca_mmc *host)
 		host->dev_num = mmc->block_dev.dev;
 		mmc->has_init = 0;
 		mmc->init_in_progress = 0;
-		ret = mmc_init(mmc);
-		if (ret)
-			puts("mmc_init failed\n");
 	}
 
 	return ret;
