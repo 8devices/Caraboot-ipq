@@ -427,7 +427,11 @@ static void boot_jump_linux(bootm_headers_t *images)
 	debug("## Transferring control to Linux (at address %08lx)" \
 		"...\n", (ulong) kernel_entry);
 	bootstage_mark(BOOTSTAGE_ID_RUN_OS);
+#ifdef CONFIG_QCOM_WATCHDOG
+	qcom_watchdog_enable();
+#endif
 	announce_and_cleanup();
+
 
 #ifdef CONFIG_OF_LIBFDT
 	if (images->ft_len)

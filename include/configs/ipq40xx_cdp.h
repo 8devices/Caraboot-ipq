@@ -317,6 +317,8 @@ typedef struct {
 
 #define CONFIG_CMD_MISC
 
+#define CONFIG_QCOM_WATCHDOG
+
 #define CONFIG_EXTRA_ENV_SETTINGS								\
 	"bootcmd=run setup && run bootlinux\0"							\
 	"setup=partname=1 && setenv bootargs ubi.mtd=ubi ${args_common}\0"	\
