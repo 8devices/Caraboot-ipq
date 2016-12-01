@@ -26,6 +26,8 @@ DECLARE_GLOBAL_DATA_PTR;
 
 qca_mmc mmc_host;
 
+extern int ipq_spi_init(u16);
+
 const char *rsvd_node = "/reserved-memory";
 const char *del_node[] = {"uboot",
 			  "sbl"};
@@ -108,7 +110,15 @@ int board_mmc_init(bd_t *bis)
 
 void board_nand_init(void)
 {
+	int gpio_node;
+
 	qpic_nand_init();
+
+	gpio_node = fdt_path_offset(gd->fdt_blob, "/spi/spi_gpio");
+	if (gpio_node >= 0) {
+		qca_gpio_init(gpio_node);
+		ipq_spi_init(CONFIG_IPQ_SPI_NOR_INFO_IDX);
+	}
 }
 
 void board_pci_init(int id)

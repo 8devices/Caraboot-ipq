@@ -232,8 +232,10 @@ int ft_board_setup(void *blob, bd_t *bd)
 	struct flash_node_info nodes[] = {
 		{ "qcom,msm-nand", MTD_DEV_TYPE_NAND, 0 },
 		{ "qcom,qcom_nand", MTD_DEV_TYPE_NAND, 0 },
+		{ "qcom,ebi2-nandc-bam-v1.5.0", MTD_DEV_TYPE_NAND, 0 },
 		{ "spinand,mt29f", MTD_DEV_TYPE_NAND, 1 },
-		{ "n25q128a11", MTD_DEV_TYPE_NAND, 2 },
+		{ "n25q128a11", MTD_DEV_TYPE_NAND,
+				CONFIG_IPQ_SPI_NOR_INFO_IDX },
 		{ NULL, 0, -1 },	/* Terminator */
 	};
 

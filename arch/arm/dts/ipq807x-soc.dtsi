@@ -31,6 +31,57 @@
 		timer_load_val = <0x00FFFFFF 0xFFFFFFFF>;
 	};
 
+	spi {
+		status = "ok";
+
+		compatible = "qcom,spi-qup-v2.7.0";
+		spi_gpio {
+			gpio1 {
+				gpio = <42>;
+				func = <3>;
+				pull = <GPIO_PULL_UP>;
+				drvstr = <GPIO_2MA>;
+				oe = <GPIO_OE_DISABLE>;
+				vm = <GPIO_VM_ENABLE>;
+				od_en = <GPIO_OD_DISABLE>;
+				pu_res = <GPIO_PULL_RES2>;
+			};
+
+			gpio2 {
+				gpio = <43>;
+				func = <3>;
+				pull = <GPIO_PULL_UP>;
+				drvstr = <GPIO_2MA>;
+				oe = <GPIO_OE_DISABLE>;
+				vm = <GPIO_VM_ENABLE>;
+				od_en = <GPIO_OD_DISABLE>;
+				pu_res = <GPIO_PULL_RES2>;
+			};
+
+			gpio3 {
+				gpio = <44>;
+				func = <2>;
+				pull = <GPIO_PULL_UP>;
+				drvstr = <GPIO_2MA>;
+				oe = <GPIO_OE_DISABLE>;
+				vm = <GPIO_VM_ENABLE>;
+				od_en = <GPIO_OD_DISABLE>;
+				pu_res = <GPIO_PULL_RES2>;
+			};
+
+			gpio4 {
+				gpio = <45>;
+				func = <2>;
+				pull = <GPIO_PULL_UP>;
+				drvstr = <GPIO_2MA>;
+				oe = <GPIO_OE_DISABLE>;
+				vm = <GPIO_VM_ENABLE>;
+				od_en = <GPIO_OD_DISABLE>;
+				pu_res = <GPIO_PULL_RES2>;
+			};
+		};
+	};
+
 	nand: nand-controller@79B0000 {
 		#address-cells = <1>;
 		#size-cells = <0>;

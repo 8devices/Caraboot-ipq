@@ -20,4 +20,4 @@ obj-$(CONFIG_FTSMC020) += ftsmc020.o
 obj-$(CONFIG_FLASH_CFI_LEGACY) += jedec_flash.o
 obj-$(CONFIG_MW_EEPROM) += mw_eeprom.o
 obj-$(CONFIG_ST_SMI) += st_smi.o
-obj-$(CONFIG_IPQ40XX_SPI) += ipq_spi_flash.o
+obj-$(CONFIG_QCA_SPI) += ipq_spi_flash.o
