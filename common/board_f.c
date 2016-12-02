@@ -59,7 +59,6 @@
 #endif
 #include <dm/root.h>
 #include <linux/compiler.h>
-#include <generated/asm-offsets.h>
 
 /*
  * Pointer to initial global data area
