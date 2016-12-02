@@ -236,6 +236,7 @@ int ft_board_setup(void *blob, bd_t *bd)
 		{ "spinand,mt29f", MTD_DEV_TYPE_NAND, 1 },
 		{ "n25q128a11", MTD_DEV_TYPE_NAND,
 				CONFIG_IPQ_SPI_NOR_INFO_IDX },
+		{ "s25fl256s1", MTD_DEV_TYPE_NAND, 1 },
 		{ NULL, 0, -1 },	/* Terminator */
 	};
 
@@ -250,7 +251,11 @@ int ft_board_setup(void *blob, bd_t *bd)
 		/* Patch NOR block size and density for
 		 * generic probe case */
 		ipq_fdt_fixup_spi_nor_params(blob);
-		sprintf(parts_str, "mtdparts=spi0.0");
+		sprintf(parts_str, "mtdparts=" QCA_SPI_NOR_DEVICE);
+
+		if (sfi->flash_secondary_type == SMEM_BOOT_NAND_FLASH)
+			sprintf(parts_str,
+				"mtdparts=nand0:64M@0(rootfs);nand1");
 	}
 	mtdparts = parts_str;
 	if (mtdparts) {

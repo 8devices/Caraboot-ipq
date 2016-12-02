@@ -167,12 +167,19 @@ static int set_fs_bootargs(int *fs_on_nand)
 #define nand_rootfs "ubi.mtd=" QCA_ROOT_FS_PART_NAME " root=mtd:ubi_rootfs rootfstype=squashfs"
 
 	if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
-		if (get_which_flash_param("rootfs")) {
+		if (get_which_flash_param("rootfs") ||
+		    sfi->flash_secondary_type == SMEM_BOOT_NAND_FLASH) {
 			bootargs = nand_rootfs;
 			*fs_on_nand = 1;
+
+			if (sfi->rootfs.offset == 0xBAD0FF5E) {
+				sfi->rootfs.offset = 0;
+				sfi->rootfs.size = IPQ_NAND_ROOTFS_SIZE;
+			}
+
 			fdt_setprop(gd->fdt_blob, 0, "nor_nand_available", fs_on_nand, sizeof(int));
 			snprintf(mtdids, sizeof(mtdids),
-				 "nand%d=nand%d,nand%d=spi0.0",
+				 "nand%d=nand%d,nand%d=" QCA_SPI_NOR_DEVICE,
 				 is_spi_nand_available(),
 				 is_spi_nand_available(),
 				CONFIG_SPI_FLASH_INFO_IDX
@@ -193,7 +200,8 @@ static int set_fs_bootargs(int *fs_on_nand)
 			}
 			*fs_on_nand = 0;
 
-			snprintf(mtdids, sizeof(mtdids), "nand%d=spi0.0", CONFIG_SPI_FLASH_INFO_IDX);
+			snprintf(mtdids, sizeof(mtdids), "nand%d="
+				QCA_SPI_NOR_DEVICE, CONFIG_SPI_FLASH_INFO_IDX);
 
 			if (getenv("fsbootargs") == NULL)
 				setenv("fsbootargs", bootargs);
@@ -359,10 +367,6 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 	kernel_img_info.kernel_load_addr = request;
 
 	if (ipq_fs_on_nand) {
-		if (sfi->rootfs.offset == 0xBAD0FF5E) {
-			sfi->rootfs.offset = 0;
-			sfi->rootfs.size = IPQ_NAND_ROOTFS_SIZE;
-		}
 		/*
 		 * The kernel will be available inside a UBI volume
 		 */
@@ -542,8 +546,8 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 			 CONFIG_SYS_LOAD_ADDR);
 
 	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH &&
-			(sfi->rootfs.offset != 0xBAD0FF5E)) {
-		if (get_which_flash_param("rootfs")) {
+		   (sfi->rootfs.offset != 0xBAD0FF5E) || ipq_fs_on_nand) {
+		if (get_which_flash_param("rootfs") || ipq_fs_on_nand) {
 			snprintf(runcmd, sizeof(runcmd),
 				 "nand device %d && "
 				 "setenv mtdids nand%d=nand%d && "

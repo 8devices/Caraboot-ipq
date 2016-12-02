@@ -145,6 +145,8 @@ void get_kernel_fs_part_details(void)
 		ret = smem_getpart(entries[i].name, &start, &size);
 		if (ret < 0) {
 			qca_part_entry_t *part = entries[i].part;
+
+			smem->flash_secondary_type = SMEM_BOOT_NAND_FLASH;
 			debug("cdp: get part failed for %s\n", entries[i].name);
 			part->offset = 0xBAD0FF5E;
 			part->size = 0xBAD0FF5E;

@@ -514,8 +514,9 @@ static inline uint32_t get_part_block_size(struct smem_ptn *p,
 void qca_set_part_entry(char *name, qca_smem_flash_info_t *smem,
 		qca_part_entry_t *part, uint32_t start, uint32_t size)
 {
-	part->offset = ((loff_t)start) * smem->flash_block_size;
-	part->size = ((loff_t)size) * smem->flash_block_size;
+	uint32_t bsize = get_flash_block_size(name, smem);
+	part->offset = ((loff_t)start) * bsize;
+	part->size = ((loff_t)size) * bsize;
 }
 
 uint32_t qca_smem_get_flash_block_size(void)

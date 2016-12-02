@@ -105,6 +105,7 @@ typedef struct {
 	uint32_t		flash_chip_select;
 	uint32_t		flash_block_size;
 	uint32_t		flash_density;
+	uint32_t		flash_secondary_type;
 	qca_part_entry_t	hlos;
 	qca_part_entry_t	rootfs;
 	qca_part_entry_t	dtb;
