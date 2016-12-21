@@ -66,6 +66,7 @@
 		compatible = "qcom,qup-i2c";
 		#address-cells = <1>;
 		#size-cells = <0>;
+		clock-frequency = <19200>;
 		reg = <0x78b7000 0x600>;
 	};
 
