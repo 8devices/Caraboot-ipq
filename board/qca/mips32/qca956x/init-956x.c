@@ -251,11 +251,7 @@ ath_ddr_initial_config(uint32_t refresh)
 	uint32_t	bootstrap;
 
 	prmsg("\nsri\n");
-#ifdef CONFIG_MACH_955x
-	prmsg("Scorpion 1.%d\n", ath_reg_rd(RST_REVISION_ID_ADDRESS) & 0xf);
-#elif defined (CONFIG_MACH_956x)
-	prmsg("Dragonfly 1.%d\n", ath_reg_rd(RST_REVISION_ID_ADDRESS) & 0xf);
-#endif
+
 	bootstrap = ath_reg_rd(RST_BOOTSTRAP_ADDRESS);
 
 	switch(type = ath_ram_type(bootstrap)) {

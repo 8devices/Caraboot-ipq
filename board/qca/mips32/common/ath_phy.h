@@ -12,10 +12,8 @@
  *
  */
 
-#ifndef _PHY_H
-#define _PHY_H
-
-#include <config.h>
+#ifndef _ATH_PHY_H
+#define _ATH_PHY_H
 
 #define ath_gmac_unit2name(_unit) (_unit ?  "eth1" : "eth0")
 

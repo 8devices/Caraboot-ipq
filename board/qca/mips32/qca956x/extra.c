@@ -124,3 +124,10 @@ int ath_set_tuning_caps(void)
 	printf("Setting " str(XTAL_ADDRESS) " to 0x%x\n", val);
 	return 0;
 }
+#ifdef CONFIG_LAST_STAGE_INIT
+int last_stage_init(void)
+{
+	ath_set_tuning_caps();
+	return 0;
+}
+#endif

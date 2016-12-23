@@ -3362,7 +3362,6 @@
 #define CFG_MAXARGS     16      /* max number of command args*/
 
 /*#define CFG_MALLOC_LEN      (128*1024) CONFIG_SYS_MALLOC_LEN */ /* Moved to QCA956x board config */
-#define CONFIG_SYS_BOOTPARAMS_LEN  (128*1024)
 #define CONFIG_SYS_SDRAM_BASE	0x80000000    /* Cached addr */
 /* #define CONFIG_SYS_LOAD_ADDR	0x81000000 */ /* default load address  */ /* Moved to QCA956x board config */
 
