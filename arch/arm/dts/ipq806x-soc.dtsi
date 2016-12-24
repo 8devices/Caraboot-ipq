@@ -18,7 +18,6 @@
 	config_name = "config@1";
 
 	config {
-		bootdelay = <2>;
 		bootcmd = "bootipq";
 	};
 
