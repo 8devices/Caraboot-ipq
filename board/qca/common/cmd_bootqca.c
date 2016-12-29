@@ -260,7 +260,7 @@ int config_select(unsigned int addr, char *rcmd, int rcmd_size)
 			config + strlen("config@"));
 	}
 
-	if (fit_conf_get_node((void *)addr, config) >= 0) {
+	if (fit_conf_get_node((void *)addr, dtb_config_name) >= 0) {
 		snprintf(rcmd, rcmd_size, "bootm 0x%x#%s\n",
 			 addr, dtb_config_name);
 		return 0;
