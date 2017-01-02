@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2017 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -112,7 +112,7 @@ extern loff_t board_env_offset;
 #define CONFIG_ENV_OFFSET		board_env_offset
 #define CONFIG_ENV_SIZE			0x2000
 #define CONFIG_ENV_SIZE_MAX		(256 << 10) /* 256 KB */
-#define CONFIG_SYS_MALLOC_LEN		(CONFIG_ENV_SIZE_MAX + (256 << 10))
+#define CONFIG_SYS_MALLOC_LEN		(CONFIG_ENV_SIZE_MAX + (512 << 10))
 
 #define CONFIG_ENV_IS_IN_NAND		1
 
@@ -237,6 +237,19 @@ extern loff_t board_env_offset;
 #define CONFIG_CMD_PCI
 #define CONFIG_PCI_SCAN_SHOW
 #endif
+
+#define CONFIG_IPQ807X_EDMA		1
+#define CONFIG_IPQ807X_BRIDGED_MODE	1
+#define CONFIG_NET_RETRY_COUNT		5
+#define CONFIG_SYS_RX_ETH_BUFFER	16
+#define CONFIG_CMD_PING
+#define CONFIG_CMD_DHCP
+#define CONFIG_MII
+#define CONFIG_CMD_MII
+#define CONFIG_IPADDR	192.168.10.10
+#define CONFIG_NETMASK	255.255.255.0
+#define CONFIG_SERVERIP	192.168.10.1
+#define CONFIG_CMD_TFTPPUT
 
 /*
  * CRASH DUMP ENABLE
