@@ -1,4 +1,4 @@
-/* Copyright (c) 2012,2015 The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012,2015-2017 The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -30,7 +30,7 @@
 #include <asm/errno.h>
 
 #include <common.h>
-#include <asm/arch-qcom-common/bam.h>
+#include <asm/arch-qca-common/bam.h>
 #define HLOS_EE_INDEX          0
 
 /* Resets pipe registers and state machines */

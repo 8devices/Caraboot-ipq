@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2017 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -21,7 +21,7 @@
 #include <dm/root.h>
 #include <mapmem.h>
 #include <dm.h>
-#include <asm/arch-qcom-common/qca_common.h>
+#include <asm/arch-qca-common/qca_common.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 static int src_clk_freq;

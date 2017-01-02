@@ -170,9 +170,9 @@ enum fdt_compat_id {
 	COMPAT_ALTERA_SOCFPGA_DWC2USB,	/* SoCFPGA DWC2 USB controller */
 	COMPAT_INTEL_BAYTRAIL_FSP,	/* Intel Bay Trail FSP */
 	COMPAT_INTEL_BAYTRAIL_FSP_MDP,	/* Intel FSP memory-down params */
-	COMPAT_QCOM_QPIC_NAND_V1_5_20,	/* Qualcomm QPIC NAND controller */
-	COMPAT_QCOM_QPIC_NAND_V1_4_20,	/* Qualcomm QPIC NAND controller */
-	COMPAT_QCOM_QUP_I2C,		/* Qualcomm QUP I2C controller */
+	COMPAT_QCA_QPIC_NAND_V1_5_20,	/* QTI QPIC NAND controller */
+	COMPAT_QCA_QPIC_NAND_V1_4_20,	/* QTI QPIC NAND controller */
+	COMPAT_QCA_QUP_I2C,		/* QTI QUP I2C controller */
 
 	COMPAT_COUNT,
 };

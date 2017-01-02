@@ -133,7 +133,7 @@ extern loff_t board_env_offset;
 #define CONFIG_SPI_FLASH_BAR	1
 
 #define CONFIG_EFI_PARTITION
-#define CONFIG_QCOM_BAM			1
+#define CONFIG_QCA_BAM			1
 /*
  * NAND Flash Configs
  */

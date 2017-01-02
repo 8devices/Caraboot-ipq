@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2017 The Linux Foundation. All rights reserved.
 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -16,7 +16,7 @@
 #include <linux/compat.h>
 #include <asm-generic/errno.h>
 #include <asm/io.h>
-#include <asm/arch-qcom-common/scm.h>
+#include <asm/arch-qca-common/scm.h>
 #include <common.h>
 
 /**

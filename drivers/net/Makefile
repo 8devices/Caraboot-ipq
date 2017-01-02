@@ -5,7 +5,7 @@
 # SPDX-License-Identifier:	GPL-2.0+
 #
 
-ccflags-y += -I$(srctree)/board/qca/ipq40xx -I$(srctree)/board/qca/common
+ccflags-y += -I$(srctree)/board/qca/arm/ipq40xx -I$(srctree)/board/qca/arm/common
 
 obj-$(CONFIG_PPC4xx_EMAC) += 4xx_enet.o
 obj-$(CONFIG_ALTERA_TSE) += altera_tse.o

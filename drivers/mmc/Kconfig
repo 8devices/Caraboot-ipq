@@ -31,11 +31,11 @@ config SDHCI
 	help
 	  This enables SDHCI controllers support
 
-config SDHCI_QCOM
-	bool "Enable Qualcomm SDHCI controllers"
+config SDHCI_QCA
+	bool "Enable QTI SDHCI controllers"
 	depends on SDHCI
 	help
-	  This enables Qualcomm SDHCI controller support
+	  This enables QTI SDHCI controller support
 
 config ROCKCHIP_DWMMC
 	bool "Rockchip SD/MMC controller support"

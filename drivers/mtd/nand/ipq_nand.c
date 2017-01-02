@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -19,8 +19,8 @@
 
 #include <asm/io.h>
 #include <asm/errno.h>
-#include <asm/arch-qcom-common/nand.h>
-#include <asm/arch-qcom-common/ebi2.h>
+#include <asm/arch-qca-common/nand.h>
+#include <asm/arch-qca-common/ebi2.h>
 #include <fdtdec.h>
 #include <dm.h>
 
@@ -609,7 +609,7 @@ static void ipq_enter_raw_mode(struct mtd_info *mtd)
 	writel(dev->dev_cfg1_raw, &regs->dev0_cfg1);
 
 	/* we use BCH ECC on QPIC for both 4 bit and 8 bit strength */
-	if (dev->variant == QCOM_NAND_QPIC)
+	if (dev->variant == QCA_NAND_QPIC)
 		writel(BCH_ECC_DISABLE(1), &regs->dev0_ecc_cfg);
 
 	dev->read_cmd = IPQ_CMD_PAGE_READ;
@@ -1727,7 +1727,7 @@ static void ipq_nand_hw_config(struct mtd_info *mtd, struct ipq_config *cfg)
 		mtd->oobavail += cw_layout->oob_size;
 	}
 
-	if (dev->variant == QCOM_NAND_QPIC) {
+	if (dev->variant == QCA_NAND_QPIC) {
 		/*
 		 * On IPQ40xx with the QPIC controller, we use BCH for both ECC
 		 * modes
@@ -1871,7 +1871,7 @@ int ipq_nand_post_scan_init(struct mtd_info *mtd, enum ipq_nand_layout layout)
 	memset(dev->zero_page, 0x0, mtd->writesize);
 	memset(dev->zero_oob, 0x0, mtd->oobsize);
 
-	if (dev->variant == QCOM_NAND_QPIC)
+	if (dev->variant == QCA_NAND_QPIC)
 		configs = qpic_configs[layout];
 	else
 		configs = ipq_configs[layout];
@@ -1984,7 +1984,7 @@ int ipq_nand_init (struct ipq_nand *ipq_nand)
 	regs = ipq_nand_dev.regs =
 			(struct ebi2nd_regs *) ipq_nand->ebi2nd_regs;
 
-	if (ipq_nand_dev.variant == QCOM_NAND_QPIC) {
+	if (ipq_nand_dev.variant == QCA_NAND_QPIC) {
 
 		/* Reset QPIC BAM */
 		qpic_bam_reset(regs);
@@ -1993,7 +1993,7 @@ int ipq_nand_init (struct ipq_nand *ipq_nand)
 	chip = mtd->priv;
 	chip->priv = &ipq_nand_dev;
 
-	if (ipq_nand_dev.variant == QCOM_NAND_QPIC) {
+	if (ipq_nand_dev.variant == QCA_NAND_QPIC) {
 		/* bypass XPU */
 		writel(0x1, &regs->qpic_nand_mpu_bypass);
 
@@ -2107,7 +2107,7 @@ static int do_ipq_nand_cmd(cmd_tbl_t *cmdtp, int flag,
 	ipq_nand.ebi2cr_regs = fdt32_to_cpu(nand_base[0]);
 	ipq_nand.ebi2nd_regs = fdt32_to_cpu(nand_base[2]);
 	ipq_nand.layout = layout;
-	ipq_nand.variant = QCOM_NAND_IPQ;
+	ipq_nand.variant = QCA_NAND_IPQ;
 	ret = ipq_nand_init(&ipq_nand);
 	if (ret < 0)
 		return CMD_RET_FAILURE;

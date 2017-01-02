@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 - 2013, 2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012 - 2013, 2016-2017 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -23,7 +23,7 @@
 #include <asm/arch-ipq806x/clk.h>
 #include <asm/arch-ipq806x/ipq_gmac.h>
 #include <asm/arch-ipq806x/msm_ipq806x_gmac.h>
-#include <asm/arch-qcom-common/gpio.h>
+#include <asm/arch-qca-common/gpio.h>
 #include <dt-bindings/qcom/gpio-ipq806x.h>
 
 #define ipq_info	printf

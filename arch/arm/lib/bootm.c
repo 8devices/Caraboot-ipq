@@ -30,7 +30,7 @@
 #include <asm/armv7.h>
 #endif
 #ifdef CONFIG_SCM_TZ64
-#include <asm/arch-qcom-common/scm.h>
+#include <asm/arch-qca-common/scm.h>
 #endif
 DECLARE_GLOBAL_DATA_PTR;
 

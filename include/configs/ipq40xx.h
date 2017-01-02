@@ -147,7 +147,7 @@ typedef struct {
  * size is configured to 64 */
 #define CONFIG_SYS_CACHELINE_SIZE	64
 
-#define CONFIG_QCOM_BAM                 1
+#define CONFIG_QCA_BAM                 1
 /*
  * NAND Flash Configs104
  */
@@ -265,7 +265,7 @@ typedef struct {
 #define CONFIG_MMC
 #define CONFIG_ENV_IS_IN_MMC
 #define CONFIG_CMD_MMC
-#define CONFIG_SDHCI_QCOM
+#define CONFIG_SDHCI_QCA
 #define CONFIG_GENERIC_MMC
 #define CONFIG_EFI_PARTITION
 #define CONFIG_SYS_MMC_ENV_DEV  0

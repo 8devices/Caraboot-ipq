@@ -1,6 +1,6 @@
 /*
  * BLSP QUP SPI controller driver.
- * Copyright (c) 2015-2016, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2017, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -19,8 +19,8 @@
 #include <malloc.h>
 #include <asm/io.h>
 #include <asm/errno.h>
-#include <asm/arch-qcom-common/gpio.h>
-#include <asm/arch-qcom-common/iomap.h>
+#include <asm/arch-qca-common/gpio.h>
+#include <asm/arch-qca-common/iomap.h>
 #include "qca_qup_spi.h"
 
 static int check_bit_state(uint32_t reg_addr, int bit_num, int val, int us_delay)

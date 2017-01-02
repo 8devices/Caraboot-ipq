@@ -30,13 +30,13 @@ typedef volatile unsigned char	vu_char;
 #endif
 
 #if defined(CONFIG_IPQ40XX)
-#include <../board/qca/ipq40xx/ipq40xx.h>
+#include <../board/qca/arm/ipq40xx/ipq40xx.h>
 
 #elif defined(CONFIG_IPQ806X)
-#include <../board/qca/ipq806x/ipq806x.h>
+#include <../board/qca/arm/ipq806x/ipq806x.h>
 
 #elif defined(CONFIG_IPQ_RUMI)
-#include <../board/qca/ipq807x/ipq807x.h>
+#include <../board/qca/arm/ipq807x/ipq807x.h>
 #endif
 
 #if defined(CONFIG_8xx)

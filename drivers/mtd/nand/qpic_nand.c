@@ -33,9 +33,9 @@
 #include <asm/errno.h>
 #include <nand.h>
 #include <linux/mtd/nand.h>
-#include <asm/arch-qcom-common/bam.h>
-#include <asm/arch-qcom-common/qpic_nand.h>
-#include <asm/arch-qcom-common/gpio.h>
+#include <asm/arch-qca-common/bam.h>
+#include <asm/arch-qca-common/qpic_nand.h>
+#include <asm/arch-qca-common/gpio.h>
 #include <fdtdec.h>
 #include <dm.h>
 
@@ -54,8 +54,8 @@ static struct bam_instance bam;
 struct nand_ecclayout fake_ecc_layout;
 
 static const struct udevice_id qpic_ver_ids[] = {
-	{ .compatible = "qcom,qpic-nand.1.4.20", .data = QCOM_QPIC_V1_4_20 },
-	{ .compatible = "qcom,qpic-nand.1.5.20", .data = QCOM_QPIC_V1_5_20 },
+	{ .compatible = "qcom,qpic-nand.1.4.20", .data = QCA_QPIC_V1_4_20 },
+	{ .compatible = "qcom,qpic-nand.1.5.20", .data = QCA_QPIC_V1_5_20 },
 	{ },
 };
 
@@ -213,7 +213,7 @@ qpic_nand_fetch_id(struct mtd_info *mtd)
 
 	vld = NAND_CMD_VALID_BASE;
 
-	if (hw_ver == QCOM_QPIC_V1_5_20)
+	if (hw_ver == QCA_QPIC_V1_5_20)
 		cmd_vld = NAND_DEV_CMD_VLD_V1_5_20;
 
 	bam_add_cmd_element(cmd_list_ptr, cmd_vld, (uint32_t)vld,
@@ -402,7 +402,7 @@ qpic_nand_add_onfi_probe_ce(struct onfi_probe_params *params,
 
 	cmd_list_ptr = qpic_nand_add_addr_n_cfg_ce(&params->cfg, cmd_list_ptr);
 
-	if (hw_ver == QCOM_QPIC_V1_5_20) {
+	if (hw_ver == QCA_QPIC_V1_5_20) {
 		cmd_vld = NAND_DEV_CMD_VLD_V1_5_20;
 		dev_cmd1 = NAND_DEV_CMD1_V1_5_20;
 	}
@@ -494,7 +494,7 @@ qpic_nand_onfi_probe_cleanup(uint32_t vld, uint32_t dev_cmd1)
 	uint32_t cmd_vld = NAND_DEV_CMD_VLD_V1_4_20;
 	uint32_t dev_cmd1_reg = NAND_DEV_CMD1_V1_4_20;
 
-	if (hw_ver == QCOM_QPIC_V1_5_20) {
+	if (hw_ver == QCA_QPIC_V1_5_20) {
 		cmd_vld = NAND_DEV_CMD_VLD_V1_5_20;
 		dev_cmd1_reg = NAND_DEV_CMD1_V1_5_20;
 	}
@@ -688,7 +688,7 @@ qpic_nand_onfi_probe(struct mtd_info *mtd)
 		return -ENOMEM;
 	}
 
-	if (hw_ver == QCOM_QPIC_V1_5_20) {
+	if (hw_ver == QCA_QPIC_V1_5_20) {
 		cmd_vld = NAND_DEV_CMD_VLD_V1_5_20;
 		dev_cmd1_reg = NAND_DEV_CMD1_V1_5_20;
 	}

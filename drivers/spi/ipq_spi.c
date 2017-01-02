@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -19,7 +19,7 @@
 #include <asm/io.h>
 #include <asm/errno.h>
 #include "ipq_spi.h"
-#include <asm/arch-qcom-common/gpio.h>
+#include <asm/arch-qca-common/gpio.h>
 #include <dt-bindings/qcom/gpio-ipq806x.h>
 #define SUCCESS		0
 

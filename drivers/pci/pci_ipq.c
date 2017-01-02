@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014, 2015-2017 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -17,8 +17,8 @@
 #include <linux/sizes.h>
 #include <asm/io.h>
 #include <asm/errno.h>
-#include <asm/arch-qcom-common/gpio.h>
-#include <asm/arch-qcom-common/iomap.h>
+#include <asm/arch-qca-common/gpio.h>
+#include <asm/arch-qca-common/iomap.h>
 #include <fdtdec.h>
 #include <dm.h>
 

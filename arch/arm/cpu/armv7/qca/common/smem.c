@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, 2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013, 2015-2017 The Linux Foundation. All rights reserved.
  *
  * Based on smem.c from lk.
  *
@@ -33,7 +33,7 @@
 #include <asm/io.h>
 #include <asm/errno.h>
 #include <linux/sizes.h>
-#include <asm/arch-qcom-common/smem.h>
+#include <asm/arch-qca-common/smem.h>
 #include <nand.h>
 #include "fdt_info.h"
 

@@ -11,7 +11,7 @@
 #include <fdtdec.h>
 #include <asm/sections.h>
 #include <linux/ctype.h>
-#include <asm/arch-qcom-common/smem.h>
+#include <asm/arch-qca-common/smem.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -75,9 +75,9 @@ static const char * const compat_names[COMPAT_COUNT] = {
 	COMPAT(ALTERA_SOCFPGA_DWC2USB, "snps,dwc2"),
 	COMPAT(COMPAT_INTEL_BAYTRAIL_FSP, "intel,baytrail-fsp"),
 	COMPAT(COMPAT_INTEL_BAYTRAIL_FSP_MDP, "intel,baytrail-fsp-mdp"),
-	COMPAT(COMPAT_QCOM_QPIC_NAND_V1_5_20, "qcom,qpic-nand.1.5.20"),
-	COMPAT(COMPAT_QCOM_QPIC_NAND_V1_4_20, "qcom,qpic-nand.1.4.20"),
-	COMPAT(QCOM_QUP_I2C, "qcom,qup-ip2c"),
+	COMPAT(COMPAT_QCA_QPIC_NAND_V1_5_20, "qcom,qpic-nand.1.5.20"),
+	COMPAT(COMPAT_QCA_QPIC_NAND_V1_4_20, "qcom,qpic-nand.1.4.20"),
+	COMPAT(QCA_QUP_I2C, "qcom,qup-ip2c"),
 };
 
 const char *fdtdec_get_compatible(enum fdt_compat_id id)
