@@ -38,6 +38,31 @@
 		};
 	};
 
+	serial@78B0000 {
+		reg = <0x78B0000 0x200>;
+		id = <1>;
+		bit_rate = <0xee>;
+		clk_rate = <3686400>;
+		m_value = <72>;
+		n_value = <15625>;
+		d_value = <15625>;
+		serial_gpio {
+			gpio1 {
+				gpio = <44>;
+				func = <1>;
+				pull = <GPIO_PULL_DOWN>;
+				oe = <GPIO_OE_ENABLE>;
+			};
+
+			gpio2 {
+				gpio = <45>;
+				func = <1>;
+				pull = <GPIO_NO_PULL>;
+				oe = <GPIO_OE_ENABLE>;
+			};
+		};
+	};
+
 	timer {
 		gcnt_cntcv_lo = <0x4a2000>;
 		gcnt_cntcv_hi = <0x4a2004>;
