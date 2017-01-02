@@ -45,7 +45,7 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-
+struct ipq_serial_platdata uart2;
 #define FIFO_DATA_SIZE	4
 
 
@@ -53,9 +53,11 @@ static unsigned int msm_boot_uart_dm_init(unsigned long uart_dm_base);
 
 /* Received data is valid or not */
 static int valid_data = 0;
+static int uart_valid_data = 0;
 
 /* Received data */
 static unsigned int word = 0;
+static unsigned int uart_word = 0;
 
 /**
  * msm_boot_uart_dm_init_rx_transfer - Init Rx transfer
@@ -461,3 +463,120 @@ U_BOOT_DRIVER(serial_ipq) = {
 	.ops    = &ipq_serial_ops,
 	.flags = DM_FLAG_PRE_RELOC,
 };
+
+/**
+ * do_uartwr - transmits a string of data
+ * @s: string to transmit
+ */
+static int do_uartwr(char *str)
+{
+	unsigned long base = uart2.reg_base;
+
+	while (*str != '\0')
+		msm_boot_uart_dm_write(str++, 1, base);
+	return 0;
+}
+
+static int uart_serial_tstc()
+{
+	unsigned long base = uart2.reg_base;
+	/* Return if data is already read */
+	if (uart_valid_data)
+		return 1;
+
+	/* Read data from the FIFO */
+	if (msm_boot_uart_dm_read(&uart_word, &uart_valid_data, 0,
+		base) != MSM_BOOT_UART_DM_E_SUCCESS)
+		return 0;
+
+	return 1;
+}
+
+static int do_uartrd(void)
+{
+	int byte;
+
+	for (;;) {
+		while (!uart_serial_tstc()) {
+			/* wait for incoming data */
+		}
+		byte = (int)uart_word & 0xff;
+		switch (byte) {
+			case 0x03:
+				uart_word = uart_word >> 8;
+				uart_valid_data--;
+				return (-1);
+			default:
+				serial_putc(byte);
+		}
+		uart_word = uart_word >> 8;
+		uart_valid_data--;
+	}
+	return 0;
+}
+
+static void  do_uart_start(void)
+{
+	int node;
+	u32 *uart_base;
+	int len;
+
+	node = fdt_path_offset(gd->fdt_blob, "uart2");
+	if (node < 0) {
+		printf("2nd UART : Not found, skipping initialization\n");
+		return;
+	}
+
+	uart_base = fdt_getprop(gd->fdt_blob, node, "reg", &len);
+	if (uart_base == FDT_ADDR_T_NONE)
+		return -EINVAL;
+
+	uart2.reg_base = fdt32_to_cpu(uart_base[0]);
+
+	uart2.port_id = fdtdec_get_int(gd->fdt_blob, node, "id", -1);
+	uart2.bit_rate = fdtdec_get_int(gd->fdt_blob, node,
+			"bit_rate", -1);
+	uart2.m_value = fdtdec_get_int(gd->fdt_blob, node, "m_value", -1);
+	uart2.n_value = fdtdec_get_int(gd->fdt_blob, node, "n_value", -1);
+	uart2.d_value = fdtdec_get_int(gd->fdt_blob, node, "d_value", -1);
+
+	ipq_serial_init(&uart2,  uart2.reg_base);
+}
+/******************************************************************************
+ * uart command intepreter
+ */
+static int do_uart(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	int i;
+
+	if (argc < 2)
+		return CMD_RET_USAGE;
+
+	if (strncmp(argv[1], "start", 5) == 0) {
+		printf("starting second UART...\n");
+		do_uart_start();
+		return 0;
+	}
+
+	if (strcmp(argv[1], "read") == 0) {
+		if (argc == 2) {
+			do_uartrd();
+			return 0;
+		}
+	}
+
+	if (strcmp(argv[1], "write") == 0) {
+		if (argc == 3) {
+			do_uartwr(argv[2]);
+			return 0;
+		}
+	}
+	return CMD_RET_USAGE;
+}
+U_BOOT_CMD(
+	uart,	3,	1,	do_uart,
+	"UART sub-system",
+	"start - start UART controller\n"
+	"uart read - read strings from second UART\n"
+	"uart write - write strings to second UART\n"
+);
