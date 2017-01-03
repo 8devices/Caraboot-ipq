@@ -18,10 +18,31 @@
 	ddr_size = <256>;
 	config_name = "config@ap.dk04.1-c1";
 
+	aliases {
+		uart2 = "/serial@78b0000";
+	};
+
 	sdhci@7824000 {
 		status = "ok";
 	};
+	serial@78b0000 {
+		status = "ok";
+		serial_gpio {
+			gpio1 {
+				gpio = <8>;
+				func = <1>;
+				pull = <GPIO_PULL_DOWN>;
+				oe = <GPIO_OE_ENABLE>;
+			};
 
+			gpio2 {
+				gpio = <9>;
+				func = <1>;
+				pull = <GPIO_NO_PULL>;
+				oe = <GPIO_OE_ENABLE>;
+			};
+		};
+	};
 	ess-switch@c000000{
 		sw_gpio {
 			gpio1 {

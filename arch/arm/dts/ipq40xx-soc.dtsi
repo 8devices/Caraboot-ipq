@@ -18,8 +18,19 @@
 		compatible = "qca,ipq-uartdm";
 		reg = <0x78af000 0x200>;
 		bit_rate = <0xff>;
-		id = <2>;
+		id = <1>;
 	};
+
+	serial@78b0000 {
+		reg = <0x78b0000 0x200>;
+		bit_rate = <0xff>;
+		m_value = <0x18>;
+		n_value = <625>;
+		d_value = <313>;
+		id = <2>;
+		status = "disabled";
+	};
+
 
 	timer {
 		gcnt_base = <0x4a1000>;

@@ -72,15 +72,28 @@ extern int ipq_qca8075_phy_init(struct phy_ops **ops);
 extern int ipq40xx_qca8033_phy_init(struct ipq40xx_eth_dev *cfg);
 extern void ipq40xx_register_switch(
 	int (*sw_init)(struct phy_ops **ops));
+
 void qca_serial_init(struct ipq_serial_platdata *plat)
 {
-	int node;
+	int node, uart2_node;
 	node = fdt_path_offset(gd->fdt_blob, "/serial/serial_gpio");
 	if (node < 0) {
 		printf("Could not find serial_gpio node\n");
 		return;
 	}
 
+	if (plat->port_id == 2) {
+		uart2_node = fdt_path_offset(gd->fdt_blob, "uart2");
+		if (uart2_node < 0) {
+			printf("Could not find uart2 node\n");
+			return;
+		}
+
+		node = fdt_subnode_offset(gd->fdt_blob,
+				       uart2_node, "serial_gpio");
+		uart2_clock_config(plat->m_value, plat->n_value, plat->d_value);
+		writel(1, GCC_BLSP1_UART2_APPS_CBCR);
+	}
 	qca_gpio_init(node);
 }
 
