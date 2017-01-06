@@ -20,8 +20,21 @@
 #define CFG_CMD_MII	1
 #define CONFIG_COMMANDS 1
 
-#define CFG_DDR2_DRAGONFLY_CAS_LATENCY 5
+#if pll
+#define CFG_PLL_FREQ (pll)
+#else
+#define CFG_PLL_FREQ CFG_PLL_750_400_250
+#endif
 
+#if ddr_cas
+#define CFG_DDR2_DRAGONFLY_CAS_LATENCY ddr_cas
+#else
+#define CFG_DDR2_DRAGONFLY_CAS_LATENCY 5
+#endif
+
+#if ATH_SGMII_FORCED
+#define ATH_SGMII_FORCED_MODE    1
+#endif
 
 #if CONFIG_AP152
 #define CFG_ATH_GMAC_NMACS      1
@@ -30,7 +43,6 @@
 #define ATH_S17_MAC0_SGMII      1
 #define CONFIG_ATHRS_GMAC_SGMII 1
 #define CONFIG_ATHRS17_PHY      1
-#define ATH_SGMII_FORCED_MODE    1
 #define UART_RX18_TX22  1
 #define __CONFIG_BOARD_NAME ap152
 #define CONFIG_BOARD_NAME "ap152"

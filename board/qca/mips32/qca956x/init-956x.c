@@ -245,12 +245,14 @@ int /* ram type */
 ath_ddr_initial_config(uint32_t refresh)
 {
 #if !defined(CONFIG_ATH_NAND_BR) && !defined(CONFIG_ATH_EMULATION)
-	int		ddr_config, ddr_config2, ddr_config3, ext_mod, mod_val,
+	int ddr_config, ddr_config2, ddr_config3, ext_mod, mod_val,
 			mod_val_init, cycle_val, tap_val, type, ctl_config;
-	uint32_t	*pll = (unsigned *)PLL_CONFIG_VAL_F;
-	uint32_t	bootstrap;
+	uint32_t *pll_config = (unsigned *)PLL_CONFIG_VAL_F;
+	uint32_t bootstrap;
 
+#if !defined(CONFIG_DISPLAY_BOARDINFO)
 	prmsg("\nsri\n");
+#endif
 
 	bootstrap = ath_reg_rd(RST_BOOTSTRAP_ADDRESS);
 
@@ -307,8 +309,8 @@ ath_ddr_initial_config(uint32_t refresh)
 		break;
 	}
 #if 0
-	if (*pll == PLL_MAGIC) {
-		uint32_t cas = pll[5];
+	if (*pll_config == PLL_MAGIC) {
+		uint32_t cas = pll_config[5];
 		if (cas == 3 || cas == 4) {
 			cas = (cas * 2) + 2;
 			ddr_config &= ~(DDR_CONFIG_CAS_LATENCY_MSB_MASK |
@@ -316,7 +318,7 @@ ath_ddr_initial_config(uint32_t refresh)
 			ddr_config |= DDR_CONFIG_CAS_LATENCY_SET(cas & 0x7) |
 				DDR_CONFIG_CAS_LATENCY_MSB_SET((cas >> 3) & 1);
 
-			cas = pll[5];
+			cas = pll_config[5];
 
 			ddr_config2 &= ~DDR_CONFIG2_GATE_OPEN_LATENCY_MASK;
 			ddr_config2 |= DDR_CONFIG2_GATE_OPEN_LATENCY_SET((2 * cas) + 1);
@@ -466,7 +468,7 @@ void
 ath_sys_frequency()
 {
 #if !defined(CONFIG_ATH_EMULATION)
-    unsigned int    rdata, i;
+	unsigned int    rdata, i;
 	unsigned int	cpu_pll_low_int, cpu_pll_low_frac, cpu_pll_high_int, cpu_pll_high_frac;
 	unsigned int	ddr_pll_low_int, ddr_pll_low_frac, ddr_pll_high_int, ddr_pll_high_frac;
 	unsigned int	cpu_clk_low, cpu_clk_high;
@@ -479,13 +481,13 @@ ath_sys_frequency()
 	/* CPU_PLL_CONFIG, CPU_PLL_CONFIG1, CPU_PLL_DITHER1, CPU_PLL_DITHER2 */
 	unsigned int cpu_pllpwd, cpu_outdiv, cpu_Refdiv, cpu_Nint;
 	unsigned int cpu_dither_en, cpu_NFrac_Min, cpu_NFrac_Max;
-    unsigned int cpu_NFrac_Min_17_5, cpu_NFrac_Min_4_0;
-    unsigned int cpu_NFrac_Max_17_5, cpu_NFrac_Max_4_0;
+	unsigned int cpu_NFrac_Min_17_5, cpu_NFrac_Min_4_0;
+	unsigned int cpu_NFrac_Max_17_5, cpu_NFrac_Max_4_0;
 	/* DDR_PLL_CONFIG, DDR_PLL_CONFIG1, DDR_PLL_DITHER1, DDR_PLL_DITHER2 */
 	unsigned int ddr_pllpwd, ddr_outdiv, ddr_Refdiv, ddr_Nint;
 	unsigned int ddr_dither_en, ddr_NFrac_Min, ddr_NFrac_Max;
-    unsigned int ddr_NFrac_Min_17_5, ddr_NFrac_Min_4_0;
-    unsigned int ddr_NFrac_Max_17_5, ddr_NFrac_Max_4_0;
+	unsigned int ddr_NFrac_Min_17_5, ddr_NFrac_Min_4_0;
+	unsigned int ddr_NFrac_Max_17_5, ddr_NFrac_Max_4_0;
 	static uint32_t ath_cpu_freq, ath_ddr_freq, ath_ahb_freq;
 #endif
 	uint32_t ref_clk;
@@ -542,13 +544,13 @@ ath_sys_frequency()
 	rdata = ath_reg_rd(CPU_PLL_DITHER1_ADDRESS);
 	cpu_dither_en	= CPU_PLL_DITHER1_DITHER_EN_GET(rdata);
 	cpu_NFrac_Min	= CPU_PLL_DITHER1_NFRAC_MIN_GET(rdata);
-    cpu_NFrac_Min_17_5 = (cpu_NFrac_Min >> 5) & 0x1fff;
-    cpu_NFrac_Min_4_0  = cpu_NFrac_Min & 0x1f;
+	cpu_NFrac_Min_17_5 = (cpu_NFrac_Min >> 5) & 0x1fff;
+	cpu_NFrac_Min_4_0  = cpu_NFrac_Min & 0x1f;
 
 	rdata = ath_reg_rd(CPU_PLL_DITHER1_ADDRESS);
 	cpu_NFrac_Max	= CPU_PLL_DITHER2_NFRAC_MAX_GET(rdata);
-    cpu_NFrac_Max_17_5 = (cpu_NFrac_Max >> 5) & 0x1fff;
-    cpu_NFrac_Max_4_0  = cpu_NFrac_Max & 0x1f;
+	cpu_NFrac_Max_17_5 = (cpu_NFrac_Max >> 5) & 0x1fff;
+	cpu_NFrac_Max_4_0  = cpu_NFrac_Max & 0x1f;
 
 	rdata = ath_reg_rd(DDR_PLL_CONFIG_ADDRESS);
 	ddr_pllpwd	= DDR_PLL_CONFIG_PLLPWD_GET(rdata);
@@ -561,95 +563,95 @@ ath_sys_frequency()
 	rdata = ath_reg_rd(DDR_PLL_DITHER1_ADDRESS);
 	ddr_dither_en	= DDR_PLL_DITHER1_DITHER_EN_GET(rdata);
 	ddr_NFrac_Min	= DDR_PLL_DITHER1_NFRAC_MIN_GET(rdata);
-    ddr_NFrac_Min_17_5 = (ddr_NFrac_Min >> 5) & 0x1fff;
-    ddr_NFrac_Min_4_0  = ddr_NFrac_Min & 0x1f;
+	ddr_NFrac_Min_17_5 = (ddr_NFrac_Min >> 5) & 0x1fff;
+	ddr_NFrac_Min_4_0  = ddr_NFrac_Min & 0x1f;
 
 	rdata = ath_reg_rd(DDR_PLL_DITHER1_ADDRESS);
 	ddr_NFrac_Max	= DDR_PLL_DITHER2_NFRAC_MAX_GET(rdata);
-    ddr_NFrac_Max_17_5 = (ddr_NFrac_Max >> 5) & 0x1fff;
-    ddr_NFrac_Max_4_0  = ddr_NFrac_Max & 0x1f;
+	ddr_NFrac_Max_17_5 = (ddr_NFrac_Max >> 5) & 0x1fff;
+	ddr_NFrac_Max_4_0  = ddr_NFrac_Max & 0x1f;
 
 	/* CPU PLL */
-    i = (ref_clk/cpu_Refdiv);
+	i = (ref_clk/cpu_Refdiv);
 
-    cpu_pll_low_int  = i*cpu_Nint;
-    cpu_pll_high_int = cpu_pll_low_int;
+	cpu_pll_low_int  = i*cpu_Nint;
+	cpu_pll_high_int = cpu_pll_low_int;
 
-    cpu_pll_low_frac = (i/(25*32))*((cpu_NFrac_Min_17_5*25 + cpu_NFrac_Min_4_0)/(8192/32));
-    cpu_pll_high_frac = (i/(25*32))*((cpu_NFrac_Max_17_5*25 + cpu_NFrac_Max_4_0)/(8192/32));
+	cpu_pll_low_frac = (i/(25*32))*((cpu_NFrac_Min_17_5*25 + cpu_NFrac_Min_4_0)/(8192/32));
+	cpu_pll_high_frac = (i/(25*32))*((cpu_NFrac_Max_17_5*25 + cpu_NFrac_Max_4_0)/(8192/32));
 
-    if (!cpu_dither_en || cpu_pll_high_frac <= cpu_pll_low_frac) {
-        cpu_pll_high_frac = cpu_pll_low_frac;
-    }
+	if (!cpu_dither_en || cpu_pll_high_frac <= cpu_pll_low_frac) {
+		cpu_pll_high_frac = cpu_pll_low_frac;
+	}
 
-     /* DDR PLL */
-    i = (ref_clk/ddr_Refdiv);
+	/* DDR PLL */
+	i = (ref_clk/ddr_Refdiv);
 
-    ddr_pll_low_int  = i*ddr_Nint;
-    ddr_pll_high_int = ddr_pll_low_int;
+	ddr_pll_low_int  = i*ddr_Nint;
+	ddr_pll_high_int = ddr_pll_low_int;
 
-    ddr_pll_low_frac = (i/(25*32))*((ddr_NFrac_Min_17_5*25 + ddr_NFrac_Min_4_0)/(8192/32));
-    ddr_pll_high_frac = (i/(25*32))*((ddr_NFrac_Max_17_5*25 + ddr_NFrac_Max_4_0)/(8192/32));
+	ddr_pll_low_frac = (i/(25*32))*((ddr_NFrac_Min_17_5*25 + ddr_NFrac_Min_4_0)/(8192/32));
+	ddr_pll_high_frac = (i/(25*32))*((ddr_NFrac_Max_17_5*25 + ddr_NFrac_Max_4_0)/(8192/32));
 
-    if (!ddr_dither_en || ddr_pll_high_frac <= ddr_pll_low_frac) {
-        ddr_pll_high_frac = ddr_pll_low_frac;
-    }
+	if (!ddr_dither_en || ddr_pll_high_frac <= ddr_pll_low_frac) {
+		ddr_pll_high_frac = ddr_pll_low_frac;
+	}
 
-    /* CPU Clock, DDR Clock, AHB Clock (before post div) */
-    if (cpu_ddr_clk_from_cpupll) {
-        cpu_clk_low  = cpu_pll_low_int + cpu_pll_low_frac;
-        cpu_clk_high = cpu_pll_high_int + cpu_pll_high_frac;
+	/* CPU Clock, DDR Clock, AHB Clock (before post div) */
+	if (cpu_ddr_clk_from_cpupll) {
+		cpu_clk_low  = cpu_pll_low_int + cpu_pll_low_frac;
+		cpu_clk_high = cpu_pll_high_int + cpu_pll_high_frac;
 
-        if (cpu_outdiv != 0) {
-            cpu_clk_low  /= (2*cpu_outdiv);
-            cpu_clk_high /= (2*cpu_outdiv);
-        }
+		if (cpu_outdiv != 0) {
+			cpu_clk_low  /= (2*cpu_outdiv);
+			cpu_clk_high /= (2*cpu_outdiv);
+		}
 
-        ddr_clk_low  = cpu_clk_low;
-        ddr_clk_high = cpu_clk_high;
-    } else if (cpu_ddr_clk_from_ddrpll) {
-        ddr_clk_low  = ddr_pll_low_int + ddr_pll_low_frac;
-        ddr_clk_high = ddr_pll_high_int + ddr_pll_high_frac;
+	ddr_clk_low  = cpu_clk_low;
+	ddr_clk_high = cpu_clk_high;
+	} else if (cpu_ddr_clk_from_ddrpll) {
+		ddr_clk_low  = ddr_pll_low_int + ddr_pll_low_frac;
+		ddr_clk_high = ddr_pll_high_int + ddr_pll_high_frac;
 
-        if (ddr_outdiv != 0) {
-            ddr_clk_low  /= (2*ddr_outdiv);
-            ddr_clk_high /= (2*ddr_outdiv);
-        }
+		if (ddr_outdiv != 0) {
+			ddr_clk_low  /= (2*ddr_outdiv);
+			ddr_clk_high /= (2*ddr_outdiv);
+		}
 
-        cpu_clk_low  = ddr_clk_low;
-        cpu_clk_high = ddr_clk_high;
-    } else {
-        cpu_clk_low  = cpu_pll_low_int + cpu_pll_low_frac;
-        cpu_clk_high = cpu_pll_high_int + cpu_pll_high_frac;
-        ddr_clk_low  = ddr_pll_low_int + ddr_pll_low_frac;
-        ddr_clk_high = ddr_pll_high_int + ddr_pll_high_frac;
+		cpu_clk_low  = ddr_clk_low;
+		cpu_clk_high = ddr_clk_high;
+	} else {
+		cpu_clk_low  = cpu_pll_low_int + cpu_pll_low_frac;
+		cpu_clk_high = cpu_pll_high_int + cpu_pll_high_frac;
+		ddr_clk_low  = ddr_pll_low_int + ddr_pll_low_frac;
+		ddr_clk_high = ddr_pll_high_int + ddr_pll_high_frac;
 
-        if (cpu_outdiv != 0) {
-            cpu_clk_low  /= (2*cpu_outdiv);
-            cpu_clk_high /= (2*cpu_outdiv);
-        }
+		if (cpu_outdiv != 0) {
+			cpu_clk_low  /= (2*cpu_outdiv);
+			cpu_clk_high /= (2*cpu_outdiv);
+		}
 
-        if (ddr_outdiv != 0) {
-            ddr_clk_low  /= (2*ddr_outdiv);
-            ddr_clk_high /= (2*ddr_outdiv);
-        }
-    }
+		if (ddr_outdiv != 0) {
+			ddr_clk_low  /= (2*ddr_outdiv);
+			ddr_clk_high /= (2*ddr_outdiv);
+		}
+	}
 
-    if (ahbclk_from_ddrpll) {
-        ahb_clk_low  = ddr_clk_low;
-        ahb_clk_high = ddr_clk_high;
-    } else {
-        ahb_clk_low  = cpu_clk_low;
-        ahb_clk_high = cpu_clk_high;
-    }
+	if (ahbclk_from_ddrpll) {
+        	ahb_clk_low  = ddr_clk_low;
+		ahb_clk_high = ddr_clk_high;
+	} else {
+		ahb_clk_low  = cpu_clk_low;
+		ahb_clk_high = cpu_clk_high;
+	}
 
-    /* CPU Clock, DDR Clock, AHB Clock */
-    cpu_clk_low  /= (cpu_post_div + 1);
-    cpu_clk_high /= (cpu_post_div + 1);
-    ddr_clk_low  /= (ddr_post_div + 1);
-    ddr_clk_high /= (ddr_post_div + 1);
-    ahb_clk_low  /= (ahb_post_div + 1);
-    ahb_clk_high /= (ahb_post_div + 1);
+	/* CPU Clock, DDR Clock, AHB Clock */
+	cpu_clk_low  /= (cpu_post_div + 1);
+	cpu_clk_high /= (cpu_post_div + 1);
+	ddr_clk_low  /= (ddr_post_div + 1);
+	ddr_clk_high /= (ddr_post_div + 1);
+	ahb_clk_low  /= (ahb_post_div + 1);
+	ahb_clk_high /= (ahb_post_div + 1);
 
 	ath_cpu_freq = cpu_clk_low;
 	ath_ddr_freq = ddr_clk_low;
@@ -658,10 +660,8 @@ ath_sys_frequency()
 	//*ddr_clk_h = ddr_clk_high;
 	//*ahb_clk_h = ahb_clk_high;
 #endif
-
-prmsg("%s: cpu %u ddr %u ahb %u\n", __func__,
+	prmsg("%s: cpu %u ddr %u ahb %u\n", __func__,
 	ath_cpu_freq / 1000000,
 	ath_ddr_freq / 1000000,
 	ath_ahb_freq / 1000000);
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014, 2016-2017 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -118,33 +118,33 @@ static int ath_gmac_recv(struct eth_device *dev)
 	mac = (ath_gmac_mac_t *)dev->priv;
 
 	for (;;) {
-	     f = mac->fifo_rx[mac->next_rx];
-	 if (ath_gmac_rx_owned_by_dma(f)) {
-	 /* check if the current Descriptor is_empty is 1,But the DMAed count is not-zero
-	    then move to desciprot where the packet is available */
-	   dmaed_pkt = (ath_gmac_reg_rd(mac, 0x194) >> 16);
-            if (!dmaed_pkt) {
-	        break ;
-              } else {
-                if (f->is_empty == 1) {
-                    while ( count < NO_OF_RX_FIFOS ) {
-                        if (++mac->next_rx >= NO_OF_RX_FIFOS) {
-                            mac->next_rx = 0;
-                        }
-                        f = mac->fifo_rx[mac->next_rx];
-                        /*
-                         * Break on valid data in the desc by checking
-                         *  empty bit.
-                         */
-                        if (!f->is_empty){
-                            count = 0;
-                            break;
-                        }
-                        count++;
-                    }
-               }
-            }
-	}
+		f = mac->fifo_rx[mac->next_rx];
+		if (ath_gmac_rx_owned_by_dma(f)) {
+		/* check if the current Descriptor is_empty is 1,But the DMAed count is not-zero
+		then move to desciprot where the packet is available */
+			dmaed_pkt = (ath_gmac_reg_rd(mac, 0x194) >> 16);
+			if (!dmaed_pkt) {
+				break ;
+			} else {
+				if (f->is_empty == 1) {
+					while ( count < NO_OF_RX_FIFOS ) {
+						if (++mac->next_rx >= NO_OF_RX_FIFOS) {
+							mac->next_rx = 0;
+						}
+					f = mac->fifo_rx[mac->next_rx];
+					/*
+					 * Break on valid data in the desc by checking
+					 *  empty bit.
+					 */
+					if (!f->is_empty){
+						count = 0;
+						break;
+					}
+					count++;
+					}
+				}
+			}
+		}
 
 		length = f->pkt_size;
 
@@ -162,7 +162,6 @@ static int ath_gmac_recv(struct eth_device *dev)
 		ath_gmac_reg_wr(mac, ATH_DMA_RX_DESC, virt_to_phys(f));
 		ath_gmac_reg_wr(mac, ATH_DMA_RX_CTRL, 1);
 	}
-
 	return (0);
 }
 
@@ -304,52 +303,49 @@ static void athr_gmac_sgmii_setup()
 	int status = 0, count = 0;
 
 #ifdef ATH_SGMII_FORCED_MODE
-        ath_reg_wr(MR_AN_CONTROL_ADDRESS, MR_AN_CONTROL_SPEED_SEL1_SET(1) |
-                                           MR_AN_CONTROL_PHY_RESET_SET(1)  |
-                                           MR_AN_CONTROL_DUPLEX_MODE_SET(1));
-        udelay(10);
-
-        ath_reg_wr(SGMII_CONFIG_ADDRESS, SGMII_CONFIG_MODE_CTRL_SET(2)   |
-                                          SGMII_CONFIG_FORCE_SPEED_SET(1) |
-                                          SGMII_CONFIG_SPEED_SET(2));
-
-        printf ("SGMII in forced mode\n");
+	ath_reg_wr(MR_AN_CONTROL_ADDRESS, MR_AN_CONTROL_SPEED_SEL1_SET(1) |
+						MR_AN_CONTROL_PHY_RESET_SET(1)  |
+						MR_AN_CONTROL_DUPLEX_MODE_SET(1));
+	udelay(10);
+	ath_reg_wr(SGMII_CONFIG_ADDRESS, SGMII_CONFIG_MODE_CTRL_SET(2)   |
+					SGMII_CONFIG_FORCE_SPEED_SET(1) |
+					SGMII_CONFIG_SPEED_SET(2));
+	printf ("SGMII in forced mode\n");
 #else
-
 	ath_reg_wr(SGMII_CONFIG_ADDRESS, SGMII_CONFIG_MODE_CTRL_SET(2));
-
-	ath_reg_wr(MR_AN_CONTROL_ADDRESS, MR_AN_CONTROL_AN_ENABLE_SET(1)
-                                      |MR_AN_CONTROL_PHY_RESET_SET(1));
-
+	ath_reg_wr(MR_AN_CONTROL_ADDRESS, MR_AN_CONTROL_AN_ENABLE_SET(1) |
+					MR_AN_CONTROL_PHY_RESET_SET(1));
 	ath_reg_wr(MR_AN_CONTROL_ADDRESS, MR_AN_CONTROL_AN_ENABLE_SET(1));
 #endif
-/*
- * SGMII reset sequence suggested by systems team.
- */
+
+	/*
+	 * SGMII reset sequence suggested by systems team.
+	 */
 
 	ath_reg_wr(SGMII_RESET_ADDRESS, SGMII_RESET_RX_CLK_N_RESET);
 
 	ath_reg_wr(SGMII_RESET_ADDRESS, SGMII_RESET_HW_RX_125M_N_SET(1));
 
-	ath_reg_wr(SGMII_RESET_ADDRESS, SGMII_RESET_HW_RX_125M_N_SET(1)
-                                    |SGMII_RESET_RX_125M_N_SET(1));
+	ath_reg_wr(SGMII_RESET_ADDRESS, SGMII_RESET_HW_RX_125M_N_SET(1) |
+					SGMII_RESET_RX_125M_N_SET(1));
 
-	ath_reg_wr(SGMII_RESET_ADDRESS, SGMII_RESET_HW_RX_125M_N_SET(1)
-                                    |SGMII_RESET_TX_125M_N_SET(1)
-                                    |SGMII_RESET_RX_125M_N_SET(1));
+	ath_reg_wr(SGMII_RESET_ADDRESS, SGMII_RESET_HW_RX_125M_N_SET(1) |
+					SGMII_RESET_TX_125M_N_SET(1)	|
+					SGMII_RESET_RX_125M_N_SET(1));
 
-	ath_reg_wr(SGMII_RESET_ADDRESS, SGMII_RESET_HW_RX_125M_N_SET(1)
-                                    |SGMII_RESET_TX_125M_N_SET(1)
-                                    |SGMII_RESET_RX_125M_N_SET(1)
-                                    |SGMII_RESET_RX_CLK_N_SET(1));
+	ath_reg_wr(SGMII_RESET_ADDRESS, SGMII_RESET_HW_RX_125M_N_SET(1) |
+					SGMII_RESET_TX_125M_N_SET(1)	|
+					SGMII_RESET_RX_125M_N_SET(1)	|
+					SGMII_RESET_RX_CLK_N_SET(1));
 
-	ath_reg_wr(SGMII_RESET_ADDRESS, SGMII_RESET_HW_RX_125M_N_SET(1)
-                                    |SGMII_RESET_TX_125M_N_SET(1)
-                                    |SGMII_RESET_RX_125M_N_SET(1)
-                                    |SGMII_RESET_RX_CLK_N_SET(1)
-                                    |SGMII_RESET_TX_CLK_N_SET(1));
+	ath_reg_wr(SGMII_RESET_ADDRESS, SGMII_RESET_HW_RX_125M_N_SET(1) |
+					SGMII_RESET_TX_125M_N_SET(1)	|
+					SGMII_RESET_RX_125M_N_SET(1)	|
+					SGMII_RESET_RX_CLK_N_SET(1)	|
+					SGMII_RESET_TX_CLK_N_SET(1));
 
-        ath_reg_rmw_clear(MR_AN_CONTROL_ADDRESS, MR_AN_CONTROL_PHY_RESET_SET(1));
+	ath_reg_rmw_clear(MR_AN_CONTROL_ADDRESS, MR_AN_CONTROL_PHY_RESET_SET(1));
+
 	/*
 	 * WAR::Across resets SGMII link status goes to weird
 	 * state.
@@ -357,6 +353,7 @@ static void athr_gmac_sgmii_setup()
 	 * for sure we are in bad  state.
 	 * Issue a PHY reset in MR_AN_CONTROL_ADDRESS to keep going.
 	 */
+
 	status = (ath_reg_rd(SGMII_DEBUG_ADDRESS) & 0xff);
 	while (!(status == 0xf || status == 0x10)) {
 
@@ -371,7 +368,6 @@ static void athr_gmac_sgmii_setup()
 	}
 
 	printf("%s SGMII done\n",__func__);
-
 }
 
 static void ath_gmac_hw_start(ath_gmac_mac_t *mac)
@@ -581,8 +577,8 @@ static int ath_gmac_setup_fifos(ath_gmac_mac_t *mac)
 static void ath_gmac_halt(struct eth_device *dev)
 {
 	ath_gmac_mac_t *mac = (ath_gmac_mac_t *)dev->priv;
-        ath_gmac_reg_rmw_clear(mac, ATH_MAC_CFG1,(ATH_MAC_CFG1_RX_EN | ATH_MAC_CFG1_TX_EN));
-        ath_gmac_reg_wr(mac,ATH_MAC_FIFO_CFG_0,0x1f1f);
+	ath_gmac_reg_rmw_clear(mac, ATH_MAC_CFG1,(ATH_MAC_CFG1_RX_EN | ATH_MAC_CFG1_TX_EN));
+	ath_gmac_reg_wr(mac,ATH_MAC_FIFO_CFG_0,0x1f1f);
 	ath_gmac_reg_wr(mac,ATH_DMA_RX_CTRL, 0);
 	while (ath_gmac_reg_rd(mac, ATH_DMA_RX_CTRL));
 }
@@ -1011,7 +1007,7 @@ ath_gmac_miiphy_write(char *devname, uint32_t phy_addr, uint8_t reg, uint16_t da
 
 int cpu_eth_init(bd_t *bis)
 {
-        ath_gmac_enet_initialize(bis);
-        return 0;
+	ath_gmac_enet_initialize(bis);
+	return 0;
 }
 

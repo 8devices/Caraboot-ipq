@@ -98,7 +98,7 @@ int ath_uart_freq(void);
 
 typedef unsigned int ath_reg_t;
 
-#ifdef COMPRESSED_UBOOT
+#if COMPRESSED_UBOOT
 #	define prmsg(...)
 #else
 #	define prmsg	printf

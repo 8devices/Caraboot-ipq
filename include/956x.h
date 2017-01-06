@@ -28,7 +28,6 @@
 #define is_qca956x()    (1)
 #define is_sco()    (1)
 
-#define CFG_PLL_FREQ         CFG_PLL_775_650_258
 
 #define CPU_PLL_CONFIG_UPDATING_MSB                                  31
 #define CPU_PLL_CONFIG_UPDATING_LSB                                  31
@@ -1021,8 +1020,7 @@
 
 #define DDR_FSM_WAIT_CTRL_ADDRESS                                    0x180000e4
 
-//#define TAP_CONTROL_0_ADDRESS                                        0x1800001c
-#define TAP_CONTROL_0_ADDRESS                                        0xb800001c
+#define TAP_CONTROL_0_ADDRESS                                        0x1800001c
 #define TAP_CONTROL_1_ADDRESS                                        0x18000020
 #define TAP_CONTROL_2_ADDRESS                                        0x18000024
 #define TAP_CONTROL_3_ADDRESS                                        0x18000028
@@ -4192,8 +4190,8 @@
 
 
 #define __nint_to_mhz(n, ref)   ((n) * (ref) * 1000000)
-#define __cpu_hz_40(pll)    (__nint_to_mhz(CPU_PLL_CONFIG1_NINT_GET(pll), 40))
-#define __cpu_hz_25(pll)    (__nint_to_mhz(CPU_PLL_CONFIG1_NINT_GET(pll), 25))
+#define __cpu_hz_40(val)    (__nint_to_mhz(CPU_PLL_CONFIG1_NINT_GET(val), 40))
+#define __cpu_hz_25(val)    (__nint_to_mhz(CPU_PLL_CONFIG1_NINT_GET(val), 25))
 
 /* Since the count is incremented every other tick, divide by 2 */
 #define CFG_HZ          (__cpu_hz_25(CPU_PLL_CONFIG1_NINT_VAL) / 2)
