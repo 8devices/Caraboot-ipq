@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014, 2016-2017 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -170,8 +170,10 @@ ath_ddr_initial_config(uint32_t refresh)
 	uint32_t	*pll = (unsigned *)PLL_CONFIG_VAL_F;
 	uint32_t	bootstrap;
 
+#if !defined(CONFIG_DISPLAY_BOARDINFO)
 	prmsg("\nsri\n");
 	prmsg("Scorpion 1.%d\n", ath_reg_rd(RST_REVISION_ID_ADDRESS) & 0xf);
+#endif
 
 	bootstrap = ath_reg_rd(RST_BOOTSTRAP_ADDRESS);
 
@@ -225,12 +227,12 @@ ath_ddr_initial_config(uint32_t refresh)
 		prmsg("%s(%d): (", __func__, __LINE__);
 		if (RST_BOOTSTRAP_DDR_WIDTH_GET(bootstrap)) {
 			prmsg("32");
-                        ctl_config = CFG_DDR_CTL_CONFIG;
+			ctl_config = CFG_DDR_CTL_CONFIG;
 			cycle_val = CFG_DDR1_RD_DATA_THIS_CYCLE_VAL_32;
 		} else {
 			prmsg("16");
 			cycle_val = CFG_DDR1_RD_DATA_THIS_CYCLE_VAL_16;
-                        ctl_config = 0;
+			ctl_config = 0;
 		}
 
 		ctl_config |= CPU_DDR_SYNC_MODE;
@@ -349,7 +351,7 @@ ath_ddr_initial_config(uint32_t refresh)
 	ath_reg_wr_nf(DDR_REFRESH_ADDRESS, refresh);
 	udelay(100);
 
-        ath_reg_wr(TAP_CONTROL_0_ADDRESS, tap_val);
+	ath_reg_wr(TAP_CONTROL_0_ADDRESS, tap_val);
 	ath_reg_wr(TAP_CONTROL_1_ADDRESS, tap_val);
 
 	if (RST_BOOTSTRAP_DDR_WIDTH_GET(bootstrap)) {
@@ -365,9 +367,9 @@ ath_ddr_initial_config(uint32_t refresh)
 	}
 
 	/*
-         * Based on SGMII validation for stucks, packet errors were  observed and it was
-         * mostly due to noise pickup on SGMII lines. Switching regulator register is to
-         * be programmed with proper setting to avoid such stucks.
+	 * Based on SGMII validation for stucks, packet errors were  observed and it was
+	 * mostly due to noise pickup on SGMII lines. Switching regulator register is to
+	 * be programmed with proper setting to avoid such stucks.
 	 */
 	ath_reg_rmw_clear(PMU1_ADDRESS, (7<<1));
 	ath_reg_rmw_set(PMU1_ADDRESS, (1<<3));
@@ -469,8 +471,8 @@ void ath_sys_frequency()
 	}
 #endif
 done:
-        prmsg("cpu %u ddr %u ahb %u\n",
-		ath_cpu_freq / 1000000,
-		ath_ddr_freq / 1000000,
-		ath_ahb_freq / 1000000);
+		prmsg("cpu %u ddr %u ahb %u\n",
+			ath_cpu_freq / 1000000,
+			ath_ddr_freq / 1000000,
+			ath_ahb_freq / 1000000);
 }
