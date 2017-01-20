@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013, 2016-2017 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -165,14 +165,16 @@ ath_ddr_initial_config(uint32_t refresh)
 #if !defined(CONFIG_ATH_EMULATION)
 	int		ddr_config, ddr_config2, ddr_config3, ext_mod, mod_val,
 			mod_val_init, cycle_val, tap_val, type, ctl_config;
-	uint32_t	*pll = (unsigned *)PLL_CONFIG_VAL_F;
+	uint32_t	*pll_config = (unsigned *)PLL_CONFIG_VAL_F;
 	uint32_t	bootstrap,revid;
 
+#if !defined(CONFIG_DISPLAY_BOARDINFO)
 	prmsg("\nsri\n");
 	if(((revid=ath_reg_rd(RST_REVISION_ID_ADDRESS))&0xff0)==0x140)
 		prmsg("Honey Bee 1.%d\n", revid & 0xf);
 	else
 		prmsg("Honey Bee 2.%d\n", revid & 0xf);
+#endif
 
 	bootstrap = ath_reg_rd(RST_BOOTSTRAP_ADDRESS);
 
@@ -336,7 +338,7 @@ ath_uart_freq(void)
 void ath_sys_frequency()
 {
 #if !defined(CONFIG_ATH_EMULATION)
-	uint32_t pll, out_div, ref_div, nint, frac, clk_ctrl;
+	uint32_t pll_config, out_div, ref_div, nint, frac, clk_ctrl;
 #endif
 	uint32_t ref = ath_uart_freq();
 	uint32_t ath_cpu_freq = 0, ath_ddr_freq = 0, ath_ahb_freq = 0;
@@ -353,23 +355,23 @@ void ath_sys_frequency()
 
 	clk_ctrl = ath_reg_rd(ATH_DDR_CLK_CTRL);
 
-	pll = ath_reg_rd(ATH_PLL_CONFIG);
-	out_div	= CPU_PLL_CONFIG_OUTDIV_GET(pll);
-	ref_div	= CPU_PLL_CONFIG_REFDIV_GET(pll);
-	nint	= CPU_PLL_CONFIG_NINT_GET(pll);
-	frac	= CPU_PLL_CONFIG_NFRAC_GET(pll);
-	pll = ref >> 6;
-	frac	= frac * pll / ref_div;
+	pll_config = ath_reg_rd(ATH_PLL_CONFIG);
+	out_div	= CPU_PLL_CONFIG_OUTDIV_GET(pll_config);
+	ref_div	= CPU_PLL_CONFIG_REFDIV_GET(pll_config);
+	nint	= CPU_PLL_CONFIG_NINT_GET(pll_config);
+	frac	= CPU_PLL_CONFIG_NFRAC_GET(pll_config);
+	pll_config = ref >> 6;
+	frac	= frac * pll_config / ref_div;
 	ath_cpu_freq = (((nint * (ref / ref_div)) + frac) >> out_div) /
 			(CPU_DDR_CLOCK_CONTROL_CPU_POST_DIV_GET(clk_ctrl) + 1);
 
-	pll = ath_reg_rd(ATH_DDR_PLL_CONFIG);
-	out_div	= DDR_PLL_CONFIG_OUTDIV_GET(pll);
-	ref_div	= DDR_PLL_CONFIG_REFDIV_GET(pll);
-	nint	= DDR_PLL_CONFIG_NINT_GET(pll);
-	frac	= DDR_PLL_CONFIG_NFRAC_GET(pll);
-	pll = ref >> 10;
-	frac	= frac * pll / ref_div;
+	pll_config = ath_reg_rd(ATH_DDR_PLL_CONFIG);
+	out_div	= DDR_PLL_CONFIG_OUTDIV_GET(pll_config);
+	ref_div	= DDR_PLL_CONFIG_REFDIV_GET(pll_config);
+	nint	= DDR_PLL_CONFIG_NINT_GET(pll_config);
+	frac	= DDR_PLL_CONFIG_NFRAC_GET(pll_config);
+	pll_config = ref >> 10;
+	frac	= frac * pll_config / ref_div;
 	ath_ddr_freq = (((nint * (ref / ref_div)) + frac) >> out_div) /
 			(CPU_DDR_CLOCK_CONTROL_DDR_POST_DIV_GET(clk_ctrl) + 1);
 
@@ -382,8 +384,8 @@ void ath_sys_frequency()
 	}
 #endif
 done:
-        prmsg("cpu %u ddr %u ahb %u\n",
-                ath_cpu_freq / 1000000,
-                ath_ddr_freq / 1000000,
-                ath_ahb_freq / 1000000);
+	prmsg("cpu %u ddr %u ahb %u\n",
+		ath_cpu_freq / 1000000,
+		ath_ddr_freq / 1000000,
+		ath_ahb_freq / 1000000);
 }

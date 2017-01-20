@@ -153,20 +153,27 @@
 
 /*#define CONFIG_USB 1*/
 
+#if pll
+#define CFG_PLL_FREQ (pll)
+#else
+#define CFG_PLL_FREQ	CFG_PLL_650_600_200
+#endif
+
 #define CONFIG_ATH_SOC 1
 #define CONFIG_ATHEROS          1
 #define CONFIG_MACH_QCA953x     1
 #define CFG_INIT_STACK_IN_SRAM  1
-#define CONFIG_AP147    1
 #define __CONFIG_BOARD_NAME ap147
 #define CONFIG_BOARD_NAME "ap147"
 #define BUILD_VERSION "g36c341f-dirty-1"
-#define CFG_PLL_FREQ            CFG_PLL_650_600_200
 #define CFG_ATHRS27_PHY 1
 #define CFG_ATH_GMAC_NMACS 2
 #define BOARD_NAME "AP147"
 
 #define CONFIG_LAST_STAGE_INIT
+#define CONFIG_DISPLAY_BOARDINFO 1
+#define CONFIG_CUSTOM_BOARDINFO 1
+
 #define CONFIG_SYS_TEXT_BASE 0x9f000000
 
 #define CONFIG_SYS_SDRAM_BASE 0x80000000

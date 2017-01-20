@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2017 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -868,8 +868,7 @@
 
 #define DDR_RD_DATA_THIS_CYCLE_ADDRESS                               0x18000018
 
-#define TAP_CONTROL_0_ADDRESS                                        0x1800001c /* Causes exception on u-boot-2016 */
-#define TAP_CONTROL_0_ADDRESS                                        0xB800001c
+#define TAP_CONTROL_0_ADDRESS                                        0x1800001c
 #define TAP_CONTROL_1_ADDRESS                                        0x18000020
 #define TAP_CONTROL_2_ADDRESS                                        0x18000024
 #define TAP_CONTROL_3_ADDRESS                                        0x18000028

@@ -60,11 +60,11 @@ typedef struct {
 #define ath_gmac_reg_rmw_clear(_mac, _x, _y)	\
 	ath_reg_rmw_clear(((_x) + _mac->mac_base), (_y))
 
-#ifdef COMPRESSED_UBOOT
+#if COMPRESSED_UBOOT
 #define _1000BASET		1000
 #define _100BASET		100
 #define _10BASET		10
-#endif /* #ifdef COMPRESSED_UBOOT */
+#endif /* #if COMPRESSED_UBOOT */
 
 /*
  * spd is _1000BASET, _100BASET etc. defined in include/miiphy.h
