@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014, 2016-2017 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -30,57 +30,59 @@ ath_get_nand_cal_data(void)
 {
 	extern unsigned long long ath_nand_get_cal_offset(const char *ba);
 
-        ulong           off,size;
-        int             ret;
-        static u_char   nand_cal_data[256 * 1024];
-        nand_info_t *nand;
+	ulong off,size;
+	int ret;
+	static u_char nand_cal_data[256 * 1024];
+	nand_info_t *nand;
 
-         /*
-          * caldata partition is of 128k
-          *
-          */
-        nand = &nand_info[nand_curr_device];
-        size = nand->erasesize;
+	/*
+	 * caldata partition is of 128k
+	 *
+	 */
+	nand = &nand_info[nand_curr_device];
+	size = nand->erasesize;
 
-        /*
-         * Get the Offset of Caldata partition
-         */
-        off = ath_nand_get_cal_offset(getenv("bootargs"));
-        if(off == ATH_CAL_OFF_INVAL) {
-                printf("Invalid CAL offset \n");
-                return 1;
-        }
+	/*
+	 * Get the Offset of Caldata partition
+	 */
 
-        /*
-         * Get the values from flash, and program into the MAC address
-         * registers
-         */
-        ret = nand_read(nand, (loff_t)off, &size, nand_cal_data);
-        printf(" %d bytes %s: %s\n", size,
-                        "read", ret ? "ERROR" : "OK");
-        if(ret != 0 ) {
-                return NULL;
-        }
+	off = ath_nand_get_cal_offset(getenv("bootargs"));
+	if(off == ATH_CAL_OFF_INVAL) {
+		printf("Invalid CAL offset \n");
+		return 1;
+	}
 
-        return nand_cal_data;
+	/*
+	 * Get the values from flash, and program into the MAC address
+	 * registers
+	 */
+
+	ret = nand_read(nand, (loff_t)off, &size, nand_cal_data);
+	printf(" %d bytes %s: %s\n", size,
+		"read", ret ? "ERROR" : "OK");
+	if(ret != 0 ) {
+		return NULL;
+	}
+
+	return nand_cal_data;
 }
 #endif
 
 void ath_set_tuning_caps(void)
 {
 	typedef struct {
-		u_int8_t	pad[0x28],
-				params_for_tuning_caps[2],
-				featureEnable;
+		u_int8_t pad[0x28],
+		params_for_tuning_caps[2],
+		featureEnable;
 	} __attribute__((__packed__)) ar9300_eeprom_t;
 
 	ar9300_eeprom_t	*eep;
 	uint32_t	val;
 
 #ifdef CONFIG_ATH_NAND_BR
-        eep = (ar9300_eeprom_t *)ath_get_nand_cal_data();
+	eep = (ar9300_eeprom_t *)ath_get_nand_cal_data();
 #else
-        eep = (ar9300_eeprom_t *)WLANCAL;
+	eep = (ar9300_eeprom_t *)WLANCAL;
 #endif /* CONFIG_ATH_NAND_BR */
 
 	val =	XTAL_TCXODET_SET(0x0) |

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014, 2016-2017 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -23,7 +23,7 @@
 extern int ath_ddr_initial_config(uint32_t refresh);
 extern int ath_ddr_find_size(void);
 
-#ifdef COMPRESSED_UBOOT
+#if COMPRESSED_UBOOT
 #	define prmsg(...)
 #	define args		char *s
 #	define board_str(a)	do {			\
@@ -37,7 +37,7 @@ extern int ath_ddr_find_size(void);
 #	define prmsg	printf
 #	define args		void
 #	define board_str(a)				\
-	printf(a " - Scorpion 1.%d", ath_reg_rd		\
+	printf(a " - Scorpion 1.%d\n", ath_reg_rd		\
 			(RST_REVISION_ID_ADDRESS) & 0xf)
 #endif
 
@@ -126,9 +126,11 @@ ath_mem_config(void)
 	tap = (uint32_t *)0xbd007f10;
 	prmsg("Tap (low, high) = (0x%x, 0x%x)\n", tap[0], tap[1]);
 
-	tap = (uint32_t *)TAP_CONTROL_0_ADDRESS;
 	prmsg("Tap values = (0x%x, 0x%x, 0x%x, 0x%x)\n",
-		tap[0], tap[2], tap[2], tap[3]);
+		ath_reg_rd(TAP_CONTROL_0_ADDRESS),
+		ath_reg_rd(TAP_CONTROL_1_ADDRESS),
+		ath_reg_rd(TAP_CONTROL_2_ADDRESS),
+		ath_reg_rd(TAP_CONTROL_3_ADDRESS));
 
 	/* Take WMAC out of reset */
 	reg32 = ath_reg_rd(RST_RESET_ADDRESS);
@@ -150,7 +152,7 @@ phys_size_t initdram(int board_type)
 	return (ath_mem_config());
 }
 
-int	checkboard(args)
+int checkboard(args)
 {
 	board_str(CONFIG_BOARD_NAME);
 	return 0;
