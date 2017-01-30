@@ -459,4 +459,85 @@
 		};
 
 	};
+
+	sdcc@12400000 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "qcom,sdcc";
+		reg = <0x12400000 0x2000>;
+		status = "ok";
+
+		emmc_gpio {
+				gpio38 {
+					gpio = <38>;
+					func = <2>;
+					pull = <GPIO_PULL_UP>;
+					drvstr = <GPIO_10MA>;
+					oe = <GPIO_OE_DISABLE>;
+				};
+				gpio39 {
+					gpio = <39>;
+					func = <2>;
+					pull = <GPIO_PULL_UP>;
+					drvstr = <GPIO_10MA>;
+					oe = <GPIO_OE_DISABLE>;
+				};
+				gpio40 {
+					gpio = <40>;
+					func = <2>;
+					pull = <GPIO_PULL_UP>;
+					drvstr = <GPIO_10MA>;
+					oe = <GPIO_OE_DISABLE>;
+				};
+				gpio41 {
+					gpio = <41>;
+					func = <2>;
+					pull = <GPIO_PULL_UP>;
+					drvstr = <GPIO_10MA>;
+					oe = <GPIO_OE_DISABLE>;
+				};
+				gpio42 {
+					gpio = <42>;
+					func = <2>;
+					pull = <GPIO_NO_PULL>;
+					drvstr = <GPIO_16MA>;
+					oe = <GPIO_OE_DISABLE>;
+				};
+				gpio43 {
+					gpio = <43>;
+					func = <2>;
+					pull = <GPIO_PULL_UP>;
+					drvstr = <GPIO_10MA>;
+					oe = <GPIO_OE_DISABLE>;
+				};
+				gpio44 {
+					gpio = <44>;
+					func = <2>;
+					pull = <GPIO_PULL_UP>;
+					drvstr = <GPIO_10MA>;
+					oe = <GPIO_OE_DISABLE>;
+				};
+				gpio45 {
+					gpio = <45>;
+					func = <2>;
+					pull = <GPIO_PULL_UP>;
+					drvstr = <GPIO_10MA>;
+					oe = <GPIO_OE_DISABLE>;
+				};
+				gpio46 {
+					gpio = <46>;
+					func = <2>;
+					pull = <GPIO_PULL_UP>;
+					drvstr = <GPIO_10MA>;
+					oe = <GPIO_OE_DISABLE>;
+				};
+				gpio47 {
+					gpio = <47>;
+					func = <2>;
+					pull = <GPIO_PULL_UP>;
+					drvstr = <GPIO_10MA>;
+					oe = <GPIO_OE_DISABLE>;
+				};
+			};
+	};
 };

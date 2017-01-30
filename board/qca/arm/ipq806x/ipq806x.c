@@ -14,6 +14,7 @@
 #include <common.h>
 #include <asm/global_data.h>
 #include <asm/io.h>
+#include <asm-generic/errno.h>
 #include <environment.h>
 #include <fdtdec.h>
 #include <asm/arch-qca-common/gsbi.h>
@@ -92,20 +93,38 @@ void reset_cpu(unsigned long a)
 	while(1);
 }
 
-void emmc_clock_config(int mode)
-{
-	/* TODO: To be filled */
-}
 int board_mmc_init(bd_t *bis)
 {
-	int ret;
+	int node, gpio_node;
+	int ret = -ENODEV;
+	u32 *emmc_base;
+	int len;
 
-	mmc_host.base = MSM_SDC1_BASE;
-	mmc_host.clk_mode = MMC_IDENTIFY_MODE;
-	emmc_clock_config(mmc_host.clk_mode);
+	node = fdt_path_offset(gd->fdt_blob, "sdcc");
 
-	ret = qca_mmc_init(bis, &mmc_host);
+	if (node < 0) {
+		printf("SDCC : Node Not found, skipping initialization\n");
+		goto out;
+	}
 
+	emmc_base = fdt_getprop(gd->fdt_blob, node, "reg", &len);
+
+	if (emmc_base == FDT_ADDR_T_NONE) {
+		printf("No valid SDCC base address found in device tree\n");
+		goto out;
+        }
+
+	gpio_node = fdt_subnode_offset(gd->fdt_blob, node, "emmc_gpio");
+	if (gpio_node >= 0) {
+
+		mmc_host.clk_mode = MMC_IDENTIFY_MODE;
+		mmc_host.base = fdt32_to_cpu(emmc_base[0]);
+		emmc_clock_config(mmc_host.clk_mode);
+		qca_gpio_init(gpio_node);
+		ret = qca_mmc_init(bis, &mmc_host);
+	}
+
+out:
 	return ret;
 }
 void board_nand_init(void)
@@ -306,3 +325,10 @@ int ipq_fdt_fixup_socinfo(void *blob)
 		printf("%s: cannot set cpu type %d\n", __func__, ret);
 	return ret;
 }
+
+void board_mmc_deinit(void)
+{
+	emmc_clock_reset();
+	emmc_clock_disable();
+}
+

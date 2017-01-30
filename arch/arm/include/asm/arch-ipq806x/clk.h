@@ -33,6 +33,12 @@
 #define Uart_clk_ns_mask                        (BM(31, 16) | BM(6, 0))
 #define Uart_en_mask                            BIT(11)
 #define MD16(m, n)                              (BVAL(31, 16, m) | BVAL(15, 0, ~(n)))
+/* MD Registers */
+#define MD4(m_lsb, m, n_lsb, n) \
+		(BVAL((m_lsb+3), m_lsb, m) | BVAL((n_lsb+3), n_lsb, ~(n)))
+
+#define MD8(m_lsb, m, n_lsb, n) \
+		(BVAL((m_lsb+7), m_lsb, m) | BVAL((n_lsb+7), n_lsb, ~(n)))
 
 /* NS Registers */
 #define NS(n_msb, n_lsb, n, m, mde_lsb, d_msb, d_lsb, d, s_msb, s_lsb, s) \
@@ -60,6 +66,13 @@
 
 #define GSBIn_QUP_APPS_MD_REG(n)	REG(0x29C8+(0x20*((n)-1)))
 #define GSBIn_QUP_APPS_NS_REG(n)	REG(0x29CC+(0x20*((n)-1)))
+#define SDC1_HCLK_CTL		REG(0x2820)
+#define SDC1_APPS_CLK_MD	REG(0x2828)
+#define SDC1_APPS_CLK_NS	REG(0x282C)
+#define SDC1_RESET		REG(0x2830)
+#define emmc_clk_ns_mask (BM(BIT_POS_23, BIT_POS_16) | BM(BIT_POS_6, BIT_POS_0))
+#define emmc_en_mask BIT(11)
+
 
 void i2c_clock_config(void);
 

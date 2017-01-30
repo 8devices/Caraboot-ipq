@@ -40,6 +40,7 @@ DECLARE_GLOBAL_DATA_PTR;
 static qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 int ipq_fs_on_nand ;
 extern int nand_env_device;
+extern qca_mmc mmc_host;
 
 #ifdef CONFIG_QCA_MMC
 static qca_mmc *host = &mmc_host;
@@ -451,15 +452,14 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 	}
 
 	dcache_enable();
+#ifdef CONFIG_QCA_MMC
+	board_mmc_deinit();
+#endif
 
 	ret = config_select(request, runcmd, sizeof(runcmd));
 
 	if (debug)
 		printf(runcmd);
-
-#ifdef CONFIG_QCA_MMC
-	board_mmc_deinit();
-#endif
 
 	if (ret < 0 || run_command(runcmd, 0) != CMD_RET_SUCCESS) {
 #ifdef CONFIG_QCA_MMC

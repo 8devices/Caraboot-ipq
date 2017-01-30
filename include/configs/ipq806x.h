@@ -151,7 +151,7 @@
 /*
  * MMC Configs
  */
-#undef CONFIG_QCA_MMC
+#define CONFIG_QCA_MMC
 
 #ifdef CONFIG_QCA_MMC
 #define CONFIG_CMD_MMC

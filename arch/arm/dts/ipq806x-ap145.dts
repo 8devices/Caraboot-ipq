@@ -23,6 +23,7 @@
 		console = "/serial@16340000";
 		nand = "/nand@1A600000";
 		gmac_gpio = "/gmac1_gpio";
+		sdcc = "/sdcc@12400000";
 	};
 
 	serial@16340000 {
