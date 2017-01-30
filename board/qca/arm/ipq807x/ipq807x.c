@@ -94,6 +94,17 @@ void emmc_clock_config(int mode)
 	udelay(10);
 }
 
+void emmc_clock_disable(void)
+{
+	/* Clear divider */
+	writel(0x0, GCC_SDCC1_MISC);
+}
+
+void board_mmc_deinit(void)
+{
+	emmc_clock_disable();
+}
+
 int board_mmc_init(bd_t *bis)
 {
 	int ret;

@@ -134,6 +134,19 @@ extern loff_t board_env_offset;
 
 #define CONFIG_EFI_PARTITION
 #define CONFIG_QCA_BAM			1
+
+/*
+ * MMC configs
+ */
+#define CONFIG_QCA_MMC
+
+#ifdef CONFIG_QCA_MMC
+#define CONFIG_MMC
+#define CONFIG_EFI_PARTITION
+#define CONFIG_ENV_IS_IN_MMC
+#define CONFIG_SYS_MMC_ENV_DEV	0
+#endif
+
 /*
  * NAND Flash Configs
  */
