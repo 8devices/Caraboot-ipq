@@ -524,6 +524,7 @@ static int do_ubi(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	int64_t size = 0;
 	ulong addr = 0;
+	int err = 0;
 
 	if (argc < 2)
 		return CMD_RET_USAGE;
@@ -661,7 +662,12 @@ static int do_ubi(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 			printf("Read %lld bytes from volume %s to %lx\n", size,
 			       argv[3], addr);
 
-			return ubi_volume_read(argv[3], (char *)addr, size);
+			err = ubi_volume_read(argv[3], (char *)addr, size);
+			if (err != 0) {
+				ubi_detach_mtd_dev(ubi_dev.nr, 1);
+				put_mtd_device(ubi_dev.mtd_info);
+			}
+			return err;
 		}
 	}
 
