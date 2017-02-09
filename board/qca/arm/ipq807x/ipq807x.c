@@ -27,6 +27,7 @@ DECLARE_GLOBAL_DATA_PTR;
 qca_mmc mmc_host;
 
 extern int ipq_spi_init(u16);
+extern int ipq807x_edma_init(void *cfg);
 
 const char *rsvd_node = "/reserved-memory";
 const char *del_node[] = {"uboot",
@@ -103,6 +104,18 @@ void emmc_clock_disable(void)
 void board_mmc_deinit(void)
 {
 	emmc_clock_disable();
+}
+
+int board_eth_init(bd_t *bis)
+{
+	int ret;
+
+	ret = ipq807x_edma_init(NULL);
+
+	if (ret != 0)
+		printf("%s: ipq807x_edma_init failed : %d\n", __func__, ret);
+
+	return ret;
 }
 
 int board_mmc_init(bd_t *bis)

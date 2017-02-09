@@ -82,3 +82,5 @@ obj-$(CONFIG_IPQ40XX_MDIO) += ipq40xx/ipq40xx_mdio.o
 obj-$(CONFIG_IPQ_SNPS_GMAC) += ipq806x/ipq_gmac_eth.o
 obj-$(CONFIG_IPQ_SWITCH_ATHRS17) += ipq806x/athrs17_phy.o
 obj-$(CONFIG_IPQ_SWITCH_QCA8511) += ipq806x/qca8511.o
+obj-$(CONFIG_IPQ807X_EDMA) += ipq807x/ipq807x_edma.o
+obj-$(CONFIG_IPQ807X_EDMA) += ipq807x/ipq807x_ppe.o
