@@ -389,6 +389,8 @@ struct spi_slave *spi_setup_slave(unsigned int bus, unsigned int cs,
 	}
 	ds->slave.bus	= bus;
 	ds->slave.cs	= cs;
+	ds->slave.option = 0;
+	ds->slave.max_write_size = 0;
 	ds->slave.op_mode_rx = 0;	/* Default Rx Mode: CMD_READ_ARRAY_FAST */
 	ds->slave.op_mode_tx = 0;	/* Default Tx Mode: CMD_PAGE_PROGRAM */
 	ds->slave.memory_map = NULL;	/* Not memory mapped */
