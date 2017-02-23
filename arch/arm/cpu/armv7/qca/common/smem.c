@@ -66,9 +66,15 @@ typedef struct qca_platform_v2 {
 	unsigned foundry_id;
 }qca_platform_v2;
 
+typedef struct qca_platform_v3 {
+	qca_platform_v2 v2;
+	unsigned chip_serial;
+} qca_platform_v3;
+
 union qca_platform {
 	qca_platform_v1 v1;
 	qca_platform_v2 v2;
+	qca_platform_v3 v3;
 };
 
 struct smem_proc_comm {
@@ -380,15 +386,20 @@ unsigned int smem_read_platform_type(union qca_platform *platform_type)
 
 	status = smem_read_alloc_entry(SMEM_HW_SW_BUILD_ID, platform_type,
 				       sizeof(qca_platform_v1));
-	if (status) {
-		debug("smem: Mapping platform type failed. Retrying...\n");
-		status = smem_read_alloc_entry(SMEM_HW_SW_BUILD_ID,
-					       platform_type,
-					       sizeof(qca_platform_v2));
-		if (status)
-			printf("smem: Mapping platform type"
-			       "failed permanently.\n");
-	}
+	if (!status)
+		return status;
+
+	debug("smem: Mapping platform type v1 failed. Trying v2...\n");
+	status = smem_read_alloc_entry(SMEM_HW_SW_BUILD_ID,
+				       platform_type,
+				       sizeof(qca_platform_v2));
+	if (!status)
+		return status;
+
+	debug("smem: Mapping platform type v2 failed. Trying v3...\n");
+	status = smem_read_alloc_entry(SMEM_HW_SW_BUILD_ID,
+				       platform_type,
+				       sizeof(qca_platform_v3));
 	return status;
 }
 
@@ -405,7 +416,9 @@ unsigned int smem_get_board_platform_type()
 	}
 
 	if (!smem_read_alloc_entry(SMEM_HW_SW_BUILD_ID,
-				  &platform_type, sizeof(qca_platform_v2))) {
+				  &platform_type, sizeof(qca_platform_v2)) ||
+	    !smem_read_alloc_entry(SMEM_HW_SW_BUILD_ID,
+				  &platform_type, sizeof(qca_platform_v3)))  {
 		machid = ((platform_type.v1.hw_platform << 24) |
 			  ((SOCINFO_VERSION_MAJOR(platform_type.v1.platform_version)) << 16) |
 			  ((SOCINFO_VERSION_MINOR(platform_type.v1.platform_version)) << 8) |
