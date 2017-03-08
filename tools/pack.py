@@ -1,6 +1,5 @@
-#!/usr/bin/env python
 #
-# Copyright (c) 2013-2015 The Linux Foundation. All rights reserved.
+# Copyright (c) 2013-2017 The Linux Foundation. All rights reserved.
 #
 """
 Script to create a U-Boot flashable multi-image blob.
@@ -32,7 +31,7 @@ within U-Boot. The procedure to use this script is listed below.
      with address location where the image has been loaded. The script
      expects the variable 'imgaddr' to be set.
 
-     u-boot> imgaddr=0x41000000 source $imgaddr:script
+     u-boot> imgaddr=0x88000000 source $imgaddr:script
 
 Host-side Pre-req
 
@@ -55,27 +54,22 @@ generated flashing script to work.
   * CONFIG_CMD_SF -- SPI Flash commands support
 """
 
-from ConfigParser import ConfigParser
-from ConfigParser import Error as ConfigParserError
 from os.path import getsize
 from getopt import getopt
 from getopt import GetoptError
 from collections import namedtuple
 from string import Template
-from unittest import TestCase
-from tempfile import mkdtemp
-from shutil import rmtree
 
 import os
 import sys
 import os.path
 import subprocess
 import struct
-import re
 import hashlib
+import xml.etree.ElementTree as ET
 
 version = "1.1"
-
+ARCH_NAME = ""
 #
 # Python 2.6 and earlier did not have OrderedDict use the backport
 # from ordereddict package. If that is not available report error.
@@ -91,11 +85,6 @@ except ImportError:
         print "Or  'easy_install --user ordereddict'"
         sys.exit(1)
 
-__all__ = []
-
-KB = 1024
-MB = 1024 * KB
-
 def error(msg, ex=None):
     """Print an error message and exit.
 
@@ -110,7 +99,7 @@ def error(msg, ex=None):
 
 FlashInfo = namedtuple("FlashInfo", "type pagesize blocksize chipsize")
 ImageInfo = namedtuple("ProgInfo", "name filename type")
-PartInfo = namedtuple("PartInfo", "name offset length")
+PartInfo = namedtuple("PartInfo", "name offset length which_flash")
 
 def roundup(value, roundto):
     """Return the next largest multiple of 'roundto'."""
@@ -162,7 +151,8 @@ class GPT(object):
         name = "0:GPT"
         block_start = gptheader.current_lba - 1
         block_count = gptheader.first_usable_lba - gptheader.current_lba + 1
-        part_info = PartInfo(name, block_start, block_count)
+        which_flash = 0
+        part_info = PartInfo(name, block_start, block_count, which_flash)
         self.__partitions[name] = part_info
 
         part_fp.seek(2 * self.blocksize, os.SEEK_SET)
@@ -177,7 +167,7 @@ class GPT(object):
 
             part_name = gpt_table.part_name.strip(chr(0))
             name = part_name.replace('\0','')
-            part_info = PartInfo(name, block_start, block_count)
+            part_info = PartInfo(name, block_start, block_count, which_flash)
             self.__partitions[name] = part_info
 
         # Adding the GPT Backup partition.
@@ -187,7 +177,7 @@ class GPT(object):
         name = "0:GPTBACKUP"
         block_start = gptheader.backup_lba - 32
         block_count = 33
-        part_info = PartInfo(name, block_start, block_count)
+        part_info = PartInfo(name, block_start, block_count, which_flash)
         self.__partitions[name] = part_info
 
     def get_parts(self):
@@ -212,32 +202,36 @@ class MIBIB(object):
     TABLE_FMT = "<LLLL"
     TABLE_MAGIC1 = 0x55EE73AA
     TABLE_MAGIC2 = 0xE35EBDDB
-    TABLE_VERSION = 3
+    TABLE_VERSION = 4
 
     Entry = namedtuple("Entry", "name offset length"
                         " attr1 attr2 attr3 which_flash")
     ENTRY_FMT = "<16sLLBBBB"
 
-    def __init__(self, filename, pagesize, blocksize, chipsize):
+    def __init__(self, filename, pagesize, blocksize, chipsize, nand_blocksize, nand_chipsize, root_part):
         self.filename = filename
         self.pagesize = pagesize
         self.blocksize = blocksize
         self.chipsize = chipsize
+        self.nand_blocksize = nand_blocksize
+        self.nand_chipsize = nand_chipsize
         self.__partitions = OrderedDict()
 
     def __validate(self, part_fp):
-        """Validate the MIBIB by checking for magic bytes."""
+       """Validate the MIBIB by checking for magic bytes."""
 
-        mheader_str = part_fp.read(struct.calcsize(MIBIB.HEADER_FMT))
-        mheader = struct.unpack(MIBIB.HEADER_FMT, mheader_str)
-        mheader = MIBIB.Header._make(mheader)
+       mheader_str = part_fp.read(struct.calcsize(MIBIB.HEADER_FMT))
+       mheader = struct.unpack(MIBIB.HEADER_FMT, mheader_str)
+       mheader = MIBIB.Header._make(mheader)
 
-        if (mheader.magic1 != MIBIB.HEADER_MAGIC1
-            or mheader.magic2 != MIBIB.HEADER_MAGIC2):
-            error("invalid partition table, magic byte not present")
+       if (mheader.magic1 != MIBIB.HEADER_MAGIC1
+           or mheader.magic2 != MIBIB.HEADER_MAGIC2):
+           """ mheader.magic1 = MIBIB.HEADER_MAGIC1
+           mheader.magic2 = MIBIB.HEADER_MAGIC2 """
+           error("invalid partition table, magic byte not present")
 
-        if mheader.version != MIBIB.HEADER_VERSION:
-            error("unsupport mibib version")
+       if mheader.version != MIBIB.HEADER_VERSION:
+           error("unsupport mibib version")
 
     def __read_parts(self, part_fp):
         """Read the partitions from the MIBIB."""
@@ -249,6 +243,8 @@ class MIBIB(object):
 
         if (mtable.magic1 != MIBIB.TABLE_MAGIC1
             or mtable.magic2 != MIBIB.TABLE_MAGIC2):
+            """ mtable.magic1 = MIBIB.TABLE_MAGIC1
+            mtable.magic2 = MIBIB.TABLE_MAGIC2 """
             error("invalid sys part. table, magic byte not present")
 
         if mtable.version != MIBIB.TABLE_VERSION:
@@ -258,53 +254,26 @@ class MIBIB(object):
             mentry_str = part_fp.read(struct.calcsize(MIBIB.ENTRY_FMT))
             mentry = struct.unpack(MIBIB.ENTRY_FMT, mentry_str)
             mentry = MIBIB.Entry._make(mentry)
+            self.flash_flag = self.blocksize
+            self.chip_flag = self.chipsize
 
-            byte_offset = mentry.offset * self.blocksize
+            if mentry.which_flash != 0:
+                self.flash_flag = self.nand_blocksize
+                self.chip_flag = self.nand_chipsize
+
+            byte_offset = mentry.offset * self.flash_flag
 
             if mentry.length == 0xFFFFFFFF:
-                byte_length = self.chipsize - byte_offset
+               byte_length = self.chip_flag - byte_offset
             else:
-                byte_length = mentry.length * self.blocksize
+               byte_length = mentry.length * self.flash_flag
 
             part_name = mentry.name.strip(chr(0))
-            part_info = PartInfo(part_name, byte_offset, byte_length)
+            part_info = PartInfo(part_name, byte_offset, byte_length, mentry.which_flash)
             self.__partitions[part_name] = part_info
 
-    def __write_header(self, part_fp):
-        """Write the MIBIB header, used for unit testing purposes."""
-
-        header = MIBIB.Header(magic1=MIBIB.HEADER_MAGIC1,
-                              magic2=MIBIB.HEADER_MAGIC2,
-                              version=MIBIB.HEADER_VERSION,
-                              age=1)
-        header_str = struct.pack(MIBIB.HEADER_FMT, *header)
-        part_fp.write(header_str)
-
-    def __write_parts(self, part_fp):
-        """Write the MIBIB partitions, used for unit testing purposes."""
-
-        part_fp.seek(self.pagesize, os.SEEK_SET)
-        table = MIBIB.Table(magic1=MIBIB.TABLE_MAGIC1,
-                            magic2=MIBIB.TABLE_MAGIC2,
-                            version=MIBIB.TABLE_VERSION,
-                            numparts=len(self.__partitions))
-        table_str = struct.pack(MIBIB.TABLE_FMT, *table)
-        part_fp.write(table_str)
-        for name, offset, length in self.__partitions.itervalues():
-            block_offset = offset / self.blocksize
-
-            if length == None:
-                block_length = 0xFFFFFFFF
-            else:
-                block_length = length / self.blocksize
-
-            entry = MIBIB.Entry(name, block_offset, block_length,
-                                attr1=0, attr2=0, attr3=0, which_flash=0)
-            entry_str = struct.pack(MIBIB.ENTRY_FMT, *entry)
-            part_fp.write(entry_str)
-
     def get_parts(self):
-        """Returns a list of partitions present in the MIBIB."""
+        """Returns a list of partitions present in the MIBIB. CE """
 
         try:
             with open(self.filename, "r") as part_fp:
@@ -314,21 +283,6 @@ class MIBIB(object):
             error("error opening %s" % self.filename, e)
 
         return self.__partitions
-
-    def add_part(self, part_info):
-        """Add a partition for writing to MIBIB."""
-
-        self.__partitions[part_info.name] = part_info
-
-    def write(self):
-        """Write the MIBIB to file, for unit testing purposes."""
-
-        try:
-            with open(self.filename, "w") as part_fp:
-                self.__write_header(part_fp)
-                self.__write_parts(part_fp)
-        except IOError, e:
-            error("error opening %s" % self.filename, e)
 
 class FlashScript(object):
     """Base class for creating flash scripts."""
@@ -340,6 +294,7 @@ class FlashScript(object):
         self.parts = []
         self.curr_stdout = "serial"
         self.activity = None
+        self.flash_type = flinfo.type
 
         self.script.append('if test "x$verbose" = "x"; then\n')
         self.script.append("failedmsg='[failed]'\n")
@@ -361,10 +316,6 @@ class FlashScript(object):
                                + ' && exit 1\n')
         else:
             self.script.append(cmd + "\n")
-
-    def check_isset(self, var):
-        """Check if a variable is set."""
-        self.append('test "x$%s" != "x"' % var)
 
     def dumps(self):
         """Return the created script as a string."""
@@ -448,85 +399,68 @@ class FlashScript(object):
 
         self.append('fi\n', fatal=False)
 
-class NandScript(FlashScript):
+class Flash_Script(FlashScript):
     """Class for creating NAND flash scripts."""
 
-    def __init__(self, flinfo, ipq_nand):
-        FlashScript.__init__(self, flinfo)
-        self.ipq_nand = ipq_nand
+    def __init__(self, *args):
+        FlashScript.__init__(self, args[0])
+        if args[0].type == "nand":
+            self.ipq_nand = args[1]
+        elif args[0].type == "nor" or args[0].type == "norplusnand":
+            self.nand_pagesize = args[1]
 
     def erase(self, offset, size):
         """Generate code, to erase the specified partition."""
 
-        size = roundup(size, self.blocksize)
-        self.append("nand erase 0x%08x 0x%08x" % (offset, size))
+        if self.flash_type != "emmc":
+            size = roundup(size, self.blocksize)
 
-    def write(self, offset, size, yaffs):
+        if self.flash_type == "nand":
+                self.append("nand erase 0x%08x 0x%08x" % (offset, size))
+        elif self.flash_type == "nor":
+            self.append("sf erase 0x%08x +0x%08x" % (offset, size))
+        elif self.flash_type == "emmc":
+            self.append("mmc erase 0x%08x %x" % (offset, size))
+
+    def nand_write(self, offset, part_size, img_size, spi_nand):
+       """Handle the NOR + NAND case
+          All binaries upto HLOS will go to NOR and Root FS will go to NAND
+          Assumed all nand page sizes are less than are equal to 8KB
+          """
+
+       if spi_nand == "true":
+           self.append("nand device 1 && nand erase 0x%08x 0x%08x" % (offset, part_size))
+       else:
+           self.append("nand device 0 && nand erase 0x%08x 0x%08x" % (offset, part_size))
+
+       if img_size > 0:
+            self.append("nand write $fileaddr 0x%08x 0x%08x" % (offset, img_size))
+
+    def write(self, offset, size):
         """Generate code, to write to a partition."""
 
-        if size > 0:
-            if yaffs:
-                self.append("nand write.yaffs $fileaddr 0x%08x 0x%08x"
-                        % (offset, size))
-            else:
+        if self.flash_type == "nand":
+            if size > 0:
                 size = roundup(size, self.pagesize)
                 self.append("nand write $fileaddr 0x%08x 0x%08x" % (offset, size))
 
-    def switch_layout(self, layout):
-        """Generate code, to switch between sbl/linux layouts."""
+        elif self.flash_type == "nor":
+            if size > 0:
+                self.append("sf write $fileaddr 0x%08x 0x%08x" % (offset, size))
 
-        self.append("ipq_nand %s" % layout)
+        elif self.flash_type == "emmc":
+            if size > 0:
+               size = roundup(size, self.blocksize)
+               blk_cnt = size / self.blocksize
+               self.append("mmc write $fileaddr 0x%08x %x" % (offset, blk_cnt))
 
-class NorScript(FlashScript):
-    """Class for creating NAND flash scripts."""
-
-    def __init__(self, flinfo):
-        FlashScript.__init__(self, flinfo)
-
-    def erase(self, offset, size):
-        """Generate code, to erase the specified partition."""
-
-        size = roundup(size, self.blocksize)
-        self.append("sf erase 0x%08x +0x%08x" % (offset, size))
-
-    def write(self, offset, size, yaffs):
-        """Generate code, to write to a partition."""
-
-        if size > 0:
-            self.append("sf write $fileaddr 0x%08x 0x%08x" % (offset, size))
-
-    def nand_write(self, offset, part_size, img_size):
-        """Handle the NOR + NAND case
-           All binaries upto HLOS will go to NOR and Root FS will go to NAND
-           Assumed all nand page sizes are less than are equal to 8KB
-           """
-        self.append("nand device 0 && nand erase 0x%08x 0x%08x" % (offset, part_size))
-        if img_size > 0:
-            self.append("nand write $fileaddr 0x%08x 0x%08x" % (offset, img_size))
-
-    def switch_layout(self, layout):
-        pass
-
-class EmmcScript(FlashScript):
-    """Class for creating EMMC scripts."""
-
-    def __init__(self, flinfo):
-        FlashScript.__init__(self, flinfo)
-
-    def erase(self, offset, size):
-        """Generate code, to erase the specified partition."""
-
-        self.append("mmc erase 0x%08x %x" % (offset, size))
-
-    def write(self, offset, size, yaffs):
-        """Generate code, to write to a partition."""
-        if size > 0:
-           size = roundup(size, self.blocksize)
-           blk_cnt = size / self.blocksize
-           self.append("mmc write $fileaddr 0x%08x %x" % (offset, blk_cnt))
-
-    def switch_layout(self, layout):
-        pass
+    def probe(self):
+        if self.flash_type == "nand":
+            pass
+        elif self.flash_type == "nor":
+            self.append("sf probe")
+        else:
+            pass
 
 its_tmpl = Template("""
 /dts-v1/;
@@ -550,14 +484,12 @@ its_image_tmpl = Template("""
                 };
 """)
 
-
 def sha1(message):
     """Returns SHA1 digest in hex format of the message."""
 
     m = hashlib.sha1()
     m.update(message)
     return m.hexdigest()
-
 
 class Pack(object):
     """Class to create a flashable, multi-image blob.
@@ -578,63 +510,18 @@ class Pack(object):
         self.scr_fname = None
         self.its_fname = None
         self.img_fname = None
+        self.emmc_page_size = 512
+        self.emmc_block_size = 512
 
-    def __get_yaffs(self, info, section):
-        """Get the yaffs flag for a section.
-
-        info -- ConfigParser object, containing image flashing info
-        section -- section to check if yaffs flag is set
-        """
-        try:
-            yaffs = info.get(section, "yaffs")
-            if yaffs.lower() in ["0", "no"]:
-                yaffs = False
-            elif yaffs.lower() in ["1", "yes"]:
-                yaffs = True
-            else:
-                error("invalid value for 'yaffs' in '%s'" % section)
-        except ConfigParserError, e:
-            yaffs = False
-
-        if self.flinfo.type == "nor" and yaffs == True:
-            error("yaffs cannot be used with NOR flash type")
-
-        return yaffs
-
-    def __get_layout(self, info, section):
-        """Get the layout for a section.
-
-        info -- ConfigParser object, containing image flashing info
-        section - section to retreive the layout from
-        """
-        try:
-            layout = info.get(section, "layout")
-        except ConfigParserError, e:
-            layout = None
-
-        if self.ipq_nand and layout == None:
-            error("layout not specified for IPQ device")
-
-        if not self.ipq_nand and layout != None:
-            error("layout specified for a non IPQ device")
-
-        if layout not in ("sbl", "linux", None):
-            error("invalid layout in '%s'" % section)
-
-        return layout
-
-    def __get_machid(self, info, section):
+    def __get_machid(self, section):
         """Get the machid for a section.
 
         info -- ConfigParser object, containing image flashing info
         section -- section to retreive the machid from
         """
         try:
-            machid = info.get(section, "if_machid")
-            machid = int(machid, 0)
+            machid = int(section.find("./machid").text, 0)
             machid = "%x" % machid
-        except ConfigParserError, e:
-            machid = None
         except ValueError, e:
             error("invalid value for machid, should be integer")
 
@@ -663,31 +550,31 @@ class Pack(object):
         except KeyError, e:
             return None
 
-    def __gen_flash_script(self, info, script, flinfo):
-        """Generate the script to flash the images.
+    def __gen_flash_script_cdt(self, entries, partition, flinfo, script):
 
-        info -- ConfigParser object, containing image flashing info
-        script -- Script object, to append commands to
-        """
-        count = 0
+        for section in entries:
 
-        for section in info.sections():
+            machid = int(section.find(".//machid").text, 0)
+            machid = "%x" % machid
+            board = section.find(".//board").text
+            spi_nand = section.find(".//spi_nand").text
             try:
-                filename = info.get(section, "filename")
-                partition = info.get(section, "partition")
-                include = info.get(section, "include")
-            except ConfigParserError, e:
-                error("error getting image info in section '%s'" % section, e)
+                memory = section.find(".//memory").text
+            except AttributeError, e:
+                memory = "128M16"
 
-            if include.lower() in ["0", "no"]:
-                continue
-
-            machid = self.__get_machid(info, section)
-            layout = self.__get_layout(info, section)
-            yaffs = self.__get_yaffs(info, section)
+            filename = "cdt-" + board + "_" + memory + ".bin"
 
             img_size = self.__get_img_size(filename)
             part_info = self.__get_part_info(partition)
+
+            section_label = partition.split(":")
+            if len(section_label) != 1:
+                section_conf = section_label[1]
+            else:
+                section_conf = section_label[0]
+
+            section_conf = section_conf.lower()
 
             if self.flinfo.type == 'nand':
                 size = roundup(img_size, flinfo.pagesize)
@@ -717,75 +604,257 @@ class Pack(object):
                        if count > 2:
                            error("More than 2 NAND images for NOR+NAND is not allowed")
                elif img_size > part_info.length:
-                   error("img size is larger than part. len in '%s'" % section)
+                   error("img size is larger than part. len in '%s'" % section_conf)
             else:
                 if part_info != None:
                     if (img_size > 0):
                         if img_size > (part_info.length * self.flinfo.blocksize):
-                            error("img size is larger than part. len in '%s'" % section)
+                            error("img size is larger than part. len in '%s'" % section_conf)
 
             if part_info == None and self.flinfo.type != 'norplusnand':
+                print "Flash type is norplusemmc"
                 continue
 
             if machid:
                 script.start_if("machid", machid)
 
-            script.start_activity("Flashing %s:" % section)
-            if self.ipq_nand: script.switch_layout(layout)
+            script.start_activity("Flashing ddr-%s_%s:" % ( board, memory ))
             if img_size > 0:
+                filename_pad = filename + ".padded"
                 if ((self.flinfo.type == 'nand' or self.flinfo.type == 'emmc') and (size != img_size)):
-                    filename_pad = filename + ".padded"
-                    script.imxtract(section + "-" + sha1(filename_pad))
+                    script.imxtract("ddr-" + board + "_" + memory + "-" + sha1(filename_pad))
                 else:
-                    script.imxtract(section + "-" + sha1(filename))
+                    script.imxtract("ddr-" + board + "_" + memory + "-" + sha1(filename))
+                    """ script.imxtract("cdt-" + board + "_" + memory + ".bin-" + sha1(filename_pad))
+                else:
+                    script.imxtract("cdt-" + board + "_" + memory + ".bin-" + sha1(filename)) """
 
+            part_size = Pack.norplusnand_rootfs_img_size
             if part_info == None:
                 if self.flinfo.type == 'norplusnand':
                     offset = count * Pack.norplusnand_rootfs_img_size
-                    part_size = Pack.norplusnand_rootfs_img_size
-                    script.nand_write(offset, part_size, img_size)
+                    script.nand_write(offset, part_size, img_size, spi_nand)
                     count = count + 1
             else:
-                offset = part_info.offset
-                script.erase(offset, part_info.length)
-                script.write(offset, img_size, yaffs)
+                if part_info.which_flash == 0:
+                    offset = part_info.offset
+                    script.erase(offset, part_info.length)
+                    script.write(offset, img_size)
+                else:
+                    offset = part_info.offset
+                    script.nand_write(offset, part_info.length, img_size, spi_nand)
+
             script.finish_activity()
 
             if machid:
                 script.end_if()
 
-        if part_info == None and self.flinfo.type != 'norplusnand':
-            print "Flash type is norplusemmc"
-        else:
-            script.end()
+    def __gen_flash_script(self, script, flinfo, root):
+        """Generate the script to flash the images.
 
-    def __gen_script(self, script_fp, info_fp, script, images, flinfo):
-        """Generate the script to flash the multi-image blob.
-
-        script_fp -- file object, to write script to
-        info_fp -- file object, to read flashing information from
-        script -- Script object, to append the commands to
-        images -- list of ImageInfo, appended to, based on images in config
+        info -- ConfigParser object, containing image flashing info
+        script -- Script object, to append commands to
         """
-        try:
-            info = ConfigParser({"include": "yes"})
-            info.readfp(info_fp)
-        except ConfigParserError, e:
-            error("error parsing info file '%s'" % self.fconf_fname, e)
+        count = 0
 
-        self.__gen_flash_script(info, script, flinfo)
+        if self.flash_type == "norplusemmc" and flinfo.type == "emmc":
+            srcDir_part = "$$/" + ARCH_NAME + "/flash_partition/" + flinfo.type + "-partition.xml"
+        else:
+            srcDir_part = "$$/" + ARCH_NAME + "/flash_partition/" + self.flash_type.lower() + "-partition.xml"
+        cdir = os.path.abspath("")
+        srcDir_part = srcDir_part.replace('$$', cdir)
+        root_part = ET.parse(srcDir_part)
+        if self.flash_type != "emmc" and flinfo.type != "emmc":
+            parts = root_part.findall(".//partitions/partition")
+        elif self.flash_type != "emmc" and flinfo.type == "emmc":
+            parts = root_part.findall(".//physical_partition[@ref='norplusemmc']/partition")
+        else:
+            parts = root_part.findall(".//physical_partition[@ref='emmc']/partition")
+        if flinfo.type == "emmc":
+            parts_length = len(parts) + 2
+        else:
+            parts_length = len(parts)
+        entries = root.findall(".//data[@type='MACH_ID_BOARD_MAP']/entry")
 
-        for section in info.sections():
-            if info.get(section, "include").lower() in ["0", "no"]:
+        first = False
+        section = None
+        part_index = 0
+
+        if flinfo.type == "emmc":
+            first = True
+
+        for index in range(parts_length):
+
+            if first:
+                if self.flash_type == "norplusemmc":
+                    part_info = root.find(".//data[@type='NORPLUSEMMC_PARAMETER']")
+                else:
+                    part_info = root.find(".//data[@type='EMMC_PARAMETER']")
+                part_fname = part_info.find(".//partition_mbn")
+                filename = part_fname.text
+                partition = "0:GPT"
+                first = False
+
+            elif index == (parts_length - 1) and flinfo.type == "emmc":
+                if self.flash_type == "norplusemmc":
+                    part_info = root.find(".//data[@type='NORPLUSEMMC_PARAMETER']")
+                else:
+                    part_info = root.find(".//data[@type='EMMC_PARAMETER']")
+                part_fname = part_info.find(".//partition_mbn_backup")
+                filename = part_fname.text
+                partition = "0:GPTBACKUP"
+
+            else:
+                section = parts[part_index]
+                part_index += 1
+                if flinfo.type != "emmc":
+                    try:
+                        filename = section[8].text
+                    except IndexError, e:
+                        if index == (parts_length - 1):
+                            return
+                        else:
+                            continue
+                    partition = section[0].text
+                else:
+                    if section.attrib['label'] == "0:CDT" or section.attrib['filename'] != "":
+                        try:
+                            filename = section.attrib['filename']
+                            partition = section.attrib['label']
+                        except KeyError, e:
+                            error("Error getting image info in section '%s'" % section, e)
+                    else:
+                        continue
+            # Get machID
+            if partition != "0:CDT":
+                machid = None
+            else:
+                self.__gen_flash_script_cdt(entries, partition, flinfo, script)
                 continue
 
-            partition = info.get(section, "partition")
+            # Get Layout
+            try:
+                layout = section.attrib['layout']
+                if layout is None:
+                    layout = None
+            except KeyError, e:
+                layout = None
+            except AttributeError, e:
+                layout = None
+
+            if layout not in ("sbl", "linux", None):
+                error("invalid layout in '%s'" % section)
+
+            img_size = self.__get_img_size(filename)
+            part_info = self.__get_part_info(partition)
+
+            section_label = partition.split(":")
+            if len(section_label) != 1:
+                section_conf = section_label[1]
+            else:
+                section_conf = section_label[0]
+
+            section_conf = section_conf.lower()
+            spi_nand = False
+
+            if self.flinfo.type == 'nand':
+                size = roundup(img_size, flinfo.pagesize)
+                tr = ' | tr \"\\000\" \"\\377\"'
+
+            if self.flinfo.type == 'emmc':
+                size = roundup(img_size, flinfo.blocksize)
+                tr = ''
+
+            if ((self.flinfo.type == 'nand' or self.flinfo.type == 'emmc') and (size != img_size)):
+                pad_size = size - img_size
+                filename_abs = os.path.join(self.images_dname, filename)
+                filename_abs_pad = filename_abs + ".padded"
+                cmd = 'cat %s > %s' % (filename_abs, filename_abs_pad)
+                ret = subprocess.call(cmd, shell=True)
+                if ret != 0:
+                    error("failed to copy image")
+                cmd = 'dd if=/dev/zero count=1 bs=%s %s >> %s' % (pad_size, tr, filename_abs_pad)
+                cmd = '(' + cmd + ') 1>/dev/null 2>/dev/null'
+                ret = subprocess.call(cmd, shell=True)
+                if ret != 0:
+                    error("failed to create padded image from script")
+
+            if self.flinfo.type != "emmc":
+                if part_info == None:
+                    if self.flinfo.type == 'norplusnand':
+                        if count > 2:
+                            error("More than 2 NAND images for NOR+NAND is not allowed")
+                elif img_size > part_info.length:
+                    error("img size is larger than part. len in '%s'" % section_conf)
+            else:
+                if part_info != None:
+                    if (img_size > 0):
+                        if img_size > (part_info.length * self.flinfo.blocksize):
+                            error("img size is larger than part. len in '%s'" % section_conf)
+
+            if part_info == None and self.flinfo.type != 'norplusnand':
+                print "Flash type is norplusemmc"
+                continue
+
+            if machid:
+                script.start_if("machid", machid)
+
+            if section_conf == "qsee":
+                section_conf = "tz"
+            elif section_conf == "appsbl":
+                section_conf = "u-boot"
+            elif section_conf == "rootfs" and flinfo.type != "nor" and self.flash_type != "norplusemmc":
+                section_conf = "ubi"
+
+            script.start_activity("Flashing %s:" % section_conf)
+            if img_size > 0:
+                filename_pad = filename + ".padded"
+                if ((self.flinfo.type == 'nand' or self.flinfo.type == 'emmc') and (size != img_size)):
+                    script.imxtract(section_conf + "-" + sha1(filename_pad))
+                else:
+                    script.imxtract(section_conf + "-" + sha1(filename))
+
+            part_size = Pack.norplusnand_rootfs_img_size
+            if part_info == None:
+                if self.flinfo.type == 'norplusnand':
+                    offset = count * Pack.norplusnand_rootfs_img_size
+                    img_size = Pack.norplusnand_rootfs_img_size
+                    script.nand_write(offset, part_size, img_size, spi_nand)
+                    count = count + 1
+            else:
+                if part_info.which_flash == 0:
+                    offset = part_info.offset
+                    script.erase(offset, part_info.length)
+                    script.write(offset, img_size)
+                else:
+                    offset = part_info.offset
+                    script.nand_write(offset, part_info.length, img_size, spi_nand)
+
+            script.finish_activity()
+
+            if machid:
+                script.end_if()
+
+    def __gen_script_cdt(self, images, flinfo, root, section_conf, partition):
+
+        entries = root.findall(".//data[@type='MACH_ID_BOARD_MAP']/entry")
+
+        for section in entries:
+
+            board = section.find(".//board").text
+            try:
+                memory = section.find(".//memory").text
+            except AttributeError, e:
+                memory = "128M16"
+
+            filename = "cdt-" + board + "_" + memory + ".bin"
+            file_info = "ddr-" + board + "_" + memory
+
             part_info = self.__get_part_info(partition)
 
             if part_info == None and self.flinfo.type != 'norplusnand':
                 continue
 
-            filename = info.get(section, "filename")
             if self.flinfo.type == 'nand':
                 img_size = self.__get_img_size(filename)
                 size = roundup(img_size, flinfo.pagesize)
@@ -796,21 +865,135 @@ class Pack(object):
                 size = roundup(img_size, flinfo.blocksize)
                 if ( size != img_size ):
                     filename = filename + ".padded"
-            image_info = ImageInfo(section + "-" + sha1(filename),
+            image_info = ImageInfo(file_info + "-" + sha1(filename),
                                    filename, "firmware")
             if filename.lower() != "none":
-               if image_info not in images:
+                if image_info not in images:
                    images.append(image_info)
 
-    def __its_escape(self, string):
-        """Return string with ITS special characters escaped.
+    def __gen_script(self, script_fp, script, images, flinfo, root):
+        """Generate the script to flash the multi-image blob.
 
-        string -- string to be escape.
-
-        String in ITS files, consider 'slash' as special
-        character. Escape them by prefixing them with a slash.
+        script_fp -- file object, to write script to
+        info_fp -- file object, to read flashing information from
+        script -- Script object, to append the commands to
+        images -- list of ImageInfo, appended to, based on images in config
         """
-        return string.replace("\\", "\\\\")
+        self.__gen_flash_script(script, flinfo, root)
+        if (self.flash_type == "norplusemmc" and flinfo.type == "emmc") or (self.flash_type != "norplusemmc"):
+            if flinfo.type == "emmc":
+                script.start_activity("Flashing rootfs_data:")
+                part_info = self.partitions["rootfs_data"]
+                script.erase(part_info.offset, part_info.length)
+                script.finish_activity()
+            script.end()
+
+        if self.flash_type == "norplusemmc" and flinfo.type == "emmc":
+            srcDir_part = "$$/" + ARCH_NAME + "/flash_partition/" + flinfo.type + "-partition.xml"
+        else:
+            srcDir_part = "$$/" + ARCH_NAME + "/flash_partition/" + self.flash_type.lower() + "-partition.xml"
+        cdir = os.path.abspath("")
+        srcDir_part = srcDir_part.replace('$$', cdir)
+        root_part = ET.parse(srcDir_part)
+        if self.flash_type != "emmc" and flinfo.type != "emmc":
+            parts = root_part.findall(".//partitions/partition")
+        elif self.flash_type != "emmc" and flinfo.type == "emmc":
+            parts = root_part.findall(".//physical_partition[@ref='norplusemmc']/partition")
+        else:
+            parts = root_part.findall(".//physical_partition[@ref='emmc']/partition")
+        if flinfo.type == "emmc":
+            parts_length = len(parts) + 2
+        else:
+            parts_length = len(parts)
+
+        first = False
+        section = None
+        part_index = 0
+
+        if flinfo.type == "emmc":
+            first = True
+
+        for index in range(parts_length):
+
+            if first:
+                if self.flash_type == "norplusemmc":
+                    part_info = root.find(".//data[@type='NORPLUSEMMC_PARAMETER']")
+                else:
+                    part_info = root.find(".//data[@type='EMMC_PARAMETER']")
+                part_fname = part_info.find(".//partition_mbn")
+                filename = part_fname.text
+                partition = "0:GPT"
+                first = False
+
+            elif index == (parts_length - 1) and flinfo.type == "emmc":
+                if self.flash_type == "norplusemmc":
+                    part_info = root.find(".//data[@type='NORPLUSEMMC_PARAMETER']")
+                else:
+                    part_info = root.find(".//data[@type='EMMC_PARAMETER']")
+                part_fname = part_info.find(".//partition_mbn_backup")
+                filename = part_fname.text
+                partition = "0:GPTBACKUP"
+
+            else:
+                section = parts[part_index]
+                part_index += 1
+                if flinfo.type != "emmc":
+                    try:
+                        filename = section[8].text
+                    except IndexError, e:
+                        if index == (parts_length - 1):
+                            return
+                        else:
+                            continue
+                    partition = section[0].text
+                else:
+                    if section.attrib['label'] == "0:CDT" or section.attrib['filename'] != "":
+                        try:
+                            filename = section.attrib['filename']
+                            partition = section.attrib['label']
+                        except KeyError, e:
+                            error("Error getting image info in section '%s'" % section, e)
+                    else:
+                        continue
+
+            part_info = self.__get_part_info(partition)
+
+            section_label = partition.split(":")
+            if len(section_label) != 1:
+                section_conf = section_label[1]
+            else:
+                section_conf = section_label[0]
+
+            section_conf = section_conf.lower()
+
+            if section_conf == "cdt":
+                self.__gen_script_cdt(images, flinfo, root, section_conf, partition)
+                continue
+
+            if part_info == None and self.flinfo.type != 'norplusnand':
+                continue
+
+            if self.flinfo.type == 'nand':
+                img_size = self.__get_img_size(filename)
+                size = roundup(img_size, flinfo.pagesize)
+                if ( size != img_size ):
+                    filename = filename + ".padded"
+            if self.flinfo.type == 'emmc':
+                img_size = self.__get_img_size(filename)
+                size = roundup(img_size, flinfo.blocksize)
+                if ( size != img_size ):
+                    filename = filename + ".padded"
+            if section_conf == "qsee":
+                section_conf = "tz"
+            elif section_conf == "appsbl":
+                section_conf = "u-boot"
+            elif section_conf == "rootfs" and flinfo.type != "nor" and self.flash_type != "norplusemmc":
+                section_conf = "ubi"
+            image_info = ImageInfo(section_conf + "-" + sha1(filename),
+                                    filename, "firmware")
+            if filename.lower() != "none":
+                if image_info not in images:
+                    images.append(image_info)
 
     def __mkimage(self, images):
         """Create the multi-image blob.
@@ -828,7 +1011,7 @@ class Pack(object):
 
         image_data = []
         for (section, fname, imtype) in images:
-            fname = self.__its_escape(fname)
+            fname = fname.replace("\\", "\\\\")
             subs = dict(name=section, desc=fname, fname=fname, imtype=imtype)
             image_data.append(its_image_tmpl.substitute(subs))
 
@@ -837,11 +1020,12 @@ class Pack(object):
 
         its_fp.write(its_data)
         its_fp.close()
-
+	
         try:
             cmd = ["mkimage", "-f", self.its_fname, self.img_fname]
             ret = subprocess.call(cmd)
             if ret != 0:
+                print ret
                 error("failed to create u-boot image from script")
         except OSError, e:
             error("error executing mkimage", e)
@@ -852,8 +1036,7 @@ class Pack(object):
         self.scr_fname = os.path.join(self.images_dname, "flash.scr")
         self.its_fname = os.path.join(self.images_dname, "flash.its")
 
-    def __gen_board_script(self, board_section, machid, flinfo,
-                           part_fname, fconf_fname, images):
+    def __gen_board_script(self, flinfo, part_fname, images, root):
         """Generate the flashing script for one board.
 
         board_section -- string, board section in board config file
@@ -865,35 +1048,34 @@ class Pack(object):
         """
         script_fp = open(self.scr_fname, "a")
 
-        try:
-            fconf_fp = open(fconf_fname)
-        except IOError, e:
-            error("error opening flash config file '%s'" % fconf_fname, e)
-
         if flinfo.type != "emmc":
+            flash_param = root.find(".//data[@type='NAND_PARAMETER']")
+            pagesize = int(flash_param.find(".//page_size").text)
+            pages_per_block = int(flash_param.find(".//pages_per_block").text)
+            blocksize = pages_per_block * pagesize
+            blocks_per_chip = int(flash_param.find(".//total_block").text)
+            chipsize = blocks_per_chip * blocksize
+
+            srcDir_part = "$$/" + ARCH_NAME + "/flash_partition/" + flinfo.type + "-partition.xml"
+            cdir = os.path.abspath("")
+            srcDir_part = srcDir_part.replace('$$', cdir)
+            root_part = ET.parse(srcDir_part)
             mibib = MIBIB(part_fname, flinfo.pagesize, flinfo.blocksize,
-                          flinfo.chipsize)
+                          flinfo.chipsize, blocksize, chipsize, root_part)
             self.partitions = mibib.get_parts()
+            if flinfo.type == "nand":
+                script = Flash_Script(flinfo, self.ipq_nand)
+            elif flinfo.type == "nor":
+                script = Flash_Script(flinfo, pagesize)
         else:
             gpt = GPT(part_fname, flinfo.pagesize, flinfo.blocksize, flinfo.chipsize)
             self.partitions = gpt.get_parts()
+            script = Flash_Script(flinfo)
 
         self.flinfo = flinfo
-        if flinfo.type == "nand":
-            self.ipq_nand = True
-            script = NandScript(flinfo, self.ipq_nand)
-        elif flinfo.type == "nor" or flinfo.type == "norplusnand":
-            self.ipq_nand = False
-            script = NorScript(flinfo)
-        elif flinfo.type == "emmc":
-            self.ipq_nand = False
-            script = EmmcScript(flinfo)
-        else:
-            error("error, flash type unspecified.")
 
-        script.start_if("machid", machid)
-        self.__gen_script(script_fp, fconf_fp, script, images, flinfo)
-        script.end_if()
+        script.probe()
+        self.__gen_script(script_fp, script, images, flinfo, root)
 
         try:
             script_fp.write(script.dumps())
@@ -902,7 +1084,7 @@ class Pack(object):
 
         script_fp.close()
 
-    def __process_board_flash_emmc(self, ftype, board_section, machid, images):
+    def __process_board_flash_emmc(self, ftype, images, root):
         """Extract board info from config and generate the flash script.
 
         ftype -- string, flash type 'emmc'
@@ -911,150 +1093,72 @@ class Pack(object):
         images -- list of ImageInfo, append images used by the board here
         """
 
-        pagesize_param = "%s_pagesize" % ftype
-        blocksize_param = "%s_blocksize" % "emmc"
-        blocks_per_chip_param = "%s_total_blocks" % "emmc"
-        part_fname_param = "%s_partition_mbn" % ftype
-        fconf_fname_param = "%s_flash_conf" % ftype
-
-        if ftype == "norplusemmc":
-            part_fname_param = "%s_gpt_bin" % ftype
-
         try:
-            pagesize = int(self.bconf.get(board_section, pagesize_param))
-            blocksize = int(self.bconf.get(board_section, blocksize_param))
-            chipsize = int(self.bconf.get(board_section,
-                                                 blocks_per_chip_param))
-        except ConfigParserError, e:
-            error("missing flash info in section '%s'" % board_section, e)
-        except ValueError, e:
-            error("invalid flash info in section '%s'" % board_section, e)
+            part_info = root.find(".//data[@type='" + self.flash_type.upper() + "_PARAMETER']")
+            part_fname = part_info.find(".//partition_mbn")
+            cdir = os.path.abspath(os.path.dirname(""))
+            part_fname = part_fname.text
+            part_fname = os.path.join(self.images_dname, part_fname)
+            if ftype == "norplusemmc":
+                part_info = root.find(".//data[@type='NORPLUSEMMC_PARAMETER']")
+                pagesize = int(part_info.find(".//page_size_flash").text)
+                part_info = root.find(".//data[@type='EMMC_PARAMETER']")
+            else:
+                pagesize = self.emmc_page_size
+            blocksize = self.emmc_block_size
+            chipsize = int(part_info.find(".//total_block").text)
+            if ftype.lower() == "norplusemmc":
+                ftype = "emmc"
 
-        if ftype == "norplusemmc":
-            ftype = "emmc"
+        except ValueError, e:
+            error("invalid flash info in section '%s'" % board_section.find('machid').text, e)
 
         flinfo = FlashInfo(ftype, pagesize, blocksize, chipsize)
 
+        self.__gen_board_script(flinfo, part_fname, images, root)
+
+    def __process_board_flash(self, ftype, images, root):
         try:
-            part_fname = self.bconf.get(board_section, part_fname_param)
-            if not os.path.isabs(part_fname):
-                part_fname = os.path.join(self.images_dname, part_fname)
-        except ConfigParserError, e:
-            error("missing partition file in section '%s'" % board_section, e)
+            part_info = root.find(".//data[@type='" + ftype.upper() + "_PARAMETER']")
+            cdir = os.path.abspath(os.path.dirname(""))
+            part_file = "$$/" + ARCH_NAME + "/flash_partition/" + ftype + "-partition.xml"
+            cdir = os.path.abspath("")
+            part_file = part_file.replace('$$', cdir)
+            part_xml = ET.parse(part_file)
+            partition = part_xml.find(".//partitions/partition[2]")
+            part_fname = partition[8].text
+            part_fname = os.path.join(self.images_dname, part_fname)
+            pagesize = int(part_info.find(".//page_size").text)
+            pages_per_block = int(part_info.find(".//pages_per_block").text)
+            blocks_per_chip = int(part_info.find(".//total_block").text)
 
-        try:
-            fconf_fname = self.bconf.get(board_section, fconf_fname_param)
-            if not os.path.isabs(fconf_fname):
-                fconf_fname = os.path.join(self.images_dname, fconf_fname)
-        except ConfigParserError, e:
-            error("missing NAND config in section '%s'" % board_section, e)
+            if ftype == "norplusnand" or ftype == "norplusemmc":
+                ftype = "nor"
 
-        self.__gen_board_script(board_section, machid, flinfo,
-                                part_fname, fconf_fname, images)
-
-    def __process_board_flash(self, ftype, board_section, machid, images):
-        """Extract board info from config and generate the flash script.
-
-        ftype -- string, flash type 'nand' or 'nor' or 'emmc' or 'norplusnand'
-        board_section -- string, board section in config file
-        machid -- string, board machine ID in hex format
-        images -- list of ImageInfo, append images used by the board here
-        """
-
-        pagesize_param = "%s_pagesize" % ftype
-        pages_per_block_param = "%s_pages_per_block" % ftype
-        blocks_per_chip_param = "%s_total_blocks" % ftype
-        part_fname_param = "%s_partition_mbn" % ftype
-        fconf_fname_param = "%s_flash_conf" % ftype
-
-        if ftype == "norplusnand" or ftype == "norplusemmc":
-            pagesize_param = "%s_pagesize" % "nor"
-            pages_per_block_param = "%s_pages_per_block" % "nor"
-            blocks_per_chip_param = "%s_total_blocks" % "nor"
-
-        try:
-            pagesize = int(self.bconf.get(board_section, pagesize_param))
-            pages_per_block = int(self.bconf.get(board_section,
-                                                 pages_per_block_param))
-            blocks_per_chip = int(self.bconf.get(board_section,
-                                                 blocks_per_chip_param))
-        except ConfigParserError, e:
-            error("missing flash info in section '%s'" % board_section, e)
         except ValueError, e:
-            error("invalid flash info in section '%s'" % board_section, e)
+            error("invalid flash info in section '%s'" % board_section.find('machid').text, e)
 
         blocksize = pages_per_block * pagesize
         chipsize = blocks_per_chip * blocksize
-        if ftype == "norplusemmc":
-            ftype = "nor"
 
         flinfo = FlashInfo(ftype, pagesize, blocksize, chipsize)
 
-        try:
-            part_fname = self.bconf.get(board_section, part_fname_param)
-            if not os.path.isabs(part_fname):
-                part_fname = os.path.join(self.images_dname, part_fname)
-        except ConfigParserError, e:
-            error("missing partition file in section '%s'" % board_section, e)
+        self.__gen_board_script(flinfo, part_fname, images, root)
+
+    def __process_board(self, images, root):
 
         try:
-            fconf_fname = self.bconf.get(board_section, fconf_fname_param)
-            if not os.path.isabs(fconf_fname):
-                fconf_fname = os.path.join(self.images_dname, fconf_fname)
-        except ConfigParserError, e:
-            error("missing NAND config in section '%s'" % board_section, e)
-
-        self.__gen_board_script(board_section, machid, flinfo,
-                                part_fname, fconf_fname, images)
-
-    def __process_board(self, board_section, images):
-        try:
-            machid = int(self.bconf.get(board_section, "machid"), 0)
-            machid = "%x" % machid
-        except ConfigParserError, e:
-            error("missing machid in section '%s'" % board_section, e)
+            if self.flash_type in [ "nand", "nor", "norplusnand" ]:
+                self.__process_board_flash(self.flash_type, images, root)
+            elif self.flash_type == "emmc":
+                self.__process_board_flash_emmc(self.flash_type, images, root)
+            elif self.flash_type == "norplusemmc":
+                self.__process_board_flash("norplusemmc", images, root)
+                self.__process_board_flash_emmc("norplusemmc", images, root)
         except ValueError, e:
-            error("invalid machid in section '%s'" % board_section, e)
+            error("error getting board info in section '%s'" % board_section.find('machid').text, e)
 
-        try:
-            available = self.bconf.get(board_section, "nand_available")
-            if available == "true" and self.flash_type == "nand":
-                self.__process_board_flash("nand", board_section, machid, images)
-        except ConfigParserError, e:
-            error("error getting board info in section '%s'" % board_section, e)
-
-        try:
-            available = self.bconf.get(board_section, "nor_available")
-            if available == "true" and self.flash_type == "nor":
-                self.__process_board_flash("nor", board_section, machid, images)
-        except ConfigParserError, e:
-            error("error getting board info in section '%s'" % board_section, e)
-
-        try:
-            available = self.bconf.get(board_section, "emmc_available")
-            if available == "true" and self.flash_type == "emmc":
-                self.__process_board_flash_emmc("emmc", board_section, machid, images)
-        except ConfigParserError, e:
-            error("error getting board info in section '%s'" % board_section, e)
-
-        try:
-            available = self.bconf.get(board_section, "norplusnand_available")
-            if available == "true" and self.flash_type == "norplusnand":
-                self.__process_board_flash("norplusnand", board_section, machid, images)
-        except ConfigParserError, e:
-            error("error getting board info in section '%s'" % board_section, e)
-
-        try:
-            available = self.bconf.get(board_section, "norplusemmc_available")
-            if available == "true" and self.flash_type == "norplusemmc":
-                self.__process_board_flash("norplusemmc", board_section, machid, images)
-                self.__process_board_flash_emmc("norplusemmc", board_section, machid, images)
-        except ConfigParserError, e:
-            error("error getting board info in section '%s'" % board_section, e)
-
-
-
-    def main_bconf(self, flash_type, images_dname, out_fname, brdconfig):
+    def main_bconf(self, flash_type, images_dname, out_fname):
         """Start the packing process, using board config.
 
         flash_type -- string, indicates flash type, 'nand' or 'nor' or 'emmc' or 'norplusnand'
@@ -1066,91 +1170,32 @@ class Pack(object):
         self.img_fname = out_fname
 
         self.__create_fnames()
-
+	global ARCH_NAME
         try:
             os.unlink(self.scr_fname)
         except OSError, e:
             pass
 
-        try:
-            bconf_fname = os.path.join(images_dname, brdconfig)
-            bconf_fp = open(bconf_fname)
-            self.bconf = ConfigParser()
-            self.bconf.readfp(bconf_fp)
-            bconf_fp.close()
-        except IOError, e:
-            error("error reading board configuration file", e)
-        except ConfigParserError, e:
-            error("error parsing board configuration file", e)
-
-        images = []
-        for section in self.bconf.sections():
-            self.__process_board(section, images)
-
-        images.insert(0, ImageInfo("script", "flash.scr", "script"))
-        self.__mkimage(images)
-
-    def main(self, flinfo, images_dname, out_fname, part_fname, fconf_fname, ipq_nand):
-        """Start the packing process.
-
-        flinfo -- FlashInfo object, containing flash parameters
-        images_dname -- string, name of images directory
-        out_fname -- string, output file path
-        part_fname -- string, partition file path
-        fconf_fname -- string, flash confing file path
-        ipq_nand -- bool, indicates whether this is an IPQ device
-        """
-        self.flinfo = flinfo
-        self.images_dname = images_dname
-        self.img_fname = out_fname
-        self.ipq_nand = ipq_nand
-
-        self.__create_fnames()
-
-        if self.flinfo.type == "nand":
-            script = NandScript(self.flinfo, self.ipq_nand)
-        elif self.flinfo.type == "nor" or self.flinfo.type == "norplusnand":
-            script = NorScript(self.flinfo)
-        elif self.flinfo.type == "emmc":
-            script = EmmcScript(self.flinfo)
+        cdir = os.path.abspath("")
+        if len(sys.argv) > 1:
+            try:
+                opts, args = getopt(sys.argv[1:], "t:o:c:")
+            except GetoptError, e:
+                print "Configuration xml file is needed to generate cdt files"
+                raise
+            for option, value in opts:
+                if option == "-c":
+                    srcDir = value
         else:
-            error("Invalid flash type specified. It should be 'nand' or 'nor' or 'norplusnand'")
-
-        if not os.path.isabs(part_fname):
-            part_fname = os.path.join(self.images_dname, part_fname)
-
-        if not os.path.isabs(fconf_fname):
-            self.fconf_fname = os.path.join(self.images_dname, fconf_fname)
-
-        mibib = MIBIB(part_fname, self.flinfo.pagesize, self.flinfo.blocksize,
-                      self.flinfo.chipsize)
-        self.partitions = mibib.get_parts()
-
-        script.echo("", verbose=True)
-
-        script.start_activity("Check environment:")
-        script.check_isset("imgaddr")
-        script.check_isset("machid")
-        script.finish_activity()
-
-        try:
-            info_fp = open(self.fconf_fname)
-        except IOError, e:
-            error("error opening info file '%s'" % self.fconf_fname, e)
-
-        try:
-            scr_fp = open(self.scr_fname, "wb")
-        except IOError, e:
-            error("error opening script file '%s'" % self.scr_fname, e)
+            srcDir = '$$/common/config.xml'
+            srcDir = srcDir.replace('$$', cdir)
+        root = ET.parse(srcDir)
+	
+        arch = root.find(".//data[@type='ARCH']/SOC")
+        ARCH_NAME = str(arch.text)
 
         images = []
-        self.__gen_script(scr_fp, info_fp, script, images)
-        try:
-            scr_fp.write(script.dumps())
-        except IOError, e:
-            error("error writing to script '%s'" % script_fp.name, e)
-        scr_fp.close() # Flush out all written commands
-
+        self.__process_board(images, root)
         images.insert(0, ImageInfo("script", "flash.scr", "script"))
         self.__mkimage(images)
 
@@ -1161,229 +1206,55 @@ class UsageError(Exception):
 class ArgParser(object):
     """Class to parse command-line arguments."""
 
-    DEFAULT_PAGESIZE = 4096
-    DEFAULT_PAGES_PER_BLOCK = 64
-    DEFAULT_BLOCKS_PER_CHIP = 1024
     DEFAULT_TYPE = "nand"
-    DEFAULT_PART_FNAME = "partition.mbn"
-    DEFAULT_FCONF_FNAME = "flash.conf"
 
     def __init__(self):
-        self.__pagesize = None
-        self.__pages_per_block = None
-        self.__blocksize = None
-        self.__chipsize = None
-        self.__flash_type = None
-
-        self.flash_info = None
+        self.flash_type = None
         self.images_dname = None
-        self.ipq_nand = False
-        self.bconf = False
-        self.bconf_fname = "boardconfig"
-        self.part_fname = None
-        self.fconf_fname = None
-        self.genitb_fname = None
-
-    def __init_pagesize(self, pagesize):
-        """Set the pagesize, from the command line argument.
-
-        pagesize -- string, flash page size
-
-        Raise UsageError, if pagesize is invalid
-        """
-        if pagesize == None:
-            self.__pagesize = ArgParser.DEFAULT_PAGESIZE
-        else:
-            try:
-                self.__pagesize = int(pagesize)
-            except ValueError:
-                raise UsageError("invalid page size '%s'" % pagesize)
-
-    def __init_blocksize(self, pages_per_block):
-        """Set the blocksize, from the command line argument.
-
-        pages_per_block -- string, no. of pages in a flash block
-
-        Raise UsageError, if pages_per_block is invalid
-        """
-        if pages_per_block == None:
-            self.__blocksize = (self.__pagesize
-                                * ArgParser.DEFAULT_PAGES_PER_BLOCK)
-        else:
-            try:
-                self.__blocksize = self.__pagesize * int(pages_per_block)
-            except ValueError:
-                raise UsageError("invalid block size '%s'" % self.__blocksize)
-
-    def __init_chipsize(self, blocks_per_chip):
-        """Set the chipsize, from the command line argument.
-
-        blocks_per_chip -- string, no. of blocks in a flash chip
-
-        Raise UsageError, if chips_per_block is invalid
-        """
-        if blocks_per_chip == None:
-            self.__chipsize = (self.__blocksize
-                               * ArgParser.DEFAULT_BLOCKS_PER_CHIP)
-        else:
-            try:
-                self.__chipsize = self.__blocksize * int(blocks_per_chip)
-            except ValueError:
-                raise UsageError("invalid chip size '%s'" % self.__chipsize)
-
-    def __init_flash_info(self):
-        """Set flash_info from the parsed flash paramaters."""
-
-        self.flash_info = FlashInfo(self.__flash_type,
-                                    self.__pagesize,
-                                    self.__blocksize,
-                                    self.__chipsize)
-
-    def __init_flash_type(self, flash_type):
-        """Set the flash_type, from the command line argument.
-
-        flash_type -- string, nand or nor
-
-        Raise UsageError, if flash_type is invalid
-        """
-
-        if flash_type == None:
-            self.__flash_type = ArgParser.DEFAULT_TYPE
-        elif flash_type in [ "nand", "nor", "emmc", "norplusnand", "norplusemmc" ]:
-            self.__flash_type = flash_type
-        else:
-            raise UsageError("invalid flash type '%s'" % flash_type)
-
-    def __init_part_fname(self, part_fname):
-        """Set the partition filename from command line argument
-
-        part_fname -- string, the partition filename
-        """
-
-        if part_fname == None:
-            self.part_fname = ArgParser.DEFAULT_PART_FNAME
-        else:
-            self.part_fname = part_fname
-
-    def __init_fconf_fname(self, fconf_fname):
-        """Set the flash configuration filename from command line argument
-
-        fconf_fname -- string, the flash configuration filename
-        """
-
-        if fconf_fname == None:
-            self.fconf_fname = ArgParser.DEFAULT_FCONF_FNAME
-        else:
-            self.fconf_fname = fconf_fname
-
-    def __init_out_fname(self, out_fname, images_dname, flash_type,
-                         pagesize, pages_per_block, blocks_per_chip,
-                         bconf):
-        """Set the out_fname from the command line argument.
-
-        out_fname -- string, the output filename
-        images_dname -- string, the images dirname
-        flash_type -- string, the flash type
-        pagesize -- int, the flash page size in bytes
-        pages_per_block -- int, the flash pages per block
-        blocks_per_chip -- int, the flash blocks per chip
-        bconf -- bool, whether is board config mode
-        """
-
-        if out_fname == None:
-            images_dname_norm = os.path.abspath(images_dname)
-            if bconf:
-                fmt = "%s-%s%simg"
-                self.out_fname = fmt % (images_dname_norm, flash_type,
-                                        os.path.extsep)
-            else:
-                fmt = "%s-%s-%d-%d-%d%simg"
-                self.out_fname = fmt % (images_dname_norm, flash_type,
-                                        pagesize, pages_per_block,
-                                        blocks_per_chip, os.path.extsep)
-        else:
-            if os.path.isabs(out_fname):
-                self.out_fname = out_fname
-            else:
-                images_dname_parent = os.path.dirname(images_dname)
-                self.out_fname = os.path.join(images_dname_parent, out_fname)
-
-    def __init_images_dname(self, args):
-        """Set the images_dname from the command line argument.
-
-        args -- list of string, command line args after stripping options
-        """
-        self.images_dname = args[0]
+        self.out_dname = None
+        self.scr_fname = None
+        self.its_fname = None
 
     def parse(self, argv):
         """Start the parsing process, and populate members with parsed value.
 
         argv -- list of string, the command line arguments
         """
-        flash_type = None
-        pagesize = None
-        pages_per_block = None
-        blocks_per_chip = None
-        ipq_nand = False
-        out_fname = None
-        part_fname = None
-        fconf_fname = None
-        bconf = False
-        bconf_fname = None
-        genitb_fname = None
 
         try:
-            opts, args = getopt(argv[1:], "Bib:hp:t:o:c:m:f:F:M:")
+            opts, args = getopt(argv[1:], "t:o:c:")
         except GetoptError, e:
             raise UsageError(e.msg)
 
+        if len(args) != 2:
+            raise UsageError("Insufficient arguments")
+        else:
+            cdir = os.path.abspath(os.path.dirname(""))
+            self.images_dname = os.path.join(cdir, args[0])
+            self.out_dname = os.path.join(cdir, args[1])
+
         for option, value in opts:
+
             if option == "-t":
-                flash_type = value
-            elif option == "-i":
-                ipq_nand = True
-            elif option == "-p":
-                pagesize = value
-            elif option == "-b":
-                pages_per_block = value
-            elif option == '-c':
-                blocks_per_chip = value
+                if value == None:
+                    self.flash_type = ArgParser.DEFAULT_TYPE
+                elif value in [ "nand", "nor", "emmc", "norplusnand", "norplusemmc" ]:
+                    self.flash_type = value
+                else:
+                    raise UsageError("invalid flash type '%s'" % self.flash_type)
+
             elif option == "-o":
-                out_fname = value
-            elif option == "-m":
-                part_fname = value
-            elif option == "-f":
-                fconf_fname = value
-            elif option == "-B":
-                bconf = True
-            elif option == "-F":
-                bconf_fname = value
-            elif option == "-M":
-                genitb_fname= value
+                if value == None:
+                    fmt = "%s-%s%simg"
+                    self.out_fname = fmt % (self.out_dname, self.flash_type,
+                                            os.path.extsep)
+                elif os.path.isabs(value):
+                    self.out_fname = value
+                else:
+                    self.out_fname = os.path.join(self.out_dname, value)
 
-        if len(args) != 1:
-            raise UsageError("insufficient arguments")
-
-        self.__init_flash_type(flash_type)
-        self.__init_pagesize(pagesize)
-        self.__init_blocksize(pages_per_block)
-        self.__init_chipsize(blocks_per_chip)
-        self.__init_flash_info()
-        self.__init_images_dname(args)
-        self.__init_out_fname(out_fname, self.images_dname,
-                              self.__flash_type, self.__pagesize,
-                              self.__blocksize / self.__pagesize,
-                              self.__chipsize / self.__blocksize,
-                              bconf)
-        self.__init_part_fname(part_fname)
-        self.__init_fconf_fname(fconf_fname)
-
-        self.ipq_nand = ipq_nand
-        self.bconf = bconf
-        if bconf_fname != None:
-            self.bconf_fname = bconf_fname
-
-        self.genitb_fname = genitb_fname
+ 	    if not os.path.exists(self.out_dname):
+		os.makedirs(self.out_dname)
 
     def usage(self, msg):
         """Print error message and command usage information.
@@ -1398,47 +1269,14 @@ class ArgParser(object):
         print
         print "   -t TYPE    specifies partition type, 'nand' or 'nor',"
         print "              default is '%s'." % ArgParser.DEFAULT_TYPE
-        print "   -p SIZE    specifies the page size in bytes,"
-        print "              default is %d." % ArgParser.DEFAULT_PAGESIZE
-        print "   -b COUNT   specifies the pages per block,"
-        print "              default is %d." % ArgParser.DEFAULT_PAGES_PER_BLOCK
-        print "   -c COUNT   specifies the no. of blocks per chip"
-        print "              default is %d." % ArgParser.DEFAULT_BLOCKS_PER_CHIP
-        print "   -i         specifies IPQ processor specific NAND layout"
-        print "              switch, default disabled."
-        print "   -m FILE    specifies the partition filename"
-        print "              default is '%s'." % ArgParser.DEFAULT_PART_FNAME
-        print "   -f FILE    specifies the flash configuration filename"
-        print "              default is '%s'." % ArgParser.DEFAULT_FCONF_FNAME
         print "   -o FILE    specifies the output filename"
         print "              default is IDIR-TYPE-SIZE-COUNT.img"
         print "              if the filename is relative, it is relative"
         print "              to the parent of IDIR."
-        print "   -M         specifies script name to build single ITB with multiple dtb's,"
-        print "              default disabled."
-        print
-        print "NOTE: The above invocation method of pack is deprecated."
-        print "The new pack invocation uses a board config file to retrieve"
-        print "the board specific parameters. The new invocation is provided"
-        print "below."
-        print
-        print "Usage: pack [options] IDIR"
-        print
-        print "where IDIR is the path containing the images."
-        print
-        print "   -t TYPE    specifies partition type, 'nand' or 'nor', or 'emmc'"
-        print "              default is '%s'." % ArgParser.DEFAULT_TYPE
-        print "   -B         specifies board config should be used, for"
-        print "              flash parameters."
-        print "   -F         specifies board config file name should be used, for"
-        print "              flash parameters. Defaults to 'boardconfig'"
-        print "   -o FILE    specifies the output filename"
-        print "              default is IDIR-TYPE.img"
-        print "              if the filename is relative, it is relative"
-        print "              to the parent of IDIR."
+        print "   -c FILE    specifies the config filename"
+        print "              default is common/config.xml"
         print
         print "Pack Version: %s" % version
-
 
 def main():
     """Main script entry point.
@@ -1452,403 +1290,9 @@ def main():
         parser.usage(e.args[0])
         sys.exit(1)
 
-    if parser.genitb_fname:
-       prc = subprocess.Popen(['sh', parser.genitb_fname])
-       prc.wait()
-
-       if prc.returncode != 0:
-          print 'ERROR: unable to create ITB'
-          return prc.returncode
-       else:
-          print '...ITB binary created'
-
-
     pack = Pack()
-    if parser.bconf:
-        pack.main_bconf(parser.flash_info.type, parser.images_dname,
-                        parser.out_fname, parser.bconf_fname)
-    else:
-        pack.main(parser.flash_info, parser.images_dname,
-                  parser.out_fname, parser.part_fname,
-                  parser.fconf_fname, parser.ipq_nand)
-
-class ArgParserTestCase(TestCase):
-    def setUp(self):
-        self.parser = ArgParser()
-
-    def test_defaults(self):
-        self.parser.parse(["pack.py", "itest"])
-        self.assertEqual(self.parser.images_dname, "itest")
-
-        fmt = "itest-%s-%d-%d-%d.img"
-        expected_fname = fmt % (ArgParser.DEFAULT_TYPE,
-                                ArgParser.DEFAULT_PAGESIZE,
-                                ArgParser.DEFAULT_PAGES_PER_BLOCK,
-                                ArgParser.DEFAULT_BLOCKS_PER_CHIP)
-        self.assertEqual(self.parser.out_fname, expected_fname)
-        self.assertEqual(self.parser.ipq_nand, False)
-        self.assertEqual(self.parser.flash_info.type,
-                         ArgParser.DEFAULT_TYPE)
-        self.assertEqual(self.parser.flash_info.pagesize,
-                         ArgParser.DEFAULT_PAGESIZE)
-        self.assertEqual(self.parser.flash_info.blocksize,
-                         ArgParser.DEFAULT_PAGES_PER_BLOCK
-                         * ArgParser.DEFAULT_PAGESIZE)
-        self.assertEqual(self.parser.flash_info.chipsize,
-                         ArgParser.DEFAULT_BLOCKS_PER_CHIP
-                         * ArgParser.DEFAULT_PAGES_PER_BLOCK
-                         * ArgParser.DEFAULT_PAGESIZE)
-
-    def test_ipq_flag(self):
-        self.parser.parse(["pack.py", "-i", "itest"])
-        self.assertEqual(self.parser.ipq_nand, True)
-
-    def test_invalid_flag(self):
-        self.assertRaises(UsageError, self.parser.parse,
-                          ["pack.py", "-x", "itest"])
-
-    def test_type_option(self):
-        self.parser.parse(["pack.py", "-t", "nor", "itest"])
-        self.assertEqual(self.parser.flash_info.type, "nor")
-
-    def test_invalid_type_option(self):
-        self.assertRaises(UsageError, self.parser.parse,
-                          ["pack.py", "-t", "abcd", "itest"])
-
-    def test_pagesize_option(self):
-        self.parser.parse(["pack.py", "-p", "2048", "itest"])
-        self.assertEqual(self.parser.flash_info.pagesize, 2048)
-
-    def test_invalid_pagesize_option(self):
-        self.assertRaises(UsageError, self.parser.parse,
-                          ["pack.py", "-p", "abcd", "itest"])
-
-    def test_pages_per_block_option(self):
-        self.parser.parse(["pack.py", "-b", "32", "itest"])
-        self.assertEqual(self.parser.flash_info.blocksize,
-                         ArgParser.DEFAULT_PAGESIZE * 32)
-
-    def test_invalid_pages_per_block_option(self):
-        self.assertRaises(UsageError, self.parser.parse,
-                          ["pack.py", "-b", "abcd", "itest"])
-
-    def test_blocks_per_chip_option(self):
-        self.parser.parse(["pack.py", "-c", "512", "itest"])
-        self.assertEqual(self.parser.flash_info.chipsize,
-                         ArgParser.DEFAULT_PAGESIZE
-                         * ArgParser.DEFAULT_PAGES_PER_BLOCK
-                         * 512)
-
-    def test_out_fname_rel_option(self):
-        self.parser.parse(["pack.py", "-o", "abcd", "/tmp/test/itest"])
-        self.assertEqual(self.parser.out_fname, "/tmp/test/abcd")
-
-    def test_out_fname_abs_option(self):
-        self.parser.parse(["pack.py", "-o", "/tmp/abcd", "/tmp/test/itest"])
-        self.assertEqual(self.parser.out_fname, "/tmp/abcd")
-
-    def test_partition_option(self):
-        self.parser.parse(["pack.py", "-m", "abcd", "/tmp/test/itest"])
-        self.assertEqual(self.parser.part_fname, "abcd")
-
-    def test_flash_conf_option(self):
-        self.parser.parse(["pack.py", "-f", "abcd", "/tmp/test/itest"])
-        self.assertEqual(self.parser.fconf_fname, "abcd")
-
-class PackTestCase(TestCase):
-    def setUp(self):
-        self.pack = Pack()
-        blocksize = (ArgParser.DEFAULT_PAGESIZE
-                     * ArgParser.DEFAULT_PAGES_PER_BLOCK)
-        chipsize = blocksize * ArgParser.DEFAULT_BLOCKS_PER_CHIP
-
-        self.flinfo = FlashInfo(ArgParser.DEFAULT_TYPE,
-                                ArgParser.DEFAULT_PAGESIZE,
-                                blocksize, chipsize)
-        self.img_dname = mkdtemp()
-        self.img_fname = self.img_dname + ".img"
-        self.part_fname = "partition.mbn"
-        self.fconf_fname = "flash.conf"
-
-        sbl1_fp = open(os.path.join(self.img_dname, "sbl1.mbn"), "w")
-        sbl1_fp.write("#" * blocksize * 2)
-        sbl1_fp.close()
-
-        self.__create_partition_mbn(blocksize, chipsize)
-
-    def __create_partition_mbn(self, blocksize, chipsize):
-        part_fname = os.path.join(self.img_dname, self.part_fname)
-
-        mibib = MIBIB(part_fname, ArgParser.DEFAULT_PAGESIZE, blocksize,
-                      chipsize)
-
-        offset = 0
-        part_size = 2 * blocksize
-        mibib.add_part(PartInfo("0:SBL1", offset, part_size))
-
-        offset += part_size
-        part_size = 2 * blocksize
-        mibib.add_part(PartInfo("0:MIBIB", offset, part_size))
-
-        offset += part_size
-        part_size = 1 * blocksize
-        mibib.add_part(PartInfo("0:SBL2", offset, part_size))
-
-        offset += part_size
-        part_size = None
-        mibib.add_part(PartInfo("0:FS", offset, part_size))
-
-        mibib.write()
-
-    def __mkconf(self, conf_str):
-        conf_fname = os.path.join(self.img_dname, self.fconf_fname)
-        conf_fp = open(conf_fname, "w")
-        conf_fp.write(conf_str)
-        conf_fp.close()
-
-    def tearDown(self):
-        rmtree(self.img_dname)
-        try:
-            os.remove(self.img_fname)
-        except OSError:
-            pass
-
-    def test_simple(self):
-        self.__mkconf("""
-[sbl1]
-partition = 0:SBL1
-filename = sbl1.mbn
-""")
-
-        self.pack.main(self.flinfo, self.img_dname, self.img_fname,
-                       self.part_fname, self.fconf_fname, ipq_nand=False)
-        self.assertEqual(os.path.exists(self.img_fname), True)
-
-    def test_missing_conf(self):
-        self.assertRaises(SystemExit,
-                          self.pack.main,
-                          self.flinfo,
-                          self.img_dname,
-                          self.img_fname,
-                          self.part_fname,
-                          self.fconf_fname,
-                          ipq_nand=False)
-
-    def test_nand_layout(self):
-        self.__mkconf("""
-[sbl1]
-partition = 0:SBL1
-filename = sbl1.mbn
-layout = sbl
-""")
-        self.pack.main(self.flinfo, self.img_dname, self.img_fname,
-                       self.part_fname, self.fconf_fname, ipq_nand=True)
-        self.assertEqual(os.path.exists(self.img_fname), True)
-
-    def test_invalid_layout(self):
-        self.__mkconf("""
-[sbl1]
-partition = 0:SBL1
-filename = sbl1.mbn
-layout = abcd
-""")
-        self.assertRaises(SystemExit,
-                          self.pack.main,
-                          self.flinfo,
-                          self.img_dname,
-                          self.img_fname,
-                          self.part_fname,
-                          self.fconf_fname,
-                          ipq_nand=True)
-
-    def test_inconsistent_layout(self):
-        self.__mkconf("""
-[sbl1]
-partition = 0:SBL1
-filename = sbl1.mbn
-layout = sbl
-""")
-        self.assertRaises(SystemExit,
-                          self.pack.main,
-                          self.flinfo,
-                          self.img_dname,
-                          self.img_fname,
-                          self.part_fname,
-                          self.fconf_fname,
-                          ipq_nand=False)
-
-    def test_invalid_filename(self):
-        self.__mkconf("""
-[sbl1]
-partition = 0:SBL1
-filename = sbl10.mbn
-""")
-        self.assertRaises(SystemExit,
-                          self.pack.main,
-                          self.flinfo,
-                          self.img_dname,
-                          self.img_fname,
-                          self.part_fname,
-                          self.fconf_fname,
-                          ipq_nand=False)
-
-    def test_special_chars_in_filename(self):
-        self.__mkconf("""
-[slash]
-partition = 0:SBL1
-filename = sb\\l1.mbn
-""")
-
-        sbl1_fp = open(os.path.join(self.img_dname, "sb\\l1.mbn"), "w")
-        sbl1_fp.write("abcdef")
-        sbl1_fp.close()
-
-        self.pack.main(self.flinfo, self.img_dname, self.img_fname,
-                       self.part_fname, self.fconf_fname, ipq_nand=False)
-        self.assertEqual(os.path.exists(self.img_fname), True)
-
-    def __get_images(self):
-        mkimage_output = subprocess.check_output(["mkimage", "-l", self.img_fname])
-        return re.findall(r"Image \d+ \((.*)\)", mkimage_output)
-
-    def test_multi_image(self):
-        self.__mkconf("""
-[sbl1]
-partition = 0:SBL1
-filename = sbl1.mbn
-
-[sbl2]
-partition = 0:MIBIB
-filename = partition.mbn
-""")
-
-        self.pack.main(self.flinfo, self.img_dname, self.img_fname,
-                       self.part_fname, self.fconf_fname, ipq_nand=False)
-        count = len(self.__get_images())
-        self.assertEqual(count, 3)
-
-    def test_include(self):
-        self.__mkconf("""
-[sbl1]
-partition = 0:SBL1
-filename = sbl1.mbn
-include = no
-
-[sbl2]
-partition = 0:MIBIB
-filename = partition.mbn
-""")
-
-        self.pack.main(self.flinfo, self.img_dname, self.img_fname,
-                       self.part_fname, self.fconf_fname, ipq_nand=False)
-        images = self.__get_images()
-        print images
-        self.assertTrue("sbl2" in images)
-        self.assertTrue("sbl1" not in images)
-
-    def test_yaffs_yes(self):
-        self.__mkconf("""
-[sbl1]
-partition = 0:SBL1
-filename = sbl1.mbn
-yaffs = yes
-""")
-        self.pack.main(self.flinfo, self.img_dname, self.img_fname,
-                       self.part_fname, self.fconf_fname, ipq_nand=False)
-
-    def test_yaffs_no(self):
-        self.__mkconf("""
-[sbl1]
-partition = 0:SBL1
-filename = sbl1.mbn
-yaffs = no
-""")
-        self.pack.main(self.flinfo, self.img_dname, self.img_fname,
-                       self.part_fname, self.fconf_fname, ipq_nand=False)
-
-    def test_yaffs_invalid(self):
-        self.__mkconf("""
-[sbl1]
-partition = 0:SBL1
-filename = sbl1.mbn
-yaffs = abcd
-""")
-        self.assertRaises(SystemExit,
-                          self.pack.main,
-                          self.flinfo,
-                          self.img_dname,
-                          self.img_fname,
-                          self.part_fname,
-                          self.fconf_fname,
-                          ipq_nand=False)
-
-    def test_invalid_partition(self):
-        self.__mkconf("""
-[sbl1]
-partition = 0:SBL5
-filename = sbl1.mbn
-""")
-        self.assertRaises(SystemExit,
-                          self.pack.main,
-                          self.flinfo,
-                          self.img_dname,
-                          self.img_fname,
-                          self.part_fname,
-                          self.fconf_fname,
-                          ipq_nand=False)
-
-    def test_img_larger_than_partition(self):
-        self.__mkconf("""
-[sbl2]
-partition = 0:SBL2
-filename = sbl1.mbn
-""")
-        self.assertRaises(SystemExit,
-                          self.pack.main,
-                          self.flinfo,
-                          self.img_dname,
-                          self.img_fname,
-                          self.part_fname,
-                          self.fconf_fname,
-                          ipq_nand=False)
-
-    def test_machid_in_hex(self):
-        self.__mkconf("""
-[sbl1]
-partition = 0:SBL1
-filename = sbl1.mbn
-if_machid = 0x152
-""")
-        self.pack.main(self.flinfo, self.img_dname, self.img_fname,
-                       self.part_fname, self.fconf_fname, ipq_nand=False)
-        self.assertEqual(os.path.exists(self.img_fname), True)
-
-    def test_machid_in_dec(self):
-        self.__mkconf("""
-[sbl1]
-partition = 0:SBL1
-filename = sbl1.mbn
-if_machid = 256
-""")
-        self.pack.main(self.flinfo, self.img_dname, self.img_fname,
-                       self.part_fname, self.fconf_fname, ipq_nand=False)
-        self.assertEqual(os.path.exists(self.img_fname), True)
-
-    def test_machid_invalid(self):
-        self.__mkconf("""
-[sbl1]
-partition = 0:SBL1
-filename = sbl1.mbn
-if_machid = xyz
-""")
-        self.assertRaises(SystemExit,
-                          self.pack.main,
-                          self.flinfo,
-                          self.img_dname,
-                          self.img_fname,
-                          self.part_fname,
-                          self.fconf_fname,
-                          ipq_nand=False)
+    pack.main_bconf(parser.flash_type, parser.images_dname,
+                        parser.out_fname)
 
 if __name__ == "__main__":
     main()
