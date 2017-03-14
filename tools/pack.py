@@ -70,6 +70,7 @@ import xml.etree.ElementTree as ET
 
 version = "1.1"
 ARCH_NAME = ""
+MODE = ""
 #
 # Python 2.6 and earlier did not have OrderedDict use the backport
 # from ordereddict package. If that is not available report error.
@@ -655,6 +656,8 @@ class Pack(object):
         info -- ConfigParser object, containing image flashing info
         script -- Script object, to append commands to
         """
+	global MODE
+	diff_files = ""
         count = 0
 
         if self.flash_type == "norplusemmc" and flinfo.type == "emmc":
@@ -710,6 +713,15 @@ class Pack(object):
                 if flinfo.type != "emmc":
                     try:
                         filename = section[8].text
+			try:
+			   if section[8].attrib['mode'] != MODE:
+				filename = section[9].text
+			   else:
+				pass
+			except AttributeError, e:
+			   pass
+			except KeyError, e:
+			   pass
                     except IndexError, e:
                         if index == (parts_length - 1):
                             return
@@ -717,14 +729,27 @@ class Pack(object):
                             continue
                     partition = section[0].text
                 else:
-                    if section.attrib['label'] == "0:CDT" or section.attrib['filename'] != "":
-                        try:
-                            filename = section.attrib['filename']
-                            partition = section.attrib['label']
+		    try:
+			diff_files = section.attrib['diff_files']
+		    except KeyError, e:
+                            try:
+                                filename = section.attrib['filename']
+                                partition = section.attrib['label']
+				if filename == "":
+					continue
+	                    except KeyError, e:
+                                error("Error getting image info in section '%s'" % section.attrib['label'], e)
+
+		    if diff_files == "true":
+			try:
+                              filename = section.attrib['filename_' + MODE]
+                              partition = section.attrib['label']
+			      if filename == "":
+					continue
                         except KeyError, e:
-                            error("Error getting image info in section '%s'" % section, e)
-                    else:
-                        continue
+                              error("Error getting image info in section '%s'" % section.attrib['label'], e)
+			diff_files = "" # Clear for next iteration
+
             # Get machID
             if partition != "0:CDT":
                 machid = None
@@ -879,6 +904,8 @@ class Pack(object):
         script -- Script object, to append the commands to
         images -- list of ImageInfo, appended to, based on images in config
         """
+	global MODE
+	diff_files = ""
         self.__gen_flash_script(script, flinfo, root)
         if (self.flash_type == "norplusemmc" and flinfo.type == "emmc") or (self.flash_type != "norplusemmc"):
             if flinfo.type == "emmc":
@@ -940,6 +967,13 @@ class Pack(object):
                 if flinfo.type != "emmc":
                     try:
                         filename = section[8].text
+			try:
+			   if section[8].attrib['mode'] != MODE:
+				filename = section[9].text
+			except AttributeError, e:
+			   pass
+			except KeyError, e:
+			   pass
                     except IndexError, e:
                         if index == (parts_length - 1):
                             return
@@ -947,14 +981,28 @@ class Pack(object):
                             continue
                     partition = section[0].text
                 else:
-                    if section.attrib['label'] == "0:CDT" or section.attrib['filename'] != "":
-                        try:
-                            filename = section.attrib['filename']
-                            partition = section.attrib['label']
+
+		    try:
+			diff_files = section.attrib['diff_files']
+		    except KeyError, e:
+                            try:
+                                filename = section.attrib['filename']
+                                partition = section.attrib['label']
+				if filename == "":
+                                        continue
+	                    except KeyError, e:
+                                error("Error getting image info in section '%s'" % section.attrib['label'], e)
+
+		    if diff_files == "true":
+			try:
+                              filename = section.attrib['filename_' + MODE]
+                              partition = section.attrib['label']
+			      if filename == "":
+                                        continue
+
                         except KeyError, e:
-                            error("Error getting image info in section '%s'" % section, e)
-                    else:
-                        continue
+                              error("Error getting image info in section '%s'" % section.attrib['label'], e)
+			diff_files = "" # Clear for next iteration
 
             part_info = self.__get_part_info(partition)
 
@@ -1216,6 +1264,7 @@ class ArgParser(object):
         self.its_fname = None
 
     def parse(self, argv):
+	global MODE
         """Start the parsing process, and populate members with parsed value.
 
         argv -- list of string, the command line arguments
@@ -1226,13 +1275,13 @@ class ArgParser(object):
         except GetoptError, e:
             raise UsageError(e.msg)
 
-        if len(args) != 2:
+        if len(args) != 3:
             raise UsageError("Insufficient arguments")
         else:
             cdir = os.path.abspath(os.path.dirname(""))
             self.images_dname = os.path.join(cdir, args[0])
             self.out_dname = os.path.join(cdir, args[1])
-
+	    MODE = args[2]
         for option, value in opts:
 
             if option == "-t":
