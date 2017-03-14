@@ -147,8 +147,6 @@ struct blsp_spi {
 	unsigned int     qup_mx_input_count;
 	unsigned int     qup_mx_output_count;
 	unsigned int     qup_sw_reset;
-	unsigned int     qup_ns_reg;
-	unsigned int     qup_md_reg;
 	unsigned int	 qup_op_mask;
 	unsigned int	 qup_deassert_wait;
 };
