@@ -595,9 +595,6 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 			snprintf(runcmd, sizeof(runcmd), "mmc read 0x%x 0x%x 0x%x",
 				 CONFIG_SYS_LOAD_ADDR,
 				 (uint)disk_info.start, (uint)disk_info.size);
-
-			if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
-				return CMD_RET_FAILURE;
 		}
 
 #endif   /* CONFIG_QCA_MMC   */
