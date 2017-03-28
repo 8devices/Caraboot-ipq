@@ -15,6 +15,9 @@ CONFIG_NETCONSOLE = y
 CONFIG_SHA1_CHECK_UB_IMG = y
 endif
 
+ifneq ($(TARGETCC),)
+HOSTCC = $(TARGETCC)
+endif
 subdir-$(HOST_TOOLS_ALL) += easylogo
 subdir-$(HOST_TOOLS_ALL) += gdb
 
@@ -94,6 +97,7 @@ dumpimage-mkimage-objs := aisimage.o \
 			pbl_crc32.o \
 			$(ROCKCHIP_OBS) \
 			socfpgaimage.o \
+			sysupgrade.o \
 			lib/sha1.o \
 			lib/sha256.o \
 			common/hash.o \
