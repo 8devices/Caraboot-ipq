@@ -19,12 +19,17 @@
 #include <asm/arch-qca-common/qpic_nand.h>
 #include <asm/arch-qca-common/gpio.h>
 #include <asm/arch-qca-common/uart.h>
+#include <asm/arch-qca-common/smem.h>
 #include <fdtdec.h>
 
 
 DECLARE_GLOBAL_DATA_PTR;
 
 qca_mmc mmc_host;
+
+extern loff_t board_env_offset;
+extern loff_t board_env_range;
+extern loff_t board_env_size;
 
 extern int ipq_spi_init(u16);
 extern int ipq807x_edma_init(void *cfg);
@@ -118,15 +123,51 @@ int board_eth_init(bd_t *bis)
 	return ret;
 }
 
+int board_mmc_env_init(void)
+{
+	block_dev_desc_t *blk_dev;
+	disk_partition_t disk_info;
+	int ret;
+
+	if (mmc_init(mmc_host.mmc)) {
+		/* The HS mode command(cmd6) is getting timed out. So mmc card
+		 * is not getting initialized properly. Since the env partition
+		 * is not visible, the env default values are writing into the
+		 * default partition (start of the mmc device).
+		 * So do a reset again.
+		 */
+		if (mmc_init(mmc_host.mmc)) {
+			printf("MMC init failed \n");
+			return -1;
+		}
+	}
+	blk_dev = mmc_get_dev(mmc_host.dev_num);
+	ret = get_partition_info_efi_by_name(blk_dev,
+				"0:APPSBLENV", &disk_info);
+
+	if (ret == 0) {
+		board_env_offset = disk_info.start * disk_info.blksz;
+		board_env_size = disk_info.size * disk_info.blksz;
+		board_env_range = board_env_size;
+		BUG_ON(board_env_size > CONFIG_ENV_SIZE_MAX);
+	}
+	return ret;
+}
+
 int board_mmc_init(bd_t *bis)
 {
 	int ret;
+	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 
 	mmc_host.base = MSM_SDC1_BASE;
 	mmc_host.clk_mode = MMC_IDENTIFY_MODE;
 	emmc_clock_config(mmc_host.clk_mode);
 
 	ret = qca_mmc_init(bis, &mmc_host);
+
+	if (!ret && sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
+		ret = board_mmc_env_init();
+	}
 
 	return ret;
 }
