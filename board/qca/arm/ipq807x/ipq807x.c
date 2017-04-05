@@ -21,7 +21,7 @@
 #include <asm/arch-qca-common/uart.h>
 #include <asm/arch-qca-common/smem.h>
 #include <fdtdec.h>
-
+#include <mmc.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
