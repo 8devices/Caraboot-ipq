@@ -14,6 +14,7 @@
 #ifndef ___QCA_COMMON_H_
 #define ___QCA_COMMON_H_
 #include <asm/u-boot.h>
+#include <asm/arch-qca-common/smem.h>
 
 #ifdef CONFIG_IPQ807x
 #include <asm/arch-ipq807x/clk.h>
@@ -47,6 +48,8 @@ typedef struct {
 
 int qca_mmc_init(bd_t *, qca_mmc *);
 void board_mmc_deinit(void);
+
+void set_flash_secondary_type(qca_smem_flash_info_t *);
 
 struct dumpinfo_t{
 	char name[16]; /* use only file name in 8.3 format */

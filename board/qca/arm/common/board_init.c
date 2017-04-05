@@ -146,7 +146,12 @@ void get_kernel_fs_part_details(void)
 		if (ret < 0) {
 			qca_part_entry_t *part = entries[i].part;
 
-			smem->flash_secondary_type = SMEM_BOOT_NAND_FLASH;
+			/*
+			 * To set SoC specific secondary flash type to
+			 * eMMC/NAND device based on the one that is enabled.
+			 */
+			set_flash_secondary_type(smem);
+
 			debug("cdp: get part failed for %s\n", entries[i].name);
 			part->offset = 0xBAD0FF5E;
 			part->size = 0xBAD0FF5E;
