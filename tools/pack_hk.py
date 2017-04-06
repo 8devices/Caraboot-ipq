@@ -213,7 +213,9 @@ class MIBIB(object):
     TABLE_FMT = "<LLLL"
     TABLE_MAGIC1 = 0x55EE73AA
     TABLE_MAGIC2 = 0xE35EBDDB
-    TABLE_VERSION = 4
+    TABLE_VERSION_IPQ806X = 3
+    TABLE_VERSION_OTHERS = 4
+
 
     Entry = namedtuple("Entry", "name offset length"
                         " attr1 attr2 attr3 which_flash")
@@ -246,7 +248,7 @@ class MIBIB(object):
 
     def __read_parts(self, part_fp):
         """Read the partitions from the MIBIB."""
-
+	global ARCH_NAME
         part_fp.seek(self.pagesize, os.SEEK_SET)
         mtable_str = part_fp.read(struct.calcsize(MIBIB.TABLE_FMT))
         mtable = struct.unpack(MIBIB.TABLE_FMT, mtable_str)
@@ -257,9 +259,12 @@ class MIBIB(object):
             """ mtable.magic1 = MIBIB.TABLE_MAGIC1
             mtable.magic2 = MIBIB.TABLE_MAGIC2 """
             error("invalid sys part. table, magic byte not present")
-
-        if mtable.version != MIBIB.TABLE_VERSION:
-            error("unsupported partition table version")
+        if ARCH_NAME == "ipq806x":
+            if mtable.version != MIBIB.TABLE_VERSION_IPQ806X:
+                error("unsupported partition table version")
+        else:
+            if mtable.version != MIBIB.TABLE_VERSION_OTHERS:
+                error("unsupported partition table version")
 
         for i in range(mtable.numparts):
             mentry_str = part_fp.read(struct.calcsize(MIBIB.ENTRY_FMT))
@@ -473,6 +478,12 @@ class Flash_Script(FlashScript):
         else:
             pass
 
+    def switch_layout(self, layout):
+        if self.flash_type == "nand":
+            self.append("ipq_nand %s" % layout)
+        else:
+            pass
+
 its_tmpl = Template("""
 /dts-v1/;
 
@@ -562,19 +573,21 @@ class Pack(object):
             return None
 
     def __gen_flash_script_cdt(self, entries, partition, flinfo, script):
-
+	global ARCH_NAME
         for section in entries:
 
             machid = int(section.find(".//machid").text, 0)
             machid = "%x" % machid
             board = section.find(".//board").text
             spi_nand = section.find(".//spi_nand").text
-            try:
-                memory = section.find(".//memory").text
-            except AttributeError, e:
-                memory = "128M16"
-
-            filename = "cdt-" + board + "_" + memory + ".bin"
+            if ARCH_NAME != "ipq806x":
+                try:
+                    memory = section.find(".//memory").text
+                except AttributeError, e:
+                    memory = "128M16"
+                filename = "cdt-" + board + "_" + memory + ".bin"
+            else:
+                filename = "cdt-" + board + ".bin"
 
             img_size = self.__get_img_size(filename)
             part_info = self.__get_part_info(partition)
@@ -628,17 +641,30 @@ class Pack(object):
 
             if machid:
                 script.start_if("machid", machid)
+            if ARCH_NAME != "ipq806x":
+                script.start_activity("Flashing ddr-%s_%s:" % ( board, memory ))
+                if img_size > 0:
+                    filename_pad = filename + ".padded"
+                    if ((self.flinfo.type == 'nand' or self.flinfo.type == 'emmc') and (size != img_size)):
+                        script.imxtract("ddr-" + board + "_" + memory + "-" + sha1(filename_pad))
+                    else:
+                        script.imxtract("ddr-" + board + "_" + memory + "-" + sha1(filename))
+                        """ script.imxtract("cdt-" + board + "_" + memory + ".bin-" + sha1(filename_pad))
+                    else:
+                        script.imxtract("cdt-" + board + "_" + memory + ".bin-" + sha1(filename)) """
 
-            script.start_activity("Flashing ddr-%s_%s:" % ( board, memory ))
-            if img_size > 0:
-                filename_pad = filename + ".padded"
-                if ((self.flinfo.type == 'nand' or self.flinfo.type == 'emmc') and (size != img_size)):
-                    script.imxtract("ddr-" + board + "_" + memory + "-" + sha1(filename_pad))
-                else:
-                    script.imxtract("ddr-" + board + "_" + memory + "-" + sha1(filename))
-                    """ script.imxtract("cdt-" + board + "_" + memory + ".bin-" + sha1(filename_pad))
-                else:
-                    script.imxtract("cdt-" + board + "_" + memory + ".bin-" + sha1(filename)) """
+            else:
+                script.start_activity("Flashing ddr-%s:" % (board))
+                script.switch_layout("sbl")
+                if img_size > 0:
+                    filename_pad = filename + ".padded"
+                    if ((self.flinfo.type == 'nand' or self.flinfo.type == 'emmc') and (size != img_size)):
+                        script.imxtract("ddr-" + board + "-" + sha1(filename_pad))
+                    else:
+                        script.imxtract("ddr-" + board + "-" + sha1(filename))
+                        """ script.imxtract("cdt-" + board + ".bin-" + sha1(filename_pad))
+                    else:
+                        script.imxtract("cdt-" + board + ".bin-" + sha1(filename)) """
 
             part_size = Pack.norplusnand_rootfs_img_size
             if part_info == None:
@@ -761,24 +787,21 @@ class Pack(object):
 			diff_files = "" # Clear for next iteration
 
             # Get machID
-            if partition != "0:CDT":
+            if partition != "0:CDT" and partition != "0:DDRCONFIG":
                 machid = None
             else:
                 self.__gen_flash_script_cdt(entries, partition, flinfo, script)
                 continue
 
+            if ARCH_NAME == "ipq806x":
             # Get Layout
-            try:
-                layout = section.attrib['layout']
-                if layout is None:
-                    layout = None
-            except KeyError, e:
-                layout = None
-            except AttributeError, e:
-                layout = None
+                try:
+                    layout = section[9].text
+		except:
+		    layout  = None
 
-            if layout not in ("sbl", "linux", None):
-                error("invalid layout in '%s'" % section)
+                if layout not in ("sbl", "linux", None):
+                    error("invalid layout in '%s'" % section)
 
             img_size = self.__get_img_size(filename)
             part_info = self.__get_part_info(partition)
@@ -842,6 +865,9 @@ class Pack(object):
                 section_conf = "ubi"
 
             script.start_activity("Flashing %s:" % section_conf)
+
+            if ARCH_NAME == "ipq806x":
+                script.switch_layout(layout)
             if img_size > 0:
                 filename_pad = filename + ".padded"
                 if ((self.flinfo.type == 'nand' or self.flinfo.type == 'emmc') and (size != img_size)):
@@ -871,19 +897,24 @@ class Pack(object):
                 script.end_if()
 
     def __gen_script_cdt(self, images, flinfo, root, section_conf, partition):
+        global ARCH_NAME
 
         entries = root.findall(".//data[@type='MACH_ID_BOARD_MAP']/entry")
 
         for section in entries:
 
             board = section.find(".//board").text
-            try:
-                memory = section.find(".//memory").text
-            except AttributeError, e:
-                memory = "128M16"
+            if ARCH_NAME != "ipq806x":
+                try:
+                    memory = section.find(".//memory").text
+                except AttributeError, e:
+                    memory = "128M16"
 
-            filename = "cdt-" + board + "_" + memory + ".bin"
-            file_info = "ddr-" + board + "_" + memory
+                filename = "cdt-" + board + "_" + memory + ".bin"
+                file_info = "ddr-" + board + "_" + memory
+            else:
+                filename = "cdt-" + board + ".bin"
+                file_info = "ddr-" + board
 
             part_info = self.__get_part_info(partition)
 
@@ -1024,7 +1055,7 @@ class Pack(object):
 
             section_conf = section_conf.lower()
 
-            if section_conf == "cdt":
+            if section_conf == "cdt" or section_conf == "ddrconfig":
                 self.__gen_script_cdt(images, flinfo, root, section_conf, partition)
                 continue
 
