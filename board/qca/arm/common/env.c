@@ -13,6 +13,7 @@
 
 #include <common.h>
 #include <asm/arch-qca-common/smem.h>
+#include <environment.h>
 
 extern void nand_env_relocate_spec(void);
 extern int nand_env_init(void);
@@ -59,7 +60,9 @@ void env_relocate_spec(void)
 			    &sfi.flash_block_size,
 			    &sfi.flash_density);
 
-	if (sfi.flash_type != SMEM_BOOT_MMC_FLASH) {
+	if (sfi.flash_type == SMEM_BOOT_NO_FLASH) {
+		set_default_env("!flashless boot");
+	} else if (sfi.flash_type != SMEM_BOOT_MMC_FLASH) {
 		nand_env_relocate_spec();
 #ifdef CONFIG_QCA_MMC
 	} else {

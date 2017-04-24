@@ -59,7 +59,11 @@ int board_init(void)
 	 * Should be inited, before env_relocate() is called,
 	 * since env. offset is obtained from SMEM.
 	 */
-	if (sfi->flash_type != SMEM_BOOT_MMC_FLASH) {
+	switch (sfi->flash_type) {
+	case SMEM_BOOT_MMC_FLASH:
+	case SMEM_BOOT_NO_FLASH:
+		break;
+	default:
 		ret = smem_ptable_init();
 		if (ret < 0) {
 			printf("cdp: SMEM init failed\n");
@@ -76,13 +80,14 @@ int board_init(void)
 		nand_env_device = CONFIG_SPI_FLASH_INFO_IDX;
 		break;
 	case SMEM_BOOT_MMC_FLASH:
+	case SMEM_BOOT_NO_FLASH:
 		break;
 	default:
 		printf("BUG: unsupported flash type : %d\n", sfi->flash_type);
 		BUG();
 	}
 
-	if (sfi->flash_type != SMEM_BOOT_MMC_FLASH) {
+	if ((sfi->flash_type != SMEM_BOOT_MMC_FLASH) && (sfi->flash_type != SMEM_BOOT_NO_FLASH))  {
 		ret = smem_getpart("0:APPSBLENV", &start_blocks, &size_blocks);
 		if (ret < 0) {
 			printf("cdp: get environment part failed\n");
@@ -104,6 +109,7 @@ int board_init(void)
 		break;
 #ifdef CONFIG_QCA_MMC
 	case SMEM_BOOT_MMC_FLASH:
+	case SMEM_BOOT_NO_FLASH:
 		board_env_range = CONFIG_ENV_SIZE_MAX;
 		break;
 #endif

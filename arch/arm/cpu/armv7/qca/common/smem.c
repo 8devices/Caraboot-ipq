@@ -330,34 +330,34 @@ int smem_get_boot_flash(uint32_t *flash_type,
 				    flash_type, sizeof(uint32_t));
 	if (ret != 0) {
 		printf("smem: read flash type failed\n");
-		return -ENOMSG;
+		*flash_type = SMEM_BOOT_NO_FLASH;
 	}
 
 	ret = smem_read_alloc_entry(SMEM_BOOT_FLASH_INDEX,
 				    flash_index, sizeof(uint32_t));
 	if (ret != 0) {
 		printf("smem: read flash index failed\n");
-		return -ENOMSG;
+		*flash_index = 0;
 	}
 
 	ret = smem_read_alloc_entry(SMEM_BOOT_FLASH_CHIP_SELECT,
 				    flash_chip_select, sizeof(uint32_t));
 	if (ret != 0) {
 		printf("smem: read flash chip select failed\n");
-		return -ENOMSG;
+		*flash_chip_select = 0;
 	}
 
 	ret = smem_read_alloc_entry(SMEM_BOOT_FLASH_BLOCK_SIZE,
 				    flash_block_size, sizeof(uint32_t));
 	if (ret != 0) {
 		printf("smem: read flash block size failed\n");
-		return -ENOMSG;
+		*flash_block_size = 0;
 	}
 	ret = smem_read_alloc_entry(SMEM_BOOT_FLASH_DENSITY,
 				flash_density, sizeof(uint32_t));
 	if (ret != 0) {
 		printf("smem: read flash density failed\n");
-		return -ENOMSG;
+		*flash_density = 0;
 	}
 
 	return 0;
