@@ -191,7 +191,10 @@
 #define EXT_CSD_HC_WP_GRP_SIZE		221	/* RO */
 #define EXT_CSD_HC_ERASE_GRP_SIZE	224	/* RO */
 #define EXT_CSD_BOOT_MULT		226	/* RO */
+#define EXT_CSD_SEC_FEATURE_SUPPORT     231     /* RO */
 
+#define EXT_CSD_SEC_ER_EN       (1 << 0)
+#define EXT_CSD_SEC_GB_CL_EN    (1 << 4)
 /*
  * EXT_CSD field definitions
  */
@@ -293,6 +296,10 @@ struct mmc *mmc_get_mmc_dev(struct udevice *dev);
 
 /* End of driver model support */
 
+#define MMC_SECURE_TRIM1_ARG    0x80000001
+#define MMC_SECURE_TRIM2_ARG    0x80008000
+
+
 struct mmc_cid {
 	unsigned long psn;
 	unsigned short oid;
@@ -382,6 +389,7 @@ struct mmc {
 	char init_in_progress;	/* 1 if we have done mmc_start_init() */
 	char preinit;		/* start init as early as possible */
 	int ddr_mode;
+	uchar sec_feature_support;
 };
 
 struct mmc_hwpart_conf {
