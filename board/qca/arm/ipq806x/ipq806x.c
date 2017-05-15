@@ -276,13 +276,22 @@ int board_eth_init(bd_t *bis)
 
 void qca_serial_init(struct ipq_serial_platdata *plat)
 {
-	int serial_node, gpio_node;
+	int serial_node, gpio_node, uart2_node;
 	unsigned gsbi_base;
 
 	serial_node = fdt_path_offset(gd->fdt_blob, "console");
         if (serial_node < 0) {
              return;
         }
+
+	if (plat->port_id == 2) {
+		uart2_node = fdt_path_offset(gd->fdt_blob, "uart2");
+		if (uart2_node < 0) {
+			printf("uart2 node not defined\n");
+		} else {
+			serial_node = uart2_node;
+		}
+	}
 
         gpio_node = fdt_subnode_offset(gd->fdt_blob,
 				       serial_node, "serial_gpio");
@@ -292,15 +301,16 @@ void qca_serial_init(struct ipq_serial_platdata *plat)
 		return;
 
 	qca_gpio_init(gpio_node);
-	writel(GSBI_PROTOCOL_CODE_I2C_UART <<
-			GSBI_CTRL_REG_PROTOCOL_CODE_S,
-			GSBI_CTRL_REG(gsbi_base));
-
 	if (!(plat->m_value == -1) || ( plat->n_value == -1) || (plat->d_value == -1))
 		uart_clock_config(plat->port_id,
 				plat->m_value,
 				plat->n_value,
 				plat->d_value);
+
+	writel(GSBI_PROTOCOL_CODE_I2C_UART <<
+			GSBI_CTRL_REG_PROTOCOL_CODE_S,
+			GSBI_CTRL_REG(gsbi_base));
+
 }
 
 int ipq_fdt_fixup_socinfo(void *blob)

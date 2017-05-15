@@ -21,6 +21,7 @@
 
 	aliases {
 		console = "/serial@16340000";
+		uart2 = "/serial@12490000";
 		nand = "/nand@1A600000";
 		gmac_gpio = "/gmac1_gpio";
 		i2c0 = "/i2c@16380000";
@@ -29,6 +30,11 @@
 	serial@16340000 {
 		status = "ok";
 	};
+
+	serial@12490000 {
+		status = "ok";
+	};
+
 
 	gmac_cfg {
 		gmac_count = <2>;
