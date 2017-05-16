@@ -80,6 +80,7 @@ import xml.etree.ElementTree as ET
 
 version = "1.1"
 ARCH_NAME = ""
+SRC_DIR = ""
 MODE = ""
 #
 # Python 2.6 and earlier did not have OrderedDict use the backport
@@ -693,15 +694,17 @@ class Pack(object):
         script -- Script object, to append commands to
         """
 	global MODE
+	global SRC_DIR
+	global ARCH_NAME
+
 	diff_files = ""
         count = 0
 
         if self.flash_type == "norplusemmc" and flinfo.type == "emmc":
-            srcDir_part = "$$/" + ARCH_NAME + "/flash_partition/" + flinfo.type + "-partition.xml"
+            srcDir_part = SRC_DIR + "/" + ARCH_NAME + "/flash_partition/" + flinfo.type + "-partition.xml"
         else:
-            srcDir_part = "$$/" + ARCH_NAME + "/flash_partition/" + self.flash_type.lower() + "-partition.xml"
-        cdir = os.path.abspath("")
-        srcDir_part = srcDir_part.replace('$$', cdir)
+            srcDir_part = SRC_DIR + "/" + ARCH_NAME + "/flash_partition/" + self.flash_type.lower() + "-partition.xml"
+
         root_part = ET.parse(srcDir_part)
         if self.flash_type != "emmc" and flinfo.type != "emmc":
             parts = root_part.findall(".//partitions/partition")
@@ -946,6 +949,8 @@ class Pack(object):
         images -- list of ImageInfo, appended to, based on images in config
         """
 	global MODE
+	global SRC_DIR
+
 	diff_files = ""
         self.__gen_flash_script(script, flinfo, root)
         if (self.flash_type == "norplusemmc" and flinfo.type == "emmc") or (self.flash_type != "norplusemmc"):
@@ -957,11 +962,9 @@ class Pack(object):
             script.end()
 
         if self.flash_type == "norplusemmc" and flinfo.type == "emmc":
-            srcDir_part = "$$/" + ARCH_NAME + "/flash_partition/" + flinfo.type + "-partition.xml"
+            srcDir_part = SRC_DIR + "/" + ARCH_NAME + "/flash_partition/" + flinfo.type + "-partition.xml"
         else:
-            srcDir_part = "$$/" + ARCH_NAME + "/flash_partition/" + self.flash_type.lower() + "-partition.xml"
-        cdir = os.path.abspath("")
-        srcDir_part = srcDir_part.replace('$$', cdir)
+            srcDir_part = SRC_DIR + "/" + ARCH_NAME + "/flash_partition/" + self.flash_type.lower() + "-partition.xml"
         root_part = ET.parse(srcDir_part)
         if self.flash_type != "emmc" and flinfo.type != "emmc":
             parts = root_part.findall(".//partitions/partition")
@@ -1126,6 +1129,9 @@ class Pack(object):
         self.its_fname = os.path.join(self.images_dname, "flash.its")
 
     def __gen_board_script(self, flinfo, part_fname, images, root):
+	global SRC_DIR
+	global ARCH_NAME
+
         """Generate the flashing script for one board.
 
         board_section -- string, board section in board config file
@@ -1145,9 +1151,7 @@ class Pack(object):
             blocks_per_chip = int(flash_param.find(".//total_block").text)
             chipsize = blocks_per_chip * blocksize
 
-            srcDir_part = "$$/" + ARCH_NAME + "/flash_partition/" + flinfo.type + "-partition.xml"
-            cdir = os.path.abspath("")
-            srcDir_part = srcDir_part.replace('$$', cdir)
+            srcDir_part = SRC_DIR + "/" + ARCH_NAME + "/flash_partition/" + flinfo.type + "-partition.xml"
             root_part = ET.parse(srcDir_part)
             mibib = MIBIB(part_fname, flinfo.pagesize, flinfo.blocksize,
                           flinfo.chipsize, blocksize, chipsize, root_part)
@@ -1185,7 +1189,6 @@ class Pack(object):
         try:
             part_info = root.find(".//data[@type='" + self.flash_type.upper() + "_PARAMETER']")
             part_fname = part_info.find(".//partition_mbn")
-            cdir = os.path.abspath(os.path.dirname(""))
             part_fname = part_fname.text
             part_fname = os.path.join(self.images_dname, part_fname)
             if ftype == "norplusemmc":
@@ -1207,12 +1210,12 @@ class Pack(object):
         self.__gen_board_script(flinfo, part_fname, images, root)
 
     def __process_board_flash(self, ftype, images, root):
+	global SRC_DIR
+	global ARCH_NAME
+
         try:
             part_info = root.find(".//data[@type='" + ftype.upper() + "_PARAMETER']")
-            cdir = os.path.abspath(os.path.dirname(""))
-            part_file = "$$/" + ARCH_NAME + "/flash_partition/" + ftype + "-partition.xml"
-            cdir = os.path.abspath("")
-            part_file = part_file.replace('$$', cdir)
+            part_file = SRC_DIR + "/" + ARCH_NAME + "/flash_partition/" + ftype + "-partition.xml"
             part_xml = ET.parse(part_file)
             partition = part_xml.find(".//partitions/partition[2]")
             part_fname = partition[8].text
@@ -1247,7 +1250,7 @@ class Pack(object):
         except ValueError, e:
             error("error getting board info in section '%s'" % board_section.find('machid').text, e)
 
-    def main_bconf(self, flash_type, images_dname, out_fname):
+    def main_bconf(self, flash_type, images_dname, out_fname, root):
         """Start the packing process, using board config.
 
         flash_type -- string, indicates flash type, 'nand' or 'nor' or 'emmc' or 'norplusnand'
@@ -1259,29 +1262,10 @@ class Pack(object):
         self.img_fname = out_fname
 
         self.__create_fnames()
-	global ARCH_NAME
         try:
             os.unlink(self.scr_fname)
         except OSError, e:
             pass
-
-        cdir = os.path.abspath("")
-        if len(sys.argv) > 1:
-            try:
-                opts, args = getopt(sys.argv[1:], "t:o:c:")
-            except GetoptError, e:
-                print "Configuration xml file is needed to generate cdt files"
-                raise
-            for option, value in opts:
-                if option == "-c":
-                    srcDir = value
-        else:
-            srcDir = '$$/common/config.xml'
-            srcDir = srcDir.replace('$$', cdir)
-        root = ET.parse(srcDir)
-	
-        arch = root.find(".//data[@type='ARCH']/SOC")
-        ARCH_NAME = str(arch.text)
 
         images = []
         self.__process_board(images, root)
@@ -1295,7 +1279,7 @@ class UsageError(Exception):
 class ArgParser(object):
     """Class to parse command-line arguments."""
 
-    DEFAULT_TYPE = "nand"
+    DEFAULT_TYPE = "nor,nand,norplusnand,emmc,norplusemmc"
 
     def __init__(self):
         self.flash_type = None
@@ -1306,45 +1290,67 @@ class ArgParser(object):
 
     def parse(self, argv):
 	global MODE
+	global SRC_DIR
+	global ARCH_NAME
+
         """Start the parsing process, and populate members with parsed value.
 
         argv -- list of string, the command line arguments
         """
 
-        try:
-            opts, args = getopt(argv[1:], "t:o:c:")
-        except GetoptError, e:
-            raise UsageError(e.msg)
+	cdir = os.path.abspath(os.path.dirname(""))
+        if len(sys.argv) > 1:
+            try:
+                opts, args = getopt(sys.argv[1:], "", ["arch=", "fltype=", "srcPath=", "inImage=", "outImage="])
+            except GetoptError, e:
+		raise UsageError(e.msg)
 
-        if len(args) != 3:
-            raise UsageError("Insufficient arguments")
-        else:
-            cdir = os.path.abspath(os.path.dirname(""))
-            self.images_dname = os.path.join(cdir, args[0])
-            self.out_dname = os.path.join(cdir, args[1])
-	    MODE = args[2]
-        for option, value in opts:
+	    for option, value in opts:
+		if option == "--arch":
+		    ARCH_NAME = value
 
-            if option == "-t":
-                if value == None:
-                    self.flash_type = ArgParser.DEFAULT_TYPE
-                elif value in [ "nand", "nor", "emmc", "norplusnand", "norplusemmc" ]:
-                    self.flash_type = value
-                else:
-                    raise UsageError("invalid flash type '%s'" % self.flash_type)
+		elif option == "--fltype":
+		    self.flash_type = value
 
-            elif option == "-o":
-                if value == None:
-                    fmt = "%s-%s%simg"
-                    self.out_fname = fmt % (self.out_dname, self.flash_type,
-                                            os.path.extsep)
-                elif os.path.isabs(value):
-                    self.out_fname = value
-                else:
-                    self.out_fname = os.path.join(self.out_dname, value)
+		elif option == "--srcPath":
+		    SRC_DIR = os.path.abspath(value)
 
- 	    if not os.path.exists(self.out_dname):
-		os.makedirs(self.out_dname)
+		elif option == "--inImage":
+		    self.images_dname = os.path.join(cdir, value)
+
+		elif option == "--outImage":
+		    self.out_dname = os.path.join(cdir, value)
+
+#Verify Arguments passed by user
+
+# Verify arch type
+	    if ARCH_NAME not in ["ipq40xx", "ipq806x", "ipq807x", "ipq807x_64"]:
+		raise UsageError("Invalid arch type '%s'" % arch)
+
+	    if ARCH_NAME == "ipq807x":
+		MODE = "32"
+	    elif ARCH_NAME == "ipq807x_64":
+		MODE = "64"
+		ARCH_NAME = "ipq807x"
+
+# Set flash type to default type (nand) if not given by user
+	    if self.flash_type == None:
+                self.flash_type = ArgParser.DEFAULT_TYPE
+	    for flash_type in self.flash_type.split(","):
+                if flash_type not in [ "nand", "nor", "emmc", "norplusnand", "norplusemmc" ]:
+                    raise UsageError("invalid flash type '%s'" % flash_type)
+
+# Verify src Path
+	    if SRC_DIR == "":
+		raise UsageError("Source Path is not provided")
+
+#Verify input image path
+	    if self.images_dname == None:
+		raise UsageError("input images' Path is not provided")
+
+#Verify Output image path
+	    if self.out_dname == None:
+		raise UsageError("Output Path is not provided")
 
     def usage(self, msg):
         """Print error message and command usage information.
@@ -1353,18 +1359,20 @@ class ArgParser(object):
         """
         print "pack: %s" % msg
         print
-        print "Usage: pack [options] IDIR"
-        print
-        print "where IDIR is the path containing the images."
-        print
-        print "   -t TYPE    specifies partition type, 'nand' or 'nor',"
-        print "              default is '%s'." % ArgParser.DEFAULT_TYPE
-        print "   -o FILE    specifies the output filename"
-        print "              default is IDIR-TYPE-SIZE-COUNT.img"
-        print "              if the filename is relative, it is relative"
-        print "              to the parent of IDIR."
-        print "   -c FILE    specifies the config filename"
-        print "              default is common/config.xml"
+        print "Usage:"
+	print "python pack_hk.py [options] [Value] ..."
+	print
+        print "options:"
+        print "  --arch \tARCH_TYPE [ipq40xx/ipq806x/ipq807x/ipq807x_64]"
+	print
+	print "  --fltype \tFlash Type [nor/nand/emmc/norplusnand/norplusemmc]"
+        print " \t\tMultiple flashtypes can be passed by a comma separated string"
+        print " \t\tDefault is all. i.e If \"--fltype\" is not passed image for all the flash-type will be created.\n"
+        print "  --srcPath \tPath to the directory containg the meta scripts and configs"
+	print
+	print "  --inImage \tPath to the direcory containg binaries and images needed for singleimage"
+	print
+        print "  --outImage \tPath to the directory where single image will be generated"
         print
         print "Pack Version: %s" % version
 
@@ -1381,8 +1389,24 @@ def main():
         sys.exit(1)
 
     pack = Pack()
-    pack.main_bconf(parser.flash_type, parser.images_dname,
-                        parser.out_fname)
+
+    if not os.path.exists(parser.out_dname):
+	os.makedirs(parser.out_dname)
+
+    config = SRC_DIR + "/" + ARCH_NAME + "/config.xml"
+    root = ET.parse(config)
+
+# Format the output image name from Arch, flash type and mode
+    for flash_type in parser.flash_type.split(","):
+        if MODE == "64":
+            parser.out_fname = flash_type + "-" + ARCH_NAME + "_" + MODE + "-single.img"
+        else:
+	    parser.out_fname = flash_type + "-" + ARCH_NAME + "-single.img"
+
+        parser.out_fname = os.path.join(parser.out_dname, parser.out_fname)
+
+        pack.main_bconf(flash_type, parser.images_dname,
+                        parser.out_fname, root)
 
 if __name__ == "__main__":
     main()
