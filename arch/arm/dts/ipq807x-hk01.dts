@@ -21,45 +21,7 @@
 	config_name = "config@hk01";
 
 	aliases {
-		console = "/serial@78af000";
-		xhci0 = "/xhci@8a00000";
-		xhci1 = "/xhci@8c00000";
-		i2c0 = "/i2c@78b6000";
-		pci0 = "/pci@20000000";
-		pci1 = "/pci@10000000";
-	};
-	pci@20000000 {
-		pci_gpio {
-			gpio1 {
-				gpio = <58>;
-				func = <0>;
-				out = <GPIO_OUT_HIGH>;
-				pull = <GPIO_PULL_DOWN>;
-				drvstr = <GPIO_2MA>;
-				oe = <GPIO_OE_ENABLE>;
-				vm = <GPIO_VM_ENABLE>;
-				od_en = <GPIO_OD_DISABLE>;
-				pu_res = <GPIO_PULL_RES2>;
-			};
-
-		};
-	};
-
-	pci@10000000 {
-		pci_gpio {
-			gpio1 {
-				gpio = <61>;
-				func = <0>;
-				out = <GPIO_OUT_HIGH>;
-				pull = <GPIO_PULL_DOWN>;
-				drvstr = <GPIO_2MA>;
-				oe = <GPIO_OE_ENABLE>;
-				vm = <GPIO_VM_ENABLE>;
-				od_en = <GPIO_OD_DISABLE>;
-				pu_res = <GPIO_PULL_RES2>;
-			};
-
-		};
+		console = "/serial@78B3000";
 	};
 };
 

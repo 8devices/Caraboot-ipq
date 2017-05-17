@@ -16,11 +16,26 @@
 
 / {
 
-	serial@78af000 {
+	serial@78B3000 {
 		compatible = "qca,ipq-uartdm";
-		reg = <0x78af000 0x200>;
-		id = <2>;
+		reg = <0x78B3000 0x200>;
+		id = <4>;
 		bit_rate = <0xff>;
+		serial_gpio {
+			gpio1 {
+				gpio = <23>;
+				func = <2>;
+				pull = <GPIO_PULL_DOWN>;
+				oe = <GPIO_OE_ENABLE>;
+			};
+
+			gpio2 {
+				gpio = <24>;
+				func = <2>;
+				pull = <GPIO_NO_PULL>;
+				oe = <GPIO_OE_ENABLE>;
+			};
+		};
 	};
 
 	timer {
@@ -36,7 +51,7 @@
 		compatible = "qcom,spi-qup-v2.7.0";
 		spi_gpio {
 			gpio1 {
-				gpio = <42>;
+				gpio = <38>;
 				func = <3>;
 				pull = <GPIO_PULL_UP>;
 				drvstr = <GPIO_2MA>;
@@ -47,7 +62,7 @@
 			};
 
 			gpio2 {
-				gpio = <43>;
+				gpio = <39>;
 				func = <3>;
 				pull = <GPIO_PULL_UP>;
 				drvstr = <GPIO_2MA>;
@@ -58,8 +73,8 @@
 			};
 
 			gpio3 {
-				gpio = <44>;
-				func = <2>;
+				gpio = <40>;
+				func = <3>;
 				pull = <GPIO_PULL_UP>;
 				drvstr = <GPIO_2MA>;
 				oe = <GPIO_OE_DISABLE>;
@@ -69,8 +84,8 @@
 			};
 
 			gpio4 {
-				gpio = <45>;
-				func = <2>;
+				gpio = <41>;
+				func = <3>;
 				pull = <GPIO_PULL_UP>;
 				drvstr = <GPIO_2MA>;
 				oe = <GPIO_OE_DISABLE>;
@@ -225,6 +240,21 @@
 		reg-names = "pci_dbi", "parf", "elbi", "axi_bars",
 				"axi_conf", "pci_rst";
 		perst_gpio = <58>;
+
+		pci_gpio {
+			gpio1 {
+				gpio = <58>;
+				func = <0>;
+				out = <GPIO_OUT_HIGH>;
+				pull = <GPIO_PULL_DOWN>;
+				drvstr = <GPIO_2MA>;
+				oe = <GPIO_OE_ENABLE>;
+				vm = <GPIO_VM_ENABLE>;
+				od_en = <GPIO_OD_DISABLE>;
+				pu_res = <GPIO_PULL_RES2>;
+			};
+
+		};
 	};
 
 	pci@10000000 {
@@ -240,5 +270,21 @@
 		reg-names = "pci_dbi", "parf", "elbi", "axi_bars",
 				"axi_conf", "pci_rst";
 		perst_gpio = <61>;
+
+		pci_gpio {
+			gpio1 {
+				gpio = <61>;
+				func = <0>;
+				out = <GPIO_OUT_HIGH>;
+				pull = <GPIO_PULL_DOWN>;
+				drvstr = <GPIO_2MA>;
+				oe = <GPIO_OE_ENABLE>;
+				vm = <GPIO_VM_ENABLE>;
+				od_en = <GPIO_OD_DISABLE>;
+				pu_res = <GPIO_PULL_RES2>;
+			};
+
+		};
+
 	};
 };
