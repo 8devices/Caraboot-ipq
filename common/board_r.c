@@ -250,7 +250,7 @@ static int initr_unlock_ram_in_cache(void)
 static int initr_pci(void)
 {
 #ifndef CONFIG_DM_PCI
-	pci_init();
+	//pci_init();
 #endif
 
 	return 0;
@@ -439,7 +439,7 @@ static int initr_onenand(void)
 static int initr_mmc(void)
 {
 	puts("MMC:   ");
-	mmc_initialize(gd->bd);
+	//mmc_initialize(gd->bd);
 	return 0;
 }
 #endif
@@ -917,7 +917,7 @@ init_fnc_t init_sequence_r[] = {
 #endif
 #ifdef CONFIG_CMD_NET
 	INIT_FUNC_WATCHDOG_RESET
-	initr_net,
+	//initr_net,
 #endif
 #ifdef CONFIG_POST
 	initr_post,
