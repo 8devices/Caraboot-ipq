@@ -263,6 +263,8 @@ extern loff_t board_env_offset;
 #define CONFIG_NETMASK	255.255.255.0
 #define CONFIG_SERVERIP	192.168.10.1
 #define CONFIG_CMD_TFTPPUT
+#define CONFIG_IPQ_MDIO			1
+#define CONFIG_QCA8075_PHY		1
 
 /*
  * CRASH DUMP ENABLE

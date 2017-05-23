@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2017, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -202,7 +202,7 @@ typedef struct {
 #define CONFIG_IPQ40XX_EDMA     1
 #define CONFIG_NET_RETRY_COUNT          5
 #define CONFIG_SYS_RX_ETH_BUFFER        16
-#define CONFIG_IPQ40XX_MDIO     1
+#define CONFIG_IPQ_MDIO     	1
 #define CONFIG_QCA8075_PHY      1
 #define CONFIG_QCA8033_PHY      1
 #define CONFIG_MII

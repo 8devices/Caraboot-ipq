@@ -24,6 +24,7 @@
 #include <miiphy.h>
 #include <asm/arch-ipq807x/edma_regs.h>
 #include "ipq807x_edma.h"
+#include "ipq_phy.h"
 
 #ifdef DEBUG
 #define pr_debug(fmt, args...) printf(fmt, ##args);
@@ -39,6 +40,17 @@
 static struct ipq807x_eth_dev *ipq807x_edma_dev[IPQ807X_EDMA_DEV];
 
 uchar ipq807x_def_enetaddr[6] = {0x00, 0x03, 0x7F, 0xBA, 0xDB, 0xAD};
+
+static int (*ipq807x_switch_init)(struct phy_ops **ops);
+extern void qca8075_ess_reset(void);
+extern void psgmii_self_test(void);
+extern void clear_self_test_config(void);
+extern int ipq_sw_mdio_init(const char *);
+
+void ipq807x_register_switch(int(*sw_init)(struct phy_ops **ops))
+{
+	ipq807x_switch_init = sw_init;
+}
 
 /*
  * EDMA hardware instance
@@ -1455,6 +1467,7 @@ int ipq807x_edma_init(void *edma_board_cfg)
 	int i;
 	int ret = -1;
 	ipq807x_edma_board_cfg_t ledma_cfg, *edma_cfg;
+	static int sw_init_done = 0;
 
 
 	memset(c_info, 0, (sizeof(c_info) * IPQ807X_EDMA_DEV));
@@ -1531,6 +1544,45 @@ int ipq807x_edma_init(void *edma_board_cfg)
 		ipq807x_edma_dev[i]->c_info = c_info[i];
 		ipq807x_edma_hw_addr = IPQ807X_EDMA_CFG_BASE;
 
+		ret = ipq_sw_mdio_init(edma_cfg->phy_name);
+		if (ret)
+			goto init_failed;
+
+		switch (edma_cfg->phy) {
+		case PHY_INTERFACE_MODE_PSGMII:
+			writel(PSGMIIPHY_PLL_VCO_VAL,
+				PSGMIIPHY_PLL_VCO_RELATED_CTRL);
+			writel(PSGMIIPHY_VCO_VAL,
+				PSGMIIPHY_VCO_CALIBRATION_CTRL);
+			/* wait for 10ms */
+			mdelay(10);
+			writel(PSGMIIPHY_VCO_RST_VAL, PSGMIIPHY_VCO_CALIBRATION_CTRL);
+			break;
+		case PHY_INTERFACE_MODE_RGMII:
+			writel(0x1, RGMII_TCSR_ESS_CFG);
+			writel(0x400, ESS_RGMII_CTRL);
+			break;
+		default:
+			printf("unknown MII interface\n");
+			goto init_failed;
+		}
+
+		if (!sw_init_done) {
+			if (ipq807x_switch_init(&ipq807x_edma_dev[i]->ops) == 0) {
+				sw_init_done = 1;
+			} else {
+				printf ("SW inits failed\n");
+				goto init_failed;
+			}
+		}
+
+		if(edma_cfg->phy == PHY_INTERFACE_MODE_PSGMII) {
+			qca8075_ess_reset();
+			mdelay(100);
+			psgmii_self_test();
+			mdelay(300);
+			clear_self_test_config();
+		}
 		ret = ipq807x_edma_hw_init(hw[i]);
 
 		if (ret)

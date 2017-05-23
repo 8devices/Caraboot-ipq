@@ -32,6 +32,7 @@
 #include <phy.h>
 #include "ipq40xx_edma_eth.h"
 #include "qca_common.h"
+#include "ipq_phy.h"
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -67,11 +68,10 @@ extern int mmc_env_init(void);
 extern void mmc_env_relocate_spec(void);
 
 extern int ipq40xx_edma_init(ipq40xx_edma_board_cfg_t *edma_cfg);
-extern int ipq40xx_qca8075_phy_init(struct ipq40xx_eth_dev *cfg);
+extern int ipq_qca8075_phy_init(struct phy_ops **ops);
 extern int ipq40xx_qca8033_phy_init(struct ipq40xx_eth_dev *cfg);
 extern void ipq40xx_register_switch(
-	int (*sw_init)(struct ipq40xx_eth_dev *cfg));
-
+	int (*sw_init)(struct phy_ops **ops));
 void qca_serial_init(struct ipq_serial_platdata *plat)
 {
 	int node;
@@ -148,13 +148,13 @@ int board_eth_init(bd_t *bis)
 		/* 8075 out of reset */
 		mdelay(100);
 		gpio_set_value(62, 1);
-		ipq40xx_register_switch(ipq40xx_qca8075_phy_init);
+		ipq40xx_register_switch(ipq_qca8075_phy_init);
 		break;
 	case MACH_TYPE_IPQ40XX_AP_DK01_1_C1:
 		/* 8075 out of reset */
 		mdelay(100);
 		gpio_set_value(59, 1);
-		ipq40xx_register_switch(ipq40xx_qca8075_phy_init);
+		ipq40xx_register_switch(ipq_qca8075_phy_init);
 		break;
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C4:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C1:
@@ -162,25 +162,25 @@ int board_eth_init(bd_t *bis)
 		/* 8075 out of reset */
 		mdelay(100);
 		gpio_set_value(47, 1);
-		ipq40xx_register_switch(ipq40xx_qca8075_phy_init);
+		ipq40xx_register_switch(ipq_qca8075_phy_init);
 		break;
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C2:
 		/* 8075 out of reset */
 		mdelay(100);
 		gpio_set_value(67, 1);
-		ipq40xx_register_switch(ipq40xx_qca8075_phy_init);
+		ipq40xx_register_switch(ipq_qca8075_phy_init);
 		break;
 	case MACH_TYPE_IPQ40XX_AP_DK06_1_C1:
 		/* 8075 out of reset */
 		mdelay(100);
 		gpio_set_value(19, 1);
-		ipq40xx_register_switch(ipq40xx_qca8075_phy_init);
+		ipq40xx_register_switch(ipq_qca8075_phy_init);
 		break;
 	case MACH_TYPE_IPQ40XX_AP_DK07_1_C1:
 		/* 8075 out of reset */
 		mdelay(100);
 		gpio_set_value(41, 1);
-		ipq40xx_register_switch(ipq40xx_qca8075_phy_init);
+		ipq40xx_register_switch(ipq_qca8075_phy_init);
 		break;
 	default:
 		break;

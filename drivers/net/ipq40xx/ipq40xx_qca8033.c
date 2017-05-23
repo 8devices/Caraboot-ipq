@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2017, The Linux Foundation. All rights reserved.
 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -18,6 +18,7 @@
 #include <malloc.h>
 #include "ipq40xx_edma_eth.h"
 #include "ipq40xx_qca8033.h"
+#include "ipq_phy.h"
 
 extern int ipq40xx_mdio_write(int mii_id,
 		int regnum, u16 value);

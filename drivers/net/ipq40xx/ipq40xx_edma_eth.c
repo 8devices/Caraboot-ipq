@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2017, The Linux Foundation. All rights reserved.
 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -22,6 +22,7 @@
 #include <asm/arch-ipq40xx/ess/ipq40xx_edma.h>
 #include "ipq40xx_edma_eth.h"
 #include "ipq40xx.h"
+#include "ipq_phy.h"
 #include "qca_common.h"
 #ifdef DEBUG
 #define debugf(fmt, args...) printf(fmt, ##args);
@@ -29,17 +30,11 @@
 #define debugf(fmt, args...)
 #endif
 
-extern int ipq40xx_ess_sw_init(ipq40xx_edma_board_cfg_t *cfg);
-extern void ipq40xx_ess_enable_lookup(void);
-extern void ipq40xx_ess_disable_lookup(void);
-extern void psgmii_self_test(void);
-extern void clear_self_test_config(void);
-uchar ipq40xx_def_enetaddr[6] = {0x00, 0x03, 0x7F, 0xBA, 0xDB, 0xAD};
 static struct ipq40xx_eth_dev *ipq40xx_edma_dev[IPQ40XX_EDMA_DEV];
-static int (*ipq40xx_switch_init)(struct ipq40xx_eth_dev *cfg);
-extern void qca8075_ess_reset(void);
+static int (*ipq40xx_switch_init)(struct phy_ops **ops);
+uchar ipq40xx_def_enetaddr[6] = {0x00, 0x03, 0x7F, 0xBA, 0xDB, 0xAD};
 
-void ipq40xx_register_switch(int(*sw_init)(struct ipq40xx_eth_dev *cfg))
+void ipq40xx_register_switch(int(*sw_init)(struct phy_ops **ops))
 {
 	ipq40xx_switch_init = sw_init;
 }
@@ -930,7 +925,7 @@ int ipq40xx_edma_init(ipq40xx_edma_board_cfg_t *edma_cfg)
 		c_info[i]->q_cinfo[i].rx_status = 0;
 		c_info[i]->q_cinfo[i].c_info = c_info[i];
 
-		ret = ipq40xx_sw_mdio_init(edma_cfg->phy_name);
+		ret = ipq_sw_mdio_init(edma_cfg->phy_name);
 		if (ret)
 			goto failed;
 
@@ -955,7 +950,7 @@ int ipq40xx_edma_init(ipq40xx_edma_board_cfg_t *edma_cfg)
 		eth_register(dev[i]);
 
 		if (!sw_init_done) {
-			if (ipq40xx_switch_init(ipq40xx_edma_dev[i]) == 0) {
+			if (ipq40xx_switch_init(&ipq40xx_edma_dev[i]->ops) == 0) {
 				sw_init_done = 1;
 			} else {
 				printf ("SW inits failed\n");

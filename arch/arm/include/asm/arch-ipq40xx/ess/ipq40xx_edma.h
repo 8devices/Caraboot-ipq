@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2017, The Linux Foundation. All rights reserved.
 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -326,65 +326,16 @@
 #define PATTERN_PART_REG_OFFSET		0x40
 
 #define NETDEV_TX_BUSY	1
-#define PHY_MAX		5
-#define GCC_ESS_BCR		0x01812008
-#define GCC_MDIO_AHB_CBCR	0x1826000
-#define MDIO_CTRL_0_REG		0x00090040
-#define MDIO_CTRL_0_DIV(x)	(x << 0)
-#define MDIO_CTRL_0_MODE	(1 << 8)
-#define MDIO_CTRL_0_RES(x)	(x << 9)
-#define MDIO_CTRL_0_MDC_MODE	(1 << 12)
-#define MDIO_CTRL_0_GPHY(x)	(x << 13)
-#define MDIO_CTRL_0_RES1(x)	(x << 17)
-
-#define GP_PULL_DOWN		1
-#define GP_OE_EN		(1 << 9)
-#define GP_VM_EN		(1 << 11)
-#define GP_PU_RES(x)		(x << 13)
-#define QCA8075_RST_VAL		(GP_PULL_DOWN | GP_OE_EN | \
-				GP_VM_EN | GP_PU_RES(2))
-
-/* Phy preferred medium type */
-typedef enum {
-	QCA8075_PHY_MEDIUM_COPPER = 0,
-	QCA8075_PHY_MEDIUM_FIBER = 1, /**< Fiber */
-} qca8075_phy_medium_t;
-
-/* Phy pages */
-typedef enum {
-	QCA8075_PHY_SGBX_PAGES = 0, /* sgbx pages */
-	QCA8075_PHY_COPPER_PAGES = 1 /* copper pages */
-} qca8075_phy_reg_pages_t;
-typedef enum {
-	FAL_HALF_DUPLEX = 0,
-	FAL_FULL_DUPLEX,
-	FAL_DUPLEX_BUTT = 0xffff
-} fal_port_duplex_t;
-
-typedef enum {
-	FAL_SPEED_10 = 10,
-	FAL_SPEED_100 = 100,
-	FAL_SPEED_1000 = 1000,
-	FAL_SPEED_10000 = 10000,
-	FAL_SPEED_BUTT = 0xffff,
-} fal_port_speed_t;
-
-typedef enum {
-	FAL_CABLE_STATUS_NORMAL = 0,
-	FAL_CABLE_STATUS_SHORT = 1,
-	FAL_CABLE_STATUS_OPENED = 2,
-	FAL_CABLE_STATUS_INVALID = 3,
-	FAL_CABLE_STATUS_BUTT = 0xffff,
-} fal_cable_status_t;
-
-struct phy_ops {
-	u8 (*phy_get_link_status) (u32 dev_id, u32 phy_id);
-	u32 (*phy_get_duplex) (u32 dev_id, u32 phy_id,
-				fal_port_duplex_t * duplex);
-	u32 (*phy_get_speed) (u32 dev_id, u32 phy_id,
-				fal_port_speed_t * speed);
-};
+#define GCC_ESS_BCR        0x01812008
+#define GCC_MDIO_AHB_CBCR  0x1826000
 
 int get_eth_mac_address(uchar *enetaddr, uint no_of_macs);
-int ipq40xx_sw_mdio_init(const char *name);
+extern int ipq_sw_mdio_init(const char *name);
+extern int ipq40xx_ess_sw_init(ipq40xx_edma_board_cfg_t *cfg);
+extern void ipq40xx_ess_enable_lookup(void);
+extern void ipq40xx_ess_disable_lookup(void);
+extern void psgmii_self_test(void);
+extern void clear_self_test_config(void);
+extern void qca8075_ess_reset(void);
+
 #endif	/* _IPQ40XX_EDMA_H */
