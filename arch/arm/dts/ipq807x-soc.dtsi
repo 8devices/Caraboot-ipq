@@ -74,7 +74,7 @@
 
 			gpio3 {
 				gpio = <40>;
-				func = <3>;
+				func = <2>;
 				pull = <GPIO_PULL_UP>;
 				drvstr = <GPIO_2MA>;
 				oe = <GPIO_OE_DISABLE>;
@@ -85,7 +85,7 @@
 
 			gpio4 {
 				gpio = <41>;
-				func = <3>;
+				func = <2>;
 				pull = <GPIO_PULL_UP>;
 				drvstr = <GPIO_2MA>;
 				oe = <GPIO_OE_DISABLE>;
