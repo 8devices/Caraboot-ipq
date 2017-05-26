@@ -36,8 +36,9 @@ extern int ipq807x_edma_init(void *cfg);
 
 const char *rsvd_node = "/reserved-memory";
 const char *del_node[] = {"uboot",
-			  "sbl"};
-const add_node_t add_node[] = {};
+			  "sbl",
+			  NULL};
+const add_node_t add_node[] = {{}};
 
 struct dumpinfo_t dumpinfo[] = {
 	{ "EBICS0.BIN", 0x40000000, 0x10000000, 0 },
