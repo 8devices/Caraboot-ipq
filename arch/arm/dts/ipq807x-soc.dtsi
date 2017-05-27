@@ -225,6 +225,24 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		reg = <0x78b6000 0x600>;
+		clock-frequency  = <100000>;
+
+		i2c_gpio {
+			gpio1 {
+				gpio = <42>;
+				func = <2>;
+				pull = <GPIO_NO_PULL>;
+				oe = <GPIO_OE_ENABLE>;
+			};
+
+			gpio2 {
+				gpio = <43>;
+				func = <2>;
+				pull = <GPIO_NO_PULL>;
+				oe = <GPIO_OE_ENABLE>;
+			};
+
+		};
 	};
 
 	pci@20000000 {
