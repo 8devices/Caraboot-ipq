@@ -25,6 +25,7 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+#define GCNT_PSHOLD             0x004AB000
 qca_mmc mmc_host;
 
 extern loff_t board_env_offset;
@@ -70,6 +71,7 @@ unsigned long timer_read_counter(void)
 
 void reset_cpu(unsigned long a)
 {
+	writel(0, GCNT_PSHOLD);
 	while(1);
 }
 
