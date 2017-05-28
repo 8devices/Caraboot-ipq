@@ -302,7 +302,7 @@ typedef struct {
 	uint mac_conn_to_phy;
 	phy_interface_t phy;
 	ipq807x_edma_phy_addr_t phy_addr;
-	const char phy_name[MDIO_NAME_LEN];
+	char phy_name[MDIO_NAME_LEN];
 } ipq807x_edma_board_cfg_t;
 
 extern void ipq807x_ppe_provision_init(void);

@@ -35,7 +35,9 @@
 #define pr_info(fmt, args...) printf(fmt, ##args);
 #define pr_warn(fmt, args...) printf(fmt, ##args);
 
+#ifndef CONFIG_IPQ807X_BRIDGED_MODE
 #define IPQ807X_EDMA_MAC_PORT_NO	3
+#endif
 
 static struct ipq807x_eth_dev *ipq807x_edma_dev[IPQ807X_EDMA_DEV];
 
@@ -46,6 +48,7 @@ extern void qca8075_ess_reset(void);
 extern void psgmii_self_test(void);
 extern void clear_self_test_config(void);
 extern int ipq_sw_mdio_init(const char *);
+extern void ipq_qca8075_dump_phy_regs(u32);
 
 void ipq807x_register_switch(int(*sw_init)(struct phy_ops **ops))
 {
@@ -257,7 +260,7 @@ uint32_t ipq807x_edma_clean_tx(struct ipq807x_edma_hw *ehw,
  * ipq807x_edma_clean_rx()
  *	Reap Rx descriptors
  */
-static uint32_t ipq807x_edma_clean_rx(struct ipq807x_edma_common_info *c_info,
+uint32_t ipq807x_edma_clean_rx(struct ipq807x_edma_common_info *c_info,
 				struct ipq807x_edma_rxdesc_ring *rxdesc_ring)
 {
 	void *skb;
@@ -858,6 +861,57 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 	struct ipq807x_edma_hw *ehw = &c_info->hw;
 	int i;
 	uint32_t data;
+	u8 status;
+	struct phy_ops *phy_get_ops;
+	fal_port_speed_t speed;
+	fal_port_duplex_t duplex;
+	char *lstatus[] = {"up", "Down"};
+	char *dp[] = {"Half", "Full"};
+	int linkup=0;
+
+	if (!priv->ops) {
+		printf ("Phy ops not mapped\n");
+		return -1;
+	}
+
+	phy_get_ops = priv->ops;
+
+	if (!phy_get_ops->phy_get_link_status ||
+	    !phy_get_ops->phy_get_speed ||
+	    !phy_get_ops->phy_get_duplex) {
+		printf ("Link status/Get speed/Get duplex not mapped\n");
+		return -1;
+	}
+
+	/*
+	 * Check PHY link, speed, Duplex on all phys.
+	 * we will proceed even if single link is up
+	 * else we will return with -1;
+	 */
+	for (i =  0; i < PHY_MAX; i++) {
+		status = phy_get_ops->phy_get_link_status(priv->mac_unit, i);
+		if (status == 0)
+			linkup++;
+		phy_get_ops->phy_get_speed(priv->mac_unit, i, &speed);
+		phy_get_ops->phy_get_duplex(priv->mac_unit, i, &duplex);
+		switch (speed) {
+		case FAL_SPEED_10:
+		case FAL_SPEED_100:
+		case FAL_SPEED_1000:
+			printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
+				priv->mac_unit, i, lstatus[status], speed,
+				dp[duplex]);
+			break;
+		default:
+			printf("Unknown speed\n");
+			break;
+		}
+	}
+
+	if (linkup <= 0) {
+		/* No PHY link is alive */
+		return -1;
+	}
 
 	/*
 	 * Alloc Rx buffers
@@ -1474,6 +1528,7 @@ int ipq807x_edma_init(void *edma_board_cfg)
 	memset(enet_addr, 0, sizeof(enet_addr));
 	memset(&ledma_cfg, 0, sizeof(ledma_cfg));
 	edma_cfg = &ledma_cfg;
+	strcpy(edma_cfg->phy_name, "IPQ MDIO0");
 
 	/* Getting the MAC address from ART partition */
 	/* ret = get_eth_mac_address(enet_addr, IPQ807X_EDMA_DEV); */
@@ -1548,24 +1603,6 @@ int ipq807x_edma_init(void *edma_board_cfg)
 		if (ret)
 			goto init_failed;
 
-		switch (edma_cfg->phy) {
-		case PHY_INTERFACE_MODE_PSGMII:
-			writel(PSGMIIPHY_PLL_VCO_VAL,
-				PSGMIIPHY_PLL_VCO_RELATED_CTRL);
-			writel(PSGMIIPHY_VCO_VAL,
-				PSGMIIPHY_VCO_CALIBRATION_CTRL);
-			/* wait for 10ms */
-			mdelay(10);
-			writel(PSGMIIPHY_VCO_RST_VAL, PSGMIIPHY_VCO_CALIBRATION_CTRL);
-			break;
-		case PHY_INTERFACE_MODE_RGMII:
-			writel(0x1, RGMII_TCSR_ESS_CFG);
-			writel(0x400, ESS_RGMII_CTRL);
-			break;
-		default:
-			printf("unknown MII interface\n");
-			goto init_failed;
-		}
 
 		if (!sw_init_done) {
 			if (ipq807x_switch_init(&ipq807x_edma_dev[i]->ops) == 0) {
@@ -1576,13 +1613,6 @@ int ipq807x_edma_init(void *edma_board_cfg)
 			}
 		}
 
-		if(edma_cfg->phy == PHY_INTERFACE_MODE_PSGMII) {
-			qca8075_ess_reset();
-			mdelay(100);
-			psgmii_self_test();
-			mdelay(300);
-			clear_self_test_config();
-		}
 		ret = ipq807x_edma_hw_init(hw[i]);
 
 		if (ret)

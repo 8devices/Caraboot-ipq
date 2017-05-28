@@ -917,7 +917,7 @@ init_fnc_t init_sequence_r[] = {
 #endif
 #ifdef CONFIG_CMD_NET
 	INIT_FUNC_WATCHDOG_RESET
-	//initr_net,
+	initr_net,
 #endif
 #ifdef CONFIG_POST
 	initr_post,

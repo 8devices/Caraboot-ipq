@@ -714,6 +714,20 @@ void clear_self_test_config(void)
 }
 
 
+void ipq_qca8075_dump_phy_regs(u32 phy_id)
+{
+	u16 phy_data;
+#define REG_LEN 9
+	u32 regs[REG_LEN] = { 0, 1, 2, 3, 4, 5, 6, 9, 10 };
+	int i;
+
+	for (i=0; i < REG_LEN; i++) {
+		phy_data = qca8075_phy_reg_read(0x0, phy_id, regs[i]);
+		printf("phy[%d] reg [%d] = 0x%x\n", phy_id, regs[i], phy_data);
+	}
+#undef REG_LEN
+}
+
 int ipq_qca8075_phy_init(struct phy_ops **ops)
 {
 	u16 phy_data;
@@ -744,13 +758,6 @@ int ipq_qca8075_phy_init(struct phy_ops **ops)
 	}
 
 	/*
-	 * Enable AZ transmitting ability
-	 */
-	qca8075_phy_mmd_write(0, PSGMII_ID, QCA8075_PHY_MMD1_NUM,
-				QCA8075_PSGMII_MODE_CTRL,
-				QCA8075_PHY_PSGMII_MODE_CTRL_ADJUST_VALUE);
-
-	/*
 	 * Enable phy power saving function by default
 	 */
 	if (qca8075_id == QCA8075_PHY_V1_1_2P)
@@ -760,12 +767,44 @@ int ipq_qca8075_phy_init(struct phy_ops **ops)
 	    (qca8075_id == QCA8075_PHY_V1_1_5P) ||
 	    (qca8075_id == QCA8075_PHY_V1_1_2P)) {
 		for (; phy_id < 5; phy_id++) {
+			/*enable phy power saving function by default */
 			qca8075_phy_set_8023az(0x0, phy_id, 0x1);
 			qca8075_phy_set_powersave(0x0, phy_id, 0x1);
 			qca8075_phy_set_hibernate(0x0, phy_id, 0x1);
+
+			/*
+			 * change malibu control_dac[2:0] of MMD7 0x801A bit[9:7] 
+			 * from 111 to 101
+			 */
+			phy_data = qca8075_phy_mmd_read(0, phy_id,
+				QCA8075_PHY_MMD7_NUM, QCA8075_PHY_MMD7_DAC_CTRL);
+			phy_data &= ~QCA8075_DAC_CTRL_MASK;
+			phy_data |= QCA8075_DAC_CTRL_VALUE;
+			qca8075_phy_mmd_write(0, phy_id, QCA8075_PHY_MMD7_NUM,
+				QCA8075_PHY_MMD7_DAC_CTRL, phy_data);
+
+			/* add 10M and 100M link LED behavior for QFN board*/
+			phy_data = qca8075_phy_mmd_read(0, phy_id, QCA8075_PHY_MMD7_NUM,
+				QCA8075_PHY_MMD7_LED_1000_CTRL1);
+			phy_data &= ~QCA8075_LED_1000_CTRL1_100_10_MASK;
+			phy_data |= QCA8075_LED_1000_CTRL1_100_10_MASK;
+			qca8075_phy_mmd_write(0 , phy_id, QCA8075_PHY_MMD7_NUM,
+				QCA8075_PHY_MMD7_LED_1000_CTRL1, phy_data);
 		}
 	}
 
+	/*
+	 * Enable AZ transmitting ability
+	 */
+	qca8075_phy_mmd_write(0, PSGMII_ID, QCA8075_PHY_MMD1_NUM,
+				QCA8075_PSGMII_MODE_CTRL,
+				QCA8075_PHY_PSGMII_MODE_CTRL_ADJUST_VALUE);
+
+	/* adjust psgmii serdes tx amp */
+	qca8075_phy_reg_write(0, 5, QCA8075_PSGMII_TX_DRIVER_1_CTRL,
+				QCA8075_PHY_PSGMII_REDUCE_SERDES_TX_AMP);
+
+	/* to avoid psgmii module goes into hibernation, work with psgmii self test*/
 	phy_data = qca8075_phy_mmd_read(0, 4, QCA8075_PHY_MMD3_NUM, 0x805a);
 	phy_data &= (~(1 << 1));
 	qca8075_phy_mmd_write(0, 4, QCA8075_PHY_MMD3_NUM, 0x805a, phy_data);

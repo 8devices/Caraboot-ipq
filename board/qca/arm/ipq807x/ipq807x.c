@@ -130,17 +130,22 @@ void board_mmc_deinit(void)
 
 int board_eth_init(bd_t *bis)
 {
-	int ret;
+	int ret=0;
+	int tlmm_base = 0x1025000;
+
+	ipq807x_register_switch(ipq_qca8075_phy_init);
+
+	/* bring phy out of reset */
+	writel(0x203, tlmm_base);
+	writel(0, tlmm_base + 0x4);
+	writel(2, tlmm_base + 0x4);
+	writel(7, tlmm_base + 0x1f000);
+	writel(7, tlmm_base + 0x20000);
 
 	ret = ipq807x_edma_init(NULL);
 
 	if (ret != 0)
 		printf("%s: ipq807x_edma_init failed : %d\n", __func__, ret);
-
-	/* 8075 out of reset */
-	mdelay(100);
-	gpio_set_value(37, 1);
-	ipq807x_register_switch(ipq_qca8075_phy_init);
 
 	return ret;
 }
