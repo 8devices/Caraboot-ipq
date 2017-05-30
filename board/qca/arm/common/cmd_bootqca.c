@@ -155,6 +155,70 @@ static int inline do_dumpipq_data(void)
 	}
 	return CMD_RET_SUCCESS;
 }
+
+void dump_func(void)
+{
+	uint64_t etime;
+
+	etime = get_timer_masked() + (10 * CONFIG_SYS_HZ);
+	printf("\nCrashdump magic found."
+		"\nHit any key within 10s to stop dump activity...");
+	while (!tstc()) {       /* while no incoming data */
+		if (get_timer_masked() >= etime) {
+			if (do_dumpipq_data() == CMD_RET_FAILURE)
+				return;
+			break;
+		}
+	}
+	/* reset the system, some images might not be loaded
+	 * when crashmagic is found
+	 */
+	run_command("reset", 0);
+	return;
+}
+
+void qca_appsbl_dload(void) {
+	int ret = 0;
+	u32 rsp = 0;
+	u32 *addr = (u32 *) 0x193D100;
+	volatile u32 val;
+	unsigned long * dmagic1 = (unsigned long *) 0x2A03F000;
+	unsigned long * dmagic2 = (unsigned long *) 0x2A03F004;
+
+#ifdef CONFIG_SCM_TZ64
+	ret = qca_scm_call_read(SCM_SVC_IO, SCM_IO_READ, addr, &rsp);
+	if (rsp == DLOAD_MAGIC_COOKIE) {
+		val = 0x0;
+
+		ret = qca_scm_call_write(SCM_SVC_IO, SCM_IO_WRITE, addr, val);
+		if (ret)
+			printf ("Error in reseting the Magic cookie\n");
+		dump_func();
+	}
+#else
+	ret = qca_scm_call(SCM_SVC_BOOT, SCM_SVC_RD, (void *)&val, sizeof(val));
+	if (ret) {
+		if (*dmagic1 == 0xE47B337D && *dmagic2 == 0x0501CAB0) {
+			/* clear the magic and run the dump command */
+			*dmagic1 = 0;
+			*dmagic2 = 0;
+			dump_func();
+		}
+	}
+	else {
+		/* check if we are in download mode */
+		if (val == DLOAD_MAGIC_COOKIE) {
+			/* clear the magic and run the dump command */
+			val = 0x0;
+
+			ret = qca_scm_call(SCM_SVC_BOOT, SCM_SVC_WR, (void *)&val, sizeof(val));
+			if (ret)
+				printf ("Error in reseting the Magic cookie\n");
+			dump_func();
+		}
+	}
+#endif
+}
 #endif
 
 /*
@@ -271,36 +335,8 @@ int config_select(unsigned int addr, char *rcmd, int rcmd_size)
 	return -1;
 }
 
-void dump_func(void)
-{
-#ifdef CONFIG_QCA_APPSBL_DLOAD
-	uint64_t etime;
-#endif
-	etime = get_timer_masked() + (10 * CONFIG_SYS_HZ);
-	printf("\nCrashdump magic found."
-		"\nHit any key within 10s to stop dump activity...");
-	while (!tstc()) {       /* while no incoming data */
-		if (get_timer_masked() >= etime) {
-			if (do_dumpipq_data() == CMD_RET_FAILURE)
-				return;
-			break;
-		}
-	}
-	/* reset the system, some images might not be loaded
-	 * when crashmagic is found
-	 */
-	run_command("reset", 0);
-	return;
-}
-
-
 static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
-#ifdef CONFIG_QCA_APPSBL_DLOAD
-	volatile u32 val;
-	unsigned long * dmagic1 = (unsigned long *) 0x2A03F000;
-	unsigned long * dmagic2 = (unsigned long *) 0x2A03F004;
-#endif
 	char runcmd[256];
 	int ret;
 	unsigned int request;
@@ -314,27 +350,7 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 		debug = 1;
 
 #ifdef CONFIG_QCA_APPSBL_DLOAD
-
-	ret = qca_scm_call(SCM_SVC_BOOT, SCM_SVC_RD, (void *)&val, sizeof(val));
-	if (ret) {
-		if (*dmagic1 == 0xE47B337D && *dmagic2 == 0x0501CAB0) {
-			/* clear the magic and run the dump command */
-			*dmagic1 = 0;
-			*dmagic2 = 0;
-			dump_func();
-		}
-	}
-	else {
-		/* check if we are in download mode */
-		if (val == DLOAD_MAGIC_COOKIE) {
-			/* clear the magic and run the dump command */
-			val = 0x0;
-			ret = qca_scm_call(SCM_SVC_BOOT, SCM_SVC_WR, (void *)&val, sizeof(val));
-			if (ret)
-				printf ("Error in reseting the Magic cookie\n");
-			dump_func();
-		}
-	}
+	qca_appsbl_dload();
 #endif
 	if ((ret = set_fs_bootargs(&ipq_fs_on_nand)))
 		return ret;
@@ -477,11 +493,6 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 
 static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
-#ifdef CONFIG_QCA_APPSBL_DLOAD
-	volatile u32 val;
-	unsigned long * dmagic1 = (unsigned long *) 0x2A03F000;
-	unsigned long * dmagic2 = (unsigned long *) 0x2A03F004;
-#endif
 	int ret;
 	char runcmd[256];
 #ifdef CONFIG_QCA_MMC
@@ -493,27 +504,7 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 	if (argc == 2 && strncmp(argv[1], "debug", 5) == 0)
 		debug = 1;
 #ifdef CONFIG_QCA_APPSBL_DLOAD
-	ret = qca_scm_call(SCM_SVC_BOOT, SCM_SVC_RD, (void *)&val, sizeof(val));
-	if (ret) {
-		if (*dmagic1 == 0xE47B337D && *dmagic2 == 0x0501CAB0) {
-		/* clear the magic and run the dump command */
-			*dmagic1 = 0;
-			*dmagic2 = 0;
-			dump_func();
-		}
-	}
-	else {
-		/* check if we are in download mode */
-		if (val == DLOAD_MAGIC_COOKIE) {
-			/* clear the magic and run the dump command */
-			val = 0x0;
-			ret = qca_scm_call(SCM_SVC_BOOT, SCM_SVC_WR, (void *)&val, sizeof(val));
-			if (ret)
-				printf ("Error in reseting the Magic cookie\n");
-			dump_func();
-		}
-	}
-
+	qca_appsbl_dload();
 #endif
 
 	if ((ret = set_fs_bootargs(&ipq_fs_on_nand)))

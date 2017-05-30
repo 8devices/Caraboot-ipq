@@ -328,7 +328,7 @@ int qca_scm_call(u32 svc_id, u32 cmd_id, void *buf, size_t len)
 	int ret = 0;
 
 	desc.arginfo = QCA_SCM_ARGS(2, SCM_READ_OP);
-	desc.args[0] = buf;
+	desc.args[0] = (u32)buf;
 	desc.args[1] = len;
 #ifdef CONFIG_SCM_TZ64
 	ret = scm_call_64(svc_id, cmd_id, &desc);
@@ -336,4 +336,50 @@ int qca_scm_call(u32 svc_id, u32 cmd_id, void *buf, size_t len)
 	ret = scm_call(svc_id, cmd_id, NULL, 0, buf, len);
 #endif
 	return ret;
+}
+
+int qca_scm_call_read(u32 svc_id, u32 cmd_id, u32 *addr, u32 *rsp)
+{
+	struct qca_scm_desc desc = {0};
+	int ret = 0;
+
+	desc.arginfo = QCA_SCM_ARGS(1, SCM_READ_OP);
+	desc.args[0] = (u32)addr;
+#ifdef CONFIG_SCM_TZ64
+	ret = scm_call_64(svc_id, cmd_id, &desc);
+	if (!ret)
+		*rsp = desc.ret[0];
+#endif
+	return ret;
+}
+
+int qca_scm_call_write(u32 svc_id, u32 cmd_id, u32 *addr, u32 val)
+{
+	struct qca_scm_desc desc = {0};
+	int ret = 0;
+
+	desc.arginfo = QCA_SCM_ARGS(2, SCM_READ_OP);
+	desc.args[0] = (u32)addr;
+	desc.args[1] = val;
+#ifdef CONFIG_SCM_TZ64
+	ret = scm_call_64(svc_id, cmd_id, &desc);
+#endif
+	return ret;
+}
+
+int qca_scm_sdi_v8(void)
+{
+	struct qca_scm_desc desc = {0};
+	int ret;
+
+	desc.args[0] = 1ul;    /* Disable wdog debug */
+	desc.args[1] = 0ul;    /* SDI Enable */
+	desc.arginfo = QCA_SCM_ARGS(2, SCM_VAL, SCM_VAL);
+	ret = scm_call_64(SCM_SVC_BOOT,
+			     SCM_CMD_TZ_CONFIG_HW_FOR_RAM_DUMP_ID, &desc);
+
+	if (ret)
+		return ret;
+
+	return le32_to_cpu(desc.ret[0]);
 }

@@ -269,6 +269,7 @@ extern loff_t board_env_offset;
 /*
  * CRASH DUMP ENABLE
  */
+#define CONFIG_QCA_APPSBL_DLOAD
 
 #define CONFIG_QCA_APPSBL_DLOAD 0
 
