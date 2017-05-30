@@ -439,7 +439,7 @@ static int initr_onenand(void)
 static int initr_mmc(void)
 {
 	puts("MMC:   ");
-	//mmc_initialize(gd->bd);
+	mmc_initialize(gd->bd);
 	return 0;
 }
 #endif
