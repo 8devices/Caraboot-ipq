@@ -204,7 +204,7 @@ void board_nand_init(void)
 {
 	int gpio_node;
 
-//	qpic_nand_init();
+	qpic_nand_init();
 
 	gpio_node = fdt_path_offset(gd->fdt_blob, "/spi/spi_gpio");
 	if (gpio_node >= 0) {
