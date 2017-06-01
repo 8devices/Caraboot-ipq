@@ -1531,7 +1531,7 @@ int ipq807x_edma_init(void *edma_board_cfg)
 	strcpy(edma_cfg->phy_name, "IPQ MDIO0");
 
 	/* Getting the MAC address from ART partition */
-	/* ret = get_eth_mac_address(enet_addr, IPQ807X_EDMA_DEV); */
+	ret = get_eth_mac_address(enet_addr, IPQ807X_EDMA_DEV);
 
 	/*
 	 * Register EDMA as single ethernet
