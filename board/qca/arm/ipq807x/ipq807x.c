@@ -20,6 +20,7 @@
 #include <asm/arch-qca-common/gpio.h>
 #include <asm/arch-qca-common/uart.h>
 #include <asm/arch-qca-common/smem.h>
+#include <asm/arch-qca-common/scm.h>
 #include <fdtdec.h>
 #include <mmc.h>
 
@@ -70,15 +71,22 @@ unsigned long timer_read_counter(void)
 	return 0;
 }
 
-void reset_cpu(unsigned long a)
-{
-	writel(0, GCNT_PSHOLD);
-	while(1);
-}
-
 void reset_crashdump(void)
 {
+	unsigned int ret = 0;
+	qca_scm_sdi_v8();
+	ret = qca_scm_call_write(SCM_SVC_IO, SCM_IO_WRITE,
+				 0x193D100, CLEAR_MAGIC);
+	if (ret)
+		printf ("Error in reseting the Magic cookie\n");
 	return;
+}
+
+void reset_cpu(unsigned long a)
+{
+	reset_crashdump();
+	writel(0, GCNT_PSHOLD);
+	while(1);
 }
 
 void emmc_clock_config(int mode)

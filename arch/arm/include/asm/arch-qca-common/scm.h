@@ -28,6 +28,11 @@
 #define SCM_SVC_RD			0x12
 #define QFPROM_IS_AUTHENTICATE_CMD	0x7
 
+/* scm_v8 */
+#define SCM_VAL				0x0
+#define SCM_IO_READ			0x1
+#define SCM_IO_WRITE			0x2
+
 #define CE_CHN_SWITCH_CMD		0x2
 
 #define SCM_EBUSY		-6
@@ -90,6 +95,10 @@ int scm_init(void);
 extern int scm_call(u32 svc_id, u32 cmd_id, const void *cmd_buf, size_t cmd_len,
 		void *resp_buf, size_t resp_len);
 extern int qca_scm_call(u32 svc_id, u32 cmd_id, void *buf, size_t len);
+
+int qca_scm_call_write(u32, u32, u32 *, u32);
+int qca_scm_call_read(u32, u32, u32 *, u32 *);
+int qca_scm_sdi_v8(void);
 
 #define MAX_QCA_SCM_RETS		3
 #define MAX_QCA_SCM_ARGS		10
