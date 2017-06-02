@@ -90,8 +90,78 @@ DECLARE_GLOBAL_DATA_PTR;
 #define PCIE20_SIZE   			SZ_4K
 #define PCIE_AXI_CONF_SIZE   		SZ_1M
 
+#define PCIE_USB3_PCS_POWER_DOWN_CONTROL		0x804
+#define QSERDES_COM_BIAS_EN_CLKBUFLR_EN			0x34
+#define QSERDES_COM_CLK_ENABLE1				0x38
+#define QSERDES_COM_BG_TRIM				0x70
+#define QSERDES_COM_LOCK_CMP_EN				0xC8
+#define QSERDES_COM_VCO_TUNE_MAP			0x128
+#define QSERDES_COM_VCO_TUNE_TIMER1			0x144
+#define QSERDES_COM_VCO_TUNE_TIMER2			0x144
+#define QSERDES_COM_CMN_CONFIG				0x194
+#define QSERDES_COM_PLL_IVCO				0x48
+#define QSERDES_COM_HSCLK_SEL				0x178
+#define QSERDES_COM_SVS_MODE_CLK_SEL			0x19C
+#define QSERDES_COM_CORE_CLK_EN				0x18C
+#define QSERDES_COM_CORECLK_DIV				0x184
+#define QSERDES_COM_RESETSM_CNTRL			0xB4
+#define QSERDES_COM_BG_TIMER				0xC
+#define QSERDES_COM_SYSCLK_EN_SEL			0xAC
+#define QSERDES_COM_DEC_START_MODE0			0xD0
+#define QSERDES_COM_DIV_FRAC_START3_MODE0		0xE4
+#define QSERDES_COM_DIV_FRAC_START2_MODE0		0xE0
+#define QSERDES_COM_DIV_FRAC_START1_MODE0		0xDC
+#define QSERDES_COM_LOCK_CMP3_MODE0			0x54
+#define QSERDES_COM_LOCK_CMP2_MODE0			0x50
+#define QSERDES_COM_LOCK_CMP1_MODE0			0x4C
+#define QSERDES_COM_CLK_SELECT				0x174
+#define QSERDES_COM_SYS_CLK_CTRL			0x3C
+#define QSERDES_COM_SYSCLK_BUF_ENABLE			0x40
+#define QSERDES_COM_CP_CTRL_MODE0			0x78
+#define QSERDES_COM_PLL_RCTRL_MODE0			0x84
+#define QSERDES_COM_PLL_CCTRL_MODE0			0x90
+#define QSERDES_COM_INTEGLOOP_GAIN1_MODE0		0x10C
+#define QSERDES_COM_INTEGLOOP_GAIN0_MODE0		0x108
+#define QSERDES_COM_BIAS_EN_CTRL_BY_PSM			0xA8
+#define QSERDES_COM_VCO_TUNE_CTRL			0xC
+#define QSERDES_COM_SSC_EN_CENTER			0x10
+#define QSERDES_COM_SSC_PER1				0x1C
+#define QSERDES_COM_SSC_PER2				0x20
+#define QSERDES_COM_SSC_ADJ_PER1			0x14
+#define QSERDES_COM_SSC_ADJ_PER2			0x18
+#define QSERDES_COM_SSC_STEP_SIZE1			0x24
+#define QSERDES_COM_SSC_STEP_SIZE2			0x28
+#define QSERDES_TX_HIGHZ_TRANSCEIVEREN_BIAS_DRVR_EN     0x268
+#define QSERDES_TX_LANE_MODE                            0x294
+#define QSERDES_TX_RES_CODE_LANE_OFFSET                 0x254
+#define QSERDES_TX_RCV_DETECT_LVL_2                     0x2AC
+#define QSERDES_RX_SIGDET_ENABLES                       0x510
+#define QSERDES_RX_SIGDET_DEGLITCH_CNTRL                0x51C
+#define QSERDES_RX_RX_EQU_ADAPTOR_CNTRL2                0x4D8
+#define QSERDES_RX_RX_EQU_ADAPTOR_CNTRL3                0x4DC
+#define QSERDES_RX_RX_EQU_ADAPTOR_CNTRL4                0x4E0
+#define QSERDES_RX_UCDR_SO_SATURATION_AND_ENABLE        0x448
+#define QSERDES_RX_UCDR_SO_GAIN                         0x41C
+#define QSERDES_RX_UCDR_SO_GAIN_HALF                    0x410
+#define QSERDES_COM_CLK_EP_DIV                          0x74
+#define PCIE_USB3_PCS_ENDPOINT_REFCLK_DRIVE             0x854
+#define PCIE_USB3_PCS_OSC_DTCT_ACTIONS                  0x9AC
+#define PCIE_USB3_PCS_PWRUP_RESET_DLY_TIME_AUXCLK       0x8A0
+#define PCIE_USB3_PCS_L1SS_WAKEUP_DLY_TIME_AUXCLK_MSB   0x9E0
+#define PCIE_USB3_PCS_L1SS_WAKEUP_DLY_TIME_AUXCLK_LSB   0x9DC
+#define PCIE_USB3_PCS_PLL_LOCK_CHK_DLY_TIME_AUXCLK_LSB  0x9A8
+#define PCIE_USB3_PCS_LP_WAKEUP_DLY_TIME_AUXCLK         0x8A4
+#define PCIE_USB3_PCS_PLL_LOCK_CHK_DLY_TIME             0x8A8
+#define QSERDES_RX_SIGDET_CNTRL                         0x514
+#define PCIE_USB3_PCS_RX_SIGDET_LVL                     0x9D8
+#define PCIE_USB3_PCS_TXDEEMPH_M6DB_V0                  0x824
+#define PCIE_USB3_PCS_TXDEEMPH_M3P5DB_V0                0x828
+#define PCIE_USB3_PCS_SW_RESET                          0x800
+#define PCIE_USB3_PCS_START_CONTROL                     0x808
+
 static unsigned int local_buses[] = { 0, 0 };
 struct pci_controller pci_hose[PCI_MAX_DEVICES];
+static int phy_initialised;
 
 enum pcie_verion{
 	PCIE_V0,
@@ -106,6 +176,10 @@ static const struct udevice_id pcie_ver_ids[] = {
 	{ },
 };
 
+struct phy_regs {
+	u32 reg_offset;
+	u32 val;
+};
 
 struct ipq_pcie {
 	struct pci_controller hose;
@@ -115,6 +189,7 @@ struct ipq_pcie {
 	struct fdt_resource axi_conf;
 	struct fdt_resource axi_bars;
 	struct fdt_resource pci_rst;
+	struct fdt_resource pci_phy;
 
 	int rst_gpio;
 	int linkup;
@@ -328,8 +403,11 @@ void pcie_linkup(struct ipq_pcie *pcie)
 {
 	int j, val;
 
-	writel(SLV_ADDR_SPACE_SZ, pcie->parf.start + PARF_SLV_ADDR_SPACE_SIZE);
-	mdelay(100);
+	if (pcie->version != PCIE_V2)
+	{
+		writel(SLV_ADDR_SPACE_SZ, pcie->parf.start + PARF_SLV_ADDR_SPACE_SIZE);
+		mdelay(100);
+	}
 
 	writel(0x0, pcie->pci_dbi.start + PCIE_0_PORT_FORCE_REG);
 	val = (L1_ENTRANCE_LATENCY(3) |
@@ -433,6 +511,12 @@ static int ipq_pcie_parse_dt(const void *fdt, int id,
 		return err;
 	}
 
+	err = fdt_get_named_resource(fdt, node, "reg", "reg-names", "pci_phy",
+				     &pcie->pci_phy);
+	if (err < 0) {
+		error("resource \"cs\" not found");
+		return err;
+	}
 	rst_gpio = fdtdec_get_int(fdt, node, "perst_gpio", 0);
 	if (rst_gpio <= 0) {
 		debug("PCI: Can't get perst_gpio\n");
@@ -522,6 +606,93 @@ void pci_controller_init_v1(struct ipq_pcie *pcie)
 	writel(val, pcie->pci_rst.start);
 }
 
+static const struct phy_regs pcie_phy_regs[] = {
+	{ PCIE_USB3_PCS_POWER_DOWN_CONTROL,			0x00000003 },
+	{ QSERDES_COM_BIAS_EN_CLKBUFLR_EN,			0x00000018 },
+	{ QSERDES_COM_CLK_ENABLE1,				0x00000010 },
+	{ QSERDES_COM_BG_TRIM,					0x0000000f },
+	{ QSERDES_COM_LOCK_CMP_EN,				0x00000001 },
+	{ QSERDES_COM_VCO_TUNE_MAP,				0x00000000 },
+	{ QSERDES_COM_VCO_TUNE_TIMER1,				0x000000ff },
+	{ QSERDES_COM_VCO_TUNE_TIMER2,				0x0000001f },
+	{ QSERDES_COM_CMN_CONFIG,				0x00000006 },
+	{ QSERDES_COM_PLL_IVCO,					0x0000000f },
+	{ QSERDES_COM_HSCLK_SEL,				0x00000000 },
+	{ QSERDES_COM_SVS_MODE_CLK_SEL,				0x00000001 },
+	{ QSERDES_COM_CORE_CLK_EN,				0x00000020 },
+	{ QSERDES_COM_CORECLK_DIV,				0x0000000a },
+	{ QSERDES_COM_RESETSM_CNTRL,				0x00000020 },
+	{ QSERDES_COM_BG_TIMER,					0x00000009 },
+	{ QSERDES_COM_SYSCLK_EN_SEL,				0x0000000a },
+	{ QSERDES_COM_DEC_START_MODE0,				0x00000082 },
+	{ QSERDES_COM_DIV_FRAC_START3_MODE0,			0x00000003 },
+	{ QSERDES_COM_DIV_FRAC_START2_MODE0,			0x00000055 },
+	{ QSERDES_COM_DIV_FRAC_START1_MODE0,			0x00000055 },
+	{ QSERDES_COM_LOCK_CMP3_MODE0,				0x00000000 },
+	{ QSERDES_COM_LOCK_CMP2_MODE0,				0x0000000D },
+	{ QSERDES_COM_LOCK_CMP1_MODE0,				0x00000D04 },
+	{ QSERDES_COM_CLK_SELECT,				0x00000033 },
+	{ QSERDES_COM_SYS_CLK_CTRL,				0x00000002 },
+	{ QSERDES_COM_SYSCLK_BUF_ENABLE,			0x0000001f },
+	{ QSERDES_COM_CP_CTRL_MODE0,				0x0000000b },
+	{ QSERDES_COM_PLL_RCTRL_MODE0,				0x00000016 },
+	{ QSERDES_COM_PLL_CCTRL_MODE0,				0x00000028 },
+	{ QSERDES_COM_INTEGLOOP_GAIN1_MODE0,			0x00000000 },
+	{ QSERDES_COM_INTEGLOOP_GAIN0_MODE0,			0x00000080 },
+	{ QSERDES_COM_BIAS_EN_CTRL_BY_PSM,			0x00000001 },
+	{ QSERDES_COM_VCO_TUNE_CTRL,				0x0000000a },
+	{ QSERDES_COM_SSC_EN_CENTER,				0x00000001 },
+	{ QSERDES_COM_SSC_PER1,					0x00000031 },
+	{ QSERDES_COM_SSC_PER2,					0x00000001 },
+	{ QSERDES_COM_SSC_ADJ_PER1,				0x00000002 },
+	{ QSERDES_COM_SSC_ADJ_PER2,				0x00000000 },
+	{ QSERDES_COM_SSC_STEP_SIZE1,				0x0000002f },
+	{ QSERDES_COM_SSC_STEP_SIZE2,				0x00000019 },
+	{ QSERDES_TX_HIGHZ_TRANSCEIVEREN_BIAS_DRVR_EN,		0x00000045 },
+	{ QSERDES_TX_LANE_MODE,					0x00000006 },
+	{ QSERDES_TX_RES_CODE_LANE_OFFSET,			0x00000002 },
+	{ QSERDES_TX_RCV_DETECT_LVL_2,				0x00000012 },
+	{ QSERDES_RX_SIGDET_ENABLES,				0x0000001c },
+	{ QSERDES_RX_SIGDET_DEGLITCH_CNTRL,			0x00000014 },
+	{ QSERDES_RX_RX_EQU_ADAPTOR_CNTRL2,			0x00000001 },
+	{ QSERDES_RX_RX_EQU_ADAPTOR_CNTRL3,			0x00000000 },
+	{ QSERDES_RX_RX_EQU_ADAPTOR_CNTRL4,			0x000000db },
+	{ QSERDES_RX_UCDR_SO_SATURATION_AND_ENABLE,		0x0000004b },
+	{ QSERDES_RX_UCDR_SO_GAIN,				0x00000004 },
+	{ QSERDES_RX_UCDR_SO_GAIN_HALF,				0x00000004 },
+	{ QSERDES_COM_CLK_EP_DIV,				0x00000019 },
+	{ PCIE_USB3_PCS_ENDPOINT_REFCLK_DRIVE,			0x00000004 },
+	{ PCIE_USB3_PCS_OSC_DTCT_ACTIONS,			0x00000000 },
+	{ PCIE_USB3_PCS_PWRUP_RESET_DLY_TIME_AUXCLK,		0x00000040 },
+	{ PCIE_USB3_PCS_L1SS_WAKEUP_DLY_TIME_AUXCLK_MSB,	0x00000000 },
+	{ PCIE_USB3_PCS_L1SS_WAKEUP_DLY_TIME_AUXCLK_LSB,	0x00000040 },
+	{ PCIE_USB3_PCS_PLL_LOCK_CHK_DLY_TIME_AUXCLK_LSB,	0x00000000 },
+	{ PCIE_USB3_PCS_LP_WAKEUP_DLY_TIME_AUXCLK,		0x00000040 },
+	{ PCIE_USB3_PCS_PLL_LOCK_CHK_DLY_TIME,			0x00000073 },
+	{ QSERDES_RX_SIGDET_CNTRL,				0x00000007 },
+	{ PCIE_USB3_PCS_RX_SIGDET_LVL,				0x00000099 },
+	{ PCIE_USB3_PCS_TXDEEMPH_M6DB_V0,			0x00000015 },
+	{ PCIE_USB3_PCS_TXDEEMPH_M3P5DB_V0,			0x0000000e },
+	{ PCIE_USB3_PCS_SW_RESET,				0x00000000 },
+	{ PCIE_USB3_PCS_START_CONTROL,				0x00000003 },
+};
+
+void pcie_phy_init(struct ipq_pcie *pcie)
+{
+	int i;
+	const struct phy_regs *regs = pcie_phy_regs;
+
+	if (!phy_initialised) {
+		writel(0x10000000, pcie->parf.start + 0x358);
+		writel(0x10000000, pcie->parf.start + 0x8358);
+		mdelay(100);
+		phy_initialised = 1;
+	}
+	for (i = 0; i < ARRAY_SIZE(pcie_phy_regs); i++)
+		writel(regs[i].val, pcie->pci_phy.start + regs[i].reg_offset);
+
+}
+
 static int pci_ipq_ofdata_to_platdata(int id, struct ipq_pcie *pcie)
 {
 
@@ -535,6 +706,7 @@ static int pci_ipq_ofdata_to_platdata(int id, struct ipq_pcie *pcie)
 			pcie_linkup(pcie);
 			break;
 		case PCIE_V2:
+			pcie_phy_init(pcie);
 			pcie_linkup(pcie);
 			break;
 		default:
