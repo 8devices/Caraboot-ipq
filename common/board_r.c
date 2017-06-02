@@ -250,7 +250,7 @@ static int initr_unlock_ram_in_cache(void)
 static int initr_pci(void)
 {
 #ifndef CONFIG_DM_PCI
-	//pci_init();
+	pci_init();
 #endif
 
 	return 0;
