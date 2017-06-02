@@ -735,6 +735,7 @@ void pci_init_board (void)
 	}
 
 	for (i = 0; i < PCI_MAX_DEVICES; i++) {
+		pcie->linkup = 0;
 		pci_ipq_ofdata_to_platdata(i, pcie);
 		if (pcie->linkup) {
 			pci_hose[i].first_busno = bus;
