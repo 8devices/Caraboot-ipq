@@ -42,7 +42,7 @@ const char *del_node[] = {"uboot",
 			  "sbl",
 			  NULL};
 const add_node_t add_node[] = {{}};
-
+static int pci_initialised;
 struct dumpinfo_t dumpinfo[] = {
 	{ "EBICS0.BIN", 0x40000000, 0x10000000, 0 },
 	{ "CODERAM.BIN", 0x00200000, 0x00024000, 0 },
@@ -274,6 +274,35 @@ void board_nand_init(void)
 	}
 }
 
+static void pcie_clock_init(int id)
+{
+
+	/* Enable PCIE CLKS */
+	if (id == 0) {
+		writel(0x2, GCC_PCIE0_AUX_CMD_RCGR);
+		writel(0x107, GCC_PCIE0_AXI_CFG_RCGR);
+		writel(0x1, GCC_PCIE0_AXI_CMD_RCGR);
+		mdelay(100);
+		writel(0x2, GCC_PCIE0_AXI_CMD_RCGR);
+		writel(0x20000001, GCC_PCIE0_AHB_CBCR);
+		writel(0x4FF1, GCC_PCIE0_AXI_M_CBCR);
+		writel(0x20004FF1, GCC_PCIE0_AXI_S_CBCR);
+		writel(0x1, GCC_PCIE0_AUX_CBCR);
+		writel(0x80004FF1, GCC_PCIE0_PIPE_CBCR);
+		writel(0x2, GCC_PCIE1_AUX_CMD_RCGR);
+		writel(0x107, GCC_PCIE1_AXI_CFG_RCGR);
+		writel(0x1, GCC_PCIE1_AXI_CMD_RCGR);
+		mdelay(100);
+		writel(0x2, GCC_PCIE1_AXI_CMD_RCGR);
+		writel(0x20000001, GCC_PCIE1_AHB_CBCR);
+		writel(0x4FF1, GCC_PCIE1_AXI_M_CBCR);
+		writel(0x20004FF1, GCC_PCIE1_AXI_S_CBCR);
+		writel(0x1, GCC_PCIE1_AUX_CBCR);
+		writel(0x80004FF1, GCC_PCIE1_PIPE_CBCR);
+		pci_initialised = 1;
+	}
+}
+
 void board_pci_init(int id)
 {
 	int node, gpio_node;
@@ -289,6 +318,7 @@ void board_pci_init(int id)
 	if (gpio_node >= 0)
 		qca_gpio_init(gpio_node);
 
+	pcie_clock_init(id);
 	return ;
 }
 
