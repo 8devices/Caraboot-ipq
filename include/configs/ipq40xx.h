@@ -278,4 +278,11 @@ typedef struct {
 #define CONFIG_CMD_PCI
 #define CONFIG_PCI_SCAN_SHOW
 #endif
+
+/*
+ * Other commands
+ */
+
+#define CONFIG_CMD_CRC32
+
 #endif /* _IPQ40XX_H */

@@ -334,5 +334,11 @@ typedef struct {
 #define GPIO_CONFIG_ADDR(x) (TLMM_BASE_ADDR + 0x1000 + (x)*0x10)
 #define GPIO_IN_OUT_ADDR(x) (TLMM_BASE_ADDR + 0x1004 + (x)*0x10)
 
+/*
+ * Other commands
+ */
+
+#define CONFIG_CMD_CRC32
+
 #endif /* _IPQ806x_CDP_H */
 
