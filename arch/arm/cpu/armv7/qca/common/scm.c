@@ -367,6 +367,7 @@ int qca_scm_call_write(u32 svc_id, u32 cmd_id, u32 *addr, u32 val)
 	return ret;
 }
 
+#ifdef CONFIG_SCM_TZ64
 int qca_scm_sdi_v8(void)
 {
 	struct qca_scm_desc desc = {0};
@@ -383,3 +384,4 @@ int qca_scm_sdi_v8(void)
 
 	return le32_to_cpu(desc.ret[0]);
 }
+#endif
