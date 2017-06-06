@@ -271,8 +271,6 @@ extern loff_t board_env_offset;
  */
 #define CONFIG_QCA_APPSBL_DLOAD
 
-#define CONFIG_QCA_APPSBL_DLOAD 0
-
 #ifdef CONFIG_QCA_APPSBL_DLOAD
 #define CONFIG_CMD_TFTPPUT
 /* We will be uploading very big files */
