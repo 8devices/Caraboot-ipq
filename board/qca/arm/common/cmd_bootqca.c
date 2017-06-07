@@ -105,7 +105,7 @@ static int do_dumpqca_data(cmd_tbl_t *cmdtp, int flag, int argc,
 		if (dumpinfo[indx].is_aligned_access) {
 			if (IPQ_TEMP_DUMP_ADDR) {
 				snprintf(runcmd, sizeof(runcmd), "cp.l 0x%x 0x%x 0x%x", memaddr,
-						IPQ_TEMP_DUMP_ADDR, dumpinfo[indx].size);
+						IPQ_TEMP_DUMP_ADDR, dumpinfo[indx].size / 4);
 				if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
 					return CMD_RET_FAILURE;
 

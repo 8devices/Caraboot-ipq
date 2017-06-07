@@ -47,7 +47,8 @@ struct dumpinfo_t dumpinfo[] = {
 	{ "EBICS0.BIN", 0x40000000, 0x10000000, 0 },
 	{ "CODERAM.BIN", 0x00200000, 0x00024000, 0 },
 	{ "DATARAM.BIN", 0x00290000, 0x00010000, 0 },
-	{ "MSGRAM.BIN", 0x00060000, 0x00005000, 0 },
+	{ "MSGRAM.BIN", 0x00060000, 0x00006000, 1 },
+	{ "IMEM.BIN", 0x08600000, 0x00006000, 0 },
 };
 int dump_entries = ARRAY_SIZE(dumpinfo);
 
