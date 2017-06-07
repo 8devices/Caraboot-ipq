@@ -22,6 +22,8 @@
 
 	aliases {
 		console = "/serial@78B3000";
+		pci0 = "/pci@20000000";
+		pci1 = "/pci@10000000";
 	};
 };
 
