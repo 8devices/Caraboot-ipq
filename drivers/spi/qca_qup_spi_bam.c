@@ -1,6 +1,6 @@
 /*
  * BLSP QUP SPI controller driver.
- * Copyright (c) 2015, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015, 2017 The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -29,35 +29,12 @@
  */
 
 #include <common.h>
-#include <watchdog.h>
 #include <spi.h>
 #include <malloc.h>
 #include <asm/io.h>
 #include <asm/errno.h>
-#include <asm/arch-qcom-common/gpio.h>
-#include <asm/arch-qcom-common/bam.h>
-#include <asm/arch-ipq40xx/iomap.h>
+#include <asm/arch-qca-common/bam.h>
 #include "qca_qup_spi_bam.h"
-
-DECLARE_GLOBAL_DATA_PTR;
-
-/*
- * CS GPIO number array cs_gpio_array[port_num][cs_num]
- * cs_gpio_array[0][x] -- QUP0
- */
-static unsigned int cs_gpio_array_dk01[NUM_PORTS][NUM_CS] = {
-	{
-		QUP0_SPI_CS_0, QUP0_SPI_CS_1_DK01,
-	},
-};
-
-static unsigned int cs_gpio_array_dk04[NUM_PORTS][NUM_CS] = {
-	{
-		QUP0_SPI_CS_0, QUP0_SPI_CS_1_DK04,
-	},
-};
-
-static unsigned int (*cs_gpio_array)[NUM_CS] = cs_gpio_array_dk01;
 
 static int check_bit_state(uint32_t reg_addr, int bit_num, int val,
 							int us_delay)
@@ -184,30 +161,6 @@ void spi_init()
 	/* do nothing */
 }
 
-/*
- * Function to assert and De-assert chip select
- */
-static void CS_change(int port_num, int cs_num, int enable)
-{
-	unsigned int cs_gpio = cs_gpio_array[port_num][cs_num];
-	uint32_t addr = GPIO_IN_OUT_ADDR(cs_gpio);
-	uint32_t val = readl(addr);
-
-	val &= ~(GPIO_OUT);
-	if (!enable)
-		val |= GPIO_OUT;
-	writel(val, addr);
-}
-
-static void blsp_pin_config(unsigned int port_num, int cs_num)
-{
-        unsigned int gpio;
-	gpio = cs_gpio_array[port_num][cs_num];
-	/* configure CS */
-	gpio_tlmm_config(gpio, FUNC_SEL_GPIO, GPIO_OUTPUT, GPIO_PULL_UP,
-			GPIO_DRV_STR_10MA, GPIO_FUNC_ENABLE, 0, 0, 0);
-}
-
 int qup_bam_init(struct ipq_spi_slave *ds)
 {
 	unsigned int read_pipe = QUP0_DATA_PRODUCER_PIPE;
@@ -296,9 +249,6 @@ struct spi_slave *spi_setup_slave(unsigned int bus, unsigned int cs,
 	 * controller will indefinitely wait for response from slave.
 	 * Hence, return NULL.
 	 */
-	if (gd->bd->bi_arch_number == MACH_TYPE_IPQ40XX_AP_DK07_1_C2)
-		return NULL;
-
 	ds = malloc(sizeof(struct ipq_spi_slave));
 	if (!ds) {
 		printf("SPI error: malloc of SPI structure failed\n");
@@ -338,14 +288,6 @@ struct spi_slave *spi_setup_slave(unsigned int bus, unsigned int cs,
 
 	/* DMA mode */
 	ds->use_dma = CONFIG_QUP_SPI_USE_DMA;
-
-	if (ds->slave.cs == CONFIG_SF_SPI_NAND_CS) {
-		/* GPIO Configuration for SPI port */
-		if (gd->bd->bi_arch_number == MACH_TYPE_IPQ40XX_AP_DK04_1_C5)
-			cs_gpio_array = cs_gpio_array_dk04;
-		blsp_pin_config(ds->slave.bus, ds->slave.cs);
-		CS_change(ds->slave.bus, ds->slave.cs, CS_DEASSERT);
-	}
 
 	return &ds->slave;
 err:
@@ -940,12 +882,7 @@ int spi_xfer(struct spi_slave *slave, unsigned int bitlen,
 				return ret;
 		}
 
-		if (ds->slave.cs == CONFIG_SF_SPI_NAND_CS) {
-			setbits_le32(ds->regs->io_control, CS_POLARITY_MASK);
-			CS_change(ds->slave.bus, ds->slave.cs, CS_ASSERT);
-		} else {
-			write_force_cs(slave, 1);
-		}
+		write_force_cs(slave, 1);
 	}
 
 	if (dout != NULL) {
@@ -961,13 +898,7 @@ int spi_xfer(struct spi_slave *slave, unsigned int bitlen,
 	}
 
 	if (flags & SPI_XFER_END) {
-		/* To handle only when chip select change is needed */
-		if (ds->slave.cs == CONFIG_SF_SPI_NAND_CS) {
-			clrbits_le32(ds->regs->io_control, CS_POLARITY_MASK);
-			CS_change(ds->slave.bus, ds->slave.cs, CS_DEASSERT);
-		} else {
-			write_force_cs(slave, 0);
-		}
+		write_force_cs(slave, 0);
 	}
 
 	return ret;

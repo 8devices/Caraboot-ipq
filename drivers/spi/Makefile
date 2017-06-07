@@ -34,7 +34,7 @@ obj-$(CONFIG_FSL_QSPI) += fsl_qspi.o
 obj-$(CONFIG_ICH_SPI) +=  ich.o
 ifdef CONFIG_QCA_SPI
 obj-$(CONFIG_ARCH_IPQ40xx) += qca_qup_spi.o
-obj-$(CONFIG_ARCH_IPQ807x) += qca_qup_spi.o
+obj-$(CONFIG_ARCH_IPQ807x) += qca_qup_spi_bam.o
 obj-$(CONFIG_ARCH_IPQ806x) += ipq_spi.o
 endif
 obj-$(CONFIG_KIRKWOOD_SPI) += kirkwood_spi.o

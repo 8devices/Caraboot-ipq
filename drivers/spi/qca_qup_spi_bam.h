@@ -1,6 +1,6 @@
 /*
  * Register definitions for the IPQ40XX QUP-SPI Controller
- * Copyright (c) 2015, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015, 2017 The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -28,8 +28,8 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _IPQ40XX_SPI_H_
-#define _IPQ40XX_SPI_H_
+#ifndef _IPQ_SPI_BAM_H_
+#define _IPQ_SPI_BAM_H_
 
 #define QUP0_BASE	0x78b5000
 #define QUP1_BASE	0x78b6000
@@ -70,8 +70,8 @@
 #define BLSP0_QUP_IO_MODES_REG		(BLSP0_QUP_REG_BASE + 0x00000008)
 #define BLSP1_QUP_IO_MODES_REG		(BLSP1_QUP_REG_BASE + 0x00000008)
 
-#define BLSP0_QUP_STATE_REG			(BLSP0_QUP_REG_BASE + 0x00000004)
-#define BLSP1_QUP_STATE_REG			(BLSP1_QUP_REG_BASE + 0x00000004)
+#define BLSP0_QUP_STATE_REG		(BLSP0_QUP_REG_BASE + 0x00000004)
+#define BLSP1_QUP_STATE_REG		(BLSP1_QUP_REG_BASE + 0x00000004)
 
 
 #define BLSP0_QUP_INPUT_FIFOc_REG(c) \
@@ -90,14 +90,14 @@
 #define BLSP0_QUP_MX_OUTPUT_COUNT_REG	(BLSP0_QUP_REG_BASE + 0x00000100)
 #define BLSP1_QUP_MX_OUTPUT_COUNT_REG	(BLSP1_QUP_REG_BASE + 0x00000100)
 
-#define BLSP0_QUP_MX_READ_COUNT_REG		(BLSP0_QUP_REG_BASE + 0x00000208)
-#define BLSP1_QUP_MX_READ_COUNT_REG		(BLSP1_QUP_REG_BASE + 0x00000208)
+#define BLSP0_QUP_MX_READ_COUNT_REG	(BLSP0_QUP_REG_BASE + 0x00000208)
+#define BLSP1_QUP_MX_READ_COUNT_REG	(BLSP1_QUP_REG_BASE + 0x00000208)
 
 #define BLSP0_QUP_MX_WRITE_COUNT_REG	(BLSP0_QUP_REG_BASE + 0x00000150)
 #define BLSP1_QUP_MX_WRITE_COUNT_REG	(BLSP1_QUP_REG_BASE + 0x00000150)
 
-#define BLSP0_QUP_SW_RESET_REG			(BLSP0_QUP_REG_BASE + 0x0000000c)
-#define BLSP1_QUP_SW_RESET_REG			(BLSP1_QUP_REG_BASE + 0x0000000c)
+#define BLSP0_QUP_SW_RESET_REG		(BLSP0_QUP_REG_BASE + 0x0000000c)
+#define BLSP1_QUP_SW_RESET_REG		(BLSP1_QUP_REG_BASE + 0x0000000c)
 
 #define QUP_STATE_VALID_BIT			2
 #define QUP_STATE_VALID				1
@@ -121,7 +121,6 @@
 #define SLAVE_OPERATION				(0 << 5)
 #define CLK_ALWAYS_ON				(0 << 9)
 #define MX_CS_MODE					(1 << 8)
-#define CS_POLARITY_MASK			(1 << 4)
 #define NO_TRI_STATE				(1 << 0)
 #define FORCE_CS_MSK				(1 << 11)
 #define FORCE_CS_EN					(1 << 11)
@@ -268,8 +267,8 @@ static inline struct ipq_spi_slave *to_ipq_spi(struct spi_slave *slave)
 #define DATA_PRODUCER_PIPE_INDEX		1
 
 /* QUP0 BAM pipe numbers */
-#define QUP0_DATA_CONSUMER_PIPE			4
-#define QUP0_DATA_PRODUCER_PIPE			5
+#define QUP0_DATA_CONSUMER_PIPE			12
+#define QUP0_DATA_PRODUCER_PIPE			13
 
 /* QUP1 BAM pipe numbers */
 #define QUP1_DATA_CONSUMER_PIPE			6
@@ -297,23 +296,5 @@ static inline struct ipq_spi_slave *to_ipq_spi(struct spi_slave *slave)
 static struct bam_instance bam;
 struct bam_desc qup_spi_data_desc_fifo[QUP_BAM_DATA_FIFO_SIZE] __attribute__ ((aligned(BAM_DESC_SIZE)));
 
-#define min_t(type, x, y) \
-    ({ type __x = (x); type __y = (y); __x < __y ? __x : __y; })
-
-#define NUM_PORTS				1
-#define NUM_CS					2
-
-#define FUNC_SEL_GPIO				0
-#define GPIO_DRV_STR_10MA			0x4
-
-#define FUNC_SEL_GPIO				0
-#define GPIO_FUNC_ENABLE			1
-/* QUP0 CS GPIO mapping*/
-#define QUP0_SPI_CS_0				54
-#define QUP0_SPI_CS_1_DK01			59
-#define QUP0_SPI_CS_1_DK04			45
-#define CS_ASSERT				1
-#define CS_DEASSERT				0
-
-#endif /* _IPQ40XX_SPI_H_ */
+#endif /* _IPQ_SPI_BAM_H_ */
 
