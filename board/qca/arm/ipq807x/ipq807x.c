@@ -23,6 +23,7 @@
 #include <asm/arch-qca-common/scm.h>
 #include <fdtdec.h>
 #include <mmc.h>
+#include <usb.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -380,6 +381,167 @@ void board_pci_deinit()
 	pcie_clock_deinit(0);
 
 	return ;
+}
+
+static void usb_clock_init(int id)
+{
+	if (id == 0) {
+		writel(0x222000, GCC_USB0_GDSCR);
+		writel(0, GCC_SYS_NOC_USB0_AXI_CBCR);
+		writel(0, GCC_SNOC_BUS_TIMEOUT2_AHB_CBCR);
+		writel(0x10b, GCC_USB0_MASTER_CFG_RCGR);
+		writel(0x1, GCC_USB0_MASTER_CMD_RCGR);
+		writel(0xcff1, GCC_USB0_MASTER_CBCR);
+		writel(1, GCC_SNOC_BUS_TIMEOUT2_AHB_CBCR);
+		writel(1, GCC_SYS_NOC_USB0_AXI_CBCR);
+		writel(1, GCC_USB0_SLEEP_CBCR);
+		writel(0x210b, GCC_USB0_MOCK_UTMI_CFG_RCGR);
+		writel(0x1, GCC_USB0_MOCK_UTMI_M);
+		writel(0xf7, GCC_USB0_MOCK_UTMI_N);
+		writel(0xf6, GCC_USB0_MOCK_UTMI_D);
+		writel(0x3, GCC_USB0_MOCK_UTMI_CMD_RCGR);
+		writel(1, GCC_USB0_MOCK_UTMI_CBCR);
+		writel(0x8001, GCC_USB0_PHY_CFG_AHB_CBCR);
+		writel(1, GCC_USB0_AUX_CBCR);
+	}
+	else if (id == 1) {
+		writel(0x222000, GCC_USB1_GDSCR);
+		writel(0, GCC_SYS_NOC_USB1_AXI_CBCR);
+		writel(0, GCC_SNOC_BUS_TIMEOUT2_AHB_CBCR);
+		writel(0x10b, GCC_USB1_MASTER_CFG_RCGR);
+		writel(0x1, GCC_USB1_MASTER_CMD_RCGR);
+		writel(0xcff1, GCC_USB1_MASTER_CBCR);
+		writel(1, GCC_SNOC_BUS_TIMEOUT2_AHB_CBCR);
+		writel(1, GCC_SYS_NOC_USB1_AXI_CBCR);
+		writel(1, GCC_USB1_SLEEP_CBCR);
+		writel(0x210b, GCC_USB1_MOCK_UTMI_CFG_RCGR);
+		writel(0x1, GCC_USB1_MOCK_UTMI_M);
+		writel(0xf7, GCC_USB1_MOCK_UTMI_N);
+		writel(0xf6, GCC_USB1_MOCK_UTMI_D);
+		writel(0x3, GCC_USB1_MOCK_UTMI_CMD_RCGR);
+		writel(1, GCC_USB1_MOCK_UTMI_CBCR);
+		writel(0x8001, GCC_USB1_PHY_CFG_AHB_CBCR);
+		writel(1, GCC_USB1_AUX_CBCR);
+	}
+}
+
+static void usb_init_phy(int index)
+{
+	void __iomem *boot_clk_ctl, *usb_bcr, *qusb2_phy_bcr;
+	void __iomem *usb_phy_bcr, *usb_gen_cfg, *usb_guctl, *phy_base;
+
+	if (index == 0) {
+		boot_clk_ctl = GCC_USB_0_BOOT_CLOCK_CTL;
+		usb_bcr = GCC_USB0_BCR;
+		qusb2_phy_bcr = GCC_QUSB2_0_PHY_BCR;
+		usb_phy_bcr = GCC_USB0_PHY_BCR;
+		usb_gen_cfg = USB30_1_GENERAL_CFG;
+		usb_guctl = USB30_1_GUCTL;
+		phy_base = USB30_PHY_1_QUSB2PHY_BASE;
+	}
+	else if (index == 1) {
+		boot_clk_ctl = GCC_USB_1_BOOT_CLOCK_CTL;
+		usb_bcr = GCC_USB1_BCR;
+		qusb2_phy_bcr = GCC_QUSB2_1_PHY_BCR;
+		usb_phy_bcr = GCC_USB1_PHY_BCR;
+		usb_gen_cfg = USB30_2_GENERAL_CFG;
+		usb_guctl = USB30_2_GUCTL;
+		phy_base = USB30_PHY_2_QUSB2PHY_BASE;
+	}
+	else {
+		return;
+	}
+
+	//2. Enable SS Ref Clock
+	setbits_le32(GCC_USB_SS_REF_CLK_EN, 0x1);
+
+	//3. Disable USB Boot Clock
+	clrbits_le32(boot_clk_ctl, 0x0);
+
+	//4. GCC Reset USB0 BCR
+	setbits_le32(usb_bcr, 0x1);
+
+	//5. Delay 100us
+	mdelay(10);
+
+	//6. GCC Reset USB0 BCR
+	clrbits_le32(usb_bcr, 0x1);
+
+	//7. GCC_QUSB2_0_PHY_BCR
+	setbits_le32(qusb2_phy_bcr, 0x1);
+
+	//8. GCC_USB0_PHY_BCR
+	setbits_le32(usb_phy_bcr, 0x1);
+
+	//9. Delay 100us
+	mdelay(10);
+
+	//10. GCC_USB0_PHY_BCR
+	clrbits_le32(usb_phy_bcr, 0x1);
+
+	//11. GCC_QUSB2_0_PHY_BCR
+	clrbits_le32(qusb2_phy_bcr, 0x1);
+
+	//12. Delay 100us
+	mdelay(10);
+
+	//13. Enable USB Boot Clock
+	setbits_le32(boot_clk_ctl, 0x1);
+
+	//14. Enable PIPE_UTMI_CLK_DIS
+	setbits_le32(usb_gen_cfg, 0x100);
+
+	//15. Delay 100us
+	mdelay(10);
+
+	//16. Enable PIPE_UTMI_CLK_SEL
+	setbits_le32(usb_gen_cfg, 0x1);
+
+	//17. Delay 100us
+	mdelay(10);
+
+	//18. Enable PIPE3_PHYSTATUS_SW
+	setbits_le32(usb_gen_cfg, 0x8);
+
+	//19. Delay 100us
+	mdelay(10);
+
+	//20. Disable PIPE_UTMI_CLK_DIS
+	clrbits_le32(usb_gen_cfg, 0x100);
+
+	//21. Config user control register
+	writel(0x0c80c010, usb_guctl);
+
+	//22. Enable USB2 PHY Power down
+	setbits_le32(phy_base+0xB4, 0x1);
+
+	//23. PHY Config Sequence
+	out_8(phy_base+0x80, 0xF8);
+	out_8(phy_base+0x84, 0x83);
+	out_8(phy_base+0x88, 0x83);
+	out_8(phy_base+0x8C, 0xC0);
+	out_8(phy_base+0x9C, 0x14);
+	out_8(phy_base+0x08, 0x30);
+	out_8(phy_base+0x0C, 0x79);
+	out_8(phy_base+0x10, 0x21);
+	out_8(phy_base+0x90, 0x00);
+	out_8(phy_base+0x18, 0x00);
+	out_8(phy_base+0x1C, 0x9F);
+	out_8(phy_base+0x04, 0x80);
+
+	//24. Disable USB2 PHY Power down
+	clrbits_le32(phy_base+0xB4, 0x1);
+}
+
+int ipq_board_usb_init(void)
+{
+	int i;
+
+	for (i=0; i<CONFIG_USB_MAX_CONTROLLER_COUNT; i++) {
+		usb_clock_init(i);
+		usb_init_phy(i);
+	}
+	return 0;
 }
 
 int ipq_fdt_fixup_socinfo(void *blob)

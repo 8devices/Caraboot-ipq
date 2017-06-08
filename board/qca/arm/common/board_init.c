@@ -39,6 +39,12 @@ loff_t board_env_offset;
 loff_t board_env_range;
 loff_t board_env_size;
 
+__weak
+int ipq_board_usb_init(void)
+{
+	return 0;
+}
+
 int board_init(void)
 {
 	int ret;
@@ -131,6 +137,11 @@ int board_init(void)
 	}
 
 #endif
+	ret = ipq_board_usb_init();
+	if (ret < 0) {
+		printf("WARN: ipq_board_usb_init failed\n");
+	}
+
 	return 0;
 }
 
