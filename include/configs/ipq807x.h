@@ -178,6 +178,7 @@ extern loff_t board_env_offset;
 #define CONFIG_SPI_FLASH_INFO_IDX	CONFIG_IPQ_SPI_NOR_INFO_IDX
 
 #define QCA_SPI_NOR_DEVICE		"spi0.0"
+#define CONFIG_QUP_SPI_USE_DMA		1
 
 #define CONFIG_SCM_TZ64	1
 /*
