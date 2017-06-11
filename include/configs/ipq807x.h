@@ -295,5 +295,11 @@ extern loff_t board_env_offset;
  * By default we are disabling it */
 /*#define CONFIG_IPQ_REPORT_L2ERR*/
 
+/*
+ * Other commands
+ */
+
+#define CONFIG_CMD_RUN
+
 #endif /* _IPQCDP_H */
 
