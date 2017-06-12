@@ -167,6 +167,11 @@ struct udevice *eth_get_dev(void)
 
 	uc_priv = eth_get_uclass_priv();
 	if (!uc_priv->current)
+#ifdef CONFIG_IPQ_ETH_INIT_DEFER
+		eth_initialize();
+		/* Wait 3s for link to settle down */
+		mdelay(3000);
+#endif
 		eth_errno = uclass_first_device(UCLASS_ETH,
 				    &uc_priv->current);
 	return uc_priv->current;

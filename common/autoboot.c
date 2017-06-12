@@ -271,7 +271,12 @@ static int abortboot_normal(int bootdelay)
 	if (abort)
 		gd->flags &= ~GD_FLG_SILENT;
 #endif
-
+#ifdef CONFIG_IPQ_ETH_INIT_DEFER
+	if (abort) {
+		puts("\nNet:   ");
+		eth_initialize();
+	}
+#endif
 	return abort;
 }
 # endif	/* CONFIG_AUTOBOOT_KEYED */

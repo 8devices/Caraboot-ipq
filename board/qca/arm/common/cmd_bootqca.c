@@ -160,6 +160,11 @@ void dump_func(void)
 {
 	uint64_t etime;
 
+#ifdef CONFIG_IPQ_ETH_INIT_DEFER
+	puts("\nNet:   ");
+	eth_initialize();
+#endif
+
 	etime = get_timer_masked() + (10 * CONFIG_SYS_HZ);
 	printf("\nCrashdump magic found."
 		"\nHit any key within 10s to stop dump activity...");
