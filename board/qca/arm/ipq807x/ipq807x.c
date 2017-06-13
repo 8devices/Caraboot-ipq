@@ -328,6 +328,36 @@ int ipq_fdt_fixup_socinfo(void *blob)
 	return 0;
 }
 
+void ipq_fdt_fixup_usb_device_mode(void *blob)
+{
+	int nodeoff, ret, node;
+	const char *usb_dr_mode = "peripheral"; /* Supported mode */
+	const char *usb_node[] = {"/soc/usb3@8A00000/dwc3@8A00000"};
+	const char *usb_cfg;
+
+	usb_cfg = getenv("usb_mode");
+	if (!usb_cfg)
+		return;
+
+	if (strcmp(usb_cfg, usb_dr_mode))
+		printf("fixup_usb: usb_mode can be either 'peripheral' or not set\n");
+		return;
+
+	for (node = 0; node < ARRAY_SIZE(usb_node); node++) {
+		nodeoff = fdt_path_offset(blob, usb_node[node]);
+		if (nodeoff < 0) {
+			printf("fixup_usb: unable to find node '%s'\n",
+			       usb_node[node]);
+			return;
+		}
+		ret = fdt_setprop(blob, nodeoff, "dr_mode",
+				  usb_dr_mode,
+				  (strlen(usb_dr_mode) + 1));
+		if (ret)
+			printf("fixup_usb: 'dr_mode' cannot be set");
+	}
+}
+
 void set_flash_secondary_type(qca_smem_flash_info_t *smem)
 {
 	return;

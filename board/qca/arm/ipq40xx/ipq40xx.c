@@ -315,6 +315,11 @@ int ipq_fdt_fixup_socinfo(void *blob)
 	return 0;
 }
 
+void ipq_fdt_fixup_usb_device_mode(void *blob)
+{
+	return;
+}
+
 void set_flash_secondary_type(qca_smem_flash_info_t * smem)
 {
 	return;

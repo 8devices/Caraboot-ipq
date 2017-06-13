@@ -326,6 +326,11 @@ int ipq_fdt_fixup_socinfo(void *blob)
 	return ret;
 }
 
+void ipq_fdt_fixup_usb_device_mode(void *blob)
+{
+	return;
+}
+
 void board_mmc_deinit(void)
 {
 	emmc_clock_reset();
