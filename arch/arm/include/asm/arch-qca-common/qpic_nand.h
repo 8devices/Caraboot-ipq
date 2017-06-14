@@ -104,6 +104,7 @@
 
 #define NAND_DEV_CMD_VLD_V1_5_20	NAND_REG(0x70AC)
 #define NAND_DEV_CMD1_V1_5_20		NAND_REG(0x70A4)
+#define NAND_XFR_STEPS_V1_5_20		NAND_REG(0x7070)
 
 /* Shift Values */
 #define NAND_DEV0_CFG1_WIDE_BUS_SHIFT		1
@@ -268,6 +269,9 @@
 
 #define QPIC_BAM_DATA_FIFO_SIZE			64
 #define QPIC_BAM_CMD_FIFO_SIZE			64
+
+#define QPIC_MAX_ONFI_MODES				4
+#define QPIC_NUM_XFER_STEPS				7
 
 enum qpic_verion{
 	QCA_QPIC_V1_4_20,
@@ -435,6 +439,7 @@ struct qpic_nand_dev {
 	unsigned char *pad_oob;
 	unsigned char *zero_page;
 	unsigned char *zero_oob;
+	uint16_t timing_mode_support;
 };
 
 void qpic_nand_init(void);

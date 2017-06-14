@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2008, Google Inc.
  * All rights reserved.
- * Copyright (c) 2009-2015, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2009-2017, The Linux Foundation. All rights reserved.
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -57,6 +57,30 @@ static const struct udevice_id qpic_ver_ids[] = {
 	{ .compatible = "qcom,qpic-nand.1.4.20", .data = QCA_QPIC_V1_4_20 },
 	{ .compatible = "qcom,qpic-nand.1.5.20", .data = QCA_QPIC_V1_5_20 },
 	{ },
+};
+
+static uint32_t
+qpic_onfi_mode_to_xfer_steps[QPIC_MAX_ONFI_MODES][QPIC_NUM_XFER_STEPS] = {
+	/* Mode 0 */
+	{
+		0x04e00480, 0x59f05998, 0x89e08980, 0xd000d000,
+		0xc000c000, 0xc000c000, 0xc000c000,
+	},
+	/* Mode 1 */
+	{
+		0x00e00080, 0x49f04d99, 0x85e08580, 0xd000d000,
+		0xc000c000, 0xc000c000, 0xc000c000,
+	},
+	/* Mode 2 */
+	{
+		0x00e00080, 0x45f0459a, 0x85e08580, 0xd000d000,
+		0xc000c000, 0xc000c000, 0xc000c000,
+	},
+	/* Mode 3 */
+	{
+		0x00e00080, 0x45f04599, 0x81e08180, 0xd000d000,
+		0xc000c000, 0xc000c000, 0xc000c000,
+	},
 };
 
 
@@ -517,6 +541,32 @@ qpic_nand_onfi_probe_cleanup(uint32_t vld, uint32_t dev_cmd1)
 	qpic_nand_wait_for_cmd_exec(1);
 }
 
+static void
+qpic_config_timing_parameters(struct mtd_info *mtd)
+{
+	struct qpic_nand_dev *dev = MTD_QPIC_NAND_DEV(mtd);
+	uint32_t xfer_start;
+	uint32_t i, timing_mode;
+
+	timing_mode = dev->timing_mode_support &
+			GENMASK(QPIC_MAX_ONFI_MODES - 1, 0);
+
+	/* If ONFI mode is not valid then use the default register values */
+	if (!timing_mode)
+		return;
+
+	timing_mode = fls(timing_mode) - 1;
+
+	if (hw_ver == QCA_QPIC_V1_5_20)
+		xfer_start = NAND_XFR_STEPS_V1_5_20;
+	else
+		xfer_start = NAND_XFR_STEP1;
+
+	for (i = 0; i < QPIC_NUM_XFER_STEPS; i++)
+		writel(qpic_onfi_mode_to_xfer_steps[timing_mode][i],
+		       xfer_start + 4 * i);
+}
+
 static int
 qpic_nand_onfi_save_params(struct mtd_info *mtd,
 			   struct onfi_param_page *param_page)
@@ -546,6 +596,7 @@ qpic_nand_onfi_save_params(struct mtd_info *mtd,
 	ecc_bits = param_page->num_bits_ecc_correctability;
 	dev->num_pages_per_blk = param_page->pgs_per_blk;
 	dev->num_pages_per_blk_mask = param_page->pgs_per_blk - 1;
+	dev->timing_mode_support = param_page->timing_mode_support;
 
 	if (ecc_bits >= 8)
 		dev->ecc_width = NAND_WITH_8_BIT_ECC;
@@ -2238,6 +2289,8 @@ void qpic_nand_init(void)
 		return;
 	else if (ret > 0)
 		qpic_nand_non_onfi_probe(mtd);
+
+	qpic_config_timing_parameters(mtd);
 
 	/* Save the RAW and read/write configs */
 	qpic_nand_save_config(mtd);
