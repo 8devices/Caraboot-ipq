@@ -102,6 +102,9 @@ static int do_dumpqca_data(cmd_tbl_t *cmdtp, int flag, int argc,
 		printf("\nProcessing %s:", dumpinfo[indx].name);
 		memaddr = dumpinfo[indx].start;
 
+		if (!strncmp(dumpinfo[indx].name, "EBICS0.BIN", strlen("EBICS0.BIN")))
+			dumpinfo[indx].size = gd->ram_size;
+
 		if (dumpinfo[indx].is_aligned_access) {
 			if (IPQ_TEMP_DUMP_ADDR) {
 				snprintf(runcmd, sizeof(runcmd), "cp.l 0x%x 0x%x 0x%x", memaddr,
