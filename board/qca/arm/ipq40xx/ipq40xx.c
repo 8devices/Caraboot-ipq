@@ -320,6 +320,11 @@ void ipq_fdt_fixup_usb_device_mode(void *blob)
 	return;
 }
 
+void fdt_fixup_auto_restart(void *blob)
+{
+	return;
+}
+
 void set_flash_secondary_type(qca_smem_flash_info_t * smem)
 {
 	return;

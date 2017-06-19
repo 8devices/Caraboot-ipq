@@ -339,9 +339,10 @@ void ipq_fdt_fixup_usb_device_mode(void *blob)
 	if (!usb_cfg)
 		return;
 
-	if (strcmp(usb_cfg, usb_dr_mode))
+	if (strcmp(usb_cfg, usb_dr_mode)) {
 		printf("fixup_usb: usb_mode can be either 'peripheral' or not set\n");
 		return;
+	}
 
 	for (node = 0; node < ARRAY_SIZE(usb_node); node++) {
 		nodeoff = fdt_path_offset(blob, usb_node[node]);
@@ -356,6 +357,33 @@ void ipq_fdt_fixup_usb_device_mode(void *blob)
 		if (ret)
 			printf("fixup_usb: 'dr_mode' cannot be set");
 	}
+}
+
+void fdt_fixup_auto_restart(void *blob)
+{
+	int nodeoff, ret;
+	const char *node = "/soc/q6v5_wcss@CD00000";
+	const char *paniconwcssfatal;
+
+	paniconwcssfatal = getenv("paniconwcssfatal");
+
+	if (!paniconwcssfatal)
+		return;
+
+	if (strncmp(paniconwcssfatal, "1", sizeof("1"))) {
+		printf("fixup_auto_restart: invalid variable 'paniconwcssfatal'");
+	} else {
+		nodeoff = fdt_path_offset(blob, node);
+		if (nodeoff < 0) {
+			printf("fixup_auto_restart: unable to find node '%s'\n", node);
+			return;
+		}
+		ret = fdt_delprop(blob, nodeoff, "qca,auto-restart");
+
+		if (ret)
+			printf("fixup_auto_restart: cannot delete property");
+	}
+	return;
 }
 
 void set_flash_secondary_type(qca_smem_flash_info_t *smem)

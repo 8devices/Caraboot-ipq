@@ -272,6 +272,7 @@ int ft_board_setup(void *blob, bd_t *bd)
 	dcache_disable();
 	fdt_fixup_ethernet(blob);
 	ipq_fdt_fixup_usb_device_mode(blob);
+	fdt_fixup_auto_restart(blob);
 
 #ifdef CONFIG_QCA_MMC
 	board_mmc_deinit();
