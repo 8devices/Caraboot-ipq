@@ -116,6 +116,9 @@ extern loff_t board_env_offset;
 
 #define CONFIG_ENV_IS_IN_NAND		1
 
+/* Allow to overwrite serial and ethaddr */
+#define CONFIG_ENV_OVERWRITE
+
 /*
 * SPI Flash Configs
 */
