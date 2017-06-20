@@ -292,12 +292,12 @@ static int set_fs_bootargs(int *fs_on_nand)
 		if (smem_bootconfig_info() == 0) {
 			active_part = get_rootfs_active_partition();
 			if (active_part) {
-				bootargs = "rootfsname=rootfs_1";
+				bootargs = "rootfsname=rootfs_1 gpt";
 			} else {
-				bootargs = "rootfsname=rootfs";
+				bootargs = "rootfsname=rootfs gpt";
 			}
 		} else {
-			bootargs = "rootfsname=rootfs";
+			bootargs = "rootfsname=rootfs gpt";
 		}
 
 		*fs_on_nand = 0;
