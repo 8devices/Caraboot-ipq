@@ -21,7 +21,9 @@ dtb-$(CONFIG_EXYNOS5) += exynos5250-arndale.dtb \
 	exynos5422-odroidxu3.dtb
 
 dtb-$(CONFIG_ARCH_IPQ807x) += ipq807x-hk01.dtb \
-	ipq807x-hk02.dtb
+	ipq807x-hk02.dtb \
+	ipq807x-db-hk01.dtb \
+	ipq807x-db-hk02.dtb
 
 dtb-$(CONFIG_ARCH_IPQ806x) += ipq806x-ap148.dtb \
 	ipq806x-ap160.dtb \
