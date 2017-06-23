@@ -47,6 +47,7 @@
  * select serial console configuration
  */
 #define CONFIG_CONS_INDEX               1
+#define CONFIG_SYS_DEVICE_NULLDEV
 
 /* allow to overwrite serial and ethaddr */
 #define CONFIG_BAUDRATE                 115200
