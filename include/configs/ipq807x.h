@@ -107,11 +107,14 @@
 #ifndef __ASSEMBLY__
 #include <compiler.h>
 extern loff_t board_env_offset;
+extern loff_t board_env_range;
+extern loff_t board_env_size;
 #endif
 
 #define CONFIG_IPQ807X_ENV		1
 #define CONFIG_ENV_OFFSET		board_env_offset
-#define CONFIG_ENV_SIZE			0x2000
+#define CONFIG_ENV_SIZE			CONFIG_ENV_SIZE_MAX
+#define CONFIG_ENV_RANGE		board_env_range
 #define CONFIG_ENV_SIZE_MAX		(256 << 10) /* 256 KB */
 #define CONFIG_SYS_MALLOC_LEN		(CONFIG_ENV_SIZE_MAX + (512 << 10))
 
