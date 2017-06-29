@@ -103,3 +103,21 @@ int qca_gpio_init(int offset)
 	}
 	return 0;
 }
+
+int qca_gpio_deinit(int offset)
+{
+	struct qca_gpio_config gpio_config;
+
+	for (offset = fdt_first_subnode(gd->fdt_blob, offset); offset > 0;
+	     offset = fdt_next_subnode(gd->fdt_blob, offset)) {
+
+		gpio_config.gpio	= fdtdec_get_uint(gd->fdt_blob,
+							  offset, "gpio", 0);
+		unsigned int *addr =
+			(unsigned int *)GPIO_CONFIG_ADDR(gpio_config.gpio);
+		writel(1, addr);
+		addr = (unsigned int *)GPIO_IN_OUT_ADDR(gpio_config.gpio);
+		writel(1, addr);
+	}
+	return 0;
+}

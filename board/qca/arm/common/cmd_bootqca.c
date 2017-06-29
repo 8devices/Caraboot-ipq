@@ -480,6 +480,8 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 	board_mmc_deinit();
 #endif
 
+	board_pci_deinit();
+
 	ret = config_select(request, runcmd, sizeof(runcmd));
 
 	if (debug)
@@ -610,6 +612,8 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 	}
 
 	dcache_enable();
+
+	board_pci_deinit();
 
 	setenv("mtdids", mtdids);
 
