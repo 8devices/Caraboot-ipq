@@ -44,6 +44,16 @@ int ipq_board_usb_init(void)
 {
 	return 0;
 }
+__weak
+void board_usb_deinit(int id)
+{
+	return 0;
+}
+__weak
+void board_pci_deinit(void)
+{
+	return 0;
+}
 
 int board_init(void)
 {

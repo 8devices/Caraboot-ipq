@@ -41,6 +41,7 @@ static qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 int ipq_fs_on_nand ;
 extern int nand_env_device;
 extern qca_mmc mmc_host;
+extern void board_usb_deinit(int id);
 
 #ifdef CONFIG_QCA_MMC
 static qca_mmc *host = &mmc_host;
@@ -346,7 +347,7 @@ int config_select(unsigned int addr, char *rcmd, int rcmd_size)
 static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
 	char runcmd[256];
-	int ret;
+	int ret,i;
 	unsigned int request;
 #ifdef CONFIG_QCA_MMC
 	block_dev_desc_t *blk_dev;
@@ -481,6 +482,11 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 #endif
 
 	board_pci_deinit();
+#ifdef CONFIG_USB_XHCI_IPQ
+        for (i=0; i<CONFIG_USB_MAX_CONTROLLER_COUNT; i++) {
+		board_usb_deinit(i);
+        }
+#endif
 
 	ret = config_select(request, runcmd, sizeof(runcmd));
 
@@ -490,6 +496,9 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 	if (ret < 0 || run_command(runcmd, 0) != CMD_RET_SUCCESS) {
 #ifdef CONFIG_QCA_MMC
 		mmc_initialize(gd->bd);
+#endif
+#ifdef CONFIG_USB_XHCI_IPQ
+		ipq_board_usb_init();
 #endif
 		dcache_disable();
 		return CMD_RET_FAILURE;
@@ -503,7 +512,7 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 
 static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
-	int ret;
+	int ret,i;
 	char runcmd[256];
 #ifdef CONFIG_QCA_MMC
 	block_dev_desc_t *blk_dev;
@@ -615,6 +624,12 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 
 	board_pci_deinit();
 
+#ifdef CONFIG_USB_XHCI_IPQ
+        for (i=0; i<CONFIG_USB_MAX_CONTROLLER_COUNT; i++) {
+		board_usb_deinit(i);
+        }
+#endif
+
 	setenv("mtdids", mtdids);
 
 	ret = genimg_get_format((void *)CONFIG_SYS_LOAD_ADDR);
@@ -641,7 +656,11 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 		}
 	}
 
+
 	if (ret < 0 || run_command(runcmd, 0) != CMD_RET_SUCCESS) {
+#ifdef CONFIG_USB_XHCI_IPQ
+		ipq_board_usb_init();
+#endif
 		dcache_disable();
 		return CMD_RET_FAILURE;
 	}
