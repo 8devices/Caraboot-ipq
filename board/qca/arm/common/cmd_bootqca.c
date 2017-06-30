@@ -467,8 +467,8 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 
 	request += sizeof(mbn_header_t);
 
-	ret = qca_scm_call(SCM_SVC_BOOT, KERNEL_AUTH_CMD,
-			(void *)&kernel_img_info, sizeof(kernel_img_info_t));
+	ret = qca_scm_auth_kernel(&kernel_img_info,
+			sizeof(kernel_img_info));
 
 	if (ret) {
 		printf("Kernel image authentication failed \n");

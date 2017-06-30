@@ -324,13 +324,14 @@ void __attribute__ ((noreturn)) jump_kernel64(void *kernel_entry,
 
 int qca_scm_call(u32 svc_id, u32 cmd_id, void *buf, size_t len)
 {
-	struct qca_scm_desc desc = {0};
 	int ret = 0;
+
+#ifdef CONFIG_SCM_TZ64
+	struct qca_scm_desc desc = {0};
 
 	desc.arginfo = QCA_SCM_ARGS(2, SCM_READ_OP);
 	desc.args[0] = (u32)buf;
 	desc.args[1] = len;
-#ifdef CONFIG_SCM_TZ64
 	ret = scm_call_64(svc_id, cmd_id, &desc);
 #else
 	ret = scm_call(svc_id, cmd_id, NULL, 0, buf, len);
@@ -338,36 +339,53 @@ int qca_scm_call(u32 svc_id, u32 cmd_id, void *buf, size_t len)
 	return ret;
 }
 
-int qca_scm_call_read(u32 svc_id, u32 cmd_id, u32 *addr, u32 *rsp)
+int qca_scm_auth_kernel(void *cmd_buf,
+			size_t cmd_len)
 {
-	struct qca_scm_desc desc = {0};
 	int ret = 0;
 
+#ifdef CONFIG_SCM_TZ64
+	struct qca_scm_desc desc = {0};
+	desc.arginfo = QCA_SCM_ARGS(1, SCM_VAL);
+	/* args[0] has the kernel load address */
+	desc.args[0] = * ((unsigned int *)cmd_buf);
+	/* args[1] has the kernel image size */
+	desc.args[1] = * (((unsigned int *)cmd_buf) + 1);
+	ret = scm_call_64(SCM_SVC_BOOT, KERNEL_AUTH_CMD, &desc);
+#else
+	ret = scm_call(SCM_SVC_BOOT, KERNEL_AUTH_CMD, cmd_buf, cmd_len,
+			NULL, 0);
+#endif
+
+	return ret;
+}
+
+#ifdef CONFIG_SCM_TZ64
+int qca_scm_call_read(u32 svc_id, u32 cmd_id, u32 *addr, u32 *rsp)
+{
+	int ret = 0;
+
+	struct qca_scm_desc desc = {0};
 	desc.arginfo = QCA_SCM_ARGS(1, SCM_READ_OP);
 	desc.args[0] = (u32)addr;
-#ifdef CONFIG_SCM_TZ64
 	ret = scm_call_64(svc_id, cmd_id, &desc);
 	if (!ret)
 		*rsp = desc.ret[0];
-#endif
 	return ret;
 }
 
 int qca_scm_call_write(u32 svc_id, u32 cmd_id, u32 *addr, u32 val)
 {
-	struct qca_scm_desc desc = {0};
 	int ret = 0;
 
+	struct qca_scm_desc desc = {0};
 	desc.arginfo = QCA_SCM_ARGS(2, SCM_READ_OP);
 	desc.args[0] = (u32)addr;
 	desc.args[1] = val;
-#ifdef CONFIG_SCM_TZ64
 	ret = scm_call_64(svc_id, cmd_id, &desc);
-#endif
 	return ret;
 }
 
-#ifdef CONFIG_SCM_TZ64
 int qca_scm_sdi_v8(void)
 {
 	struct qca_scm_desc desc = {0};

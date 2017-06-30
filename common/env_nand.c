@@ -134,9 +134,9 @@ static int writeenv(size_t offset, u_char *buf)
 	u_char *char_ptr;
 
 	blocksize = nand_info[nand_env_device].erasesize;
-	len = min(blocksize, (size_t)CONFIG_ENV_SIZE);
+	len = min(blocksize, (size_t)CONFIG_ENV_RANGE);
 
-	while (amount_saved < CONFIG_ENV_SIZE && offset < end) {
+	while (amount_saved < CONFIG_ENV_RANGE && offset < end) {
 		if (nand_block_isbad(&nand_info[nand_env_device], offset)) {
 			offset += blocksize;
 		} else {
@@ -149,7 +149,7 @@ static int writeenv(size_t offset, u_char *buf)
 			amount_saved += len;
 		}
 	}
-	if (amount_saved != CONFIG_ENV_SIZE)
+	if (amount_saved != CONFIG_ENV_RANGE)
 		return 1;
 
 	return 0;
@@ -205,7 +205,7 @@ int nand_saveenv(void)
 	};
 
 
-	if (CONFIG_ENV_RANGE < CONFIG_ENV_SIZE)
+	if (CONFIG_ENV_RANGE > board_env_size)
 		return 1;
 
 	ret = env_export(env_new);
@@ -216,7 +216,6 @@ int nand_saveenv(void)
 	env_new->flags = ++env_flags; /* increase the serial */
 	env_idx = (gd->env_valid == 1);
 #endif
-
 	ret = erase_and_write_env(&location[env_idx], (u_char *)env_new);
 #ifdef CONFIG_ENV_OFFSET_REDUND
 	if (!ret) {
@@ -253,9 +252,9 @@ static int readenv(size_t offset, u_char *buf)
 	if (!blocksize)
 		return 1;
 
-	len = min(blocksize, (size_t)CONFIG_ENV_SIZE);
+	len = min(blocksize, (size_t)CONFIG_ENV_RANGE);
 
-	while (amount_loaded < CONFIG_ENV_SIZE && offset < end) {
+	while (amount_loaded < CONFIG_ENV_RANGE && offset < end) {
 		if (nand_block_isbad(&nand_info[nand_env_device], offset)) {
 			offset += blocksize;
 		} else {
@@ -270,7 +269,7 @@ static int readenv(size_t offset, u_char *buf)
 		}
 	}
 
-	if (amount_loaded != CONFIG_ENV_SIZE)
+	if (amount_loaded != CONFIG_ENV_RANGE)
 		return 1;
 
 	return 0;

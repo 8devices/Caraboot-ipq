@@ -169,7 +169,7 @@ int mmc_saveenv(void)
 
 	printf("Writing to %sMMC(%d)... ", copy ? "redundant " : "",
 	       CONFIG_SYS_MMC_ENV_DEV);
-	if (write_env(mmc, CONFIG_ENV_SIZE, offset, (u_char *)env_new)) {
+	if (write_env(mmc, CONFIG_ENV_RANGE, offset, (u_char *)env_new)) {
 		puts("failed\n");
 		ret = 1;
 		goto fini;
@@ -322,7 +322,7 @@ void mmc_env_relocate_spec(void)
 		goto fini;
 	}
 
-	if (read_env(mmc, CONFIG_ENV_SIZE, offset, buf)) {
+	if (read_env(mmc, CONFIG_ENV_RANGE, offset, buf)) {
 		errmsg = "!read failed";
 		ret = 1;
 		goto fini;

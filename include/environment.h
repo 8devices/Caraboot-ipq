@@ -150,7 +150,7 @@ extern char *env_name_spec;
 /* Make sure the payload is multiple of AES block size */
 #define ENV_SIZE ((CONFIG_ENV_SIZE - ENV_HEADER_SIZE) & ~(16 - 1))
 #else
-#define ENV_SIZE (CONFIG_ENV_SIZE - ENV_HEADER_SIZE)
+#define ENV_SIZE (CONFIG_ENV_RANGE - ENV_HEADER_SIZE)
 #endif
 
 typedef struct environment_s {
@@ -158,7 +158,7 @@ typedef struct environment_s {
 #ifdef CONFIG_SYS_REDUNDAND_ENVIRONMENT
 	unsigned char	flags;		/* active/obsolete flags	*/
 #endif
-	unsigned char	data[ENV_SIZE]; /* Environment data		*/
+	unsigned char	data[CONFIG_ENV_SIZE_MAX - ENV_HEADER_SIZE]; /* Environment data		*/
 } env_t
 #ifdef CONFIG_ENV_AES
 /* Make sure the env is aligned to block size. */
