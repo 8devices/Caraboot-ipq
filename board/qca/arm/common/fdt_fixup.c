@@ -97,17 +97,10 @@ void ipq_fdt_fixup_version(void *blob)
 	int nodeoff, ret;
 	char ver[OEM_VERSION_STRING_LENGTH + VERSION_STRING_LENGTH + 1];
 
-	nodeoff = fdt_path_offset(blob, "/soc");
+	nodeoff = fdt_path_offset(blob, "/");
 
 	if (nodeoff < 0) {
-		debug("ipq: fdt fixup unable to find 'soc' node\n");
-		return;
-	}
-
-	nodeoff = fdt_add_subnode(blob, nodeoff, "version");
-
-	if (nodeoff < 0) {
-		debug("ipq: fdt fixup unable to create 'version' node\n");
+		debug("fdt-fixup: fdt fixup unable to find root node\n");
 		return;
 	}
 
