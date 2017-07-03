@@ -119,6 +119,16 @@ void ipq_fdt_fixup_version(void *blob)
 		if (ret)
 			debug("fdt-fixup: unable to set TZ version(%d)\n", ret);
 	}
+
+#ifdef RPM_VERSION
+	if (!smem_get_build_version(ver, sizeof(ver), RPM_VERSION)) {
+		debug("RPM Build Version:  %s\n", ver);
+		ret = fdt_setprop(blob, nodeoff, "rpm_version",
+				ver, strlen(ver));
+		if (ret)
+			debug("fdt-fixup: unable to set RPM version(%d)\n", ret);
+	}
+#endif /* RPM_VERSION */
 }
 
 void ipq_fdt_fixup_mtdparts(void *blob, struct flash_node_info *ni)

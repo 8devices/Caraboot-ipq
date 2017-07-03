@@ -233,6 +233,7 @@ extern loff_t board_env_size;
 #define SCM_CMD_TZ_FORCE_DLOAD_ID		0x10
 #define BOOT_VERSION				0
 #define TZ_VERSION				1
+#define RPM_VERSION				3
 #endif
 
 #define CONFIG_FDT_FIXUP_PARTITIONS
