@@ -58,6 +58,7 @@ static int uart_valid_data = 0;
 /* Received data */
 static unsigned int word = 0;
 static unsigned int uart_word = 0;
+static unsigned int current_baud_rate = 0;
 
 /**
  * msm_boot_uart_dm_init_rx_transfer - Init Rx transfer
@@ -536,18 +537,87 @@ static void  do_uart_start(void)
 	uart2.port_id = fdtdec_get_int(gd->fdt_blob, node, "id", -1);
 	uart2.bit_rate = fdtdec_get_int(gd->fdt_blob, node,
 			"bit_rate", -1);
+	uart2.clk_rate = fdtdec_get_int(gd->fdt_blob, node,
+			"clk_rate", -1);
 	uart2.m_value = fdtdec_get_int(gd->fdt_blob, node, "m_value", -1);
 	uart2.n_value = fdtdec_get_int(gd->fdt_blob, node, "n_value", -1);
 	uart2.d_value = fdtdec_get_int(gd->fdt_blob, node, "d_value", -1);
 
 	ipq_serial_init(&uart2,  uart2.reg_base);
 }
+
+static const baud_table[] = {
+	150, 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 38400, 57600, 115200
+};
+
+static int find_baud_rate(unsigned int baud_rate)
+{
+	int i;
+
+	for (i=0; i<ARRAY_SIZE(baud_table); i++)
+	{
+		if(baud_rate == baud_table[i])
+			return 1;
+	}
+
+	return 0;
+}
+
+struct msm_baud_map {
+        u16     divisor;
+        u8      code;
+};
+
+static void set_baud_rate(unsigned int baud)
+{
+	unsigned int divisor;
+	const struct msm_baud_map *entry, *end;
+	static const struct msm_baud_map table[] = {
+		{    1, 0xff },
+		{    2, 0xee },
+		{    3, 0xdd },
+		{    4, 0xcc },
+		{    6, 0xbb },
+		{    8, 0xaa },
+		{   12, 0x99 },
+		{   16, 0x88 },
+		{   24, 0x77 },
+		{   32, 0x66 },
+		{   48, 0x55 },
+		{   96, 0x44 },
+		{  192, 0x33 },
+		{  384, 0x22 },
+		{  768, 0x11 },
+		{ 1536, 0x00 },
+	};
+
+	if (uart2.clk_rate == 0)
+	{
+		printf("Second uart is not initialised\n");
+		return;
+	}
+
+	divisor = uart2.clk_rate / baud / 16;
+	end = table + ARRAY_SIZE(table);
+	entry = table;
+	while (entry < end) {
+		if (entry->divisor == divisor) {
+			writel(entry->code, MSM_BOOT_UART_DM_CSR(uart2.reg_base));
+			current_baud_rate = baud;
+			break;
+		}
+		entry++;
+	}
+
+}
+
 /******************************************************************************
  * uart command intepreter
  */
 static int do_uart(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	int i;
+	unsigned int baud_rate;
 
 	if (argc < 2)
 		return CMD_RET_USAGE;
@@ -571,6 +641,25 @@ static int do_uart(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 			return 0;
 		}
 	}
+
+	if (strcmp(argv[1], "baud_rate") == 0) {
+		if (argc == 3) {
+			baud_rate = simple_strtoul(argv[2], NULL, 10);
+
+			if (!find_baud_rate(baud_rate)) {
+				printf("Invalid baud rate %d\n", baud_rate);
+				printf("The supported rates are:");
+				for (i=0; i<ARRAY_SIZE(baud_table); i++)
+					printf("%d ", baud_table[i]);
+				return -1;
+			}
+			set_baud_rate(baud_rate);
+		} else {
+			printf("The current baud rate is: %d\n", current_baud_rate);
+		}
+		return 0;
+	}
+
 	return CMD_RET_USAGE;
 }
 U_BOOT_CMD(
@@ -579,4 +668,5 @@ U_BOOT_CMD(
 	"start - start UART controller\n"
 	"uart read - read strings from second UART\n"
 	"uart write - write strings to second UART\n"
+	"uart baud_rate [rate] - show or set second UART baud rates\n"
 );

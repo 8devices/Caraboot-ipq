@@ -84,6 +84,7 @@ struct ipq_serial_platdata {
 	unsigned long reg_base;  /* address of registers in physical memory */
 	u8 port_id;     /* uart port number */
 	u8 bit_rate;
+	unsigned int clk_rate;
 	int m_value;
 	int n_value;
 	int d_value;
