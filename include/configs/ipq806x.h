@@ -90,6 +90,7 @@
 #define CONFIG_ARCH_CPU_INIT
 
 #define CONFIG_ENV_SIZE			0x10000 /* 64 KB */
+#define CONFIG_ENV_RANGE		board_env_range
 #define CONFIG_ENV_SIZE_MAX             (256 << 10) /* 256 KB */
 #define CONFIG_SYS_MALLOC_LEN           (CONFIG_ENV_SIZE_MAX + (512 << 10))
 
