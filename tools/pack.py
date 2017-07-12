@@ -864,7 +864,7 @@ class Pack(object):
                 section_conf = "tz"
             elif section_conf == "appsbl":
                 section_conf = "u-boot"
-            elif section_conf == "rootfs" and flinfo.type != "nor" and self.flash_type != "norplusemmc":
+            elif section_conf == "rootfs" and (self.flash_type == "nand" or self.flash_type == "norplusnand"):
                 section_conf = "ubi"
 
             script.start_activity("Flashing %s:" % section_conf)
@@ -1079,7 +1079,7 @@ class Pack(object):
                 section_conf = "tz"
             elif section_conf == "appsbl":
                 section_conf = "u-boot"
-            elif section_conf == "rootfs" and flinfo.type != "nor" and self.flash_type != "norplusemmc":
+            elif section_conf == "rootfs" and (self.flash_type == "nand" or self.flash_type == "norplusnand"):
                 section_conf = "ubi"
             image_info = ImageInfo(section_conf + "-" + sha1(filename),
                                     filename, "firmware")
