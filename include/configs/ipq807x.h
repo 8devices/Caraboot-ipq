@@ -102,7 +102,7 @@
 #define CONFIG_QCA_SMEM_BASE		0x4AB00000
 
 #define CONFIG_IPQ_FDT_HIGH		0x4A600000
-#define CONFIG_IPQ_NO_MACS		1
+#define CONFIG_IPQ_NO_MACS		6
 
 #ifndef __ASSEMBLY__
 #include <compiler.h>

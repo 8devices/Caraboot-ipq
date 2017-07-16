@@ -286,6 +286,7 @@ int board_eth_init(bd_t *bis)
 	writel(7, tlmm_base + 0x20000);
 
 	ret = ipq807x_edma_init(NULL);
+	set_ethmac_addr();
 
 	if (ret != 0)
 		printf("%s: ipq807x_edma_init failed : %d\n", __func__, ret);
