@@ -22,6 +22,8 @@ dtb-$(CONFIG_EXYNOS5) += exynos5250-arndale.dtb \
 
 dtb-$(CONFIG_ARCH_IPQ807x) += ipq807x-hk01.dtb \
 	ipq807x-hk02.dtb \
+	ipq807x-hk05.dtb \
+	ipq807x-hk06.dtb \
 	ipq807x-db-hk01.dtb \
 	ipq807x-db-hk02.dtb
 
