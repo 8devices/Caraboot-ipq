@@ -688,7 +688,25 @@ int ipq_board_usb_init(void)
 
 int ipq_fdt_fixup_socinfo(void *blob)
 {
-	return 0;
+	uint32_t cpu_type;
+	int nodeoff, ret;
+
+	ret = ipq_smem_get_socinfo_cpu_type(&cpu_type);
+	if (ret) {
+		printf("ipq: fdt fixup cannot get socinfo\n");
+		return ret;
+	}
+	nodeoff = fdt_path_offset(blob, "/");
+
+	if (nodeoff < 0) {
+		printf("ipq: fdt fixup cannot find root node\n");
+		return nodeoff;
+	}
+	ret = fdt_setprop(blob, nodeoff, "cpu_type",
+			&cpu_type, sizeof(cpu_type));
+	if (ret)
+		printf("%s: cannot set cpu type %d\n", __func__, ret);
+	return ret;
 }
 
 void ipq_fdt_fixup_usb_device_mode(void *blob)
