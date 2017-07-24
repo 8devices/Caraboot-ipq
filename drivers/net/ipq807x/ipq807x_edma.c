@@ -868,7 +868,7 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 	char *lstatus[] = {"up", "Down"};
 	char *dp[] = {"Half", "Full"};
 	int linkup=0;
-
+	int mac_speed, speed_clock1, speed_clock2;
 	if (!priv->ops) {
 		printf ("Phy ops not mapped\n");
 		return -1;
@@ -896,8 +896,25 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 		phy_get_ops->phy_get_duplex(priv->mac_unit, i, &duplex);
 		switch (speed) {
 		case FAL_SPEED_10:
+			mac_speed = 0x0;
+			speed_clock1 = 0x109;
+			speed_clock2 = 0x9;
+			printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
+				priv->mac_unit, i, lstatus[status], speed,
+				dp[duplex]);
+			break;
 		case FAL_SPEED_100:
+			mac_speed = 0x1;
+			speed_clock1 = 0x101;
+			speed_clock2 = 0x4;
+			printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
+				priv->mac_unit, i, lstatus[status], speed,
+				dp[duplex]);
+			break;
 		case FAL_SPEED_1000:
+			mac_speed = 0x2;
+			speed_clock1 = 0x101;
+			speed_clock2 = 0x0;
 			printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
 				priv->mac_unit, i, lstatus[status], speed,
 				dp[duplex]);
@@ -906,6 +923,7 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 			printf("Unknown speed\n");
 			break;
 		}
+		ipq807x_pqsgmii_speed_clock_set(i, mac_speed, speed_clock1, speed_clock2);
 	}
 
 	if (linkup <= 0) {
