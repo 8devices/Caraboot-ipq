@@ -25,6 +25,10 @@
 #include <net.h>
 #include <miiphy.h>
 
+#define GCC_NSS_PORT1_RX_CMD_RCGR		0x01868020
+#define GCC_NSS_PORT1_RX_CFG_RCGR		0x01868024
+#define GCC_NSS_PORT1_RX_MISC			0x01868400
+
 #define IPQ807X_PPE_BASE_ADDR			0x3a000000
 #define IPQ807X_PPE_REG_SIZE			0x1000000
 

@@ -106,6 +106,18 @@ static void ipq807x_gmac_port_enable(int port)
 	ipq807x_ppe_reg_write(IPQ807X_PPE_MAC_SPEED + (0x200 * port), 0x2);
 	ipq807x_ppe_reg_write(IPQ807X_PPE_MAC_MIB_CTL + (0x200 * port), 0x1);
 }
+void ipq807x_pqsgmii_speed_clock_set(int port, int speed, int speed_clock1, int speed_clock2)
+{
+	int i;
+
+	for (i = 0; i < 2; i++)
+	{
+		writel(speed_clock2, GCC_NSS_PORT1_RX_MISC + i*4 + port*0x10);
+		writel(speed_clock1, GCC_NSS_PORT1_RX_CFG_RCGR + i*8 + port*0x10);
+		writel(0x1, GCC_NSS_PORT1_RX_CMD_RCGR + i*8 + port*0x10);
+	}
+	ipq807x_ppe_reg_write(IPQ807X_PPE_MAC_SPEED + (0x200 * port), speed);
+}
 
 /*
  * ipq807x_ppe_flow_port_map_tbl_port_num_set()
