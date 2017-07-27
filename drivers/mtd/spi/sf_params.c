@@ -53,7 +53,7 @@ const struct spi_flash_params spi_flash_params_table[] = {
 	{"MX25L25635F",	   0xc22019, 0x0,	64 * 1024,   512, RD_FULL,		     WR_QPP},
 	{"MX25L51235F",	   0xc2201a, 0x0,	64 * 1024,  1024, RD_FULL,		     WR_QPP},
 	{"MX25L12855E",	   0xc22618, 0x0,	64 * 1024,   256, RD_FULL,		     WR_QPP},
-	{"MX25U3235F",	   0xc2536,  0x0,	64 * 1024,   64,  RD_NORM,			  0},
+	{"MX25U3235F",	   0xc22536,  0x0,	64 * 1024,   64,  RD_NORM,			  0},
 	{"MX25U6435F",	   0xc22537, 0x0,	64 * 1024,   128, RD_NORM,			  0},
 	{"MX25U25635F",	   0xc22539, 0x0,	64 * 1024,   512, RD_NORM,			  0},
 #endif
