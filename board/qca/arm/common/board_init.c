@@ -217,6 +217,7 @@ int board_late_init(void)
 		setenv_addr("machid", (void *)machid);
 		gd->bd->bi_arch_number = machid;
 	}
+	set_ethmac_addr();
 	return 0;
 }
 
