@@ -747,6 +747,11 @@ static int do_env_default(cmd_tbl_t *cmdtp, int __flag,
 {
 	int all = 0, flag = 0;
 
+	if (argc == 2 && strcmp(argv[1], "-f") == 0) {
+		set_default_env("## Resetting to default environment\n");
+		return 0;
+	}
+
 	debug("Initial value for argc=%d\n", argc);
 	while (--argc > 0 && **++argv == '-') {
 		char *arg = *argv;
