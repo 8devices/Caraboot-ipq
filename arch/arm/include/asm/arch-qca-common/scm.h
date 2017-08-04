@@ -99,6 +99,7 @@ extern int qca_scm_call(u32 svc_id, u32 cmd_id, void *buf, size_t len);
 int qca_scm_call_write(u32, u32, u32 *, u32);
 int qca_scm_call_read(u32, u32, u32 *, u32 *);
 int qca_scm_sdi_v8(void);
+int qca_scm_fuseipq(u32, u32, void *, size_t);
 
 #define MAX_QCA_SCM_RETS		3
 #define MAX_QCA_SCM_ARGS		10

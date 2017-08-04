@@ -45,9 +45,8 @@ int do_fuseipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	fuseip.address = simple_strtoul(argv[1], NULL, 16);
 	fuseip.status = (uint32_t)&fuse_status;
 
-	ret = scm_call(SCM_SVC_FUSE, TZ_BLOW_FUSE_SECDAT,
-			&fuseip, sizeof(fuseip), NULL, 0);
-
+	ret = qca_scm_fuseipq(SCM_SVC_FUSE, TZ_BLOW_FUSE_SECDAT,
+			&fuseip, sizeof(fuseip));
 
 	if (ret || fuse_status)
 		printf("%s: Error in QFPROM write (%d, %d)\n",

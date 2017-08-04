@@ -32,6 +32,7 @@
 #define DLOAD_MAGIC_COOKIE 0x10
 #define XMK_STR(x)#x
 #define MK_STR(x)XMK_STR(x)
+#define MAX_TFTP_SIZE 0x40000000
 
 static int debug = 0;
 static char mtdids[256];
@@ -69,15 +70,52 @@ kernel_img_info_t kernel_img_info;
 
 char dtb_config_name[64];
 
+static int tftpdump (int is_aligned_access, uint32_t memaddr, uint32_t size, char *name)
+{
+	char runcmd[128];
+	char *dumpdir;
+
+	if ((dumpdir = getenv("dumpdir")) != NULL) {
+		printf("Using directory %s in TFTP server\n", dumpdir);
+	} else {
+		dumpdir = "";
+		printf("Env 'dumpdir' not set. Using / dir in TFTP server\n");
+	}
+
+	if (is_aligned_access) {
+		if (IPQ_TEMP_DUMP_ADDR) {
+			snprintf(runcmd, sizeof(runcmd), "cp.l 0x%x 0x%x 0x%x", memaddr,
+					IPQ_TEMP_DUMP_ADDR, size / 4);
+			if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
+				return CMD_RET_FAILURE;
+
+			memaddr = IPQ_TEMP_DUMP_ADDR;
+		} else {
+			printf("%s  needs aligned access and temp address is not defined. Skipping...", name);
+			return CMD_RET_FAILURE;
+		}
+	}
+
+	snprintf(runcmd, sizeof(runcmd), "tftpput 0x%x 0x%x %s/%s",
+		memaddr, size, dumpdir, name);
+
+	if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
+		return CMD_RET_FAILURE;
+
+	return CMD_RET_SUCCESS;
+
+}
+
 static int do_dumpqca_data(cmd_tbl_t *cmdtp, int flag, int argc,
 					char *const argv[])
 {
-	char runcmd[128];
 	char *serverip = NULL;
 	/* dump to root of TFTP server if none specified */
-	char *dumpdir;
 	uint32_t memaddr;
+	uint32_t remaining;
 	int indx;
+	int ebi_indx = 0;
+	int ret = CMD_RET_FAILURE;
 
 	if (argc == 2) {
 		serverip = argv[1];
@@ -92,40 +130,40 @@ static int do_dumpqca_data(cmd_tbl_t *cmdtp, int flag, int argc,
 			return CMD_RET_FAILURE;
 		}
 	}
-	if ((dumpdir = getenv("dumpdir")) != NULL) {
-		printf("Using directory %s in TFTP server\n", dumpdir);
-	} else {
-		dumpdir = "";
-		printf("Env 'dumpdir' not set. Using / dir in TFTP server\n");
-	}
 
 	for (indx = 0; indx < dump_entries; indx++) {
 		printf("\nProcessing %s:", dumpinfo[indx].name);
 		memaddr = dumpinfo[indx].start;
 
-		if (!strncmp(dumpinfo[indx].name, "EBICS0.BIN", strlen("EBICS0.BIN")))
+		if (!strncmp(dumpinfo[indx].name, "EBICS", strlen("EBICS")))
+		{
 			dumpinfo[indx].size = gd->ram_size;
+			remaining = dumpinfo[indx].size;
+			while (remaining > 0) {
+				snprintf(dumpinfo[indx].name, sizeof(dumpinfo[indx].name), "EBICS%d.BIN", ebi_indx);
 
-		if (dumpinfo[indx].is_aligned_access) {
-			if (IPQ_TEMP_DUMP_ADDR) {
-				snprintf(runcmd, sizeof(runcmd), "cp.l 0x%x 0x%x 0x%x", memaddr,
-						IPQ_TEMP_DUMP_ADDR, dumpinfo[indx].size / 4);
-				if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
+				if (remaining > MAX_TFTP_SIZE) {
+					dumpinfo[indx].size = MAX_TFTP_SIZE;
+				}
+				else {
+					dumpinfo[indx].size = remaining;
+				}
+				ret = tftpdump (dumpinfo[indx].is_aligned_access, memaddr, dumpinfo[indx].size, dumpinfo[indx].name);
+				if (ret == CMD_RET_FAILURE)
 					return CMD_RET_FAILURE;
 
-				memaddr = IPQ_TEMP_DUMP_ADDR;
-			} else {
-				printf("%s  needs aligned access and temp address is not defined. Skipping...", dumpinfo[indx].name);
-				continue;
+				memaddr += dumpinfo[indx].size;
+				remaining -= dumpinfo[indx].size;
+				ebi_indx++;
 			}
 		}
+		else
+		{
+			ret = tftpdump (dumpinfo[indx].is_aligned_access, memaddr, dumpinfo[indx].size, dumpinfo[indx].name);
+			if (ret == CMD_RET_FAILURE)
+				return CMD_RET_FAILURE;
+		}
 
-		snprintf(runcmd, sizeof(runcmd), "tftpput 0x%x 0x%x %s/%s",
-			memaddr, dumpinfo[indx].size,
-			dumpdir,  dumpinfo[indx].name);
-
-		if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
-			return CMD_RET_FAILURE;
 		udelay(10000); /* give some delay for server */
 	}
 	return CMD_RET_SUCCESS;

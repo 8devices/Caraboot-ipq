@@ -339,6 +339,26 @@ int qca_scm_call(u32 svc_id, u32 cmd_id, void *buf, size_t len)
 	return ret;
 }
 
+int qca_scm_fuseipq(u32 svc_id, u32 cmd_id, void *buf, size_t len)
+{
+	int ret = 0;
+	uint32_t *status;
+#ifdef CONFIG_SCM_TZ64
+	struct qca_scm_desc desc = {0};
+
+	desc.arginfo = QCA_SCM_ARGS(1, SCM_READ_OP);
+	desc.args[0] = *((unsigned int *)buf);
+
+	ret = scm_call_64(svc_id, cmd_id, &desc);
+
+	status = (uint32_t *)(*(((uint32_t *)buf) + 1));
+	*status = desc.ret[0];
+#else
+	ret = scm_call(svc_id, cmd_id, buf, len, NULL, 0);
+#endif
+	return ret;
+}
+
 int qca_scm_auth_kernel(void *cmd_buf,
 			size_t cmd_len)
 {
