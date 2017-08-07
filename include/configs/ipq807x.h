@@ -290,8 +290,8 @@ extern loff_t board_env_size;
 #define IPQ_TEMP_DUMP_ADDR 0x44000000
 #endif
 
-#define CONFIG_QCA_KERNEL_CRASHDUMP_ADDRESS	0x08605FFF
-#define CONFIG_CPU_CONTEXT_DUMP_SIZE		2048
+#define CONFIG_QCA_KERNEL_CRASHDUMP_ADDRESS	*((unsigned int *)0x08600658)
+#define CONFIG_CPU_CONTEXT_DUMP_SIZE		4096
 #define CONFIG_TLV_DUMP_SIZE			2048
 
 /* L1 cache line size is 64 bytes, L2 cache line size is 128 bytes

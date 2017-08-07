@@ -743,7 +743,6 @@ U_BOOT_CMD(bootipq, 2, 0, do_bootipq,
 #define QCA_WDT_SCM_TLV_LEN_SIZE	2
 #define QCA_WDT_SCM_TLV_TYPE_LEN_SIZE (QCA_WDT_SCM_TLV_TYPE_SIZE +\
 						QCA_WDT_SCM_TLV_LEN_SIZE)
-#define CRASHDUMP_CPU_CONTEXT_SIZE	2048
 #define MAX_NAND_PAGE_SIZE		2048
 #define MAX_EMMC_BLK_LEN		1024
 
@@ -1326,7 +1325,7 @@ static int qca_wdt_write_crashdump_data(
 	}
 
 	/* Start writing cpu context and uname in flash */
-	required_size = CRASHDUMP_CPU_CONTEXT_SIZE +
+	required_size = CONFIG_CPU_CONTEXT_DUMP_SIZE +
 				crashdump_data->uname_length;
 
 	ret = crashdump_flash_write_init(crashdump_cnxt,
@@ -1338,7 +1337,7 @@ static int qca_wdt_write_crashdump_data(
 
 	ret = crashdump_flash_write(crashdump_cnxt,
 			crashdump_data->cpu_context,
-			CRASHDUMP_CPU_CONTEXT_SIZE);
+			CONFIG_CPU_CONTEXT_DUMP_SIZE);
 
 	if (!ret)
 		ret = crashdump_flash_write(crashdump_cnxt,
