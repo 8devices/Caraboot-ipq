@@ -123,6 +123,19 @@ repeat:
 	}
 
 }
+
+/* get_ticks - returns the timer coutner */
+uint64_t notrace get_ticks(void)
+{
+	return read_counter();
+}
+
+/* get_ticks - returns the timer frequency */
+unsigned long get_tbclk(void)
+{
+        return GPT_FREQ_HZ;
+}
+
 /**
  * __udelay -  generates micro second delay.
  * @usec: delay duration in microseconds
