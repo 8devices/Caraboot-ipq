@@ -210,6 +210,7 @@ extern loff_t board_env_size;
 #define CONFIG_MTD_DEVICE
 #define CONFIG_CMD_MTDPARTS
 #define CONFIG_MTD_PARTITIONS
+#define NUM_ALT_PARTITION	16
 
 #define CONFIG_CMD_UBI
 #define CONFIG_RBTREE

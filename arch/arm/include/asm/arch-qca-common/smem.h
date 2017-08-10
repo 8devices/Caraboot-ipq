@@ -121,10 +121,8 @@ struct per_part_info
 {
 	char name[ALT_PART_NAME_LENGTH];
 	uint32_t primaryboot;
-	uint32_t upgraded;
 };
 
-#define NUM_ALT_PARTITION 8
 typedef struct
 {
 #define _SMEM_DUAL_BOOTINFO_MAGIC_START		0xA3A2A1A0

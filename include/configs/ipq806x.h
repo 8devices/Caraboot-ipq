@@ -281,6 +281,7 @@ typedef struct {
 #define QCA_SPI_NOR_DEVICE		"nand1"
 
 #define CONFIG_FDT_FIXUP_PARTITIONS
+#define NUM_ALT_PARTITION		8
 
 #define CONFIG_MTD_DEVICE
 #define CONFIG_MTD_PARTITIONS
