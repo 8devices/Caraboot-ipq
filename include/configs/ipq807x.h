@@ -316,6 +316,6 @@ extern loff_t board_env_size;
  */
 
 #define CONFIG_CMD_RUN
-
+#define CONFIG_ARMV7_PSCI
 #endif /* _IPQCDP_H */
 

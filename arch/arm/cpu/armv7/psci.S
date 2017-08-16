@@ -221,3 +221,8 @@ ENTRY(psci_cpu_entry)
 ENDPROC(psci_cpu_entry)
 
 	.popsection
+
+ENTRY(__invoke_psci_fn_smc)
+	__SMC(0)
+	bx lr
+ENDPROC(__invoke_psci_fn_smc)

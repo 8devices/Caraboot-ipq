@@ -37,4 +37,9 @@ int psci_update_dt(void *fdt);
 void psci_board_init(void);
 #endif /* ! __ASSEMBLY__ */
 
+#define ___inst_arm(x) .long x
+
+#define __inst_arm(x) ___inst_arm((x) & 0xFFFFFFFF)
+#define __SMC(imm4) __inst_arm(0xE1600070 | (((imm4) & 0xF) << 0))
+
 #endif /* __ARM_PSCI_H__ */

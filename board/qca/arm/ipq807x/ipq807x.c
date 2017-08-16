@@ -25,11 +25,14 @@
 #include <fdtdec.h>
 #include <mmc.h>
 #include <usb.h>
+#include <linux/linkage.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
 #define GCNT_PSHOLD             0x004AB000
 qca_mmc mmc_host;
+
+extern asmlinkage void __invoke_psci_fn_smc(unsigned long, unsigned long, unsigned long, unsigned long);
 
 extern loff_t board_env_offset;
 extern loff_t board_env_range;
@@ -164,10 +167,15 @@ void reset_crashdump(void)
 	return;
 }
 
+void psci_sys_reset(void)
+{
+	__invoke_psci_fn_smc(0x84000009, 0, 0, 0);
+}
+
 void reset_cpu(unsigned long a)
 {
 	reset_crashdump();
-	writel(0, GCNT_PSHOLD);
+	psci_sys_reset();
 	while(1);
 }
 
