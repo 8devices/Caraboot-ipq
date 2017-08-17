@@ -32,6 +32,36 @@
 #define IPQ807X_PPE_BASE_ADDR			0x3a000000
 #define IPQ807X_PPE_REG_SIZE			0x1000000
 
+#define PORT5					5
+#define PORT6					6
+#define PORT_GMAC_TYPE				1
+#define PORT_XGMAC_TYPE				2
+struct port_mux_ctrl {
+	uint32_t  port4_pcs_sel:1;
+	uint32_t  port5_pcs_sel:2;
+	uint32_t  port5_gmac_sel:1;
+	uint32_t  port6_pcs_sel:1;
+	uint32_t  port6_gmac_sel:1;
+	uint32_t  _reserved0:26;
+};
+union port_mux_ctrl_u {
+	uint32_t val;
+	struct port_mux_ctrl bf;
+};
+
+#define IPQ807X_PORT_MUX_CTRL			0x10
+#define PORT4_PCS_SEL_GMII_FROM_PCS0		1
+#define PORT4_PCS_SEL_RGMII 			0
+#define PORT5_PCS_SEL_RGMII 			0
+#define PORT5_PCS_SEL_GMII_FROM_PCS0 		1
+#define PORT5_PCS_SEL_GMII_FROM_PCS1		2
+#define PORT5_GMAC_SEL_GMAC			1
+#define PORT5_GMAC_SEL_XGMAC			0
+#define PORT6_PCS_SEL_RGMII			0
+#define PORT6_PCS_SEL_GMII_FROM_PCS2		1
+#define PORT6_GMAC_SEL_GMAC			1
+#define PORT6_GMAC_SEL_XGMAC			0
+
 #define IPQ807X_PPE_IPE_L3_BASE_ADDR		0x200000
 #define IPQ807X_PPE_L3_VP_PORT_TBL_ADDR		(IPQ807X_PPE_IPE_L3_BASE_ADDR + 0x1000)
 #define IPQ807X_PPE_L3_VP_PORT_TBL_INC		0x10
@@ -125,4 +155,5 @@
 #define IPQ807X_PPE_PORT_XGMAC1_BITPOS		(1 << IPQ807X_PPE_PORT_XGMAC1)
 #define IPQ807X_PPE_PORT_XGMAC2_BITPOS		(1 << IPQ807X_PPE_PORT_XGMAC2)
 #define IPQ807X_PPE_PORT_CRYPTO1_BITPOS		(1 << IPQ807X_PPE_PORT_CRYPTO1)
+
 

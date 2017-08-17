@@ -17,8 +17,12 @@
  */
 
 #include <common.h>
+#include <asm/global_data.h>
 #include "ipq807x_ppe.h"
+#include "ipq807x_uniphy.h"
+#include <fdtdec.h>
 
+DECLARE_GLOBAL_DATA_PTR;
 #define pr_info(fmt, args...) printf(fmt, ##args);
 
 /*
@@ -874,6 +878,93 @@ static void ipq807x_ppe_e_sp_cfg_tbl_drr_id_set(int id)
 	ipq807x_ppe_reg_write(IPQ807X_PPE_L1_E_SP_CFG_TBL + (id * 0x80), id * 2 + 1);
 }
 
+static void ppe_port_mux_set(int port_id, int port_type)
+{
+	union port_mux_ctrl_u port_mux_ctrl;
+
+	ipq807x_ppe_reg_read(IPQ807X_PORT_MUX_CTRL,  &(port_mux_ctrl.val));
+	port_mux_ctrl.bf.port4_pcs_sel = PORT4_PCS_SEL_GMII_FROM_PCS0;
+	if (port_id == PORT5) {
+		if (port_type == PORT_GMAC_TYPE) {
+			port_mux_ctrl.bf.port5_pcs_sel = PORT5_PCS_SEL_GMII_FROM_PCS1;
+			port_mux_ctrl.bf.port5_gmac_sel = PORT5_GMAC_SEL_GMAC;
+		} else if (port_type == PORT_XGMAC_TYPE) {
+			port_mux_ctrl.bf.port5_pcs_sel = PORT5_PCS_SEL_GMII_FROM_PCS1;
+			port_mux_ctrl.bf.port5_gmac_sel = PORT5_GMAC_SEL_XGMAC;
+		}
+	} else if (port_id == PORT6) {
+		if (port_type == PORT_GMAC_TYPE) {
+			port_mux_ctrl.bf.port6_pcs_sel = PORT6_PCS_SEL_GMII_FROM_PCS2;
+			port_mux_ctrl.bf.port6_gmac_sel = PORT6_GMAC_SEL_GMAC;
+		} else if (port_type == PORT_XGMAC_TYPE) {
+			port_mux_ctrl.bf.port6_pcs_sel = PORT6_PCS_SEL_GMII_FROM_PCS2;
+			port_mux_ctrl.bf.port6_gmac_sel = PORT6_GMAC_SEL_XGMAC;
+		}
+	} else
+		return;
+
+	ipq807x_ppe_reg_write(IPQ807X_PORT_MUX_CTRL,  port_mux_ctrl.val);
+}
+
+static void ppe_port_mux_mac_type_set(int port_id, int mode)
+{
+	uint32_t port_type;
+
+	switch(mode)
+	{
+		case PORT_WRAPPER_SGMII0_RGMII4:
+			port_type = PORT_GMAC_TYPE;
+			break;
+		case PORT_WRAPPER_USXGMII:
+			port_type = PORT_XGMAC_TYPE;
+			break;
+		default:
+			port_type = PORT_GMAC_TYPE;
+			break;
+	}
+	ppe_port_mux_set(port_id, port_type);
+}
+
+
+
+void ipq807x_ppe_interface_mode_init(void)
+{
+	uint32_t mode0, mode1, mode2;
+	int node;
+
+	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
+	if (node < 0) {
+		printf("Error: ess-switch not specified in dts");
+		return;
+	}
+
+	mode0 = fdtdec_get_uint(gd->fdt_blob, node, "switch_mac_mode0", -1);
+	if (mode0 < 0) {
+		printf("Error: switch_mac_mode0 not specified in dts");
+		return;
+	}
+
+	mode1 = fdtdec_get_uint(gd->fdt_blob, node, "switch_mac_mode1", -1);
+	if (mode1 < 0) {
+		printf("Error: switch_mac_mode1 not specified in dts");
+		return;
+	}
+	mode2 = fdtdec_get_uint(gd->fdt_blob, node, "switch_mac_mode2", -1);
+	if (mode2 < 0) {
+		printf("Error: switch_mac_mode2 not specified in dts");
+		return;
+	}
+
+	ppe_uniphy_mode_set(PPE_UNIPHY_INSTANCE0, mode0);
+	ppe_uniphy_mode_set(PPE_UNIPHY_INSTANCE1, mode1);
+	ppe_uniphy_mode_set(PPE_UNIPHY_INSTANCE2, mode2);
+
+	/* Port 1-4 are used mac type as GMAC by default but Port5 and Port6
+	* can be used as GMAC or XGMAC */
+	ppe_port_mux_mac_type_set(PORT5, mode1);
+	ppe_port_mux_mac_type_set(PORT6, mode2);
+}
+
 /*
  * ipq807x_ppe_provision_init()
  */
@@ -976,6 +1067,7 @@ void ipq807x_ppe_provision_init(void)
 	for (i = 0; i < 8; i++)
 		ipq807x_ppe_reg_write(IPQ807X_PPE_STP_BASE + (0x4 * i), 0x3);
 
+	ipq807x_ppe_interface_mode_init();
 	/* Port 0-5 enable */
 	for (i = 0; i < 6; i++)
 		ipq807x_gmac_port_enable(i);
