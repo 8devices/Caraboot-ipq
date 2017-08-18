@@ -998,6 +998,7 @@ void ipq807x_ppe_provision_init(void)
 	ipq807x_ppe_vp_port_tbl_set(3, 2);
 	ipq807x_ppe_vp_port_tbl_set(4, 2);
 	ipq807x_ppe_vp_port_tbl_set(5, 2);
+	ipq807x_ppe_vp_port_tbl_set(6, 2);
 
 #else
 	ipq807x_ppe_vp_port_tbl_set(1, 2);
@@ -1055,7 +1056,7 @@ void ipq807x_ppe_provision_init(void)
 	ipq807x_ppe_reg_write(0x060038, 0xc0);
 
 #ifdef CONFIG_IPQ807X_BRIDGED_MODE
-	ipq807x_vsi_setup(2, 0x3f);
+	ipq807x_vsi_setup(2, 0x7f);
 #else
 	ipq807x_vsi_setup(2, 0x03);
 	ipq807x_vsi_setup(3, 0x05);
