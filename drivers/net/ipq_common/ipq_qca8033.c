@@ -17,7 +17,7 @@
 #include <asm/arch-ipq40xx/ess/ipq40xx_edma.h>
 #include <malloc.h>
 #include "ipq40xx_edma_eth.h"
-#include "ipq40xx_qca8033.h"
+#include "ipq_qca8033.h"
 #include "ipq_phy.h"
 
 extern int ipq40xx_mdio_write(int mii_id,

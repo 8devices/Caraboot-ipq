@@ -77,7 +77,6 @@ obj-$(CONFIG_FSL_MEMAC) += fm/memac_phy.o
 obj-$(CONFIG_VSC9953) += vsc9953.o
 obj-$(CONFIG_IPQ40XX_EDMA) += ipq40xx/ipq40xx_edma_eth.o
 obj-$(CONFIG_IPQ40XX_ESS) += ipq40xx/ipq40xx_ess_sw.o
-obj-$(CONFIG_QCA8033_PHY) += ipq40xx/ipq40xx_qca8033.o
 obj-$(CONFIG_IPQ_SNPS_GMAC) += ipq806x/ipq_gmac_eth.o
 obj-$(CONFIG_IPQ_SWITCH_ATHRS17) += ipq806x/athrs17_phy.o
 obj-$(CONFIG_IPQ_SWITCH_QCA8511) += ipq806x/qca8511.o
