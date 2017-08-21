@@ -270,5 +270,5 @@ int phy_get_interface_by_name(const char *str);
 /* PHY UIDs for various PHYs that are referenced in external code */
 #define PHY_UID_CS4340  0x13e51002
 #define PHY_UID_TN2020	0x00a19410
-
+#define MII_ADDR_C45 (1<<30)
 #endif
