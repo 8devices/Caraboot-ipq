@@ -69,11 +69,11 @@ void mmu_set_region_dcache_behaviour(phys_addr_t start, size_t size,
 __weak void dram_bank_mmu_setup(int bank)
 {
 	bd_t *bd = gd->bd;
-	int	i;
+	unsigned long long	i;
 
 	debug("%s: bank: %d\n", __func__, bank);
 	for (i = bd->bi_dram[bank].start >> 20;
-	     i < (bd->bi_dram[bank].start + bd->bi_dram[bank].size) >> 20;
+	     i < ((unsigned long long)bd->bi_dram[bank].start + (unsigned long long)bd->bi_dram[bank].size) >> 20;
 	     i++) {
 		/* Set XN bit for all dram regions except uboot code region */
 		if (i >= (CONFIG_SYS_TEXT_BASE >> 20) && i < ((CONFIG_SYS_TEXT_BASE + 0x100000) >> 20))
