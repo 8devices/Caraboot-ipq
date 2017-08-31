@@ -14,27 +14,26 @@
 #include <net.h>
 #include <asm-generic/errno.h>
 #include <asm/io.h>
-#include <asm/arch-ipq40xx/ess/ipq40xx_edma.h>
 #include <malloc.h>
-#include "ipq40xx_edma_eth.h"
+#include <phy.h>
 #include "ipq_qca8033.h"
 #include "ipq_phy.h"
 
-extern int ipq40xx_mdio_write(int mii_id,
+extern int ipq_mdio_write(int mii_id,
 		int regnum, u16 value);
-extern int ipq40xx_mdio_read(int mii_id,
+extern int ipq_mdio_read(int mii_id,
 		int regnum, ushort *data);
 
 static u16 qca8033_phy_reg_write(u32 dev_id, u32 phy_id,
 		u32 reg_id, u16 reg_val)
 {
-	ipq40xx_mdio_write(phy_id, reg_id, reg_val);
+	ipq_mdio_write(phy_id, reg_id, reg_val);
 	return 0;
 }
 
 u16 qca8033_phy_reg_read(u32 dev_id, u32 phy_id, u32 reg_id)
 {
-	return ipq40xx_mdio_read(phy_id, reg_id, NULL);
+	return ipq_mdio_read(phy_id, reg_id, NULL);
 }
 
 u8 qca8033_phy_get_link_status(u32 dev_id, u32 phy_id)
@@ -89,7 +88,7 @@ u32 qca8033_phy_get_speed(u32 dev_id, u32 phy_id, fal_port_speed_t *speed)
 	return 0;
 }
 
-int ipq40xx_qca8033_phy_init(struct ipq40xx_eth_dev *info)
+int ipq_qca8033_phy_init(struct phy_ops **ops, u32 phy_id)
 {
 	u16 phy_data;
 	struct phy_ops *qca8033_ops;
@@ -99,19 +98,17 @@ int ipq40xx_qca8033_phy_init(struct ipq40xx_eth_dev *info)
 	qca8033_ops->phy_get_link_status = qca8033_phy_get_link_status;
 	qca8033_ops->phy_get_speed = qca8033_phy_get_speed;
 	qca8033_ops->phy_get_duplex = qca8033_phy_get_duplex;
-	info->ops = qca8033_ops;
+	*ops = qca8033_ops;
 
-	phy_data = qca8033_phy_reg_read(0x0, 0x4, QCA8033_PHY_ID1);
+	phy_data = qca8033_phy_reg_read(0x0, phy_id, QCA8033_PHY_ID1);
 	printf ("PHY ID1: 0x%x\n", phy_data);
-	phy_data = qca8033_phy_reg_read(0x0, 0x4, QCA8033_PHY_ID2);
+	phy_data = qca8033_phy_reg_read(0x0, phy_id, QCA8033_PHY_ID2);
 	printf ("PHY ID2: 0x%x\n", phy_data);
-
-	qca8033_phy_reg_write(0x0, 0x4, 0x1d, 0x5);
-	qca8033_phy_reg_write(0x0, 0x4, 0x1e, 0x2d47);
-	qca8033_phy_reg_write(0x0, 0x4, 0x1d, 0xb);
-	qca8033_phy_reg_write(0x0, 0x4, 0x1e, 0xbc40);
-	qca8033_phy_reg_write(0x0, 0x4, 0x1d, 0x0);
-	qca8033_phy_reg_write(0x0, 0x4, 0x1e, 0x82ee);
-
+	qca8033_phy_reg_write(0x0, phy_id, 0x1d, 0x5);
+	qca8033_phy_reg_write(0x0, phy_id, 0x1e, 0x2d47);
+	qca8033_phy_reg_write(0x0, phy_id, 0x1d, 0xb);
+	qca8033_phy_reg_write(0x0, phy_id, 0x1e, 0xbc40);
+	qca8033_phy_reg_write(0x0, phy_id, 0x1d, 0x0);
+	qca8033_phy_reg_write(0x0, phy_id, 0x1e, 0x82ee);
 	return 0;
 }
