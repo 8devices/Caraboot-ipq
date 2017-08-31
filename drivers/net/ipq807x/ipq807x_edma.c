@@ -23,9 +23,12 @@
 #include <net.h>
 #include <miiphy.h>
 #include <asm/arch-ipq807x/edma_regs.h>
+#include <asm/global_data.h>
+#include <fdtdec.h>
 #include "ipq807x_edma.h"
 #include "ipq_phy.h"
 
+DECLARE_GLOBAL_DATA_PTR;
 #ifdef DEBUG
 #define pr_debug(fmt, args...) printf(fmt, ##args);
 #else
@@ -52,6 +55,7 @@ extern int ipq_mdio_read(int mii_id,
 		int regnum, ushort *data);
 extern void ipq_qca8075_phy_map_ops(struct phy_ops **ops);
 extern int ipq_qca8075_phy_init(struct phy_ops **ops);
+extern int ipq_qca8033_phy_init(struct phy_ops **ops, u32 phy_id);
 
 /*
  * EDMA hardware instance
@@ -867,7 +871,11 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 	char *dp[] = {"Half", "Full"};
 	int linkup=0;
 	int mac_speed, speed_clock1, speed_clock2;
+	int phy_addr, port_8033 = -1, node;
 
+	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
+	if (node >= 0)
+		port_8033 = fdtdec_get_uint(gd->fdt_blob, node, "8033_port", -1);
 	/*
 	 * Check PHY link, speed, Duplex on all phys.
 	 * we will proceed even if single link is up
@@ -887,11 +895,16 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 			return -1;
 		}
 
-		status = phy_get_ops->phy_get_link_status(priv->mac_unit, i);
+		if (i == port_8033)
+			phy_addr = QCA8033_PHY_ADDR;
+		else
+			phy_addr = i;
+
+		status = phy_get_ops->phy_get_link_status(priv->mac_unit, phy_addr);
 		if (status == 0)
 			linkup++;
-		phy_get_ops->phy_get_speed(priv->mac_unit, i, &speed);
-		phy_get_ops->phy_get_duplex(priv->mac_unit, i, &duplex);
+		phy_get_ops->phy_get_speed(priv->mac_unit, phy_addr, &speed);
+		phy_get_ops->phy_get_duplex(priv->mac_unit, phy_addr, &duplex);
 		switch (speed) {
 			case FAL_SPEED_10:
 				mac_speed = 0x0;
@@ -1539,6 +1552,11 @@ int ipq807x_edma_init(void *edma_board_cfg)
 	int ret = -1;
 	ipq807x_edma_board_cfg_t ledma_cfg, *edma_cfg;
 	static int sw_init_done = 0;
+	int port_8033 = -1, node, phy_addr;
+
+	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
+	if (node >= 0)
+		port_8033 = fdtdec_get_uint(gd->fdt_blob, node, "8033_port", -1);
 
 	memset(c_info, 0, (sizeof(c_info) * IPQ807X_EDMA_DEV));
 	memset(enet_addr, 0, sizeof(enet_addr));
@@ -1620,9 +1638,13 @@ int ipq807x_edma_init(void *edma_board_cfg)
 			goto init_failed;
 
 		for (phy_id =  0; phy_id < PHY_MAX; phy_id++) {
+			if (phy_id == port_8033)
+				phy_addr = QCA8033_PHY_ADDR;
+			else
+				phy_addr = phy_id;
 
-			phy_chip_id1 = ipq_mdio_read(phy_id, QCA_PHY_ID1, NULL);
-			phy_chip_id2 = ipq_mdio_read(phy_id, QCA_PHY_ID2, NULL);
+			phy_chip_id1 = ipq_mdio_read(phy_addr, QCA_PHY_ID1, NULL);
+			phy_chip_id2 = ipq_mdio_read(phy_addr, QCA_PHY_ID2, NULL);
 			phy_chip_id = (phy_chip_id1 << 16) | phy_chip_id2;
 			switch(phy_chip_id) {
 				case QCA8075_PHY_V1_0_5P:
@@ -1636,6 +1658,9 @@ int ipq807x_edma_init(void *edma_board_cfg)
 					 } else {
 						ipq_qca8075_phy_map_ops(&ipq807x_edma_dev[i]->ops[phy_id]);
 					 }
+					 break;
+				case QCA8033_PHY:
+					ipq_qca8033_phy_init(&ipq807x_edma_dev[i]->ops[phy_id], phy_addr);
 					 break;
 				default:
 					ipq_qca8075_phy_map_ops(&ipq807x_edma_dev[i]->ops[phy_id]);
