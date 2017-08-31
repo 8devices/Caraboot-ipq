@@ -43,17 +43,15 @@ static struct ipq807x_eth_dev *ipq807x_edma_dev[IPQ807X_EDMA_DEV];
 
 uchar ipq807x_def_enetaddr[6] = {0x00, 0x03, 0x7F, 0xBA, 0xDB, 0xAD};
 
-static int (*ipq807x_switch_init)(struct phy_ops **ops);
 extern void qca8075_ess_reset(void);
 extern void psgmii_self_test(void);
 extern void clear_self_test_config(void);
 extern int ipq_sw_mdio_init(const char *);
 extern void ipq_qca8075_dump_phy_regs(u32);
-
-void ipq807x_register_switch(int(*sw_init)(struct phy_ops **ops))
-{
-	ipq807x_switch_init = sw_init;
-}
+extern int ipq_mdio_read(int mii_id,
+		int regnum, ushort *data);
+extern void ipq_qca8075_phy_map_ops(struct phy_ops **ops);
+extern int ipq_qca8075_phy_init(struct phy_ops **ops);
 
 /*
  * EDMA hardware instance
@@ -868,20 +866,7 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 	char *lstatus[] = {"up", "Down"};
 	char *dp[] = {"Half", "Full"};
 	int linkup=0;
-	int mac_speed = 0, speed_clock1 = 0, speed_clock2 = 0;
-	if (!priv->ops) {
-		printf ("Phy ops not mapped\n");
-		return -1;
-	}
-
-	phy_get_ops = priv->ops;
-
-	if (!phy_get_ops->phy_get_link_status ||
-	    !phy_get_ops->phy_get_speed ||
-	    !phy_get_ops->phy_get_duplex) {
-		printf ("Link status/Get speed/Get duplex not mapped\n");
-		return -1;
-	}
+	int mac_speed, speed_clock1, speed_clock2;
 
 	/*
 	 * Check PHY link, speed, Duplex on all phys.
@@ -889,39 +874,52 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 	 * else we will return with -1;
 	 */
 	for (i =  0; i < PHY_MAX; i++) {
+		if (!priv->ops[i]) {
+			printf ("Phy ops not mapped\n");
+			return -1;
+		}
+		phy_get_ops = priv->ops[i];
+
+		if (!phy_get_ops->phy_get_link_status ||
+				!phy_get_ops->phy_get_speed ||
+				!phy_get_ops->phy_get_duplex) {
+			printf ("Link status/Get speed/Get duplex not mapped\n");
+			return -1;
+		}
+
 		status = phy_get_ops->phy_get_link_status(priv->mac_unit, i);
 		if (status == 0)
 			linkup++;
 		phy_get_ops->phy_get_speed(priv->mac_unit, i, &speed);
 		phy_get_ops->phy_get_duplex(priv->mac_unit, i, &duplex);
 		switch (speed) {
-		case FAL_SPEED_10:
-			mac_speed = 0x0;
-			speed_clock1 = 0x109;
-			speed_clock2 = 0x9;
-			printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
-				priv->mac_unit, i, lstatus[status], speed,
-				dp[duplex]);
-			break;
-		case FAL_SPEED_100:
-			mac_speed = 0x1;
-			speed_clock1 = 0x101;
-			speed_clock2 = 0x4;
-			printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
-				priv->mac_unit, i, lstatus[status], speed,
-				dp[duplex]);
-			break;
-		case FAL_SPEED_1000:
-			mac_speed = 0x2;
-			speed_clock1 = 0x101;
-			speed_clock2 = 0x0;
-			printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
-				priv->mac_unit, i, lstatus[status], speed,
-				dp[duplex]);
-			break;
-		default:
-			printf("Unknown speed\n");
-			break;
+			case FAL_SPEED_10:
+				mac_speed = 0x0;
+				speed_clock1 = 0x109;
+				speed_clock2 = 0x9;
+				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
+						priv->mac_unit, i, lstatus[status], speed,
+						dp[duplex]);
+				break;
+			case FAL_SPEED_100:
+				mac_speed = 0x1;
+				speed_clock1 = 0x101;
+				speed_clock2 = 0x4;
+				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
+						priv->mac_unit, i, lstatus[status], speed,
+						dp[duplex]);
+				break;
+			case FAL_SPEED_1000:
+				mac_speed = 0x2;
+				speed_clock1 = 0x101;
+				speed_clock2 = 0x0;
+				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
+						priv->mac_unit, i, lstatus[status], speed,
+						dp[duplex]);
+				break;
+			default:
+				printf("Unknown speed\n");
+				break;
 		}
 		ipq807x_pqsgmii_speed_clock_set(i, mac_speed, speed_clock1, speed_clock2);
 	}
@@ -1536,11 +1534,11 @@ int ipq807x_edma_init(void *edma_board_cfg)
 	struct ipq807x_edma_common_info *c_info[IPQ807X_EDMA_DEV];
 	struct ipq807x_edma_hw *hw[IPQ807X_EDMA_DEV];
 	uchar enet_addr[IPQ807X_EDMA_DEV * 6];
-	int i;
+	int i, phy_id;
+	uint32_t phy_chip_id, phy_chip_id1, phy_chip_id2;
 	int ret = -1;
 	ipq807x_edma_board_cfg_t ledma_cfg, *edma_cfg;
 	static int sw_init_done = 0;
-
 
 	memset(c_info, 0, (sizeof(c_info) * IPQ807X_EDMA_DEV));
 	memset(enet_addr, 0, sizeof(enet_addr));
@@ -1621,13 +1619,27 @@ int ipq807x_edma_init(void *edma_board_cfg)
 		if (ret)
 			goto init_failed;
 
+		for (phy_id =  0; phy_id < PHY_MAX; phy_id++) {
 
-		if (!sw_init_done) {
-			if (ipq807x_switch_init(&ipq807x_edma_dev[i]->ops) == 0) {
-				sw_init_done = 1;
-			} else {
-				printf ("SW inits failed\n");
-				goto init_failed;
+			phy_chip_id1 = ipq_mdio_read(phy_id, QCA_PHY_ID1, NULL);
+			phy_chip_id2 = ipq_mdio_read(phy_id, QCA_PHY_ID2, NULL);
+			phy_chip_id = (phy_chip_id1 << 16) | phy_chip_id2;
+			switch(phy_chip_id) {
+				case QCA8075_PHY_V1_0_5P:
+				case QCA8075_PHY_V1_1_5P:
+				case QCA8075_PHY_V1_1_2P:
+
+					if (!sw_init_done) {
+						if (ipq_qca8075_phy_init(&ipq807x_edma_dev[i]->ops[phy_id]) == 0) {
+							sw_init_done = 1;
+						}
+					 } else {
+						ipq_qca8075_phy_map_ops(&ipq807x_edma_dev[i]->ops[phy_id]);
+					 }
+					 break;
+				default:
+					ipq_qca8075_phy_map_ops(&ipq807x_edma_dev[i]->ops[phy_id]);
+					break;
 			}
 		}
 

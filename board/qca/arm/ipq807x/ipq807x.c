@@ -40,7 +40,6 @@ extern loff_t board_env_size;
 
 extern int ipq_spi_init(u16);
 extern int ipq807x_edma_init(void *cfg);
-extern int ipq_qca8075_phy_init(struct phy_ops **ops);
 
 const char *rsvd_node = "/reserved-memory";
 const char *del_node[] = {"uboot",
@@ -230,8 +229,6 @@ int board_eth_init(bd_t *bis)
 {
 	int ret=0;
 	int tlmm_base = 0x1025000;
-
-	ipq807x_register_switch(ipq_qca8075_phy_init);
 
 	/*
 	 * ethernet clk rcgr block init -- start

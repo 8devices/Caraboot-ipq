@@ -25,6 +25,7 @@ extern int ipq_mdio_write(int mii_id,
 extern int ipq_mdio_read(int mii_id,
 		int regnum, ushort *data);
 
+struct phy_ops *qca8075_ops;
 static u32 qca8075_id;
 static u16 qca8075_phy_reg_write(u32 dev_id, u32 phy_id,
 		u32 reg_id, u16 reg_val)
@@ -728,11 +729,15 @@ void ipq_qca8075_dump_phy_regs(u32 phy_id)
 #undef REG_LEN
 }
 
+void ipq_qca8075_phy_map_ops(struct phy_ops **ops)
+{
+	*ops = qca8075_ops;
+}
+
 int ipq_qca8075_phy_init(struct phy_ops **ops)
 {
 	u16 phy_data;
 	u32 phy_id = 0;
-	struct phy_ops *qca8075_ops;
 
 	qca8075_ops = (struct phy_ops *)malloc(sizeof(struct phy_ops));
 	if (!qca8075_ops)

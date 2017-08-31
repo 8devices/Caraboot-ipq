@@ -32,6 +32,12 @@
 #define GP_PU_RES(x)		(x << 13)
 #define QCA8075_RST_VAL		(GP_PULL_DOWN | GP_OE_EN | \
 				GP_VM_EN | GP_PU_RES(2))
+#define QCA8075_PHY_V1_0_5P			0x004DD0B0
+#define QCA8075_PHY_V1_1_5P			0x004DD0B1
+#define QCA8075_PHY_V1_1_2P			0x004DD0B2
+#define QCA_PHY_ID1				0x2
+#define QCA_PHY_ID2				0x3
+
 
 /* Phy preferred medium type */
 typedef enum {

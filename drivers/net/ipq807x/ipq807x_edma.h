@@ -251,6 +251,7 @@ struct ipq807x_edma_common_info {
 	struct ipq807x_edma_hw hw;
 };
 
+#define MAX_PHY 6
 struct ipq807x_eth_dev {
 	u8 *phy_address;
 	uint no_of_phys;
@@ -264,7 +265,7 @@ struct ipq807x_eth_dev {
 	u32 padding;
 	struct eth_device *dev;
 	struct ipq807x_edma_common_info *c_info;
-	struct phy_ops *ops;
+	struct phy_ops *ops[MAX_PHY];
 	const char phy_name[MDIO_NAME_LEN];
 } __attribute__ ((aligned(8)));
 
