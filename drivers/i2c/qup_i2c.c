@@ -751,6 +751,8 @@ static int qup_i2c_probe_chip(struct udevice *bus, uint chip_addr,
 	struct ipq_i2c_platdata *plat = bus->platdata;
 	plat->type = dev_get_driver_data(bus);
 	buf[0] = 0;
+	if (i2c_bus == NULL)
+		return -ENODEV;
 	i2c_bus->i2c_base_addr = (int *)dev_get_addr(bus);
 	i2c_base_addr = (int)i2c_bus->i2c_base_addr;
 	src_clk_freq = fdtdec_get_int(gd->fdt_blob, bus->of_offset, "clock-frequency", -1);

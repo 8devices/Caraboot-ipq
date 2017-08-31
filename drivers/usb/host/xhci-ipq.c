@@ -50,6 +50,11 @@ void ipq_reset_usb_phy(struct ipq_xhci *ipq)
 	struct ipq_xhci_platdata *platdata;
 
 	platdata = dev_get_platdata(ipq->dev);
+	if (platdata == NULL) {
+		printf("Error: %s Failed\n", __func__);
+		return;
+	}
+
 	gcc_rst_ctrl = platdata->rst_ctrl;
 
 	if (gcc_rst_ctrl) {
@@ -126,7 +131,17 @@ static int xhci_usb_probe(struct udevice *dev)
 	int ret;
 
 	platdata = dev_get_platdata(dev);
+	if (platdata == NULL) {
+		printf("Error: %s Failed\n", __func__);
+		return -ENODEV;
+	}
+
 	context = dev_get_priv(dev);
+	if (context == NULL) {
+		printf("Error: %s Failed\n", __func__);
+		return -ENODEV;
+	}
+
 	context->hcd = (struct xhci_hccr *)platdata->hcd_base;
 	context->dev = dev;
 	context->dwc3_reg = (struct dwc3 *)((char *)(context->hcd) + DWC3_REG_OFFSET);
@@ -149,6 +164,11 @@ static int xhci_ofdata_to_platdata(struct udevice *dev)
 	const void *blob = gd->fdt_blob;
 
 	platdata = dev_get_platdata(dev);
+	if (platdata == NULL) {
+		printf("Error: %s Failed\n", __func__);
+		return -ENODEV;
+	}
+
 	platdata->hcd_base = dev_get_addr(dev);
 	if (platdata->hcd_base == FDT_ADDR_T_NONE) {
 		debug("Error getting DWC3 base address\n");

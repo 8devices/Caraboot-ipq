@@ -723,6 +723,11 @@ void pci_init_board (void)
 	const struct udevice_id *of_match = pcie_ver_ids;
 
 	pcie = malloc(sizeof(*pcie));
+	if (pcie == NULL) {
+		printf("PCI: Init failed. Could't allocate memory\n");
+		return;
+	}
+
 	while (of_match->compatible) {
 		ret = fdt_node_offset_by_compatible(gd->fdt_blob, 0,
 						of_match->compatible);

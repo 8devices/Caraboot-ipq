@@ -562,7 +562,7 @@ static int ipq807x_eth_recv(struct eth_device *dev)
 	struct ipq807x_edma_rxdesc_ring *rxdesc_ring;
 	struct ipq807x_edma_hw *ehw = &c_info->hw;
 	volatile u32 reg_data;
-	u32 rxdesc_intr_status;
+	u32 rxdesc_intr_status = 0;
 	int i;
 
 	/*
@@ -868,7 +868,7 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 	char *lstatus[] = {"up", "Down"};
 	char *dp[] = {"Half", "Full"};
 	int linkup=0;
-	int mac_speed, speed_clock1, speed_clock2;
+	int mac_speed = 0, speed_clock1 = 0, speed_clock2 = 0;
 	if (!priv->ops) {
 		printf ("Phy ops not mapped\n");
 		return -1;

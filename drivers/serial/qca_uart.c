@@ -529,8 +529,10 @@ static void  do_uart_start(void)
 	}
 
 	uart_base = fdt_getprop(gd->fdt_blob, node, "reg", &len);
-	if (uart_base == FDT_ADDR_T_NONE)
-		return -EINVAL;
+	if (uart_base == NULL) {
+		printf("UART init failed. Unable to get uart_base\n");
+		return;
+	}
 
 	uart2.reg_base = fdt32_to_cpu(uart_base[0]);
 
