@@ -128,7 +128,10 @@ static const struct winbond_spi_flash_params winbond_spi_flash_table[] = {
 
 static int winbond_erase(struct spi_flash *flash, u32 offset, size_t len)
 {
-	return spi_flash_cmd_erase(flash, CMD_W25_BE, offset, len);
+	if ((offset % flash->block_size) == 0 && (len % flash->block_size) == 0)
+		return spi_flash_cmd_erase_block(flash, CMD_W25_BE, offset, len);
+	else
+		return spi_flash_cmd_erase(flash, CMD_W25_SE, offset, len);
 }
 
 struct spi_flash *spi_flash_probe_winbond(struct spi_slave *spi, u8 *idcode)
@@ -168,6 +171,7 @@ struct spi_flash *spi_flash_probe_winbond(struct spi_slave *spi, u8 *idcode)
 	flash->read = spi_flash_cmd_read_fast;
 	flash->page_size = page_size;
 	flash->sector_size = page_size * params->pages_per_sector;
+	flash->block_size = flash->sector_size * params->sectors_per_block;
 	flash->size = page_size * params->pages_per_sector
 				* params->sectors_per_block
 				* params->nr_blocks;
