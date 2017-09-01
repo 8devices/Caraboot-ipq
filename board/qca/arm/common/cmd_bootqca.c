@@ -363,6 +363,11 @@ int config_select(unsigned int addr, char *rcmd, int rcmd_size)
 	int soc_version = 0;
 	const char *config = fdt_getprop(gd->fdt_blob, 0, "config_name", NULL);
 
+	if(config == NULL) {
+		printf("Failed to get config_name\n");
+		return -1;
+	}
+
 	sprintf((char *)dtb_config_name, "%s", config);
 
 	ipq_smem_get_socinfo_version((uint32_t *)&soc_version);
@@ -447,7 +452,7 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 			 request);
 
 		if (debug)
-			printf(runcmd);
+			printf("%s", runcmd);
 
 		if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
 			return CMD_RET_FAILURE;
@@ -494,7 +499,7 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 			 request, sfi->hlos.offset, sfi->hlos.size);
 
 		if (debug)
-			printf(runcmd);
+			printf("%s", runcmd);
 
 		if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
 			return CMD_RET_FAILURE;
@@ -529,7 +534,7 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 	ret = config_select(request, runcmd, sizeof(runcmd));
 
 	if (debug)
-		printf(runcmd);
+		printf("%s", runcmd);
 
 	if (ret < 0 || run_command(runcmd, 0) != CMD_RET_SUCCESS) {
 #ifdef CONFIG_QCA_MMC
@@ -712,7 +717,7 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
 	int ret;
-	char buf;
+	char buf = 0;
 	/*
 	 * set fdt_high parameter so that u-boot will not load
 	 * dtb above CONFIG_IPQ40XX_FDT_HIGH region.
