@@ -104,6 +104,16 @@
 #define CONFIG_IPQ_FDT_HIGH		0x4A600000
 #define CONFIG_IPQ_NO_MACS		6
 
+/*
+ * IPQ_TFTP_MIN_ADDR: Starting address of Linux HLOS region.
+ * CONFIG_TZ_END_ADDR: Ending address of Trust Zone and starting
+ * address of WLAN Area.
+ * TFTP file can only be written in Linux HLOS region and WLAN AREA.
+ */
+#define IPQ_TFTP_MIN_ADDR		(CONFIG_SYS_SDRAM_BASE + (16 << 20))
+#define CONFIG_TZ_END_ADDR		(CONFIG_SYS_SDRAM_BASE + (88 << 21))
+#define CONFIG_SYS_SDRAM_END		(CONFIG_SYS_SDRAM_BASE + gd->ram_size)
+
 #ifndef __ASSEMBLY__
 #include <compiler.h>
 extern loff_t board_env_offset;

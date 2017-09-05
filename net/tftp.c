@@ -39,6 +39,7 @@
 #define TFTP_ERROR	5
 #define TFTP_OACK	6
 
+DECLARE_GLOBAL_DATA_PTR;
 static ulong timeout_ms = TIMEOUT;
 static int timeout_count_max = TIMEOUT_COUNT;
 static ulong time_start;   /* Record time we started tftp */
@@ -190,6 +191,17 @@ static inline void store_block(int block, uchar *src, unsigned len)
 	} else
 #endif /* CONFIG_SYS_DIRECT_FLASH_TFTP */
 	{
+		/*
+		 * The file to be tftp'ed should not overwrite the
+		 * code/stack area.
+		 */
+		if (((load_addr + newsize) >= CONFIG_SYS_SDRAM_END) ||
+		    (((load_addr + newsize) >= CONFIG_IPQ_FDT_HIGH) &&
+		     ((load_addr + newsize) < CONFIG_TZ_END_ADDR))) {
+			puts("\nError file size too large\n");
+			net_set_state(NETLOOP_FAIL);
+			return;
+		}
 		void *ptr = map_sysmem(load_addr + offset, len);
 
 		memcpy(ptr, src, len);
@@ -803,6 +815,18 @@ void tftp_start(enum proto_t protocol)
 #endif
 	{
 		printf("Load address: 0x%lx\n", load_addr);
+		/*
+		 * Do not load files to the reserved region or the
+		 * region where linux is executed.
+		 */
+		if ((load_addr < IPQ_TFTP_MIN_ADDR) ||
+		    (load_addr >= CONFIG_SYS_SDRAM_END) ||
+		    ((load_addr >= CONFIG_IPQ_FDT_HIGH) &&
+		    (load_addr < CONFIG_TZ_END_ADDR))) {
+			puts("\nError specified load address not allowed\n");
+			net_set_state(NETLOOP_FAIL);
+			return;
+		}
 		puts("Loading: *\b");
 		tftp_state = STATE_SEND_RRQ;
 	}
