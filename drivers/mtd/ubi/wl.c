@@ -542,8 +542,13 @@ static void __schedule_ubi_work(struct ubi_device *ubi, struct ubi_work *wrk)
 	list_add_tail(&wrk->list, &ubi->works);
 	ubi_assert(ubi->works_count >= 0);
 	ubi->works_count += 1;
+
+	if (!ubi->thread_enabled || ubi_dbg_is_bgt_disabled(ubi)) {
+		spin_unlock(&ubi->wl_lock);
+		return;
+	}
+
 #ifndef __UBOOT__
-	if (ubi->thread_enabled && !ubi_dbg_is_bgt_disabled(ubi))
 		wake_up_process(ubi->bgt_thread);
 #else
 	int err;
