@@ -521,6 +521,7 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 
 	board_pci_deinit();
 #ifdef CONFIG_USB_XHCI_IPQ
+	usb_stop();
         for (i=0; i<CONFIG_USB_MAX_CONTROLLER_COUNT; i++) {
 		board_usb_deinit(i);
         }
@@ -663,6 +664,7 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 	board_pci_deinit();
 
 #ifdef CONFIG_USB_XHCI_IPQ
+	usb_stop();
         for (i=0; i<CONFIG_USB_MAX_CONTROLLER_COUNT; i++) {
 		board_usb_deinit(i);
         }
