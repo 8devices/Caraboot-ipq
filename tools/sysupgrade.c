@@ -126,6 +126,7 @@ int check_mbn_elf(struct image_section **sec)
 		return 0;
 	}
 
+	memset(&sb, 0, sizeof(struct stat));
 	if (fstat(fd, &sb) == -1) {
 		perror("fstat");
 		close(fd);
@@ -242,6 +243,7 @@ int get_local_image_version(struct image_section *section)
 		return 0;
 	}
 
+	memset(&st, 0, sizeof(struct stat));
 	fstat(fd, &st);
 
 	len = st.st_size < sizeof(local_version_string) - 1 ? st.st_size :
@@ -278,6 +280,11 @@ int set_local_image_version(struct image_section *section)
 	}
 
 	len = snprintf(version_string, 8, "%d", section->img_version);
+	if (len < 0) {
+		printf("Error in formatting the version string");
+		return 0;
+	}
+
 	printf("Version to be updated:%s\n", version_string);
 	if (write(fd, version_string, len) == -1) {
 		printf("Error writing version to %s\n", version_file);
@@ -348,6 +355,7 @@ int get_sw_id_from_component_bin(struct image_section *section)
 		return 0;
 	}
 
+	memset(&sb, 0, sizeof(struct stat));
 	if (fstat(fd, &sb) == -1) {
 		perror("fstat");
 		close(fd);
@@ -400,6 +408,7 @@ int process_elf(char *bin_file, uint8_t **fp, Elf32_Ehdr **elf, Elf32_Phdr **phd
 		return 0;
 	}
 
+	memset(&sb, 0, sizeof(struct stat));
 	if (fstat(fd, &sb) == -1) {
 		perror("fstat");
 		close(fd);
@@ -555,6 +564,7 @@ int extract_kernel_binary(struct image_section *section)
 		return 0;
 	}
 
+	memset(&sb, 0, sizeof(struct stat));
 	if (fstat(fd, &sb) == -1) {
 		perror("fstat");
 		close(fd);
@@ -720,6 +730,7 @@ int split_code_signature_cert_from_component_bin(struct image_section *section,
 		return 0;
 	}
 
+	memset(&sb, 0, sizeof(struct stat));
 	if (fstat(fd, &sb) == -1) {
 		perror("fstat");
 		close(fd);
@@ -928,6 +939,7 @@ char *read_file(char *file_name)
 		return NULL;
 	}
 
+	memset(&st, 0, sizeof(struct stat));
 	fstat(fd, &st);
 	buffer = malloc(st.st_size * sizeof(buffer));
 	if (buffer == NULL) {
