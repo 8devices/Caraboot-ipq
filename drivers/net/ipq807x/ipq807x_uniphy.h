@@ -26,6 +26,9 @@ enum port_wrapper_cfg {
 #define GCC_UNIPHY_USXGMII_XPCS_RESET 		0x4
 #define GCC_UNIPHY_USXGMII_XPCS_RELEASE_RESET	0x0
 
+#define PPE_UNIPHY_OFFSET_CALIB_4		0x1E0
+#define UNIPHY_CALIBRATION_DONE			0x1
+
 #define GCC_UNIPHY_PSGMII_SOFT_RESET 		0x3ff2
 #define GCC_UNIPHY_USXGMII_SOFT_RESET 		0x36
 
@@ -36,8 +39,31 @@ enum port_wrapper_cfg {
 #define UNIPHY_MISC2_REG_OFFSET 		0x218
 #define UNIPHY_MISC2_REG_SGMII_MODE 		0x30
 
+#define UNIPHY_MISC2_REG_VALUE			0x70
+
 #define UNIPHY_PLL_RESET_REG_OFFSET 		0x780
 #define UNIPHY_PLL_RESET_REG_VALUE 		0x02bf
 #define UNIPHY_PLL_RESET_REG_DEFAULT_VALUE 	0x02ff
+
+#define SR_XS_PCS_KR_STS1_ADDRESS 		0x30020
+#define UNIPHY_10GR_LINKUP 			0x1
+
+#define VR_XS_PCS_DIG_CTRL1_ADDRESS 		0x38000
+#define USXG_EN					(1 << 9)
+#define USRA_RST				(1 << 10)
+
+#define VR_MII_AN_CTRL_ADDRESS			0x1f8001
+#define MII_AN_INTR_EN				(1 << 0)
+#define MII_CTRL				(1 << 8)
+
+#define SR_MII_CTRL_ADDRESS 			0x1f0000
+#define AN_ENABLE				(1 << 12)
+#define SS5					(1 << 5)
+#define SS6					(1 << 6)
+#define SS13					(1 << 13)
+#define DUPLEX_MODE				(1 << 8)
+
+#define VR_MII_AN_INTR_STS			0x1f8002
+#define CL37_ANCMPLT_INTR			(1 << 0)
 
 void ppe_uniphy_mode_set(uint32_t uniphy_index, uint32_t mode);

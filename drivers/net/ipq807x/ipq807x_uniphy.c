@@ -52,6 +52,25 @@ int  csr1_read(int phy_id, int  addr )
 	return  readl(ahb_l);
 }
 
+static int ppe_uniphy_calibration(uint32_t uniphy_index)
+{
+	int retries = 100, calibration_done = 0;
+	uint32_t reg_value = 0;
+
+	while(calibration_done != UNIPHY_CALIBRATION_DONE) {
+		mdelay(1);
+		if (retries-- == 0) {
+			printf("uniphy callibration time out!\n");
+			return -1;
+		}
+		reg_value = readl(PPE_UNIPHY_BASE + (uniphy_index * PPE_UNIPHY_REG_INC)
+			+ PPE_UNIPHY_OFFSET_CALIB_4);
+		calibration_done = (reg_value >> 0x7) & 0x1;
+	}
+
+	return 0;
+}
+
 static void ppe_gcc_uniphy_xpcs_reset(uint32_t uniphy_index, bool enable)
 {
 	uint32_t reg_value;
@@ -107,6 +126,57 @@ static void ppe_uniphy_sgmii_mode_set(uint32_t uniphy_index)
 	ppe_gcc_uniphy_soft_reset(uniphy_index);
 }
 
+static int ppe_uniphy_10g_r_linkup(uint32_t uniphy_index)
+{
+	uint32_t reg_value = 0;
+	uint32_t retries = 100, linkup = 0;
+
+	while (linkup != UNIPHY_10GR_LINKUP) {
+		mdelay(1);
+		if (retries-- == 0)
+			return -1;
+		reg_value = csr1_read(uniphy_index, SR_XS_PCS_KR_STS1_ADDRESS);
+		linkup = (reg_value >> 12) & UNIPHY_10GR_LINKUP;
+	}
+	mdelay(10);
+	return 0;
+}
+
+static void ppe_uniphy_usxgmii_mode_set(uint32_t uniphy_index)
+{
+	uint32_t reg_value = 0;
+
+	writel(UNIPHY_MISC2_REG_VALUE, PPE_UNIPHY_BASE +
+		(uniphy_index * PPE_UNIPHY_REG_INC) + UNIPHY_MISC2_REG_OFFSET);
+	writel(UNIPHY_PLL_RESET_REG_VALUE, PPE_UNIPHY_BASE +
+		(uniphy_index * PPE_UNIPHY_REG_INC) + UNIPHY_PLL_RESET_REG_OFFSET);
+	mdelay(500);
+	writel(UNIPHY_PLL_RESET_REG_DEFAULT_VALUE, PPE_UNIPHY_BASE +
+		(uniphy_index * PPE_UNIPHY_REG_INC) + UNIPHY_PLL_RESET_REG_OFFSET);
+	mdelay(500);
+	ppe_gcc_uniphy_xpcs_reset(uniphy_index, true);
+	writel(0x1021, PPE_UNIPHY_BASE + (uniphy_index * PPE_UNIPHY_REG_INC)
+			 + PPE_UNIPHY_MODE_CONTROL);
+	ppe_gcc_uniphy_soft_reset(uniphy_index);
+	ppe_uniphy_calibration(uniphy_index);
+	ppe_gcc_uniphy_xpcs_reset(uniphy_index, false);
+	ppe_uniphy_10g_r_linkup(uniphy_index);
+	reg_value = csr1_read(uniphy_index, VR_XS_PCS_DIG_CTRL1_ADDRESS);
+	reg_value |= USXG_EN;
+	csr1_write(uniphy_index, VR_XS_PCS_DIG_CTRL1_ADDRESS, reg_value);
+	reg_value = csr1_read(uniphy_index, VR_MII_AN_CTRL_ADDRESS);
+	reg_value |= MII_AN_INTR_EN;
+	reg_value |= MII_CTRL;
+	csr1_write(uniphy_index, VR_MII_AN_CTRL_ADDRESS, reg_value);
+	reg_value = csr1_read(uniphy_index, SR_MII_CTRL_ADDRESS);
+	reg_value |= AN_ENABLE;
+	reg_value &= ~SS5;
+	reg_value |= SS6 | SS13 | DUPLEX_MODE;
+	csr1_write(uniphy_index, SR_MII_CTRL_ADDRESS, reg_value);
+	if (uniphy_index == PPE_UNIPHY_INSTANCE2);
+		ipq_mdio_write(0x7, ((1<<30) | (4<<16) | 0xc441), 8);
+}
+
 void ppe_uniphy_mode_set(uint32_t uniphy_index, uint32_t mode)
 {
 	switch(mode) {
@@ -115,6 +185,9 @@ void ppe_uniphy_mode_set(uint32_t uniphy_index, uint32_t mode)
 			break;
 		case PORT_WRAPPER_SGMII0_RGMII4:
 			ppe_uniphy_sgmii_mode_set(uniphy_index);
+			break;
+		case PORT_WRAPPER_USXGMII:
+			ppe_uniphy_usxgmii_mode_set(uniphy_index);
 			break;
 		default:
 			break;
