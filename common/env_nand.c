@@ -128,7 +128,7 @@ int nand_env_init(void)
  */
 static int writeenv(size_t offset, u_char *buf)
 {
-	size_t end = offset + CONFIG_ENV_RANGE;
+	size_t end = offset + board_env_size;
 	size_t amount_saved = 0;
 	size_t blocksize, len;
 	u_char *char_ptr;
@@ -243,7 +243,7 @@ static int readenv(size_t offset, u_char *buf)
 #else
 static int readenv(size_t offset, u_char *buf)
 {
-	size_t end = offset + CONFIG_ENV_RANGE;
+	size_t end = offset + board_env_size;
 	size_t amount_loaded = 0;
 	size_t blocksize, len;
 	u_char *char_ptr;
