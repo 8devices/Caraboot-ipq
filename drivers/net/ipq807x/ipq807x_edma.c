@@ -56,6 +56,7 @@ extern int ipq_mdio_read(int mii_id,
 extern void ipq_qca8075_phy_map_ops(struct phy_ops **ops);
 extern int ipq_qca8075_phy_init(struct phy_ops **ops);
 extern int ipq_qca8033_phy_init(struct phy_ops **ops, u32 phy_id);
+extern int ipq_qca_aquantia_phy_init(struct phy_ops **ops, u32 phy_id);
 
 /*
  * EDMA hardware instance
@@ -1552,11 +1553,14 @@ int ipq807x_edma_init(void *edma_board_cfg)
 	int ret = -1;
 	ipq807x_edma_board_cfg_t ledma_cfg, *edma_cfg;
 	static int sw_init_done = 0;
-	int port_8033 = -1, node, phy_addr;
+	int port_8033 = -1, node, phy_addr, aquantia_port = -1;
 
 	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
 	if (node >= 0)
 		port_8033 = fdtdec_get_uint(gd->fdt_blob, node, "8033_port", -1);
+
+	if (node >= 0)
+		aquantia_port = fdtdec_get_uint(gd->fdt_blob, node, "aquantia_port", -1);
 
 	memset(c_info, 0, (sizeof(c_info) * IPQ807X_EDMA_DEV));
 	memset(enet_addr, 0, sizeof(enet_addr));
@@ -1640,12 +1644,19 @@ int ipq807x_edma_init(void *edma_board_cfg)
 		for (phy_id =  0; phy_id < PHY_MAX; phy_id++) {
 			if (phy_id == port_8033)
 				phy_addr = QCA8033_PHY_ADDR;
+			else if (phy_id == aquantia_port)
+				phy_addr = AQU_PHY_ADDR;
 			else
 				phy_addr = phy_id;
 
 			phy_chip_id1 = ipq_mdio_read(phy_addr, QCA_PHY_ID1, NULL);
 			phy_chip_id2 = ipq_mdio_read(phy_addr, QCA_PHY_ID2, NULL);
 			phy_chip_id = (phy_chip_id1 << 16) | phy_chip_id2;
+			if (phy_id == aquantia_port) {
+				phy_chip_id1 = ipq_mdio_read(0x7, (1<<30) |(1<<16) | QCA_PHY_ID1, NULL);
+				phy_chip_id2 = ipq_mdio_read(0x7, (1<<30) |(1<<16) | QCA_PHY_ID2, NULL);
+				phy_chip_id = (phy_chip_id1 << 16) | phy_chip_id2;
+			}
 			switch(phy_chip_id) {
 				case QCA8075_PHY_V1_0_5P:
 				case QCA8075_PHY_V1_1_5P:
@@ -1662,6 +1673,10 @@ int ipq807x_edma_init(void *edma_board_cfg)
 				case QCA8033_PHY:
 					ipq_qca8033_phy_init(&ipq807x_edma_dev[i]->ops[phy_id], phy_addr);
 					 break;
+				case AQUANTIA_PHY_107:
+				case AQUANTIA_PHY_109:
+					ipq_qca_aquantia_phy_init(&ipq807x_edma_dev[i]->ops[phy_id], phy_addr);
+					break;
 				default:
 					ipq_qca8075_phy_map_ops(&ipq807x_edma_dev[i]->ops[phy_id]);
 					break;

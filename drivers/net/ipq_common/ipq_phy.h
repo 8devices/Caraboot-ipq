@@ -37,6 +37,9 @@
 #define QCA8075_PHY_V1_1_2P			0x004DD0B2
 #define QCA8033_PHY				0x004DD074
 #define QCA8033_PHY_ADDR			0x6
+#define AQUANTIA_PHY_107			0x03a1b4e2
+#define AQUANTIA_PHY_109			0x03a1b502
+#define AQU_PHY_ADDR				0x7
 #define QCA_PHY_ID1				0x2
 #define QCA_PHY_ID2				0x3
 
