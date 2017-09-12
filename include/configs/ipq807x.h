@@ -286,6 +286,7 @@ extern loff_t board_env_size;
 #define CONFIG_IPQ_MDIO			1
 #define CONFIG_QCA8075_PHY		1
 #define CONFIG_QCA8033_PHY		1
+#define CONFIG_QCA_AQUANTIA_PHY		1
 #define CONFIG_IPQ_ETH_INIT_DEFER
 
 /*

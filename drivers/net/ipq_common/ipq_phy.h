@@ -63,6 +63,8 @@ typedef enum {
 	FAL_SPEED_10 = 10,
 	FAL_SPEED_100 = 100,
 	FAL_SPEED_1000 = 1000,
+	FAL_SPEED_2500 = 2500,
+	FAL_SPEED_5000 = 5000,
 	FAL_SPEED_10000 = 10000,
 	FAL_SPEED_BUTT = 0xffff,
 } fal_port_speed_t;

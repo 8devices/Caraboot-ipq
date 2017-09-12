@@ -86,3 +86,4 @@ obj-$(CONFIG_IPQ807X_EDMA) += ipq807x/ipq807x_uniphy.o
 obj-$(CONFIG_IPQ_MDIO) += ipq_common/ipq_mdio.o
 obj-$(CONFIG_QCA8075_PHY) += ipq_common/ipq_qca8075.o
 obj-$(CONFIG_QCA8033_PHY) += ipq_common/ipq_qca8033.o
+obj-$(CONFIG_QCA_AQUANTIA_PHY) += ipq807x/ipq807x_aquantia_phy.o
