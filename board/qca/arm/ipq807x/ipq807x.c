@@ -229,7 +229,13 @@ int board_eth_init(bd_t *bis)
 {
 	int ret=0;
 	int tlmm_base = 0x1025000;
+	int aquantia_gpio = -1, node;
+	unsigned int *aquantia_gpio_base;
 
+	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
+
+	if (node >= 0)
+		 aquantia_gpio = fdtdec_get_uint(gd->fdt_blob, node, "aquantia_gpio", -1);
 	/*
 	 * ethernet clk rcgr block init -- start
 	 * these clk init will be moved to sbl later
@@ -290,6 +296,13 @@ int board_eth_init(bd_t *bis)
 	writel(7, tlmm_base + 0x1f000);
 	writel(7, tlmm_base + 0x20000);
 
+	if (aquantia_gpio >=0) {
+		aquantia_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(aquantia_gpio);
+		writel(0x2C3, aquantia_gpio_base);
+		writel(0, aquantia_gpio_base);
+		writel(0x3, aquantia_gpio_base);
+		mdelay(500);
+	}
 	ret = ipq807x_edma_init(NULL);
 
 	if (ret != 0)
