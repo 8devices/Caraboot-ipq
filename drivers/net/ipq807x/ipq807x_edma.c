@@ -872,11 +872,14 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 	char *dp[] = {"Half", "Full"};
 	int linkup=0;
 	int mac_speed, speed_clock1, speed_clock2;
-	int phy_addr, port_8033 = -1, node;
+	int phy_addr, port_8033 = -1, node, aquantia_port = -1;
 
 	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
 	if (node >= 0)
 		port_8033 = fdtdec_get_uint(gd->fdt_blob, node, "8033_port", -1);
+
+	if (node >= 0)
+		 aquantia_port = fdtdec_get_uint(gd->fdt_blob, node, "aquantia_port", -1);
 	/*
 	 * Check PHY link, speed, Duplex on all phys.
 	 * we will proceed even if single link is up
@@ -898,6 +901,8 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 
 		if (i == port_8033)
 			phy_addr = QCA8033_PHY_ADDR;
+		else if (i == aquantia_port)
+			phy_addr = AQU_PHY_ADDR;
 		else
 			phy_addr = i;
 
@@ -908,6 +913,10 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 		phy_get_ops->phy_get_duplex(priv->mac_unit, phy_addr, &duplex);
 		switch (speed) {
 			case FAL_SPEED_10:
+				if (i == aquantia_port) {
+					printf("10M speed not supported\n");
+					continue;
+				}
 				mac_speed = 0x0;
 				speed_clock1 = 0x109;
 				speed_clock2 = 0x9;
@@ -917,7 +926,10 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 				break;
 			case FAL_SPEED_100:
 				mac_speed = 0x1;
-				speed_clock1 = 0x101;
+				if (i == aquantia_port)
+					speed_clock1 = 0x109;
+				else
+					speed_clock1 = 0x101;
 				speed_clock2 = 0x4;
 				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
 						priv->mac_unit, i, lstatus[status], speed,
@@ -925,7 +937,34 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 				break;
 			case FAL_SPEED_1000:
 				mac_speed = 0x2;
+				if (i == aquantia_port)
+					speed_clock1 = 0x104;
+				else
+					speed_clock1 = 0x101;
+				speed_clock2 = 0x0;
+				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
+						priv->mac_unit, i, lstatus[status], speed,
+						dp[duplex]);
+				break;
+			case FAL_SPEED_10000:
+				mac_speed = 0x3;
 				speed_clock1 = 0x101;
+				speed_clock2 = 0x0;
+				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
+						priv->mac_unit, i, lstatus[status], speed,
+						dp[duplex]);
+				break;
+			case FAL_SPEED_2500:
+				mac_speed = 0x4;
+				speed_clock1 = 0x107;
+				speed_clock2 = 0x0;
+				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
+						priv->mac_unit, i, lstatus[status], speed,
+						dp[duplex]);
+				break;
+			case FAL_SPEED_5000:
+				mac_speed = 0x5;
+				speed_clock1 = 0x103;
 				speed_clock2 = 0x0;
 				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
 						priv->mac_unit, i, lstatus[status], speed,
@@ -935,7 +974,11 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 				printf("Unknown speed\n");
 				break;
 		}
-		ipq807x_pqsgmii_speed_clock_set(i, mac_speed, speed_clock1, speed_clock2);
+		ipq807x_speed_clock_set(i, speed_clock1, speed_clock2);
+		if (i == aquantia_port)
+			ipq807x_uxsgmii_speed_set(i, mac_speed, duplex);
+		else
+			ipq807x_pqsgmii_speed_set(i, mac_speed);
 	}
 
 	if (linkup <= 0) {

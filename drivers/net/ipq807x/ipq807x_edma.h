@@ -307,6 +307,8 @@ typedef struct {
 } ipq807x_edma_board_cfg_t;
 
 extern void ipq807x_ppe_provision_init(void);
-extern void ipq807x_pqsgmii_speed_clock_set(int port, int speed, int speed_clock1, int speed_clock2);
+extern void ipq807x_speed_clock_set(int port, int speed_clock1, int speed_clock2);
+extern void ipq807x_pqsgmii_speed_set(int port, int speed);
+extern void ipq807x_uxsgmii_speed_set(int port, int speed, int duplex);
 
 #endif /* ___IPQ807X_EDMA__ */

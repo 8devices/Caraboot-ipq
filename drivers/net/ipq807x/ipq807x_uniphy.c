@@ -193,3 +193,87 @@ void ppe_uniphy_mode_set(uint32_t uniphy_index, uint32_t mode)
 			break;
 	}
 }
+
+void ppe_uniphy_usxgmii_autoneg_completed(uint32_t uniphy_index)
+{
+	uint32_t autoneg_complete = 0, retries = 100;
+	uint32_t reg_value = 0;
+
+	while (autoneg_complete != 0x1) {
+		mdelay(1);
+		if (retries-- == 0)
+		{
+			return;
+		}
+		reg_value = csr1_read(uniphy_index, VR_MII_AN_INTR_STS);
+		autoneg_complete = reg_value & 0x1;
+	}
+	reg_value &= ~CL37_ANCMPLT_INTR;
+	csr1_write(uniphy_index, VR_MII_AN_INTR_STS, reg_value);
+}
+
+void ppe_uniphy_usxgmii_speed_set(uint32_t uniphy_index, int speed)
+{
+	uint32_t reg_value = 0;
+
+	reg_value = csr1_read(uniphy_index, SR_MII_CTRL_ADDRESS);
+	reg_value |= DUPLEX_MODE;
+
+	switch(speed) {
+	case 0:
+		reg_value &=~SS5;
+		reg_value &=~SS6;
+		reg_value &=~SS13;
+		break;
+	case 1:
+		reg_value &=~SS5;
+		reg_value &=~SS6;
+		reg_value |=SS13;
+		break;
+	case 2:
+		reg_value &=~SS5;
+		reg_value |=SS6;
+		reg_value &=~SS13;
+		break;
+	case 3:
+		reg_value &=~SS5;
+		reg_value |=SS6;
+		reg_value |=SS13;
+		break;
+	case 4:
+		reg_value |=SS5;
+		reg_value &=~SS6;
+		reg_value &=~SS13;
+		break;
+	case 5:
+		reg_value |=SS5;
+		reg_value &=~SS6;
+		reg_value |=SS13;
+		break;
+	}
+	csr1_write(uniphy_index, SR_MII_CTRL_ADDRESS, reg_value);
+
+}
+
+void ppe_uniphy_usxgmii_duplex_set(uint32_t uniphy_index, int duplex)
+{
+	uint32_t reg_value = 0;
+
+	reg_value = csr1_read(uniphy_index, SR_MII_CTRL_ADDRESS);
+
+	if (duplex & 0x1)
+		reg_value |= DUPLEX_MODE;
+	else
+		reg_value &= ~DUPLEX_MODE;
+
+	csr1_write(uniphy_index, SR_MII_CTRL_ADDRESS, reg_value);
+}
+
+void ppe_uniphy_usxgmii_port_reset(uint32_t uniphy_index)
+{
+	uint32_t reg_value = 0;
+
+	reg_value = csr1_read(uniphy_index, VR_XS_PCS_DIG_CTRL1_ADDRESS);
+	reg_value |= USRA_RST;
+	csr1_write(uniphy_index, VR_XS_PCS_DIG_CTRL1_ADDRESS, reg_value);
+}

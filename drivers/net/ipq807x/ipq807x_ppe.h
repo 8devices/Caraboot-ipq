@@ -156,4 +156,27 @@ union port_mux_ctrl_u {
 #define IPQ807X_PPE_PORT_XGMAC2_BITPOS		(1 << IPQ807X_PPE_PORT_XGMAC2)
 #define IPQ807X_PPE_PORT_CRYPTO1_BITPOS		(1 << IPQ807X_PPE_PORT_CRYPTO1)
 
+#define PPE_SWITCH_NSS_SWITCH_XGMAC0		0x3000
+#define NSS_SWITCH_XGMAC_MAC_TX_CONFIGURATION	0x4000
+#define USS					(1 << 31)
+#define SS(i)					(i << 29)
+#define JD					(1 << 16)
+#define TE					(1 << 0)
+#define NSS_SWITCH_XGMAC_MAC_RX_CONFIGURATION	0x4000
+#define MAC_RX_CONFIGURATION_ADDRESS		0x4
+#define RE					(1 << 0)
+#define ACS					(1 << 1)
+#define CST					(1 << 2)
+#define MAC_PACKET_FILTER_INC			0x4000
+#define MAC_PACKET_FILTER_ADDRESS 		0x8
+
+#define XGMAC_SPEED_SELECT_10000M 		0
+#define XGMAC_SPEED_SELECT_5000M 		1
+#define XGMAC_SPEED_SELECT_2500M 		2
+#define XGMAC_SPEED_SELECT_1000M 		3
+
+#define IPE_L2_BASE_ADDR		0x060000
+#define PORT_BRIDGE_CTRL_ADDRESS 	0x300
+#define PORT_BRIDGE_CTRL_INC		0x4
+#define TX_MAC_EN			(1 << 16)
 

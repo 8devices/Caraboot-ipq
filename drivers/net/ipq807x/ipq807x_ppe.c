@@ -106,11 +106,12 @@ static void ipq807x_gmac_enable(void)
  */
 static void ipq807x_gmac_port_enable(int port)
 {
-	ipq807x_ppe_reg_write(IPQ807X_PPE_MAC_ENABLE + (0x200 * port), 0x13);
+	ipq807x_ppe_reg_write(IPQ807X_PPE_MAC_ENABLE + (0x200 * port), 0x70);
 	ipq807x_ppe_reg_write(IPQ807X_PPE_MAC_SPEED + (0x200 * port), 0x2);
 	ipq807x_ppe_reg_write(IPQ807X_PPE_MAC_MIB_CTL + (0x200 * port), 0x1);
 }
-void ipq807x_pqsgmii_speed_clock_set(int port, int speed, int speed_clock1, int speed_clock2)
+
+void ipq807x_speed_clock_set(int port, int speed_clock1, int speed_clock2)
 {
 	int i;
 
@@ -120,9 +121,122 @@ void ipq807x_pqsgmii_speed_clock_set(int port, int speed, int speed_clock1, int 
 		writel(speed_clock1, GCC_NSS_PORT1_RX_CFG_RCGR + i*8 + port*0x10);
 		writel(0x1, GCC_NSS_PORT1_RX_CMD_RCGR + i*8 + port*0x10);
 	}
-	ipq807x_ppe_reg_write(IPQ807X_PPE_MAC_SPEED + (0x200 * port), speed);
 }
 
+void ipq807x_pqsgmii_speed_set(int port, int speed)
+{
+	ipq807x_ppe_reg_write(IPQ807X_PPE_MAC_SPEED + (0x200 * port), speed);
+	ipq807x_ppe_reg_write(IPQ807X_PPE_MAC_ENABLE + (0x200 * port), 0x73);
+}
+
+
+
+void ppe_xgmac_speed_set(uint32_t uniphy_index, int speed)
+{
+	uint32_t reg_value = 0;
+
+	ipq807x_ppe_reg_read(PPE_SWITCH_NSS_SWITCH_XGMAC0 +
+		 (uniphy_index * NSS_SWITCH_XGMAC_MAC_TX_CONFIGURATION), &reg_value);
+
+	switch(speed) {
+	case 0:
+	case 1:
+	case 2:
+		reg_value &=~USS;
+		reg_value |=SS(XGMAC_SPEED_SELECT_1000M);
+		break;
+	case 3:
+		reg_value |=USS;
+		reg_value |=SS(XGMAC_SPEED_SELECT_10000M);
+		break;
+	case 4:
+		reg_value |=USS;
+		reg_value |=SS(XGMAC_SPEED_SELECT_2500M);
+		break;
+	case 5:
+		reg_value |=USS;
+		reg_value |=SS(XGMAC_SPEED_SELECT_5000M);
+		break;
+	}
+	reg_value |=JD;
+	ipq807x_ppe_reg_write(PPE_SWITCH_NSS_SWITCH_XGMAC0 +
+		 (uniphy_index * NSS_SWITCH_XGMAC_MAC_TX_CONFIGURATION), reg_value);
+
+}
+
+void ppe_port_bridge_txmac_set(int port_id)
+{
+	uint32_t reg_value = 0;
+
+	ipq807x_ppe_reg_read(IPE_L2_BASE_ADDR + PORT_BRIDGE_CTRL_ADDRESS +
+		 (port_id * PORT_BRIDGE_CTRL_INC), &reg_value);
+	reg_value |= TX_MAC_EN;
+	ipq807x_ppe_reg_write(IPE_L2_BASE_ADDR + PORT_BRIDGE_CTRL_ADDRESS +
+		 (port_id * PORT_BRIDGE_CTRL_INC), reg_value);
+
+}
+
+void ppe_port_txmac_status_set(uint32_t uniphy_index)
+{
+	uint32_t reg_value = 0;
+
+	ipq807x_ppe_reg_read(PPE_SWITCH_NSS_SWITCH_XGMAC0 +
+		 (uniphy_index * NSS_SWITCH_XGMAC_MAC_TX_CONFIGURATION), &reg_value);
+
+	reg_value |=TE;
+	ipq807x_ppe_reg_write(PPE_SWITCH_NSS_SWITCH_XGMAC0 +
+		 (uniphy_index * NSS_SWITCH_XGMAC_MAC_TX_CONFIGURATION), reg_value);
+
+}
+
+void ppe_port_rxmac_status_set(uint32_t uniphy_index)
+{
+	uint32_t reg_value = 0;
+
+	ipq807x_ppe_reg_read(PPE_SWITCH_NSS_SWITCH_XGMAC0 +
+			NSS_SWITCH_XGMAC_MAC_RX_CONFIGURATION +
+			(uniphy_index * MAC_RX_CONFIGURATION_ADDRESS), &reg_value);
+
+	reg_value |= 0x5ee00c0;
+	reg_value |=RE;
+	reg_value |=ACS;
+	reg_value |=CST;
+	ipq807x_ppe_reg_write(PPE_SWITCH_NSS_SWITCH_XGMAC0 +
+			NSS_SWITCH_XGMAC_MAC_RX_CONFIGURATION +
+			(uniphy_index * MAC_RX_CONFIGURATION_ADDRESS), reg_value);
+
+}
+
+void ppe_mac_packet_filter_set(uint32_t uniphy_index)
+{
+	ipq807x_ppe_reg_write(PPE_SWITCH_NSS_SWITCH_XGMAC0 +
+			MAC_PACKET_FILTER_ADDRESS +
+			(uniphy_index * MAC_PACKET_FILTER_INC), 0x81);
+}
+
+void ipq807x_uxsgmii_speed_set(int port, int speed, int duplex,
+				int speed_clock1, int speed_clock2)
+{
+	uint32_t uniphy_index;
+
+	/* Setting the speed only for PORT5 and PORT6 */
+	if (port == (PORT5 - PPE_UNIPHY_INSTANCE1))
+		uniphy_index = PPE_UNIPHY_INSTANCE1;
+	if (port == (PORT6 - PPE_UNIPHY_INSTANCE1))
+		uniphy_index = PPE_UNIPHY_INSTANCE2;
+	else
+		return;
+
+	ppe_uniphy_usxgmii_autoneg_completed(uniphy_index);
+	ppe_uniphy_usxgmii_speed_set(uniphy_index, speed);
+	ppe_xgmac_speed_set(uniphy_index - 1, speed);
+	ppe_uniphy_usxgmii_duplex_set(uniphy_index, duplex);
+	ppe_uniphy_usxgmii_port_reset(uniphy_index);
+	ppe_port_bridge_txmac_set(port + 1);
+	ppe_port_txmac_status_set(uniphy_index - 1);
+	ppe_port_rxmac_status_set(uniphy_index - 1);
+	ppe_mac_packet_filter_set(uniphy_index - 1);
+}
 /*
  * ipq807x_ppe_flow_port_map_tbl_port_num_set()
  */
