@@ -66,4 +66,6 @@ cyg_ether_crc32_accumulate(uint32_t crc, unsigned char *s, int len);
 
 extern uint16_t cyg_crc16(unsigned char *s, int len);
 
+extern uint16_t cyg_crc16_computed(unsigned char *buf, int len, uint16_t computed_crc);
+
 #endif /* _SERVICES_CRC_CRC_H_ */

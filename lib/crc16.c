@@ -73,3 +73,17 @@ cyg_crc16(unsigned char *buf, int len)
     }
     return cksum;
 }
+
+uint16_t
+cyg_crc16_computed(unsigned char *buf, int len, uint16_t computed_crc)
+{
+    int i;
+    uint16_t cksum;
+
+    cksum = computed_crc;
+    for (i = 0;  i < len;  i++) {
+	cksum = crc16_tab[((cksum>>8) ^ *buf++) & 0xFF] ^ (cksum << 8);
+    }
+
+    return cksum;
+}
