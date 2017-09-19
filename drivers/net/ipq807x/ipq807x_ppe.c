@@ -1033,8 +1033,7 @@ static void ppe_port_mux_mac_type_set(int port_id, int mode)
 			port_type = PORT_XGMAC_TYPE;
 			break;
 		default:
-			port_type = PORT_GMAC_TYPE;
-			break;
+			return;
 	}
 	ppe_port_mux_set(port_id, port_type);
 }
