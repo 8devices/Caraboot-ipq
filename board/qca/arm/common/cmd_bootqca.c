@@ -732,12 +732,18 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	ret = qca_scm_call(SCM_SVC_FUSE, QFPROM_IS_AUTHENTICATE_CMD, &buf, sizeof(char));
 
 	if (ret == 0 && buf == 1) {
-		return do_boot_signedimg(cmdtp, flag, argc, argv);
+		ret = do_boot_signedimg(cmdtp, flag, argc, argv);
 	} else if (ret == 0 || ret == -EOPNOTSUPP) {
-		return do_boot_unsignedimg(cmdtp, flag, argc, argv);
+		ret = do_boot_unsignedimg(cmdtp, flag, argc, argv);
 	}
 
-	return CMD_RET_FAILURE;
+	if (ret != CMD_RET_SUCCESS) {
+#ifdef CONFIG_IPQ_ETH_INIT_DEFER
+		puts("\nNet:   ");
+		eth_initialize();
+#endif
+	}
+	return ret;
 }
 
 U_BOOT_CMD(bootipq, 2, 0, do_bootipq,
