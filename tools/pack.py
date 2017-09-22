@@ -82,6 +82,7 @@ version = "1.1"
 ARCH_NAME = ""
 SRC_DIR = ""
 MODE = ""
+image_type = "all"
 #
 # Python 2.6 and earlier did not have OrderedDict use the backport
 # from ordereddict package. If that is not available report error.
@@ -751,50 +752,63 @@ class Pack(object):
                 part_index += 1
                 if flinfo.type != "emmc":
                     try:
-                        filename = section[8].text
-			try:
-			   if section[8].attrib['mode'] != MODE:
-				filename = section[9].text
-			   else:
-				pass
-			except AttributeError, e:
-			   pass
-			except KeyError, e:
-			   pass
+		        if image_type == "all" or section[8].attrib['image_type'] == image_type:
+                            filename = section[8].text
+		            try:
+		               if section[8].attrib['mode'] != MODE:
+		            	filename = section[9].text
+		               else:
+		            	pass
+		            except AttributeError, e:
+		               pass
+		            except KeyError, e:
+		               pass
+			else:
+			    continue
                     except IndexError, e:
                         if index == (parts_length - 1):
                             return
                         else:
                             continue
+                    except KeyError, e:
+			continue
                     partition = section[0].text
                 else:
 		    try:
 			diff_files = section.attrib['diff_files']
 		    except KeyError, e:
                             try:
-                                filename = section.attrib['filename']
-                                partition = section.attrib['label']
+				if image_type == "all" or section.attrib['image_type'] == image_type:
+                                	filename = section.attrib['filename']
+                                	partition = section.attrib['label']
 				if filename == "":
 					continue
 	                    except KeyError, e:
-                                error("Error getting image info in section '%s'" % section.attrib['label'], e)
+                                print "Skipping partition '%s'" % section.attrib['label']
+				pass
 
 		    if diff_files == "true":
 			try:
-                              filename = section.attrib['filename_' + MODE]
-                              partition = section.attrib['label']
+			      if image_type == "all" or section.attrib['image_type'] == image_type:
+                                  filename = section.attrib['filename_' + MODE]
+                                  partition = section.attrib['label']
 			      if filename == "":
 					continue
                         except KeyError, e:
-                              error("Error getting image info in section '%s'" % section.attrib['label'], e)
+                               print "Skipping partition '%s'" % section.attrib['label']
+			       pass
 			diff_files = "" # Clear for next iteration
 
             # Get machID
             if partition != "0:CDT" and partition != "0:DDRCONFIG":
                 machid = None
             else:
-                self.__gen_flash_script_cdt(entries, partition, flinfo, script)
-                continue
+		try:
+			if image_type == "all" or section.attrib['image_type'] == image_type:
+		                self.__gen_flash_script_cdt(entries, partition, flinfo, script)
+        		        continue
+		except KeyError, e:
+			continue
 
             if ARCH_NAME == "ipq806x":
             # Get Layout
@@ -1010,19 +1024,22 @@ class Pack(object):
                 part_index += 1
                 if flinfo.type != "emmc":
                     try:
-                        filename = section[8].text
-			try:
-			   if section[8].attrib['mode'] != MODE:
-				filename = section[9].text
-			except AttributeError, e:
-			   pass
-			except KeyError, e:
-			   pass
+			if image_type == "all" or section[8].attrib['image_type'] == image_type:
+                            filename = section[8].text
+			    try:
+			        if section[8].attrib['mode'] != MODE:
+				    filename = section[9].text
+			    except AttributeError, e:
+			 	pass
+			    except KeyError, e:
+			        pass
                     except IndexError, e:
                         if index == (parts_length - 1):
                             return
                         else:
                             continue
+                    except KeyError, e:
+			continue
                     partition = section[0].text
                 else:
 
@@ -1030,22 +1047,26 @@ class Pack(object):
 			diff_files = section.attrib['diff_files']
 		    except KeyError, e:
                             try:
-                                filename = section.attrib['filename']
-                                partition = section.attrib['label']
+				if image_type == "all" or section.attrib['image_type'] == image_type:
+                                	filename = section.attrib['filename']
+	                                partition = section.attrib['label']
 				if filename == "":
                                         continue
 	                    except KeyError, e:
-                                error("Error getting image info in section '%s'" % section.attrib['label'], e)
+                                print "Skipping partition '%s'" % section.attrib['label']
+				pass
 
 		    if diff_files == "true":
 			try:
-                              filename = section.attrib['filename_' + MODE]
-                              partition = section.attrib['label']
+			      if image_type == "all" or section.attrib['image_type'] == image_type:
+                                  filename = section.attrib['filename_' + MODE]
+                                  partition = section.attrib['label']
 			      if filename == "":
                                         continue
 
                         except KeyError, e:
-                              error("Error getting image info in section '%s'" % section.attrib['label'], e)
+                              print "Skipping partition '%s'" % section.attrib['label']
+			      pass
 			diff_files = "" # Clear for next iteration
 
             part_info = self.__get_part_info(partition)
@@ -1059,8 +1080,13 @@ class Pack(object):
             section_conf = section_conf.lower()
 
             if section_conf == "cdt" or section_conf == "ddrconfig":
-                self.__gen_script_cdt(images, flinfo, root, section_conf, partition)
-                continue
+		try:
+		    if image_type == "all" or section[8].attrib['image_type'] == image_type:
+	                self.__gen_script_cdt(images, flinfo, root, section_conf, partition)
+                	continue
+                except KeyError, e:
+                    continue
+
 
             if part_info == None and self.flinfo.type != 'norplusnand':
                 continue
@@ -1292,6 +1318,7 @@ class ArgParser(object):
 	global MODE
 	global SRC_DIR
 	global ARCH_NAME
+	global image_type
 
         """Start the parsing process, and populate members with parsed value.
 
@@ -1301,7 +1328,7 @@ class ArgParser(object):
 	cdir = os.path.abspath(os.path.dirname(""))
         if len(sys.argv) > 1:
             try:
-                opts, args = getopt(sys.argv[1:], "", ["arch=", "fltype=", "srcPath=", "inImage=", "outImage="])
+                opts, args = getopt(sys.argv[1:], "", ["arch=", "fltype=", "srcPath=", "inImage=", "outImage=", "image_type="])
             except GetoptError, e:
 		raise UsageError(e.msg)
 
@@ -1320,6 +1347,9 @@ class ArgParser(object):
 
 		elif option == "--outImage":
 		    self.out_dname = os.path.join(cdir, value)
+
+		elif option == "--image_type":
+		    image_type = value
 
 #Verify Arguments passed by user
 
