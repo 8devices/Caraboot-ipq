@@ -56,6 +56,10 @@ struct dumpinfo_t{
 	uint32_t start;
 	uint32_t size;
 	int is_aligned_access; /* non zero represent 4 byte access */
+	uint32_t is_redirected; /* If this flag is set, 'start' is considered a ptr
+			    * to address to be dumped
+			    */
+	uint32_t offset; /* offset to be added to start address */
 };
 extern struct dumpinfo_t dumpinfo[];
 extern int dump_entries;

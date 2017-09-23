@@ -133,7 +133,14 @@ static int do_dumpqca_data(cmd_tbl_t *cmdtp, int flag, int argc,
 
 	for (indx = 0; indx < dump_entries; indx++) {
 		printf("\nProcessing %s:", dumpinfo[indx].name);
-		memaddr = dumpinfo[indx].start;
+
+		if (dumpinfo[indx].is_redirected)
+			memaddr = *((uint32_t *)(dumpinfo[indx].start));
+		else
+			memaddr = dumpinfo[indx].start;
+
+		if (dumpinfo[indx].offset)
+			memaddr += dumpinfo[indx].offset;
 
 		if (!strncmp(dumpinfo[indx].name, "EBICS", strlen("EBICS")))
 		{

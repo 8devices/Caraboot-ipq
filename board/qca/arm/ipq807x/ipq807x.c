@@ -48,6 +48,23 @@ const char *del_node[] = {"uboot",
 const add_node_t add_node[] = {{}};
 static int pci_initialised;
 struct dumpinfo_t dumpinfo[] = {
+	/* TZ stores the DDR physical address at which it stores the
+	 * APSS regs, NSS IMEM copy and PMIC dump. We will have the TZ IMEM
+	 * IMEM Addr at which the DDR physical address is stored as
+	 * the start
+	 *     --------------------
+         *     |  DDR phy (start) | ----> ------------------------
+         *     --------------------       | APSS regsave (8k)    |
+         *                                ------------------------
+         *                                |                      |
+	 *                                |  NSS IMEM copy       |
+         *                                |        (384k)        |
+	 *                                |                      |
+         *                                ------------------------
+	 *                                |  PMIC dump (8k)      |
+	 *                                ------------------------
+	 */
+	{ "NSSIMEM.BIN", 0x08600658, 0x00060000, 0, 1, 0x2000 },
 	{ "EBICS0.BIN", 0x40000000, 0x10000000, 0 },
 	{ "CODERAM.BIN", 0x00200000, 0x00024000, 0 },
 	{ "DATARAM.BIN", 0x00290000, 0x00010000, 0 },
