@@ -27,8 +27,11 @@
 #define MDIO_CTRL_4_ACCESS_CODE_C45_WRITE       1
 #define MDIO_CTRL_4_ACCESS_CODE_C45_READ        2
 #define CTRL_0_REG_DEFAULT_VALUE	        0x1500F
-#define CTRL_0_REG_C45_DEFAULT_VALUE	        0x1510F
-
+#ifdef MDIO_12_5_MHZ
+#define CTRL_0_REG_C45_DEFAULT_VALUE	        0x15107
+#else
+#define CTRL_0_REG_C45_DEFAULT_VALUE		0x1510F
+#endif
 #define IPQ_MDIO_RETRY				1000
 #define IPQ_MDIO_DELAY				5
 #endif /* End _IPQ_MDIO_H */
