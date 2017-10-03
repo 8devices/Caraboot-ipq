@@ -112,7 +112,7 @@
  */
 #define IPQ_TFTP_MIN_ADDR		(CONFIG_SYS_SDRAM_BASE + (16 << 20))
 #define CONFIG_TZ_END_ADDR		(CONFIG_SYS_SDRAM_BASE + (88 << 21))
-#define CONFIG_SYS_SDRAM_END		(CONFIG_SYS_SDRAM_BASE + gd->ram_size)
+#define CONFIG_SYS_SDRAM_END	((long long)CONFIG_SYS_SDRAM_BASE + gd->ram_size)
 
 #ifndef __ASSEMBLY__
 #include <compiler.h>
