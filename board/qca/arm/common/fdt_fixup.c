@@ -96,12 +96,23 @@ void ipq_fdt_fixup_version(void *blob)
 {
 	int nodeoff, ret;
 	char ver[OEM_VERSION_STRING_LENGTH + VERSION_STRING_LENGTH + 1];
+	uint32_t machid;
 
 	nodeoff = fdt_path_offset(blob, "/");
 
 	if (nodeoff < 0) {
 		debug("fdt-fixup: fdt fixup unable to find root node\n");
 		return;
+	}
+
+	machid = smem_get_board_platform_type();
+
+	if (machid) {
+		ret = fdt_setprop(blob, nodeoff, "machid",
+				  &machid, sizeof(uint32_t));
+
+		if (ret)
+			debug("fdt-fixup: unable to set machid(%d)\n", ret);
 	}
 
 	if (!smem_get_build_version(ver, sizeof(ver), BOOT_VERSION)) {
