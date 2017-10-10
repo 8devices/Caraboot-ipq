@@ -37,7 +37,7 @@ const char *rsvd_node = "/reserved-memory";
 const char *del_node[] = {NULL};
 const add_node_t add_node[] = {{}};
 
-struct dumpinfo_t dumpinfo[] = {
+struct dumpinfo_t dumpinfo_n[] = {
 	/* Note1: when aligned access is set, the contents
 	 * are copied to a temporary location and so
 	 * the size of region should not exceed the size
@@ -65,7 +65,10 @@ struct dumpinfo_t dumpinfo[] = {
 	{ "EBICS0.BIN",   0x40000000, 0x20000000, 0 },
 	{ "EBI1CS1.BIN",  0x60000000, 0x20000000, 0 }
 };
-int dump_entries = ARRAY_SIZE(dumpinfo);
+int dump_entries_n = ARRAY_SIZE(dumpinfo_n);
+
+struct dumpinfo_t *dumpinfo_s = dumpinfo_n;
+int dump_entries_s = dump_entries_n;
 
 extern int ipq_spi_init(u16);
 

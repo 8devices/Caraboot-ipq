@@ -53,11 +53,18 @@ const add_node_t add_node[] = {
 	}
 };
 
-struct dumpinfo_t dumpinfo[] = {
+struct dumpinfo_t dumpinfo_n[] = {
 	{ "EBICS0.BIN", 0x80000000, 0x10000000, 0 },
 };
 
-int dump_entries = ARRAY_SIZE(dumpinfo);
+int dump_entries_n = ARRAY_SIZE(dumpinfo_n);
+
+struct dumpinfo_t dumpinfo_s[] = {
+	{ "EBICS0.bin", CONFIG_QCA_KERNEL_CRASHDUMP_ADDRESS,
+	  CONFIG_CPU_CONTEXT_DUMP_SIZE, 0 },
+};
+
+int dump_entries_s = ARRAY_SIZE(dumpinfo_s);
 
 extern loff_t board_env_offset;
 extern loff_t board_env_range;

@@ -116,6 +116,9 @@ static int do_dumpqca_data(cmd_tbl_t *cmdtp, int flag, int argc,
 	int indx;
 	int ebi_indx = 0;
 	int ret = CMD_RET_FAILURE;
+	char buf = 1;
+	struct dumpinfo_t *dumpinfo = dumpinfo_n;
+	int dump_entries = dump_entries_n;
 
 	if (argc == 2) {
 		serverip = argv[1];
@@ -131,6 +134,13 @@ static int do_dumpqca_data(cmd_tbl_t *cmdtp, int flag, int argc,
 		}
 	}
 
+	ret = qca_scm_call(SCM_SVC_FUSE,
+			   QFPROM_IS_AUTHENTICATE_CMD, &buf, sizeof(char));
+	if (ret == 0 && buf == 1) {
+		dumpinfo = dumpinfo_s;
+		dump_entries = dump_entries_s;
+	}
+
 	for (indx = 0; indx < dump_entries; indx++) {
 		printf("\nProcessing %s:", dumpinfo[indx].name);
 
@@ -144,7 +154,16 @@ static int do_dumpqca_data(cmd_tbl_t *cmdtp, int flag, int argc,
 
 		if (!strncmp(dumpinfo[indx].name, "EBICS", strlen("EBICS")))
 		{
-			dumpinfo[indx].size = gd->ram_size;
+			if (!strncmp(dumpinfo[indx].name,
+				     "EBICS0", strlen("EBICS0")))
+				dumpinfo[indx].size = gd->ram_size;
+
+			if (!strncmp(dumpinfo[indx].name,
+				     "EBICS_S1", strlen("EBICS_S1")))
+				dumpinfo[indx].size = gd->ram_size
+						      - dumpinfo[indx - 1].size
+						      - 0x400000;
+
 			remaining = dumpinfo[indx].size;
 			while (remaining > 0) {
 				snprintf(dumpinfo[indx].name, sizeof(dumpinfo[indx].name), "EBICS%d.BIN", ebi_indx);

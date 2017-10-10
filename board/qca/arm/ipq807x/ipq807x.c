@@ -47,7 +47,7 @@ const char *del_node[] = {"uboot",
 			  NULL};
 const add_node_t add_node[] = {{}};
 static int pci_initialised;
-struct dumpinfo_t dumpinfo[] = {
+struct dumpinfo_t dumpinfo_n[] = {
 	/* TZ stores the DDR physical address at which it stores the
 	 * APSS regs, NSS IMEM copy and PMIC dump. We will have the TZ IMEM
 	 * IMEM Addr at which the DDR physical address is stored as
@@ -71,7 +71,17 @@ struct dumpinfo_t dumpinfo[] = {
 	{ "MSGRAM.BIN", 0x00060000, 0x00006000, 1 },
 	{ "IMEM.BIN", 0x08600000, 0x00006000, 0 },
 };
-int dump_entries = ARRAY_SIZE(dumpinfo);
+int dump_entries_n = ARRAY_SIZE(dumpinfo_n);
+
+struct dumpinfo_t dumpinfo_s[] = {
+	{ "NSSIMEM.BIN", 0x08600658, 0x00060000, 0, 1, 0x2000 },
+	{ "EBICS_S0.BIN", 0x40000000, 0xAC00000, 0 },
+	{ "EBICS_S1.BIN", CONFIG_TZ_END_ADDR, 0x10000000, 0 },
+	{ "DATARAM.BIN", 0x00290000, 0x00010000, 0 },
+	{ "MSGRAM.BIN", 0x00060000, 0x00006000, 1 },
+	{ "IMEM.BIN", 0x08600000, 0x00006000, 0 },
+};
+int dump_entries_s = ARRAY_SIZE(dumpinfo_s);
 
 void uart2_configure_mux(void)
 {
