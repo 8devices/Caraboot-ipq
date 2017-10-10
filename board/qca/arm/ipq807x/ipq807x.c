@@ -185,9 +185,8 @@ unsigned long timer_read_counter(void)
 void reset_crashdump(void)
 {
 	unsigned int ret = 0;
-	qca_scm_sdi_v8();
-	ret = qca_scm_call_write(SCM_SVC_IO, SCM_IO_WRITE,
-				 0x193D100, CLEAR_MAGIC);
+	qca_scm_sdi();
+	ret = qca_scm_dload(CLEAR_MAGIC);
 	if (ret)
 		printf ("Error in reseting the Magic cookie\n");
 	return;

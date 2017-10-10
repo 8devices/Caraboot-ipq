@@ -197,7 +197,6 @@ extern loff_t board_env_size;
 #define QCA_SPI_NOR_DEVICE		"spi0.0"
 #define CONFIG_QUP_SPI_USE_DMA		1
 
-#define CONFIG_SCM_TZ64	1
 /*
  * U-Boot Env Configs
  */

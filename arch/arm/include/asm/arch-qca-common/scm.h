@@ -98,8 +98,10 @@ extern int qca_scm_call(u32 svc_id, u32 cmd_id, void *buf, size_t len);
 
 int qca_scm_call_write(u32, u32, u32 *, u32);
 int qca_scm_call_read(u32, u32, u32 *, u32 *);
-int qca_scm_sdi_v8(void);
+int qca_scm_sdi(void);
+int qca_scm_dload(u32);
 int qca_scm_fuseipq(u32, u32, void *, size_t);
+bool is_scm_armv8(void);
 
 #define MAX_QCA_SCM_RETS		3
 #define MAX_QCA_SCM_ARGS		10
@@ -141,10 +143,10 @@ struct qca_scm_desc {
 #define QCA_SCM_ARGS(...) QCA_SCM_ARGS_IMPL(__VA_ARGS__, \
 			0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 
-#ifdef CONFIG_SCM_TZ64
-
 #define QCA_SCM_SIP_FNID(s, c) (((((s) & 0xFF) << 8) | \
 			((c) & 0xFF)) | 0x02000000)
+
+#define QCA_SMC_ATOMIC_MASK            0x80000000
 
 #define QCA_MAX_ARG_LEN	5
 
@@ -162,6 +164,7 @@ typedef struct {
 } kernel_params;
 
 #define SCM_ARCH64_SWITCH_ID	0x1
+#define QCA_IS_CALL_AVAIL_CMD	0x1
 #define SCM_EL1SWITCH_CMD_ID	0xf
 
 #define SCM_NULL_OP 0
@@ -171,5 +174,4 @@ typedef struct {
 void __attribute__ ((noreturn)) jump_kernel64(void *kernel_entry,
 		void *fdt_addr);
 
-#endif
 #endif

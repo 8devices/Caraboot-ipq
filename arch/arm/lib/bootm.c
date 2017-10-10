@@ -29,9 +29,7 @@
 #ifdef CONFIG_ARMV7_NONSEC
 #include <asm/armv7.h>
 #endif
-#ifdef CONFIG_SCM_TZ64
 #include <asm/arch-qca-common/scm.h>
-#endif
 DECLARE_GLOBAL_DATA_PTR;
 
 static struct tag *params;
@@ -260,7 +258,6 @@ bool armv7_boot_nonsec(void)
 }
 #endif
 
-#ifdef CONFIG_SCM_TZ64
 struct aarch64_hdr {
 	u32 code0; /* Executable code */
 	u32 code1; /* Executable code */
@@ -275,7 +272,6 @@ struct aarch64_hdr {
 };
 #define AARCH64_LINUX_MAGIC 0x644d5241
 #define TEST_AARCH64(ptr) (ptr->magic == AARCH64_LINUX_MAGIC) ? true : false
-#endif
 
 /* Subcommand: GO */
 static void boot_jump_linux(bootm_headers_t *images, int flag)
@@ -326,11 +322,9 @@ static void boot_jump_linux(bootm_headers_t *images, int flag)
 	else
 		r2 = gd->bd->bi_boot_params;
 
-#ifdef CONFIG_SCM_TZ64
 	if (TEST_AARCH64(((struct aarch64_hdr *)kernel_entry))) {
 		jump_kernel64(kernel_entry, images->ft_addr);
 	} else {
-#endif
 		if (!fake) {
 #ifdef CONFIG_ARMV7_NONSEC
 			if (armv7_boot_nonsec()) {
@@ -341,9 +335,7 @@ static void boot_jump_linux(bootm_headers_t *images, int flag)
 #endif
 				kernel_entry(0, machid, r2);
 		}
-#ifdef CONFIG_SCM_TZ64
 	}
-#endif
 #endif
 }
 

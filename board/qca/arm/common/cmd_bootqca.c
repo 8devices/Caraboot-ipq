@@ -258,39 +258,42 @@ void qca_appsbl_dload(void) {
 	unsigned long * dmagic1 = (unsigned long *) 0x2A03F000;
 	unsigned long * dmagic2 = (unsigned long *) 0x2A03F004;
 
-#ifdef CONFIG_SCM_TZ64
-	ret = qca_scm_call_read(SCM_SVC_IO, SCM_IO_READ, addr, &rsp);
-	if (rsp == DLOAD_MAGIC_COOKIE) {
-		val = 0x0;
-
-		ret = qca_scm_call_write(SCM_SVC_IO, SCM_IO_WRITE, addr, val);
-		if (ret)
-			printf ("Error in reseting the Magic cookie\n");
-		dump_func();
-	}
-#else
-	ret = qca_scm_call(SCM_SVC_BOOT, SCM_SVC_RD, (void *)&val, sizeof(val));
-	if (ret) {
-		if (*dmagic1 == 0xE47B337D && *dmagic2 == 0x0501CAB0) {
-			/* clear the magic and run the dump command */
-			*dmagic1 = 0;
-			*dmagic2 = 0;
-			dump_func();
-		}
-	}
-	else {
-		/* check if we are in download mode */
-		if (val == DLOAD_MAGIC_COOKIE) {
-			/* clear the magic and run the dump command */
+	if (is_scm_armv8())
+	{
+		ret = qca_scm_call_read(SCM_SVC_IO, SCM_IO_READ, addr, &rsp);
+		if (rsp == DLOAD_MAGIC_COOKIE) {
 			val = 0x0;
 
-			ret = qca_scm_call(SCM_SVC_BOOT, SCM_SVC_WR, (void *)&val, sizeof(val));
+			ret = qca_scm_call_write(SCM_SVC_IO, SCM_IO_WRITE, addr, val);
 			if (ret)
 				printf ("Error in reseting the Magic cookie\n");
 			dump_func();
 		}
 	}
-#endif
+	else
+	{
+		ret = qca_scm_call(SCM_SVC_BOOT, SCM_SVC_RD, (void *)&val, sizeof(val));
+		if (ret) {
+			if (*dmagic1 == 0xE47B337D && *dmagic2 == 0x0501CAB0) {
+				/* clear the magic and run the dump command */
+				*dmagic1 = 0;
+				*dmagic2 = 0;
+				dump_func();
+			}
+		}
+		else {
+			/* check if we are in download mode */
+			if (val == DLOAD_MAGIC_COOKIE) {
+				/* clear the magic and run the dump command */
+				val = 0x0;
+
+				ret = qca_scm_call(SCM_SVC_BOOT, SCM_SVC_WR, (void *)&val, sizeof(val));
+				if (ret)
+					printf ("Error in reseting the Magic cookie\n");
+				dump_func();
+			}
+		}
+	}
 }
 #endif
 

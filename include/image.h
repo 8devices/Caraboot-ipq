@@ -713,12 +713,8 @@ static inline int image_check_target_arch(const image_header_t *hdr)
 #ifndef IH_ARCH_DEFAULT
 # error "please define IH_ARCH_DEFAULT in your arch asm/u-boot.h"
 #endif
-#ifdef CONFIG_SCM_TZ64
 	return image_check_arch(hdr, IH_ARCH_DEFAULT) || image_check_arch(hdr,
 		IH_ARCH_ARM64);
-#else
-	return image_check_arch(hdr, IH_ARCH_DEFAULT);
-#endif
 }
 #endif /* USE_HOSTCC */
 
@@ -1105,12 +1101,8 @@ struct image_region *fit_region_make_list(const void *fit,
 static inline int fit_image_check_target_arch(const void *fdt, int node)
 {
 #ifndef USE_HOSTCC
-#ifdef CONFIG_SCM_TZ64
 	return fit_image_check_arch(fdt, node, IH_ARCH_DEFAULT) ||
 		fit_image_check_arch(fdt, node, IH_ARCH_ARM64);
-#else
-	return fit_image_check_arch(fdt, node, IH_ARCH_DEFAULT);
-#endif
 #else
 	return 0;
 #endif

@@ -225,8 +225,6 @@ int scm_init(void)
 	return 0;
 }
 
-#ifdef CONFIG_SCM_TZ64
-
 int __qca_scm_call_armv8_32(u32 x0, u32 x1, u32 x2, u32 x3, u32 x4, u32 x5,
 				u32 *ret1, u32 *ret2, u32 *ret3)
 {
@@ -298,6 +296,42 @@ static int scm_call_64(u32 svc_id, u32 cmd_id, struct qca_scm_desc *desc)
 	return ret;
 }
 
+static enum scm_interface_version {
+        SCM_UNKNOWN,
+        SCM_LEGACY,
+        SCM_ARMV8_32,
+} scm_version = SCM_UNKNOWN;
+
+/* This function is used to find whether TZ is in AARCH64 mode.
+ * If this function returns 1, then its in AARCH64 mode and
+ * calling conventions for AARCH64 TZ is different, we need to
+ * use them.
+ */
+bool is_scm_armv8(void)
+{
+        int ret;
+        u32 ret1, x0;
+
+        if (likely(scm_version != SCM_UNKNOWN))
+                return (scm_version == SCM_ARMV8_32);
+
+        /* Try SMC32 call */
+        ret1 = 0;
+        x0 = QCA_SCM_SIP_FNID(SCM_SVC_INFO, QCA_IS_CALL_AVAIL_CMD) |
+                        QCA_SMC_ATOMIC_MASK;
+
+        ret = __qca_scm_call_armv8_32(x0, QCA_SCM_ARGS(1), x0, 0, 0, 0,
+                                  &ret1, NULL, NULL);
+        if (ret || !ret1)
+                scm_version = SCM_LEGACY;
+        else
+                scm_version = SCM_ARMV8_32;
+
+        pr_debug("scm_call: scm version is %x\n", scm_version);
+
+        return (scm_version == SCM_ARMV8_32);
+}
+
 void __attribute__ ((noreturn)) jump_kernel64(void *kernel_entry,
 				void *fdt_addr)
 {
@@ -312,6 +346,11 @@ void __attribute__ ((noreturn)) jump_kernel64(void *kernel_entry,
 	desc.args[0] = (u32) &param;
 	desc.args[1] = sizeof(param);
 
+	if (!is_scm_armv8()) {
+		printf("Can't boot kernel: %d\n", ret);
+		hang();
+	}
+
 	printf("Jumping to AARCH64 kernel via monitor\n");
 	ret = scm_call_64(SCM_ARCH64_SWITCH_ID, SCM_EL1SWITCH_CMD_ID,
 		&desc);
@@ -320,22 +359,24 @@ void __attribute__ ((noreturn)) jump_kernel64(void *kernel_entry,
 	hang();
 }
 
-#endif
 
 int qca_scm_call(u32 svc_id, u32 cmd_id, void *buf, size_t len)
 {
 	int ret = 0;
 
-#ifdef CONFIG_SCM_TZ64
-	struct qca_scm_desc desc = {0};
+	if (is_scm_armv8())
+	{
+		struct qca_scm_desc desc = {0};
 
-	desc.arginfo = QCA_SCM_ARGS(2, SCM_READ_OP);
-	desc.args[0] = (u32)buf;
-	desc.args[1] = len;
-	ret = scm_call_64(svc_id, cmd_id, &desc);
-#else
-	ret = scm_call(svc_id, cmd_id, NULL, 0, buf, len);
-#endif
+		desc.arginfo = QCA_SCM_ARGS(2, SCM_READ_OP);
+		desc.args[0] = (u32)buf;
+		desc.args[1] = len;
+		ret = scm_call_64(svc_id, cmd_id, &desc);
+	}
+	else
+	{
+		ret = scm_call(svc_id, cmd_id, NULL, 0, buf, len);
+	}
 	return ret;
 }
 
@@ -343,19 +384,22 @@ int qca_scm_fuseipq(u32 svc_id, u32 cmd_id, void *buf, size_t len)
 {
 	int ret = 0;
 	uint32_t *status;
-#ifdef CONFIG_SCM_TZ64
-	struct qca_scm_desc desc = {0};
+	if (is_scm_armv8())
+	{
+		struct qca_scm_desc desc = {0};
 
-	desc.arginfo = QCA_SCM_ARGS(1, SCM_READ_OP);
-	desc.args[0] = *((unsigned int *)buf);
+		desc.arginfo = QCA_SCM_ARGS(1, SCM_READ_OP);
+		desc.args[0] = *((unsigned int *)buf);
 
-	ret = scm_call_64(svc_id, cmd_id, &desc);
+		ret = scm_call_64(svc_id, cmd_id, &desc);
 
-	status = (uint32_t *)(*(((uint32_t *)buf) + 1));
-	*status = desc.ret[0];
-#else
-	ret = scm_call(svc_id, cmd_id, buf, len, NULL, 0);
-#endif
+		status = (uint32_t *)(*(((uint32_t *)buf) + 1));
+		*status = desc.ret[0];
+	}
+	else
+	{
+		ret = scm_call(svc_id, cmd_id, buf, len, NULL, 0);
+	}
 	return ret;
 }
 
@@ -364,23 +408,25 @@ int qca_scm_auth_kernel(void *cmd_buf,
 {
 	int ret = 0;
 
-#ifdef CONFIG_SCM_TZ64
-	struct qca_scm_desc desc = {0};
-	desc.arginfo = QCA_SCM_ARGS(1, SCM_VAL);
-	/* args[0] has the kernel load address */
-	desc.args[0] = * ((unsigned int *)cmd_buf);
-	/* args[1] has the kernel image size */
-	desc.args[1] = * (((unsigned int *)cmd_buf) + 1);
-	ret = scm_call_64(SCM_SVC_BOOT, KERNEL_AUTH_CMD, &desc);
-#else
-	ret = scm_call(SCM_SVC_BOOT, KERNEL_AUTH_CMD, cmd_buf, cmd_len,
-			NULL, 0);
-#endif
+	if (is_scm_armv8())
+	{
+		struct qca_scm_desc desc = {0};
+		desc.arginfo = QCA_SCM_ARGS(1, SCM_VAL);
+		/* args[0] has the kernel load address */
+		desc.args[0] = * ((unsigned int *)cmd_buf);
+		/* args[1] has the kernel image size */
+		desc.args[1] = * (((unsigned int *)cmd_buf) + 1);
+		ret = scm_call_64(SCM_SVC_BOOT, KERNEL_AUTH_CMD, &desc);
+	}
+	else
+	{
+		ret = scm_call(SCM_SVC_BOOT, KERNEL_AUTH_CMD, cmd_buf, cmd_len,
+				NULL, 0);
+	}
 
 	return ret;
 }
 
-#ifdef CONFIG_SCM_TZ64
 int qca_scm_call_read(u32 svc_id, u32 cmd_id, u32 *addr, u32 *rsp)
 {
 	int ret = 0;
@@ -406,7 +452,7 @@ int qca_scm_call_write(u32 svc_id, u32 cmd_id, u32 *addr, u32 val)
 	return ret;
 }
 
-int qca_scm_sdi_v8(void)
+static int qca_scm_sdi_v8(void)
 {
 	struct qca_scm_desc desc = {0};
 	int ret;
@@ -422,4 +468,33 @@ int qca_scm_sdi_v8(void)
 
 	return le32_to_cpu(desc.ret[0]);
 }
-#endif
+
+int qca_scm_sdi(void)
+{
+        int ret;
+        unsigned int clear_info[] = {
+                1 /* Disable wdog debug */, 0 /* SDI enable*/, };
+
+        if (is_scm_armv8())
+                return qca_scm_sdi_v8();
+
+        ret = scm_call(SCM_SVC_BOOT, SCM_CMD_TZ_CONFIG_HW_FOR_RAM_DUMP_ID, &clear_info,
+                                sizeof(clear_info), NULL, 0);
+
+        return ret;
+}
+
+int qca_scm_dload(unsigned int magic_cookie)
+{
+	int ret;
+        if (is_scm_armv8())
+	{
+		ret = qca_scm_call_write(SCM_SVC_IO, SCM_IO_WRITE,
+			0x193D100, magic_cookie);
+	}
+	else
+	{
+		ret = scm_call(SCM_SVC_BOOT, SCM_CMD_TZ_FORCE_DLOAD_ID, &magic_cookie,
+			sizeof(magic_cookie), NULL, 0);
+	}
+}
