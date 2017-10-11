@@ -200,7 +200,11 @@ void psci_sys_reset(void)
 void reset_cpu(unsigned long a)
 {
 	reset_crashdump();
-	psci_sys_reset();
+	if (is_scm_armv8()) {
+		psci_sys_reset();
+	} else {
+		writel(0, GCNT_PSHOLD);
+	}
 	while(1);
 }
 
