@@ -330,9 +330,9 @@ void board_pci_deinit(void)
 	pcie_clock_disable(GCC_PCIE_AHB_CBCR);
 }
 
-int ipq_fdt_fixup_socinfo(void *blob)
+void ipq_fdt_fixup_socinfo(void *blob)
 {
-	return 0;
+	return;
 }
 
 void ipq_fdt_fixup_usb_device_mode(void *blob)

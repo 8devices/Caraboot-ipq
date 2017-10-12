@@ -114,5 +114,5 @@ extern const char *rsvd_node;
 extern const char *del_node[];
 extern const add_node_t add_node[];
 void reset_crashdump(void);
-int ipq_fdt_fixup_socinfo(void *blob);
+void ipq_fdt_fixup_socinfo(void *blob);
 #endif /* _IPQ806X_H_ */

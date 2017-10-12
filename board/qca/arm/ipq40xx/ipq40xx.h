@@ -126,5 +126,5 @@ extern const add_node_t add_node[];
 
 unsigned int get_board_index(unsigned int machid);
 void reset_crashdump(void);
-int ipq_fdt_fixup_socinfo(void *blob);
+void ipq_fdt_fixup_socinfo(void *blob);
 #endif

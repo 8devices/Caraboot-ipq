@@ -316,7 +316,7 @@ void qca_serial_init(struct ipq_serial_platdata *plat)
 
 }
 
-int ipq_fdt_fixup_socinfo(void *blob)
+void ipq_fdt_fixup_socinfo(void *blob)
 {
 	uint32_t cpu_type;
 	int nodeoff, ret;
@@ -324,19 +324,19 @@ int ipq_fdt_fixup_socinfo(void *blob)
 	ret = ipq_smem_get_socinfo_cpu_type(&cpu_type);
 	if (ret) {
 		printf("ipq: fdt fixup cannot get socinfo\n");
-		return ret;
+		return;
 	}
 	nodeoff = fdt_node_offset_by_compatible(blob, -1, "qcom,ipq8064");
 
 	if (nodeoff < 0) {
 		printf("ipq: fdt fixup cannot find compatible node\n");
-		return nodeoff;
+		return;
 	}
 	ret = fdt_setprop(blob, nodeoff, "cpu_type",
 			&cpu_type, sizeof(cpu_type));
 	if (ret)
 		printf("%s: cannot set cpu type %d\n", __func__, ret);
-	return ret;
+	return;
 }
 
 void ipq_fdt_fixup_usb_device_mode(void *blob)
