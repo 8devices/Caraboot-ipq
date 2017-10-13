@@ -251,9 +251,8 @@ void board_mmc_deinit(void)
 	emmc_clock_disable();
 }
 
-int board_eth_init(bd_t *bis)
+void eth_clock_enable(void)
 {
-	int ret=0;
 	int tlmm_base = 0x1025000;
 	int aquantia_gpio = -1, node;
 	unsigned int *aquantia_gpio_base;
@@ -329,6 +328,13 @@ int board_eth_init(bd_t *bis)
 		writel(0x3, aquantia_gpio_base);
 		mdelay(500);
 	}
+}
+
+int board_eth_init(bd_t *bis)
+{
+	int ret=0;
+
+	eth_clock_enable();
 	ret = ipq807x_edma_init(NULL);
 
 	if (ret != 0)

@@ -21,11 +21,43 @@
 #include "ipq_phy.h"
 #include "ipq807x_aquantia_phy.h"
 #include <crc.h>
+#include <mmc.h>
+#include <asm/errno.h>
+#include <nand.h>
+#include <spi_flash.h>
+#include <spi.h>
+
+typedef struct {
+	unsigned int image_type;
+	unsigned int header_vsn_num;
+	unsigned int image_src;
+	unsigned char *image_dest_ptr;
+	unsigned int image_size;
+	unsigned int code_size;
+	unsigned char *signature_ptr;
+	unsigned int signature_size;
+	unsigned char *cert_chain_ptr;
+	unsigned int cert_chain_size;
+} mbn_header_t;
+
+mbn_header_t *fwimg_header;
+static int debug = 0;
+
+#ifdef CONFIG_QCA_MMC
+extern qca_mmc mmc_host;
+static qca_mmc *host = &mmc_host;
+#endif
 
 extern int ipq_mdio_write(int mii_id,
 		int regnum, u16 value);
 extern int ipq_mdio_read(int mii_id,
 		int regnum, ushort *data);
+
+extern int ipq_sw_mdio_init(const char *);
+extern void eth_clock_enable(void);
+static int program_ethphy_fw(unsigned int phy_addr,
+			 uint32_t load_addr,uint32_t file_size );
+static qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 
 u16 aq_phy_reg_write(u32 dev_id, u32 phy_id,
 		u32 reg_id, u16 reg_val)
@@ -167,13 +199,116 @@ int ipq_qca_aquantia_phy_init(struct phy_ops **ops, u32 phy_id)
 	return 0;
 }
 
-#define AQ_PHY_IMAGE_HEADER_CONTENT_OFFSET_HHD 0x300
 static int do_load_fw(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
+	unsigned int phy_addr=0x7;
+
+	if (argc > 2)
+		return CMD_RET_USAGE;
+
+	if (argc == 2)
+		phy_addr = simple_strtoul(argv[1], NULL, 16);
+
+	if (phy_addr != AQU_PHY_ADDR) {
+		printf("Phy address is not correct: use 0x7\n");
+		return 0;
+	}
+	miiphy_init();
+	eth_clock_enable();
+	ipq_sw_mdio_init("IPQ MDIO0");
+	ipq_board_fw_download(phy_addr);
+	return 0;
+}
+
+int ipq_board_fw_download(unsigned int phy_addr)
+{
+	char runcmd[256];
+	int ret,i=0;
+	uint32_t start;         /* block number */
+	uint32_t size;          /* no. of blocks */
+	qca_part_entry_t	ethphyfw;
+	struct { char *name; qca_part_entry_t *part; } entries[] = {
+		{ "0:ETHPHYFW", &ethphyfw },
+	};
+#ifdef CONFIG_QCA_MMC
+	block_dev_desc_t *blk_dev;
+	disk_partition_t disk_info;
+#endif
+	/* check the smem info to see which flash used for booting */
+	if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
+		if (debug) {
+			printf("Using nand device %d\n", CONFIG_SPI_FLASH_INFO_IDX);
+		}
+		sprintf(runcmd, "nand device %d", CONFIG_SPI_FLASH_INFO_IDX);
+		run_command(runcmd, 0);
+
+	} else if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
+		if (debug) {
+			printf("Using nand device 0\n");
+		}
+	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
+		if (debug) {
+			printf("Using MMC device\n");
+		}
+	} else {
+		printf("Unsupported BOOT flash type\n");
+		return -1;
+	}
+
+	ret = smem_getpart(entries[i].name, &start, &size);
+	if (ret < 0) {
+		debug("cdp: get part failed for %s\n", entries[i].name);
+	} else {
+		qca_set_part_entry(entries[i].name, sfi, entries[i].part, start, size);
+	}
+
+	if  ( (sfi->flash_type == SMEM_BOOT_NAND_FLASH) || (sfi->flash_type == SMEM_BOOT_SPI_FLASH)) {
+		/*
+		 * Kernel is in a separate partition
+		 */
+		snprintf(runcmd, sizeof(runcmd),
+			 /* NOR is treated as psuedo NAND */
+			 "nand read 0x%x 0x%llx 0x%llx && ",
+			 CONFIG_SYS_LOAD_ADDR, ethphyfw.offset, ethphyfw.size);
+
+		if (debug)
+			printf("%s", runcmd);
+
+		if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
+			return CMD_RET_FAILURE;
+#ifdef CONFIG_QCA_MMC
+	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH ) {
+		blk_dev = mmc_get_dev(host->dev_num);
+		 ret = get_partition_info_efi_by_name(blk_dev,
+						"0:ETHPHYFW", &disk_info);
+		if (ret == 0) {
+			snprintf(runcmd, sizeof(runcmd), "mmc read 0x%x 0x%X 0x%X",
+				 CONFIG_SYS_LOAD_ADDR,
+				 (uint)disk_info.start, (uint)disk_info.size);
+
+			if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
+				return CMD_RET_FAILURE;
+		}
+#endif
+	}
+
+	fwimg_header = CONFIG_SYS_LOAD_ADDR;
+
+	if( fwimg_header->image_type == 0x13 && fwimg_header->header_vsn_num == 0x3) {
+		program_ethphy_fw(phy_addr, (uint32_t )(CONFIG_SYS_LOAD_ADDR + sizeof(mbn_header_t)),
+			(uint32_t )(fwimg_header->image_size));
+	}else {
+		printf("bad magic on ETHPHYFW partition\n");
+		return -1;
+	}
+	return 0;
+}
+
+
+#define AQ_PHY_IMAGE_HEADER_CONTENT_OFFSET_HHD 0x300
+static int program_ethphy_fw(unsigned int phy_addr, uint32_t load_addr, uint32_t file_size)
+{
 	int i;
-	uint32_t load_addr;
-	uint32_t file_size;
-	unsigned int phy_addr;
 	uint8_t *buf;
 	uint16_t file_crc;
 	uint16_t computed_crc;
@@ -197,24 +332,13 @@ static int do_load_fw(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	uint8_t lsb2;
 	uint16_t mailbox_crc;
 
-	if (argc < 4)
-		return CMD_RET_USAGE;
-
-	phy_addr = simple_strtoul(argv[1], NULL, 16);
-	load_addr = simple_strtoul(argv[2], NULL, 16);
-	file_size = simple_strtoul(argv[3], NULL, 16);
-
-	if (phy_addr != AQU_PHY_ADDR) {
-		printf("Phy address is not correct: use 0x7\n");
-		return 0;
-	}
 	aq_phy_reg_write(0x0, phy_addr, AQUANTIA_REG_ADDRESS(0x1e, 0x300), 0xdead);
 	aq_phy_reg_write(0x0, phy_addr, AQUANTIA_REG_ADDRESS(0x1e, 0x301), 0xbeaf);
 	reg1 = aq_phy_reg_read(0x0, phy_addr, AQUANTIA_REG_ADDRESS(0x1e, 0x300));
 	reg2 = aq_phy_reg_read(0x0, phy_addr, AQUANTIA_REG_ADDRESS(0x1e, 0x301));
 
 	if(reg1 != 0xdead && reg2 != 0xbeaf) {
-		printf("Scratchpad Read/Write test fail\n");
+		printf("PHY::Scratchpad Read/Write test fail\n");
 		return 0;
 	}
 	buf = (uint8_t *)load_addr;
@@ -222,10 +346,10 @@ static int do_load_fw(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	computed_crc = cyg_crc16(buf, file_size - 2);
 
 	if (file_crc != computed_crc) {
-		printf("CRC check failed on image file\n");
+		printf("CRC check failed on phy fw file\n");
 		return 0;
 	} else {
-		printf ("CRC check good on image file (0x%04X)\n",computed_crc);
+		printf ("CRC check good on phy fw file (0x%04X)\n",computed_crc);
 	}
 
 	daisy_chain_dis = aq_phy_reg_read(0x0, phy_addr, AQUANTIA_REG_ADDRESS(0x1e, 0xc452));
@@ -255,15 +379,10 @@ static int do_load_fw(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	primary_iram_ptr += primary_header_ptr;
 	primary_dram_ptr += primary_header_ptr;
 
-	printf ("\nSegment Addresses and Sizes as read from the PHY ROM image header:\n\n");
-	printf ("Primary Iram Address: 0x%x\n", primary_iram_ptr);
-	printf ("Primary Iram Size: 0x%x\n", primary_iram_sz);
-	printf ("Primary Dram Address: 0x%x\n", primary_dram_ptr);
-	printf ("Primary Dram Size: 0x%x\n", primary_dram_sz);
 	aq_phy_reg_write(0x0, phy_addr, AQUANTIA_REG_ADDRESS(0x1e, 0x200), 0x1000);
 	aq_phy_reg_write(0x0, phy_addr, AQUANTIA_REG_ADDRESS(0x1e, 0x200), 0x0);
 	computed_crc = 0;
-	printf("Loading IRAM\n");
+	printf("PHYFW:Loading IRAM...........");
 	aq_phy_reg_write(0x0, phy_addr, AQUANTIA_REG_ADDRESS(0x1e, 0x202), 0x4000);
 	aq_phy_reg_write(0x0, phy_addr, AQUANTIA_REG_ADDRESS(0x1e, 0x203), 0x0);
 	byte_sz = primary_iram_sz;
@@ -285,8 +404,6 @@ static int do_load_fw(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		computed_crc = cyg_crc16_computed(&msb2, 0x1, computed_crc);
 		computed_crc = cyg_crc16_computed(&lsb1, 0x1, computed_crc);
 		computed_crc = cyg_crc16_computed(&lsb2, 0x1, computed_crc);
-		if (i && ((i % 512) == 0))
-			printf("    Byte: %X:\n", i << 2);
 	}
 
 	switch (byte_sz & 0x3) {
@@ -319,7 +436,8 @@ static int do_load_fw(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		computed_crc = cyg_crc16_computed(&lsb1, 0x1, computed_crc);
 		computed_crc = cyg_crc16_computed(&lsb2, 0x1, computed_crc);
 	}
-	printf("Loading DRAM\n");
+	printf("done.\n");
+	printf("PHYFW:Loading DRAM..............");
 	aq_phy_reg_write(0x0, phy_addr, AQUANTIA_REG_ADDRESS(0x1e, 0x202), 0x3ffe);
 	aq_phy_reg_write(0x0, phy_addr, AQUANTIA_REG_ADDRESS(0x1e, 0x203), 0x0);
 	byte_sz = primary_dram_sz;
@@ -341,8 +459,6 @@ static int do_load_fw(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		computed_crc = cyg_crc16_computed(&msb2, 0x1, computed_crc);
 		computed_crc = cyg_crc16_computed(&lsb1, 0x1, computed_crc);
 		computed_crc = cyg_crc16_computed(&lsb2, 0x1, computed_crc);
-		if (i && ((i % 512) == 0))
-			printf("    Byte: %X:\n", i << 2);
 	}
 
 	switch (byte_sz & 0x3) {
@@ -375,12 +491,13 @@ static int do_load_fw(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		computed_crc = cyg_crc16_computed(&lsb1, 0x1, computed_crc);
 		computed_crc = cyg_crc16_computed(&lsb2, 0x1, computed_crc);
 	}
+	printf("done.\n");
 	aq_phy_reg_write(0x0, phy_addr, AQUANTIA_REG_ADDRESS(0x1e, 0xc441), 0x2010);
 	mailbox_crc = aq_phy_reg_read(0x0, phy_addr, AQUANTIA_REG_ADDRESS(0x1e, 0x201));
 	if (mailbox_crc != computed_crc)
-		printf("Mailbox CRC-16 (0x%X) does not match calculated CRC-16 (0x%X)\n", mailbox_crc, computed_crc);
+		printf("phy fw image load  CRC-16 (0x%X) does not match calculated CRC-16 (0x%X)\n", mailbox_crc, computed_crc);
 	else
-		printf("Image load good - mailbox CRC-16 matches (0x%X)\n", mailbox_crc);
+		printf("phy fw image load good CRC-16 matches (0x%X)\n", mailbox_crc);
 
 	aq_phy_reg_write(0x0, phy_addr, AQUANTIA_REG_ADDRESS(0x1e, 0x0), 0x0);
 	aq_phy_reg_write(0x0, phy_addr, AQUANTIA_REG_ADDRESS(0x1e, 0xc001), 0x41);
@@ -391,7 +508,6 @@ static int do_load_fw(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	aquantia_phy_restart_autoneg(phy_addr);
 	return 0;
 }
-
 U_BOOT_CMD(
 	aq_load_fw,	5,	1,	do_load_fw,
 	"LOAD aq-fw-binary",
