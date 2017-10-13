@@ -142,11 +142,22 @@ int check_mbn_elf(struct image_section **sec)
 
 	elf = (Elf32_Ehdr *)fp;
 	if (!strncmp((char *)&(elf->e_ident[1]), "ELF", 3)) {
-		(*sec)->get_sw_id = get_sw_id_from_component_bin_elf;
-		(*sec)->split_components = split_code_signature_cert_from_component_bin_elf;
+		/* EI_CLASS Check for 32/64-bit */
+		if( ((int)(elf->e_ident[4])) == 2) {
+			(*sec)->get_sw_id = get_sw_id_from_component_bin_elf64;
+			(*sec)->split_components = split_code_signature_cert_from_component_bin_elf64;
+		} else {
+			(*sec)->get_sw_id = get_sw_id_from_component_bin_elf;
+			(*sec)->split_components = split_code_signature_cert_from_component_bin_elf;
+		}
 	} else if (!strncmp((char *)&(((Elf32_Ehdr *)(fp + SBL_NAND_PREAMBLE))->e_ident[1]), "ELF", 3)) {
-		(*sec)->get_sw_id = get_sw_id_from_component_bin_elf;
-		(*sec)->split_components = split_code_signature_cert_from_component_bin_elf;
+		if( ((int)(elf->e_ident[4])) == 2) {
+			(*sec)->get_sw_id = get_sw_id_from_component_bin_elf64;
+			(*sec)->split_components = split_code_signature_cert_from_component_bin_elf64;
+		} else {
+			(*sec)->get_sw_id = get_sw_id_from_component_bin_elf;
+			(*sec)->split_components = split_code_signature_cert_from_component_bin_elf;
+		}
 	} else {
 		(*sec)->get_sw_id = get_sw_id_from_component_bin;
 		(*sec)->split_components = split_code_signature_cert_from_component_bin;
@@ -377,9 +388,8 @@ int get_sw_id_from_component_bin(struct image_section *section)
 	}
 	sig_cert_size = mbn_hdr->image_size - mbn_hdr->code_size;
 	if (sig_cert_size != SIG_CERT_2_SIZE && sig_cert_size != SIG_CERT_3_SIZE) {
-		printf("Error: Image without version information\n");
-		close(fd);
-		return 0;
+		printf("WARNING: signature certificate size is different\n");
+		// ipq807x has certificate size as dynamic, hence ignore this check
 	}
 
 	cert_offset = mbn_hdr->cert_ptr - mbn_hdr->image_dest_ptr + 40;
@@ -452,6 +462,61 @@ int process_elf(char *bin_file, uint8_t **fp, Elf32_Ehdr **elf, Elf32_Phdr **phd
 	return 1;
 }
 
+int process_elf64(char *bin_file, uint8_t **fp, Elf64_Ehdr **elf, Elf64_Phdr **phdr, Mbn_Hdr **mbn_hdr)
+{
+	struct stat sb;
+	int i, fd, version = 0;
+
+	fd = open(bin_file, O_RDONLY);
+	if (fd < 0) {
+		perror(bin_file);
+		return 0;
+	}
+
+	memset(&sb, 0, sizeof(struct stat));
+	if (fstat(fd, &sb) == -1) {
+		perror("fstat");
+		close(fd);
+		return 0;
+	}
+
+	*fp = mmap(NULL, sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+	if (*fp == MAP_FAILED) {
+		perror("mmap");
+		close(fd);
+		return 0;
+	}
+
+	*elf = (Elf64_Ehdr *)*fp;
+	while (strncmp((char *)&((*elf)->e_ident[1]), "ELF", 3)) {
+		*fp = (uint8_t *)((char *)(*fp) + SBL_NAND_PREAMBLE);
+		*elf = (Elf64_Ehdr *)*fp;
+	}
+
+	*phdr = (Elf64_Phdr *)(*fp + (*elf)->e_phoff);
+	for (i = 0; i < (*elf)->e_phnum; i++, (*phdr)++) {
+		if ((*phdr)->p_flags == HASH_P_FLAG) {
+			*mbn_hdr = (Mbn_Hdr *)(*fp + (*phdr)->p_offset);
+			if ((*mbn_hdr)->image_size != (*mbn_hdr)->code_size) {
+				version = 1;
+				break;
+			} else {
+				printf("Error: Image without version information\n");
+				close(fd);
+				return 0;
+			}
+		}
+	}
+
+	if (version != 1) {
+		printf("Error: Image without version information\n");
+		return 0;
+	}
+
+	close(fd);
+	return 1;
+}
+
 /**
  * get_sw_id_from_component_bin_elf() parses the ELF header to get the MBN header
  * of the hash table segment. Parses the MBN header of hash table segment & checks
@@ -476,6 +541,41 @@ int get_sw_id_from_component_bin_elf(struct image_section *section)
 
 	cert_offset = mbn_hdr->cert_ptr - mbn_hdr->image_dest_ptr + 40;
 	printf("Image with version information\n");
+	sw_version = find_value((char *)(fp + phdr->p_offset + cert_offset), "SW_ID", 17);
+	if (sw_version) {
+		sw_version[8] = '\0';
+		sscanf(sw_version, "%x", &section->img_version);
+		printf("SW ID:%d\n", section->img_version);
+		free(sw_version);
+	}
+
+	return 1;
+}
+
+/**
+ * get_sw_id_from_component_bin_elf64() parses the ELF64 header to get the MBN header
+ * of the hash table segment. Parses the MBN header of hash table segment & checks
+ * total size v/s actual component size. If both differ, it means signature &
+ * certificates are appended at end.
+ * Extract the attestation certificate & read the Subject & retreive the SW_ID.
+ *
+ 32_Phdr *phdr;* @bin_file: struct image_section *
+ */
+int get_sw_id_from_component_bin_elf64(struct image_section *section)
+{
+	Elf64_Ehdr *elf;
+	Elf64_Phdr *phdr;
+	Mbn_Hdr *mbn_hdr;
+	uint8_t *fp;
+	int cert_offset;
+	char *sw_version;
+
+	if (!process_elf64(section->file, &fp, &elf, &phdr, &mbn_hdr)) {
+		return 0;
+	}
+
+	cert_offset = mbn_hdr->code_size + mbn_hdr->sig_sz + 40;
+	printf("Image with version information64\n");
 	sw_version = find_value((char *)(fp + phdr->p_offset + cert_offset), "SW_ID", 17);
 	if (sw_version) {
 		sw_version[8] = '\0';
@@ -847,6 +947,62 @@ int split_code_signature_cert_from_component_bin_elf(struct image_section *secti
 }
 
 /**
+ * split_code_signature_cert_from_component_bin_elf64 splits the component
+ * binary by splitting into code(including ELF header), signature file &
+ * attenstation certificate.
+ *
+ * @bin_file: char *
+ * @src: char *
+ * @sig: char *
+ * @cert: char *
+ */
+int split_code_signature_cert_from_component_bin_elf64(struct image_section *section,
+                char **src, char **sig, char **cert)
+{
+	Elf64_Ehdr *elf;
+	Elf64_Phdr *phdr;
+	Mbn_Hdr *mbn_hdr;
+	uint8_t *fp;
+	int len, sig_offset, cert_offset;
+
+	if (!process_elf64(section->file, &fp, &elf, &phdr, &mbn_hdr)) {
+		return 0;
+	}
+
+	sig_offset = mbn_hdr->code_size + MBN_HDR_SIZE;
+	len = sig_offset;
+	*src = malloc((len + 1) * sizeof(char));
+	if (*src == NULL) {
+		return 0;
+	}
+
+	memcpy(*src, fp + phdr->p_offset, len);
+	src_size = len;
+	(*src)[len] = '\0';
+
+	*sig = malloc((SIG_SIZE + 1) * sizeof(char));
+	if (*sig == NULL) {
+		free(*src);
+		return 0;
+	}
+
+	memcpy(*sig, fp + phdr->p_offset + sig_offset, SIG_SIZE);
+	(*sig)[SIG_SIZE] = '\0';
+
+	cert_offset = mbn_hdr->code_size + mbn_hdr->sig_sz + MBN_HDR_SIZE;
+	*cert = malloc((CERT_SIZE + 1) * sizeof(char));
+	if (*cert == NULL) {
+		free(*src);
+		free(*sig);
+		return 0;
+	}
+	memcpy(*cert, fp + phdr->p_offset + cert_offset, CERT_SIZE);
+	(*cert)[CERT_SIZE] = '\0';
+
+	return 1;
+}
+
+/**
  * being used to calculate the image hash
  *
  */
@@ -910,6 +1066,7 @@ char *create_xor_ipad_opad(char *f_xor, unsigned long long *xor_buffer)
 {
 	int fd;
 	char *file;
+	unsigned long long sw_id, sw_id_be;
 
 	file = mktemp(f_xor);
 	fd = open(file, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);
@@ -918,11 +1075,9 @@ char *create_xor_ipad_opad(char *f_xor, unsigned long long *xor_buffer)
 		return NULL;
 	}
 
-	if (write(fd, xor_buffer, sizeof(*xor_buffer)) == -1) {
-		close(fd);
-		return 0;
-	}
-
+	sw_id = *xor_buffer;
+	sw_id_be = htobe64(sw_id);
+	write(fd, &sw_id_be, sizeof(sw_id_be));
 	close(fd);
 	return file;
 }
@@ -994,7 +1149,6 @@ int generate_hash(char *cert, char *sw_file, char *hw_file)
 		return 0;
 	}
 	strncpy(sw_file, tmp, 32);
-	free(tmp);
 
 	generate_hwid_opad(hw_id_str, oem_id_str, oem_model_id_str, &hwid_xor_opad);
 	tmp = create_xor_ipad_opad(f_hw_xor, &hwid_xor_opad);
@@ -1006,7 +1160,6 @@ int generate_hash(char *cert, char *sw_file, char *hw_file)
 		return 0;
 	}
 	strncpy(hw_file, tmp, 32);
-	free(tmp);
 
 	free(sw_id_str);
 	free(hw_id_str);

@@ -113,6 +113,25 @@ typedef struct elfhdr{
 					   header string table" entry offset */
 } Elf32_Ehdr;
 
+/*ELF64 Header */
+typedef struct elf64hdr{
+	unsigned char   e_ident[EI_NIDENT]; /* ELF Identification */
+	Elf64_Half      e_type;         /* object file type */
+	Elf64_Half      e_machine;      /* machine */
+	Elf64_Word      e_version;      /* object file version */
+	Elf64_Addr      e_entry;        /* virtual entry point */
+	Elf64_Off       e_phoff;        /* program header table offset */
+	Elf64_Off       e_shoff;        /* section header table offset */
+	Elf64_Word      e_flags;        /* processor-specific flags */
+	Elf64_Half      e_ehsize;       /* ELF header size */
+	Elf64_Half      e_phentsize;    /* program header entry size */
+	Elf64_Half      e_phnum;        /* number of program header entries */
+	Elf64_Half      e_shentsize;    /* section header entry size */
+	Elf64_Half      e_shnum;        /* number of section header entries */
+	Elf64_Half      e_shstrndx;     /* section header table's "section
+                                   header string table" entry offset */
+} Elf64_Ehdr;
+
 /* e_type */
 #define ET_NONE		0		/* No file type */
 #define ET_REL		1		/* relocatable file */
@@ -410,6 +429,18 @@ typedef struct {
 	Elf32_Word	p_flags;	/* flags */
 	Elf32_Word	p_align;	/* memory alignment */
 } Elf32_Phdr;
+
+/* Program Header Elf64*/
+typedef struct {
+	Elf64_Word      p_type;         /* segment type */
+	Elf64_Word      p_flags;        /* flags */
+	Elf64_Off       p_offset;       /* segment offset */
+	Elf64_Addr      p_vaddr;        /* virtual address of segment */
+	Elf64_Addr      p_paddr;        /* physical address - ignored? */
+	Elf64_Xword     p_filesz;       /* number of bytes in file for seg. */
+	Elf64_Xword     p_memsz;        /* number of bytes in mem. for seg. */
+	Elf64_Xword     p_align;        /* memory alignment */
+} Elf64_Phdr;
 
 /* Segment types - p_type */
 #define PT_NULL		0		/* unused */
