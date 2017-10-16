@@ -82,6 +82,29 @@ struct ubi_vid_hdr {
 	__be32  hdr_crc;
 };
 
+typedef struct {
+	uint32_t  codeword;
+	uint32_t  magic;
+	uint32_t  RESERVED_0;
+	uint32_t  RESERVED_1;
+	uint32_t  RESERVED_2;
+	uint32_t  image_src;
+	uint8_t  *image_dest_ptr;
+	uint32_t  image_size;
+	uint32_t  code_size;
+	uint8_t  *sig_ptr;
+	uint32_t  sig_size;
+	uint8_t  *cert_ptr;
+	uint32_t  cert_size;
+	uint32_t  root_cert_sel;
+	uint32_t  num_root_certs;
+	uint32_t  RESERVED_5;
+	uint32_t  RESERVED_6;
+	uint32_t  RESERVED_7;
+	uint32_t  RESERVED_8;
+	uint32_t  RESERVED_9;
+} Sbl_Hdr;
+
 int get_sections(void);
 int is_authentication_check_enabled(void);
 int get_local_image_version(struct image_section *);

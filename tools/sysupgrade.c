@@ -34,6 +34,7 @@
 #define CERT_SIZE		2048
 #define PRESENT		1
 #define MBN_HDR_SIZE		40
+#define SBL_HDR_SIZE		80
 #define SIG_SIZE		256
 #define NOT_PRESENT		0
 #define SIG_CERT_2_SIZE	4352
@@ -452,16 +453,20 @@ int get_sw_id_from_component_bin(struct image_section *section)
 	mbn_hdr = (Mbn_Hdr *)fp;
 	if (strstr(section->file, sections[4].type)) {
 		uint32_t preamble = sections[2].is_present ? SBL_NAND_PREAMBLE : 0;
+		Sbl_Hdr *sbl_hdr = (Sbl_Hdr *)(fp + preamble);
 
-		mbn_hdr = (Mbn_Hdr *)(fp + preamble + SBL_HDR_RESERVED);
+		sig_cert_size = sbl_hdr->image_size - sbl_hdr->code_size;
+		cert_offset = preamble + sbl_hdr->cert_ptr - sbl_hdr->image_dest_ptr +
+				SBL_HDR_SIZE;
+	} else {
+		sig_cert_size = mbn_hdr->image_size - mbn_hdr->code_size;
+		cert_offset = mbn_hdr->cert_ptr - mbn_hdr->image_dest_ptr + 40;
 	}
-	sig_cert_size = mbn_hdr->image_size - mbn_hdr->code_size;
 	if (sig_cert_size != SIG_CERT_2_SIZE && sig_cert_size != SIG_CERT_3_SIZE) {
 		printf("WARNING: signature certificate size is different\n");
 		// ipq807x has certificate size as dynamic, hence ignore this check
 	}
 
-	cert_offset = mbn_hdr->cert_ptr - mbn_hdr->image_dest_ptr + 40;
 	printf("Image with version information\n");
 	sw_version = find_value((char *)(fp + cert_offset), "SW_ID", 17);
 	if (sw_version != NULL) {
@@ -887,9 +892,11 @@ int split_code_signature_cert_from_component_bin(struct image_section *section,
 		char **src, char **sig, char **cert)
 {
 	Mbn_Hdr *mbn_hdr;
+	Sbl_Hdr *sbl_hdr;
 	int fd = open(section->file, O_RDONLY);
 	uint8_t *fp;
 	int sig_offset = 0;
+	int src_offset = 0;
 	int cert_offset = 0;
 	struct stat sb;
 	int sig_cert_size;
@@ -917,26 +924,34 @@ int split_code_signature_cert_from_component_bin(struct image_section *section,
 	if (strstr(section->file, sections[4].type)) {
 		uint32_t preamble = sections[2].is_present ? SBL_NAND_PREAMBLE : 0;
 
-		mbn_hdr = (Mbn_Hdr *)(fp + preamble + SBL_HDR_RESERVED);
-		sig_offset = preamble + MBN_HDR_SIZE;
-		cert_offset = preamble + MBN_HDR_SIZE;
+		sbl_hdr = (Sbl_Hdr *)(fp + preamble);
+		src_offset = preamble;
+		sig_offset = preamble + sbl_hdr->sig_ptr - sbl_hdr->image_dest_ptr +
+				SBL_HDR_SIZE;
+		cert_offset = preamble + sbl_hdr->cert_ptr - sbl_hdr->image_dest_ptr +
+				SBL_HDR_SIZE;
+		sig_cert_size = sbl_hdr->image_size - sbl_hdr->code_size;
+		src_size = sbl_hdr->sig_ptr - sbl_hdr->image_dest_ptr + SBL_HDR_SIZE;
+	} else {
+		sig_cert_size = mbn_hdr->image_size - mbn_hdr->code_size;
+		src_size = mbn_hdr->sig_ptr - mbn_hdr->image_dest_ptr + MBN_HDR_SIZE;
+		sig_offset += mbn_hdr->sig_ptr - mbn_hdr->image_dest_ptr + MBN_HDR_SIZE;
+		cert_offset += mbn_hdr->cert_ptr - mbn_hdr->image_dest_ptr + MBN_HDR_SIZE;
 	}
-	sig_cert_size = mbn_hdr->image_size - mbn_hdr->code_size;
+
 	if (sig_cert_size != SIG_CERT_2_SIZE && sig_cert_size != SIG_CERT_3_SIZE) {
 		printf("Error: Image without version information\n");
 		close(fd);
 		return 0;
 	}
-	src_size = mbn_hdr->sig_ptr - mbn_hdr->image_dest_ptr + MBN_HDR_SIZE;
         *src = malloc(src_size + 1);
 	if (*src == NULL) {
 		close(fd);
 		return 0;
 	}
-	memcpy(*src, fp, src_size);
+	memcpy(*src, fp + src_offset, src_size);
 	(*src)[src_size] = '\0';
 
-	sig_offset += mbn_hdr->sig_ptr - mbn_hdr->image_dest_ptr + MBN_HDR_SIZE;
 	*sig = malloc((SIG_SIZE + 1) * sizeof(char));
 	if (*sig == NULL) {
 		free(*src);
@@ -945,7 +960,6 @@ int split_code_signature_cert_from_component_bin(struct image_section *section,
 	memcpy(*sig, fp + sig_offset, SIG_SIZE);
 	(*sig)[SIG_SIZE] = '\0';
 
-	cert_offset += mbn_hdr->cert_ptr - mbn_hdr->image_dest_ptr + MBN_HDR_SIZE;
 	*cert = malloc((CERT_SIZE + 1) * sizeof(char));
 	if (*cert == NULL) {
 		free(*src);
