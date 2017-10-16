@@ -174,4 +174,6 @@ typedef struct {
 void __attribute__ ((noreturn)) jump_kernel64(void *kernel_entry,
 		void *fdt_addr);
 
+
+void __attribute__ ((noreturn)) execute_tzt(void *entry_addr);
 #endif

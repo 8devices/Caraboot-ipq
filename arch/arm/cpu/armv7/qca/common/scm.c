@@ -360,6 +360,27 @@ void __attribute__ ((noreturn)) jump_kernel64(void *kernel_entry,
 }
 
 
+void __attribute__ ((noreturn)) execute_tzt(void *entry_addr)
+{
+        struct qca_scm_desc desc = {0};
+        int ret = 0;
+        kernel_params param = {0};
+
+        param.kernel_start = (u32)entry_addr;
+
+        desc.arginfo = QCA_SCM_ARGS(2, SCM_READ_OP);
+        desc.args[0] = (u32) &param;
+        desc.args[1] = sizeof(param);
+
+        printf("Jumping to AARCH64 TZT via monitor\n");
+        ret = scm_call_64(SCM_ARCH64_SWITCH_ID, SCM_EL1SWITCH_CMD_ID,
+                &desc);
+
+        printf("Can't boot TZT: %d\n", ret);
+        hang();
+}
+
+
 int qca_scm_call(u32 svc_id, u32 cmd_id, void *buf, size_t len)
 {
 	int ret = 0;
