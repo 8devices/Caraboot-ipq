@@ -858,14 +858,14 @@ int split_code_signature_cert_from_component_bin(struct image_section *section,
 		close(fd);
 		return 0;
 	}
-	*src = malloc((mbn_hdr->code_size + 1) * sizeof(char));
+	src_size = mbn_hdr->sig_ptr - mbn_hdr->image_dest_ptr + MBN_HDR_SIZE;
+        *src = malloc(src_size + 1);
 	if (*src == NULL) {
 		close(fd);
 		return 0;
 	}
-	memcpy(*src, fp, mbn_hdr->code_size);
-	src_size = mbn_hdr->code_size;
-	(*src)[mbn_hdr->code_size] = '\0';
+	memcpy(*src, fp, src_size);
+	(*src)[src_size] = '\0';
 
 	sig_offset += mbn_hdr->sig_ptr - mbn_hdr->image_dest_ptr + MBN_HDR_SIZE;
 	*sig = malloc((SIG_SIZE + 1) * sizeof(char));
@@ -916,7 +916,7 @@ int split_code_signature_cert_from_component_bin_elf(struct image_section *secti
 	}
 
 	sig_offset = mbn_hdr->sig_ptr - mbn_hdr->image_dest_ptr + MBN_HDR_SIZE;
-	len = MBN_HDR_SIZE + sig_offset;
+	len = sig_offset;
 	*src = malloc((len + 1) * sizeof(char));
 	if (*src == NULL) {
 		return 0;
@@ -1031,8 +1031,8 @@ void generate_hwid_opad(char *hw_id, char *oem_id, char *oem_model_id,
 {
 	unsigned long long val;
 
-	val = strtoul(hw_id, NULL, 16);
-	*hwid_xor_opad = ((val ^ HW_ID_MASK) << 32);
+	val = strtoull(hw_id, NULL, 16);
+	*hwid_xor_opad = (((val >> 32) ^ HW_ID_MASK) << 32);
 
 	val = strtoul(oem_id, NULL, 16);
 	*hwid_xor_opad |= ((val ^ OEM_ID_MASK) << 16);
@@ -1082,7 +1082,7 @@ char *create_xor_ipad_opad(char *f_xor, unsigned long long *xor_buffer)
 	return file;
 }
 
-char *read_file(char *file_name)
+char *read_file(char *file_name, size_t *file_size)
 {
 	int fd;
 	struct stat st;
@@ -1101,11 +1101,13 @@ char *read_file(char *file_name)
 		close(fd);
 		return NULL;
 	}
+
 	if (read(fd, buffer, st.st_size) == -1) {
 		close(fd);
 		return NULL;
 	}
 
+	*file_size = (size_t) st.st_size;
 	close(fd);
 	return buffer;
 }
@@ -1115,7 +1117,7 @@ int generate_hash(char *cert, char *sw_file, char *hw_file)
 	unsigned long long swid_xor_ipad, hwid_xor_opad;
 	char *tmp;
 	char *sw_id_str = find_value(cert, "SW_ID", 17);
-	char *hw_id_str = find_value(cert, "HW_ID", 9);
+	char *hw_id_str = find_value(cert, "HW_ID", 17);
 	char *oem_id_str = find_value(cert, "OEM_ID", 5);
 	char *oem_model_id_str = find_value(cert, "MODEL_ID", 5);
 	char f_sw_xor[] = "/tmp/swid_xor_XXXXXX";
@@ -1200,6 +1202,7 @@ int is_component_authenticated(char *src, char *sig, char *cert)
 	char f_reference_hash[] = "/tmp/reference_hash_XXXXXX", *reference_file;
 	char sw_file[32],hw_file[32];
 	int retval;
+	size_t comp_hash_size, ref_hash_size;
 
 	if (!create_file("src", src, src_size) || !create_file("sig", sig, SIG_SIZE) ||
 			!create_file("cert", cert, CERT_SIZE)) {
@@ -1272,8 +1275,8 @@ int is_component_authenticated(char *src, char *sig, char *cert)
 		return 0;
 	}
 
-	computed_hash = read_file(computed_file);
-	reference_hash = read_file(reference_file);
+	computed_hash = read_file(computed_file, &comp_hash_size);
+	reference_hash = read_file(reference_file, &ref_hash_size);
 	if (computed_hash == NULL || reference_hash == NULL) {
 		remove_file(sw_file, hw_file, code_file, pub_file);
 		remove(tmp_file);
@@ -1287,14 +1290,16 @@ int is_component_authenticated(char *src, char *sig, char *cert)
 	remove(tmp_file);
 	remove(computed_file);
 	remove(reference_file);
-	if (strcmp(computed_hash, reference_hash)) {
+	if (memcmp(computed_hash, reference_hash, ref_hash_size) ||
+			(comp_hash_size != ref_hash_size)) {
 		free(computed_hash);
 		free(reference_hash);
-		return 1;
+		printf("Error: Hash or file_size not equal\n");
+		return 0;
 	}
 	free(computed_hash);
 	free(reference_hash);
-	return 0;
+	return 1;
 }
 
 /**

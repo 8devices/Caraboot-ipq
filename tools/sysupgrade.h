@@ -38,7 +38,7 @@ struct image_section {
 };
 
 typedef struct mbn_header {
-	uint16_t image_id;
+	uint32_t image_id;
 	uint32_t ver_num;
 	uint32_t image_src;
 	uint8_t *image_dest_ptr;
