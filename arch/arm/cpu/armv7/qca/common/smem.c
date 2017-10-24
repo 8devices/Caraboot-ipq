@@ -253,6 +253,25 @@ unsigned int get_rootfs_active_partition(void)
 	return 0; /* alt partition not available */
 }
 
+/*
+ * To determine the spi flash addr is in 3 byte
+ * or 4 byte.
+ */
+unsigned int get_smem_spi_addr_len(void)
+{
+	int ret;
+	uint32_t spi_flash_addr_len;
+
+	ret = smem_read_alloc_entry(SMEM_SPI_FLASH_ADDR_LEN,
+					&spi_flash_addr_len, sizeof(uint32_t));
+	if (ret != 0) {
+		printf("smem: read spi flash address len failed\n");
+		spi_flash_addr_len = 0;
+	}
+
+	return spi_flash_addr_len;
+}
+
 unsigned int get_partition_table_offset(void)
 {
 	int ret;
