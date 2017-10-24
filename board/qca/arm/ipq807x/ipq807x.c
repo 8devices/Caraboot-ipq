@@ -327,9 +327,10 @@ void eth_clock_enable(void)
 
 	if (aquantia_gpio >=0) {
 		aquantia_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(aquantia_gpio);
-		writel(0x2C3, aquantia_gpio_base);
-		writel(0, aquantia_gpio_base);
-		writel(0x3, aquantia_gpio_base);
+		writel(0x203, aquantia_gpio_base);
+		gpio_set_value(aquantia_gpio, 0x0);
+		mdelay(500);
+		gpio_set_value(aquantia_gpio, 0x1);
 		mdelay(500);
 	}
 }
