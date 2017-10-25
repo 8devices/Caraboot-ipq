@@ -844,8 +844,8 @@ void ipq_fdt_fixup_socinfo(void *blob)
 			       __func__, soc_version_major);
 
 		ret = fdt_setprop(blob, nodeoff, "soc_version_minor",
-				  &soc_version_major,
-				  sizeof(soc_version_major));
+				  &soc_version_minor,
+				  sizeof(soc_version_minor));
 		if (ret)
 			printf("%s: cannot set soc_version_minor %d\n",
 			       __func__, soc_version_minor);
