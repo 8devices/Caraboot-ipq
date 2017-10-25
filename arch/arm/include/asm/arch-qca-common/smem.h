@@ -144,6 +144,7 @@ typedef struct
 extern qca_smem_bootconfig_info_t qca_smem_bootconfig_info;
 
 int smem_bootconfig_info(void);
+unsigned int get_smem_spi_addr_len(void);
 unsigned int get_rootfs_active_partition(void);
 unsigned int get_mibib_active_partition(void);
 void qca_smem_part_to_mtdparts(char *mtdid);

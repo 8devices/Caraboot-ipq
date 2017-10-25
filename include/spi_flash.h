@@ -73,6 +73,7 @@ struct spi_flash {
 	const char *name;
 	u8 dual_flash;
 	u8 shift;
+	u8 addr_width;
 	u16 flags;
 
 	u32 size;
