@@ -18,6 +18,7 @@
 #define HLOS_VERSION_FILE      "hlos_version"
 #define APPSBL_VERSION_FILE    "appsbl_version"
 #define RPM_VERSION_FILE       "rpm_version"
+#define DEVCFG_VERSION_FILE	"devcfg_version"
 #define VERSION_FILE_BASENAME  "/sys/devices/system/qfprom/qfprom0/"
 #define AUTHENTICATE_FILE	"/sys/devices/system/qfprom/qfprom0/authenticate"
 #define TEMP_KERNEL_PATH	"/tmp/tmp_kernel.bin"
@@ -26,6 +27,7 @@
 #define MAX_TZ_VERSION		14
 #define MAX_APPSBL_VERSION	14
 #define MAX_RPM_VERSION	8
+#define MAX_DEVCFG_VERSION	11
 #define HASH_P_FLAG		0x02200000
 #define TMP_FILE_DIR		"/tmp/"
 #define CERT_SIZE		2048
@@ -107,6 +109,14 @@ struct image_section sections[] = {
 		.max_version		= MAX_RPM_VERSION,
 		.file			= TMP_FILE_DIR,
 		.version_file		= RPM_VERSION_FILE,
+		.is_present		= NOT_PRESENT,
+	},
+	{
+		.section_type		= DEVCFG_TYPE,
+		.type			= "devcfg",
+		.max_version		= MAX_DEVCFG_VERSION,
+		.file			= TMP_FILE_DIR,
+		.version_file		= DEVCFG_VERSION_FILE,
 		.is_present		= NOT_PRESENT,
 	},
 };
