@@ -330,6 +330,31 @@ static int do_mmcrpmb(cmd_tbl_t *cmdtp, int flag,
 }
 #endif
 
+static int do_mmc_protect (cmd_tbl_t *cmdtp, int flag,
+			   int argc, char * const argv[])
+{
+	struct mmc *mmc;
+	unsigned int ret;
+	unsigned int blk, cnt;
+
+	if (argc != 3)
+		return CMD_RET_USAGE;
+
+	blk = (unsigned int)simple_strtoul(argv[1], NULL, 16);
+	cnt = (unsigned int)simple_strtoul(argv[2], NULL, 16);
+
+	mmc = init_mmc_device(curr_device, false);
+	if (!mmc)
+		return CMD_RET_FAILURE;
+
+	ret = mmc_write_protect(mmc, blk, cnt, 1);
+
+	if (!ret)
+		printf("Offset: 0x%x Count: %d blocks\nDone!\n", blk, cnt);
+
+	return ret ? CMD_RET_FAILURE : CMD_RET_SUCCESS;
+}
+
 static int do_mmc_read(cmd_tbl_t *cmdtp, int flag,
 		       int argc, char * const argv[])
 {
@@ -802,6 +827,7 @@ static cmd_tbl_t cmd_mmc[] = {
 	U_BOOT_CMD_MKENT(dev, 3, 0, do_mmc_dev, "", ""),
 	U_BOOT_CMD_MKENT(list, 1, 1, do_mmc_list, "", ""),
 	U_BOOT_CMD_MKENT(hwpartition, 28, 0, do_mmc_hwpartition, "", ""),
+	U_BOOT_CMD_MKENT(protect, 4, 0, do_mmc_protect, "", ""),
 #ifdef CONFIG_SUPPORT_EMMC_BOOT
 	U_BOOT_CMD_MKENT(bootbus, 5, 0, do_mmc_bootbus, "", ""),
 	U_BOOT_CMD_MKENT(bootpart-resize, 4, 0, do_mmc_boot_resize, "", ""),
@@ -858,6 +884,7 @@ U_BOOT_CMD(
 	"    [check|set|complete] - mode, complete set partitioning completed\n"
 	"  WARNING: Partitioning is a write-once setting once it is set to complete.\n"
 	"  Power cycling is required to initialize partitions after set to complete.\n"
+	"mmc protect start_blk# cnt_blk\n"
 #ifdef CONFIG_SUPPORT_EMMC_BOOT
 	"mmc bootbus dev boot_bus_width reset_boot_bus_width boot_mode\n"
 	" - Set the BOOT_BUS_WIDTH field of the specified device\n"
