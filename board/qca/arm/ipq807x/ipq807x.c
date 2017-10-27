@@ -26,11 +26,17 @@
 #include <mmc.h>
 #include <usb.h>
 #include <linux/linkage.h>
+#include <sdhci.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
 #define GCNT_PSHOLD             0x004AB000
+
+#ifndef CONFIG_SDHCI_SUPPORT
 qca_mmc mmc_host;
+#else
+struct sdhci_host mmc_host;
+#endif
 
 extern asmlinkage void __invoke_psci_fn_smc(unsigned long, unsigned long, unsigned long, unsigned long);
 
@@ -238,6 +244,17 @@ void emmc_clock_config(int mode)
 		/* Delay for clock operation complete */
 		udelay(10);
 	}
+	if (mode == MMC_DATA_TRANSFER_SDHCI_MODE) {
+		/* PLL0 - 192Mhz */
+		writel(0x20B, GCC_SDCC1_APPS_CFG_RCGR);
+		/* Delay for clock operation complete */
+		udelay(10);
+		writel(0x1, GCC_SDCC1_APPS_M);
+		writel(0xFC, GCC_SDCC1_APPS_N);
+		writel(0xFD, GCC_SDCC1_APPS_D);
+		/* Delay for clock operation complete */
+		udelay(10);
+	}
 	/* Update APPS_CMD_RCGR to reflect source selection */
 	writel(readl(GCC_SDCC1_APPS_CMD_RCGR)|0x1, GCC_SDCC1_APPS_CMD_RCGR);
 	/* Add 10us delay for clock update to complete */
@@ -253,6 +270,21 @@ void emmc_clock_disable(void)
 void board_mmc_deinit(void)
 {
 	emmc_clock_disable();
+}
+
+void emmc_clock_reset(void)
+{
+	writel(0x1, GCC_SDCC1_BCR);
+	udelay(10);
+	writel(0x0, GCC_SDCC1_BCR);
+}
+
+void emmc_sdhci_init(void)
+{
+	writel(readl(MSM_SDC1_MCI_HC_MODE) & (~0x1), MSM_SDC1_MCI_HC_MODE);
+	writel(readl(MSM_SDC1_BASE) | (1 << 7), MSM_SDC1_BASE); //SW_RST
+	udelay(10);
+	writel(readl(MSM_SDC1_MCI_HC_MODE) | (0x1), MSM_SDC1_MCI_HC_MODE);
 }
 
 void eth_clock_enable(void)
@@ -384,11 +416,30 @@ int board_mmc_init(bd_t *bis)
 	int ret;
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 
+#ifndef CONFIG_SDHCI_SUPPORT
 	mmc_host.base = MSM_SDC1_BASE;
 	mmc_host.clk_mode = MMC_IDENTIFY_MODE;
 	emmc_clock_config(mmc_host.clk_mode);
 
 	ret = qca_mmc_init(bis, &mmc_host);
+#else
+	mmc_host.ioaddr = (void *)MSM_SDC1_SDHCI_BASE;
+	mmc_host.voltages = MMC_VDD_165_195;
+	mmc_host.version = SDHCI_SPEC_300;
+	mmc_host.cfg.part_type = PART_TYPE_EFI;
+	mmc_host.quirks = SDHCI_QUIRK_BROKEN_VOLTAGE;
+
+	emmc_clock_disable();
+	emmc_clock_reset();
+	udelay(10);
+	emmc_clock_config(MMC_DATA_TRANSFER_SDHCI_MODE);
+	emmc_sdhci_init();
+
+	if (add_sdhci(&mmc_host, 200000000, 400000)) {
+		printf("add_sdhci fail!\n");
+		return -1;
+	}
+#endif
 
 	if (!ret && sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
 		ret = board_mmc_env_init();

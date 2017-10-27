@@ -18,9 +18,14 @@
 #include <mmc.h>
 #include <asm/arch-qca-common/smem.h>
 #include "qca_common.h"
+#include <sdhci.h>
 
 #ifdef CONFIG_QCA_MMC
+#ifndef CONFIG_SDHCI_SUPPORT
 extern qca_mmc mmc_host;
+#else
+extern  struct sdhci_host mmc_host;
+#endif
 #endif
 
 /*

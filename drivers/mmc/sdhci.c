@@ -19,6 +19,8 @@ void *aligned_buffer = (void *)CONFIG_FIXED_SDHCI_ALIGNED_BUFFER;
 void *aligned_buffer;
 #endif
 
+#define CACHE_LINE_SIZE	(CONFIG_SYS_CACHELINE_SIZE)
+
 static void sdhci_reset(struct sdhci_host *host, u8 mask)
 {
 	unsigned long timeout;
@@ -66,6 +68,103 @@ static void sdhci_transfer_pio(struct sdhci_host *host, struct mmc_data *data)
 			sdhci_writel(host, *(u32 *)offs, SDHCI_BUFFER);
 	}
 }
+
+#ifdef CONFIG_MMC_ADMA
+static struct adma_desc *sdhci_prepare_descriptors(void *data, uint32_t len)
+{
+	struct adma_desc *list;
+	uint32_t list_len = 0;
+	uint32_t remain = 0;
+	uint32_t i;
+	uint32_t table_len = 0;
+
+	if (len <= SDHCI_ADMA_DESC_LINE_SZ) {
+		list = (struct adma_desc *) memalign(CACHE_LINE_SIZE, sizeof(struct adma_desc));
+
+		if (!list) {
+			printf("Error allocating memory\n");
+			assert(0);
+		}
+
+		list[0].addr = (uint32_t)data;
+		list[0].len = (len < SDHCI_ADMA_DESC_LINE_SZ) ? len : (SDHCI_ADMA_DESC_LINE_SZ & 0xffff);
+		list[0].tran_att = SDHCI_ADMA_TRANS_VALID | SDHCI_ADMA_TRANS_DATA
+							  | SDHCI_ADMA_TRANS_END;
+
+		invalidate_dcache_range((uint32_t)list & ~(CACHE_LINE_SIZE - 1),
+					ALIGN((uint32_t)list + sizeof(struct adma_desc),CACHE_LINE_SIZE));
+
+	} else {
+		list_len = len / SDHCI_ADMA_DESC_LINE_SZ;
+		remain = len - (list_len * SDHCI_ADMA_DESC_LINE_SZ);
+
+		if (remain)
+			list_len++;
+
+		table_len = (list_len * sizeof(struct adma_desc));
+
+		list = (struct adma_desc *) memalign( CACHE_LINE_SIZE, table_len);
+
+		if (!list) {
+			printf("Allocating memory failed\n");
+			assert(0);
+		}
+
+		memset((void *) list, 0, table_len);
+
+		for (i = 0; i < (list_len - 1); i++) {
+				list[i].addr = (uint32_t)data;
+				list[i].len = (SDHCI_ADMA_DESC_LINE_SZ & 0xffff);
+				list[i].tran_att = SDHCI_ADMA_TRANS_VALID | SDHCI_ADMA_TRANS_DATA;
+				data += SDHCI_ADMA_DESC_LINE_SZ;
+				len -= SDHCI_ADMA_DESC_LINE_SZ;
+			}
+
+			list[list_len - 1].addr = (uint32_t)data;
+			list[list_len - 1].len = (len < SDHCI_ADMA_DESC_LINE_SZ) ? len : (SDHCI_ADMA_DESC_LINE_SZ & 0xffff);
+			list[list_len - 1].tran_att = SDHCI_ADMA_TRANS_VALID | SDHCI_ADMA_TRANS_DATA |
+										   SDHCI_ADMA_TRANS_END;
+		}
+
+		invalidate_dcache_range((uint32_t)list & ~(CACHE_LINE_SIZE - 1),
+					ALIGN((uint32_t)list + table_len,CACHE_LINE_SIZE));
+
+	return list;
+}
+
+struct adma_desc *sdhci_adma_transfer(struct sdhci_host *host, struct mmc_data *data)
+{
+	uint32_t sz;
+	void *dataptr;
+	struct adma_desc *adma_addr;
+
+	dataptr = data->dest;
+
+	if (data->blocksize)
+		sz = data->blocks * data->blocksize;
+	else
+		sz = data->blocks * SDHCI_MMC_BLK_SZ;
+
+	/* Prepare adma descriptors */
+	adma_addr = sdhci_prepare_descriptors(dataptr, sz);
+
+	/* Write adma address to adma register */
+	sdhci_writel(host, (uint32_t) adma_addr, SDHCI_ADM_ADDR_REG);
+
+	/* Write the block size */
+	if (data->blocksize)
+		sdhci_writew(host, data->blocksize, SDHCI_BLOCK_SIZE);
+	else
+		sdhci_writew(host, SDHCI_MMC_BLK_SZ, SDHCI_BLOCK_SIZE);
+
+	/*
+	 * Write block count in block count register
+	 */
+	sdhci_writew(host, data->blocks, SDHCI_BLOCK_COUNT);
+
+	return adma_addr;
+}
+#endif
 
 static int sdhci_transfer_data(struct sdhci_host *host, struct mmc_data *data,
 				unsigned int start_addr)
@@ -223,6 +322,11 @@ static int sdhci_send_command(struct mmc *mmc, struct mmc_cmd *cmd,
 		sdhci_writel(host, start_addr, SDHCI_DMA_ADDRESS);
 		mode |= SDHCI_TRNS_DMA;
 #endif
+
+#ifdef CONFIG_MMC_ADMA
+		mode |= SDHCI_TRNS_DMA;
+		sdhci_adma_transfer(host, data);
+#endif
 		sdhci_writew(host, SDHCI_MAKE_BLKSZ(SDHCI_DEFAULT_BOUNDARY_ARG,
 				data->blocksize),
 				SDHCI_BLOCK_SIZE);
@@ -236,6 +340,7 @@ static int sdhci_send_command(struct mmc *mmc, struct mmc_cmd *cmd,
 #ifdef CONFIG_MMC_SDMA
 	flush_cache(start_addr, trans_bytes);
 #endif
+	udelay(5);
 	sdhci_writew(host, SDHCI_MAKE_CMD(cmd->cmdidx, flags), SDHCI_COMMAND);
 	start = get_timer(0);
 	do {
@@ -440,7 +545,7 @@ static int sdhci_init(struct mmc *mmc)
 		}
 	}
 
-	sdhci_set_power(host, fls(mmc->cfg->voltages) - 1);
+	sdhci_set_power(host, fls(host->cfg.voltages) - 1);
 
 	if (host->quirks & SDHCI_QUIRK_NO_CD) {
 		unsigned int status;
@@ -525,7 +630,7 @@ int add_sdhci(struct sdhci_host *host, u32 max_clk, u32 min_clk)
 	if (host->quirks & SDHCI_QUIRK_BROKEN_VOLTAGE)
 		host->cfg.voltages |= host->voltages;
 
-	host->cfg.host_caps = MMC_MODE_HS | MMC_MODE_HS_52MHz | MMC_MODE_4BIT;
+	host->cfg.host_caps = MMC_MODE_HS | MMC_MODE_HS_52MHz | MMC_MODE_8BIT;
 	if (SDHCI_GET_VERSION(host) >= SDHCI_SPEC_300) {
 		if (caps & SDHCI_CAN_DO_8BIT)
 			host->cfg.host_caps |= MMC_MODE_8BIT;
@@ -542,6 +647,10 @@ int add_sdhci(struct sdhci_host *host, u32 max_clk, u32 min_clk)
 		printf("%s: mmc create fail!\n", __func__);
 		return -1;
 	}
+
+	host->dev_num = host->mmc->block_dev.dev;
+        host->mmc->has_init = 0;
+        host->mmc->init_in_progress = 0;
 
 	return 0;
 }
