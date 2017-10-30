@@ -122,6 +122,7 @@ extern int do_reset(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]);
 enum command_ret_t {
 	CMD_RET_SUCCESS,	/* 0 = Success */
 	CMD_RET_FAILURE,	/* 1 = Failure */
+	CMD_RET_CRASH_DUMP,	/* 2 = Crash dump */
 	CMD_RET_USAGE = -1,	/* Failure, please report 'usage' error */
 };
 

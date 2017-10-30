@@ -435,7 +435,7 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 
 #ifdef CONFIG_QCA_APPSBL_DLOAD
 	if (qca_appsbl_dload() == CMD_RET_FAILURE)
-		return CMD_RET_FAILURE;
+		return CMD_RET_CRASH_DUMP;
 #endif
 	if ((ret = set_fs_bootargs(&ipq_fs_on_nand)))
 		return ret;
@@ -601,7 +601,7 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 		debug = 1;
 #ifdef CONFIG_QCA_APPSBL_DLOAD
 	if (qca_appsbl_dload() == CMD_RET_FAILURE)
-		return CMD_RET_FAILURE;
+		return CMD_RET_CRASH_DUMP;
 #endif
 
 	if ((ret = set_fs_bootargs(&ipq_fs_on_nand)))
@@ -771,7 +771,7 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 		ret = do_boot_unsignedimg(cmdtp, flag, argc, argv);
 	}
 
-	if (ret != CMD_RET_SUCCESS) {
+	if (ret == CMD_RET_FAILURE) {
 #ifdef CONFIG_IPQ_ETH_INIT_DEFER
 		puts("\nNet:   ");
 		eth_initialize();
