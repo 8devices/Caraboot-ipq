@@ -393,20 +393,27 @@ int config_select(unsigned int addr, char *rcmd, int rcmd_size)
 	 */
 
 	int soc_version = 0;
-	const char *config = fdt_getprop(gd->fdt_blob, 0, "config_name", NULL);
+	const char *config = getenv("config_name");
 
-	if(config == NULL) {
-		printf("Failed to get config_name\n");
-		return -1;
-	}
+	if (config) {
+		printf("Manual device tree config selected!\n");
+		snprintf(dtb_config_name, strlen(dtb_config_name), config);
+	} else {
+		config = fdt_getprop(gd->fdt_blob, 0, "config_name", NULL);
 
-	sprintf((char *)dtb_config_name, "%s", config);
+		if(config == NULL) {
+			printf("Failed to get config_name\n");
+			return -1;
+		}
 
-	ipq_smem_get_socinfo_version((uint32_t *)&soc_version);
-	if(SOCINFO_VERSION_MAJOR(soc_version) >= 2) {
-		sprintf(dtb_config_name + strlen("config@"), "v%d.0-%s",
-			SOCINFO_VERSION_MAJOR(soc_version),
-			config + strlen("config@"));
+		sprintf((char *)dtb_config_name, "%s", config);
+
+		ipq_smem_get_socinfo_version((uint32_t *)&soc_version);
+		if(SOCINFO_VERSION_MAJOR(soc_version) >= 2) {
+			sprintf(dtb_config_name + strlen("config@"), "v%d.0-%s",
+					SOCINFO_VERSION_MAJOR(soc_version),
+					config + strlen("config@"));
+		}
 	}
 
 	if (fit_conf_get_node((void *)addr, dtb_config_name) >= 0) {
