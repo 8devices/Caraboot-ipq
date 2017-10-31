@@ -26,7 +26,10 @@
 #include <nand.h>
 #include <spi_flash.h>
 #include <spi.h>
+#include <asm/global_data.h>
+#include <fdtdec.h>
 
+DECLARE_GLOBAL_DATA_PTR;
 typedef struct {
 	unsigned int image_type;
 	unsigned int header_vsn_num;
@@ -202,6 +205,7 @@ int ipq_qca_aquantia_phy_init(struct phy_ops **ops, u32 phy_id)
 static int do_load_fw(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	unsigned int phy_addr=0x7;
+	int node, aquantia_port;
 
 	if (argc > 2)
 		return CMD_RET_USAGE;
@@ -213,6 +217,25 @@ static int do_load_fw(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		printf("Phy address is not correct: use 0x7\n");
 		return 0;
 	}
+
+	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
+	if (node < 0) {
+		printf("Error: ess-switch not specified in dts");
+		return 0;
+	}
+
+	aquantia_port = fdtdec_get_uint(gd->fdt_blob, node, "aquantia_port", -1);
+	if (aquantia_port < 0) {
+		printf("Error: aquantia_port not specified in dts");
+		return 0;
+	}
+
+	aquantia_port = fdtdec_get_uint(gd->fdt_blob, node, "aquantia_gpio", -1);
+	if (aquantia_port < 0) {
+		printf("Error: aquantia_gpio not specified in dts");
+		return 0;
+	}
+
 	miiphy_init();
 	eth_clock_enable();
 	ipq_sw_mdio_init("IPQ MDIO0");
