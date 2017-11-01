@@ -106,8 +106,7 @@ static int tftpdump (int is_aligned_access, uint32_t memaddr, uint32_t size, cha
 
 }
 
-static int do_dumpqca_data(cmd_tbl_t *cmdtp, int flag, int argc,
-					char *const argv[])
+static int do_dumpqca_data(void)
 {
 	char *serverip = NULL;
 	/* dump to root of TFTP server if none specified */
@@ -120,18 +119,12 @@ static int do_dumpqca_data(cmd_tbl_t *cmdtp, int flag, int argc,
 	struct dumpinfo_t *dumpinfo = dumpinfo_n;
 	int dump_entries = dump_entries_n;
 
-	if (argc == 2) {
-		serverip = argv[1];
-		printf("Using given serverip %s\n", serverip);
-		setenv("serverip", serverip);
+	serverip = getenv("serverip");
+	if (serverip != NULL) {
+		printf("Using serverip from env %s\n", serverip);
 	} else {
-		serverip = getenv("serverip");
-		if (serverip != NULL) {
-			printf("Using serverip from env %s\n", serverip);
-	} else {
-			printf("\nServer ip not found, run dhcp or configure\n");
-			return CMD_RET_FAILURE;
-		}
+		printf("\nServer ip not found, run dhcp or configure\n");
+		return CMD_RET_FAILURE;
 	}
 
 	ret = qca_scm_call(SCM_SVC_FUSE,
@@ -195,10 +188,6 @@ static int do_dumpqca_data(cmd_tbl_t *cmdtp, int flag, int argc,
 	return CMD_RET_SUCCESS;
 }
 
-U_BOOT_CMD(dumpipq_data, 2, 0, do_dumpqca_data,
-	"dumpipq_data crashdump collection from memory",
-	"dumpipq_data [serverip] - Crashdump collection from memory vi tftp\n");
-
 /**
  * Inovke the dump routine and in case of failure, do not stop unless the user
  * requested to stop
@@ -208,7 +197,7 @@ static int inline do_dumpipq_data(void)
 {
 	uint64_t etime;
 
-	if (run_command("dumpipq_data", 0) != CMD_RET_SUCCESS) {
+	if (do_dumpqca_data() != CMD_RET_SUCCESS) {
 		printf("\nAuto crashdump saving failed!"
 		       "\nPress any key within 10s to take control of U-Boot");
 
