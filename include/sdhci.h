@@ -12,7 +12,6 @@
 
 #include <asm/io.h>
 #include <mmc.h>
-#include <asm/gpio.h>
 
 /*
  * Controller registers
@@ -194,6 +193,8 @@
 #define   SDHCI_SPEC_300	2
 
 #define SDHCI_GET_VERSION(x) (x->version & SDHCI_SPEC_VER_MASK)
+#define SDHCI_ADM_ADDR_REG	(0x058)
+#define SDHCI_BLKSZ_REG		(0x004)
 
 /*
  * End of controller registers.
@@ -215,6 +216,32 @@
 #define SDHCI_QUIRK_NO_SIMULT_VDD_AND_POWER (1 << 7)
 #define SDHCI_QUIRK_USE_WIDE8		(1 << 8)
 
+/*
+ * Adma related macros
+ */
+#define SDHCI_BLK_LEN_MASK		0x00030000
+#define SDHCI_BLK_LEN_BIT		16
+#define SDHCI_BLK_ADMA_MASK		0x00080000
+#define SDHCI_INT_STS_TRANS_COMPLETE	BIT(1)
+#define SDHCI_STATE_CMD_DAT_MASK	0x0003
+#define SDHCI_INT_STS_CMD_COMPLETE	BIT(0)
+#define SDHCI_ERR_INT_STAT_MASK		0x8000
+#define SDHCI_ADMA_DESC_LINE_SZ		65536
+#define SDHCI_ADMA_MAX_TRANS_SZ		(65535 * 512)
+#define SDHCI_ADMA_TRANS_VALID		BIT(0)
+#define SDHCI_ADMA_TRANS_END		BIT(1)
+#define SDHCI_ADMA_TRANS_DATA		BIT(5)
+#define SDHCI_MMC_BLK_SZ		512
+#define SDHCI_MMC_CUR_BLK_CNT_BIT	16
+#define SDHCI_MMC_BLK_SZ_BIT		0
+#define SDHCI_TRANS_MULTI		BIT(5)
+#define SDHCI_TRANS_SINGLE		(0 << 5)
+#define SDHCI_BLK_CNT_EN		BIT(1)
+#define SDHCI_DMA_EN			BIT(0)
+#define SDHCI_AUTO_CMD23_EN		BIT(3)
+#define SDHCI_AUTO_CMD12_EN		BIT(2)
+#define SDHCI_ADMA_32BIT		BIT(4)
+
 /* to make gcc happy */
 struct sdhci_host;
 
@@ -234,6 +261,15 @@ struct sdhci_ops {
 #endif
 };
 
+/*
+ * Descriptor table for adma
+ */
+struct adma_desc {
+	uint16_t tran_att;
+	uint16_t len;
+	uint32_t addr;
+};
+
 struct sdhci_host {
 	char *name;
 	void *ioaddr;
@@ -246,8 +282,7 @@ struct sdhci_host {
 	int index;
 
 	int bus_width;
-	struct gpio_desc pwr_gpio;	/* Power GPIO */
-	struct gpio_desc cd_gpio;		/* Card Detect GPIO */
+	int dev_num;
 
 	void (*set_control_reg)(struct sdhci_host *host);
 	void (*set_clock)(int dev_index, unsigned int div);
