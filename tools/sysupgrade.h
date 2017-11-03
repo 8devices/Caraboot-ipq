@@ -20,7 +20,7 @@
 #include <linux/string.h>
 #include <linux/types.h>
 
-typedef enum {HLOS_TYPE, UBOOT_TYPE, SBL_TYPE, TZ_TYPE, RPM_TYPE}type;
+typedef enum {HLOS_TYPE, UBOOT_TYPE, SBL_TYPE, TZ_TYPE, RPM_TYPE, DEVCFG_TYPE}type;
 
 struct image_section {
 	type section_type;
