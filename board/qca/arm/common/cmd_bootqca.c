@@ -386,7 +386,7 @@ int config_select(unsigned int addr, char *rcmd, int rcmd_size)
 
 	if (config) {
 		printf("Manual device tree config selected!\n");
-		snprintf(dtb_config_name, strlen(dtb_config_name), config);
+		snprintf(dtb_config_name, sizeof(dtb_config_name), config);
 	} else {
 		config = fdt_getprop(gd->fdt_blob, 0, "config_name", NULL);
 
