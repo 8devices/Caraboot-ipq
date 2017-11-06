@@ -265,8 +265,8 @@ unsigned int get_smem_spi_addr_len(void)
 	ret = smem_read_alloc_entry(SMEM_SPI_FLASH_ADDR_LEN,
 					&spi_flash_addr_len, sizeof(uint32_t));
 	if (ret != 0) {
-		printf("smem: read spi flash address len failed\n");
-		spi_flash_addr_len = 0;
+		printf("SPI: using 3 byte address mode as default\n");
+		spi_flash_addr_len = 3;
 	}
 
 	return spi_flash_addr_len;
