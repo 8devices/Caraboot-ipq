@@ -445,6 +445,8 @@ struct qpic_nand_dev {
 	unsigned char *pad_oob;
 	unsigned char *zero_page;
 	unsigned char *zero_oob;
+	unsigned char *tmp_datbuf;
+	unsigned char *tmp_oobbuf;
 	uint16_t timing_mode_support;
 	struct read_stats stats[QPIC_NAND_MAX_CWS_IN_PAGE];
 };
