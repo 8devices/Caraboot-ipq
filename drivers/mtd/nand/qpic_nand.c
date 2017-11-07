@@ -1820,7 +1820,6 @@ static int qpic_nand_read_oob(struct mtd_info *mtd, loff_t to,
 	struct nand_chip *chip = MTD_NAND_CHIP(mtd);
 	uint32_t start_page;
 	uint32_t num_pages;
-	loff_t offs;
 	uint32_t corrected;
 	enum nand_cfg_value cfg_mode;
 
@@ -1863,13 +1862,9 @@ static int qpic_nand_read_oob(struct mtd_info *mtd, loff_t to,
 
 		ret = qpic_nand_read_page(mtd, start_page + i, cfg_mode,
 					  &page_ops);
-		if (ret == NANDC_RESULT_BAD_PAGE) {
-			offs = (start_page + i) << chip->page_shift;
-			qpic_nand_mark_badblock(mtd, offs);
-		}
 		if (ret) {
-			printf("qpic_nand_read: reading page %d failed with %d err \n",
-					start_page + i, ret);
+			printf("%s: reading page %d failed with %d err\n",
+			       __func__, start_page + i, ret);
 			return ret;
 		}
 		qpic_nand_read_datcopy(mtd, ops);
@@ -1989,7 +1984,6 @@ static int qpic_nand_write_oob(struct mtd_info *mtd, loff_t to,
 	struct qpic_nand_dev *dev = MTD_QPIC_NAND_DEV(mtd);
 	int i, ret = NANDC_RESULT_SUCCESS;
 	struct nand_chip *chip = MTD_NAND_CHIP(mtd);
-	loff_t offs;
 	u_long start_page;
 	u_long num_pages;
 	enum nand_cfg_value cfg_mode;
@@ -2045,10 +2039,6 @@ static int qpic_nand_write_oob(struct mtd_info *mtd, loff_t to,
 			printf("flash_write: write failure @ page %ld, block %ld\n",
 					start_page + i,
 				(start_page + i) / (dev->num_pages_per_blk));
-			if (ret == NANDC_RESULT_BAD_PAGE) {
-				offs = (start_page + i) << chip->page_shift;
-				qpic_nand_mark_badblock(mtd, offs);
-			}
 			goto out;
 		} else {
 			qpic_nand_write_datinc(mtd, ops);
