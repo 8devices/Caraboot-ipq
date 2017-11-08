@@ -898,7 +898,7 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 	for (i =  0; i < PHY_MAX; i++) {
 		if (!priv->ops[i]) {
 			printf ("Phy ops not mapped\n");
-			return -1;
+			continue;
 		}
 		phy_get_ops = priv->ops[i];
 
@@ -928,7 +928,10 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 					continue;
 				}
 				mac_speed = 0x0;
-				speed_clock1 = 0x109;
+				if (i == port_8033)
+					speed_clock1 = 0x309;
+				else
+					speed_clock1 = 0x109;
 				speed_clock2 = 0x9;
 				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
 						priv->mac_unit, i, lstatus[status], speed,
@@ -938,9 +941,14 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 				mac_speed = 0x1;
 				if (i == aquantia_port)
 					speed_clock1 = 0x109;
+				else if (i == port_8033)
+					speed_clock1 = 0x309;
 				else
 					speed_clock1 = 0x101;
-				speed_clock2 = 0x4;
+				if (i == port_8033)
+					speed_clock2 = 0x0;
+				else
+					speed_clock2 = 0x4;
 				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
 						priv->mac_unit, i, lstatus[status], speed,
 						dp[duplex]);
@@ -949,6 +957,8 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 				mac_speed = 0x2;
 				if (i == aquantia_port)
 					speed_clock1 = 0x104;
+				else if (i == port_8033)
+					speed_clock1 = 0x301;
 				else
 					speed_clock1 = 0x101;
 				speed_clock2 = 0x0;
