@@ -125,7 +125,7 @@ typedef struct {
 #define CONFIG_BOARD_LATE_INIT
 #define CONFIG_ENV_OFFSET		board_env_offset
 #define CONFIG_ENV_SIZE_MAX		(256 << 10) /* 256 KB */
-#define CONFIG_ENV_RANGE		board_env_size
+#define CONFIG_ENV_RANGE		board_env_range
 #define CONFIG_ENV_SIZE			(256 << 10) /* 256 KB */
 #define CONFIG_SYS_MALLOC_LEN		(CONFIG_ENV_SIZE_MAX + (256 << 10))
 
