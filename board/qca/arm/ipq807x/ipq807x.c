@@ -965,3 +965,22 @@ void set_flash_secondary_type(qca_smem_flash_info_t *smem)
 {
 	return;
 };
+
+/*
+ * To determine the spi flash addr is in 3 byte
+ * or 4 byte.
+ */
+unsigned int get_smem_spi_addr_len(void)
+{
+	int ret;
+	uint32_t spi_flash_addr_len;
+
+	ret = smem_read_alloc_entry(SMEM_SPI_FLASH_ADDR_LEN,
+					&spi_flash_addr_len, sizeof(uint32_t));
+	if (ret != 0) {
+		printf("SPI: using 3 byte address mode as default\n");
+		spi_flash_addr_len = SPI_DEFAULT_ADDR_LEN;
+	}
+
+	return spi_flash_addr_len;
+}
