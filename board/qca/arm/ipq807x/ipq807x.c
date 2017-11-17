@@ -583,6 +583,7 @@ void board_pci_deinit()
 }
 #endif
 
+#ifdef CONFIG_USB_XHCI_IPQ
 void board_usb_deinit(int id)
 {
 	void __iomem *boot_clk_ctl, *usb_bcr, *qusb2_phy_bcr;
@@ -874,6 +875,7 @@ int ipq_board_usb_init(void)
 	}
 	return 0;
 }
+#endif
 
 void ipq_fdt_fixup_socinfo(void *blob)
 {
