@@ -459,15 +459,19 @@ int board_mmc_init(bd_t *bis)
 
 void board_nand_init(void)
 {
+#ifdef CONFIG_QCA_SPI
 	int gpio_node;
+#endif
 
 	qpic_nand_init();
 
+#ifdef CONFIG_QCA_SPI
 	gpio_node = fdt_path_offset(gd->fdt_blob, "/spi/spi_gpio");
 	if (gpio_node >= 0) {
 		qca_gpio_init(gpio_node);
 		ipq_spi_init(CONFIG_IPQ_SPI_NOR_INFO_IDX);
 	}
+#endif
 }
 
 static void pcie_clock_init(int id)
