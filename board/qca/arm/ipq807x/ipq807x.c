@@ -53,6 +53,7 @@ const char *del_node[] = {"uboot",
 			  NULL};
 const add_node_t add_node[] = {{}};
 static int pci_initialised;
+static int aq_phy_initialised;
 struct dumpinfo_t dumpinfo_n[] = {
 	/* TZ stores the DDR physical address at which it stores the
 	 * APSS regs, NSS IMEM copy and PMIC dump. We will have the TZ IMEM
@@ -287,16 +288,31 @@ void emmc_sdhci_init(void)
 	writel(readl(MSM_SDC1_MCI_HC_MODE) | (0x1), MSM_SDC1_MCI_HC_MODE);
 }
 
-void eth_clock_enable(void)
+void aquantia_phy_reset(void)
 {
-	int tlmm_base = 0x1025000;
 	int aquantia_gpio = -1, node;
 	unsigned int *aquantia_gpio_base;
 
-	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
+	if (!aq_phy_initialised) {
+		node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
+		if (node >= 0)
+			aquantia_gpio = fdtdec_get_uint(gd->fdt_blob, node, "aquantia_gpio", -1);
 
-	if (node >= 0)
-		 aquantia_gpio = fdtdec_get_uint(gd->fdt_blob, node, "aquantia_gpio", -1);
+		if (aquantia_gpio >=0) {
+			aquantia_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(aquantia_gpio);
+			writel(0x203, aquantia_gpio_base);
+			gpio_set_value(aquantia_gpio, 0x0);
+			mdelay(500);
+			gpio_set_value(aquantia_gpio, 0x1);
+			mdelay(500);
+		}
+		aq_phy_initialised = 1;
+	}
+}
+void eth_clock_enable(void)
+{
+	int tlmm_base = 0x1025000;
+
 	/*
 	 * ethernet clk rcgr block init -- start
 	 * these clk init will be moved to sbl later
@@ -356,15 +372,7 @@ void eth_clock_enable(void)
 	writel(2, tlmm_base + 0x4);
 	writel(7, tlmm_base + 0x1f000);
 	writel(7, tlmm_base + 0x20000);
-
-	if (aquantia_gpio >=0) {
-		aquantia_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(aquantia_gpio);
-		writel(0x203, aquantia_gpio_base);
-		gpio_set_value(aquantia_gpio, 0x0);
-		mdelay(500);
-		gpio_set_value(aquantia_gpio, 0x1);
-		mdelay(500);
-	}
+	aquantia_phy_reset();
 }
 
 int board_eth_init(bd_t *bis)

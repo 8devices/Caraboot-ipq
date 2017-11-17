@@ -761,6 +761,7 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 
 	ret = qca_scm_call(SCM_SVC_FUSE, QFPROM_IS_AUTHENTICATE_CMD, &buf, sizeof(char));
 
+	aquantia_phy_reset();
 	if (ret == 0 && buf == 1) {
 		ret = do_boot_signedimg(cmdtp, flag, argc, argv);
 	} else if (ret == 0 || ret == -EOPNOTSUPP) {
