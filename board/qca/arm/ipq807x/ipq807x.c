@@ -530,6 +530,7 @@ static void pcie_clock_deinit(int id)
 	}
 }
 
+#ifdef CONFIG_PCI_IPQ
 void board_pci_init(int id)
 {
 	int node, gpio_node;
@@ -580,6 +581,7 @@ void board_pci_deinit()
 
 	return ;
 }
+#endif
 
 void board_usb_deinit(int id)
 {

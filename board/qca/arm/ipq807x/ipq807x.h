@@ -236,7 +236,9 @@ extern const char *del_node[];
 extern const add_node_t add_node[];
 
 void reset_crashdump(void);
+#ifdef CONFIG_PCI_IPQ
 void board_pci_init(int id);
+#endif
 void ipq_fdt_fixup_socinfo(void *blob);
 int ipq_board_usb_init(void);
 
