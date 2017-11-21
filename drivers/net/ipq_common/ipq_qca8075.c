@@ -734,6 +734,49 @@ void ipq_qca8075_phy_map_ops(struct phy_ops **ops)
 	*ops = qca8075_ops;
 }
 
+void qca8075_phy_serdes_reset(u32 phy_id)
+{
+	qca8075_phy_reg_write(0,
+			phy_id + QCA8075_PHY_PSGMII_ADDR_INC,
+			QCA8075_MODE_RESET_REG,
+			QCA8075_MODE_CHANAGE_RESET);
+	mdelay(100);
+	qca8075_phy_reg_write(0,
+			phy_id + QCA8075_PHY_PSGMII_ADDR_INC,
+			QCA8075_MODE_RESET_REG,
+			QCA8075_MODE_RESET_DEFAULT_VALUE);
+
+}
+
+static  u16 qca8075_phy_interface_get_mode(u32 phy_id)
+{
+	u16 phy_data;
+
+	phy_data = qca8075_phy_reg_read(0,
+			phy_id + QCA8075_PHY_MAX_ADDR_INC,
+			QCA8075_PHY_CHIP_CONFIG);
+	phy_data &= 0x000f;
+	return phy_data;
+}
+
+void qca8075_phy_interface_set_mode(u32 phy_id, u32 mode)
+{
+	u16 phy_data;
+
+	phy_data = qca8075_phy_interface_get_mode(phy_id);
+	if (phy_data != mode) {
+		phy_data = qca8075_phy_reg_read(0,
+			phy_id + QCA8075_PHY_MAX_ADDR_INC,
+			QCA8075_PHY_CHIP_CONFIG);
+		phy_data &= 0xfff0;
+		qca8075_phy_reg_write(0,
+				phy_id + QCA8075_PHY_MAX_ADDR_INC,
+				QCA8075_PHY_CHIP_CONFIG,
+				phy_data | mode);
+		qca8075_phy_serdes_reset(0);
+	}
+}
+
 int ipq_qca8075_phy_init(struct phy_ops **ops)
 {
 	u16 phy_data;

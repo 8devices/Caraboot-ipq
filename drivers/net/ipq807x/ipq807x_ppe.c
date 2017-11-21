@@ -21,6 +21,7 @@
 #include "ipq807x_ppe.h"
 #include "ipq807x_uniphy.h"
 #include <fdtdec.h>
+#include "ipq_phy.h"
 
 DECLARE_GLOBAL_DATA_PTR;
 #define pr_info(fmt, args...) printf(fmt, ##args);
@@ -1051,9 +1052,9 @@ void ipq807x_ppe_interface_mode_init(void)
 		return;
 	}
 
-	mode0 = fdtdec_get_uint(gd->fdt_blob, node, "switch_mac_mode0", -1);
+	mode0 = fdtdec_get_uint(gd->fdt_blob, node, "switch_mac_mode", -1);
 	if (mode0 < 0) {
-		printf("Error: switch_mac_mode0 not specified in dts");
+		printf("Error: switch_mac_mode not specified in dts");
 		return;
 	}
 

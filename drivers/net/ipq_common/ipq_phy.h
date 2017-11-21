@@ -82,6 +82,16 @@ typedef enum {
 	FAL_CABLE_STATUS_BUTT = 0xffff,
 } fal_cable_status_t;
 
+enum port_wrapper_cfg {
+	PORT_WRAPPER_PSGMII = 0,
+	PORT_WRAPPER_SGMII0_RGMII4,
+	PORT_WRAPPER_USXGMII,
+	PORT_WRAPPER_SGMII1_RGMII4,
+	PORT_WRAPPER_SGMII4_RGMII4,
+	PORT_WRAPPER_QSGMII,
+};
+
+
 struct phy_ops {
 	u8 (*phy_get_link_status) (u32 dev_id, u32 phy_id);
 	u32 (*phy_get_duplex) (u32 dev_id, u32 phy_id,

@@ -55,6 +55,8 @@ extern int ipq_mdio_read(int mii_id,
 		int regnum, ushort *data);
 extern void ipq_qca8075_phy_map_ops(struct phy_ops **ops);
 extern int ipq_qca8075_phy_init(struct phy_ops **ops);
+extern void qca8075_phy_interface_set_mode(uint32_t phy_id,
+		uint32_t mode);
 extern int ipq_qca8033_phy_init(struct phy_ops **ops, u32 phy_id);
 extern int ipq_qca_aquantia_phy_init(struct phy_ops **ops, u32 phy_id);
 
@@ -1605,6 +1607,7 @@ int ipq807x_edma_init(void *edma_board_cfg)
 	ipq807x_edma_board_cfg_t ledma_cfg, *edma_cfg;
 	static int sw_init_done = 0;
 	int port_8033 = -1, node, phy_addr, aquantia_port = -1;
+	int mode;
 
 	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
 	if (node >= 0)
@@ -1612,6 +1615,12 @@ int ipq807x_edma_init(void *edma_board_cfg)
 
 	if (node >= 0)
 		aquantia_port = fdtdec_get_uint(gd->fdt_blob, node, "aquantia_port", -1);
+
+	mode = fdtdec_get_uint(gd->fdt_blob, node, "switch_mac_mode", -1);
+	if (mode < 0) {
+		printf("Error: switch_mac_mode not specified in dts");
+		return;
+	}
 
 	memset(c_info, 0, (sizeof(c_info) * IPQ807X_EDMA_DEV));
 	memset(enet_addr, 0, sizeof(enet_addr));
@@ -1717,13 +1726,18 @@ int ipq807x_edma_init(void *edma_board_cfg)
 						if (ipq_qca8075_phy_init(&ipq807x_edma_dev[i]->ops[phy_id]) == 0) {
 							sw_init_done = 1;
 						}
-					 } else {
+					} else {
 						ipq_qca8075_phy_map_ops(&ipq807x_edma_dev[i]->ops[phy_id]);
-					 }
-					 break;
+					}
+
+					if (mode == PORT_WRAPPER_PSGMII)
+						qca8075_phy_interface_set_mode(0x0, 0x0);
+					else if ( mode == PORT_WRAPPER_QSGMII)
+						qca8075_phy_interface_set_mode(0x0, 0x4);
+					break;
 				case QCA8033_PHY:
 					ipq_qca8033_phy_init(&ipq807x_edma_dev[i]->ops[phy_id], phy_addr);
-					 break;
+					break;
 				case AQUANTIA_PHY_107:
 				case AQUANTIA_PHY_109:
 				case AQUANTIA_PHY_111:

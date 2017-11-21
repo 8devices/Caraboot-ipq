@@ -22,6 +22,7 @@
 #include <asm/arch-ipq807x/edma_regs.h>
 #include "ipq807x_edma.h"
 #include "ipq807x_uniphy.h"
+#include "ipq_phy.h"
 
 extern int ipq_mdio_write(int mii_id,
 		int regnum, u16 value);
@@ -111,6 +112,14 @@ static void ppe_uniphy_psgmii_mode_set(uint32_t uniphy_index)
 	ppe_gcc_uniphy_soft_reset(uniphy_index);
 }
 
+static void ppe_uniphy_qsgmii_mode_set(uint32_t uniphy_index)
+{
+	ppe_gcc_uniphy_xpcs_reset(uniphy_index, true);
+	writel(0x120, PPE_UNIPHY_BASE + (uniphy_index * PPE_UNIPHY_REG_INC)
+			+ PPE_UNIPHY_MODE_CONTROL);
+	ppe_gcc_uniphy_soft_reset(uniphy_index);
+}
+
 static void ppe_uniphy_sgmii_mode_set(uint32_t uniphy_index, uint32_t channel)
 {
 	uint32_t reg_value;
@@ -195,6 +204,9 @@ void ppe_uniphy_mode_set(uint32_t uniphy_index, uint32_t mode)
 	switch(mode) {
 		case PORT_WRAPPER_PSGMII:
 			ppe_uniphy_psgmii_mode_set(uniphy_index);
+			break;
+		case PORT_WRAPPER_QSGMII:
+			ppe_uniphy_qsgmii_mode_set(uniphy_index);
 			break;
 		case PORT_WRAPPER_SGMII0_RGMII4:
 			ppe_uniphy_sgmii_mode_set(uniphy_index, 0);
