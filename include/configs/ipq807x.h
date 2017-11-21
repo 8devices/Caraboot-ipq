@@ -160,6 +160,10 @@ extern loff_t board_env_size;
 
 #ifdef CONFIG_QCA_MMC
 #define CONFIG_MMC
+#define CONFIG_CMD_MMC
+#define CONFIG_GENERIC_MMC
+#define CONFIG_SDHCI
+#define CONFIG_SDHCI_QCA
 #define CONFIG_EFI_PARTITION
 #define CONFIG_ENV_IS_IN_MMC
 #define CONFIG_SYS_MMC_ENV_DEV	0

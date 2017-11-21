@@ -459,15 +459,19 @@ int board_mmc_init(bd_t *bis)
 
 void board_nand_init(void)
 {
+#ifdef CONFIG_QCA_SPI
 	int gpio_node;
+#endif
 
 	qpic_nand_init();
 
+#ifdef CONFIG_QCA_SPI
 	gpio_node = fdt_path_offset(gd->fdt_blob, "/spi/spi_gpio");
 	if (gpio_node >= 0) {
 		qca_gpio_init(gpio_node);
 		ipq_spi_init(CONFIG_IPQ_SPI_NOR_INFO_IDX);
 	}
+#endif
 }
 
 static void pcie_clock_init(int id)
@@ -526,6 +530,7 @@ static void pcie_clock_deinit(int id)
 	}
 }
 
+#ifdef CONFIG_PCI_IPQ
 void board_pci_init(int id)
 {
 	int node, gpio_node;
@@ -576,7 +581,9 @@ void board_pci_deinit()
 
 	return ;
 }
+#endif
 
+#ifdef CONFIG_USB_XHCI_IPQ
 void board_usb_deinit(int id)
 {
 	void __iomem *boot_clk_ctl, *usb_bcr, *qusb2_phy_bcr;
@@ -868,6 +875,7 @@ int ipq_board_usb_init(void)
 	}
 	return 0;
 }
+#endif
 
 void ipq_fdt_fixup_socinfo(void *blob)
 {

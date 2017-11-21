@@ -71,7 +71,6 @@ CONFIG_CMD_FLASH=y
 # CONFIG_CMD_I2C is not set
 # CONFIG_CMD_USB is not set
 CONFIG_CMD_FPGA=y
-CONFIG_CMD_MMC=y
 
 #
 # Shell scripting commands
@@ -194,9 +193,6 @@ CONFIG_SIMPLE_BUS=y
 # MMC Host controller Support
 #
 # CONFIG_DM_MMC is not set
-CONFIG_GENERIC_MMC=y
-CONFIG_SDHCI=y
-CONFIG_SDHCI_QCA=y
 
 #
 # NAND Device Support
