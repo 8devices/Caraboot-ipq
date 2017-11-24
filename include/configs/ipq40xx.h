@@ -70,6 +70,16 @@
 
 #define CONFIG_IPQ_APPSBL_IMG_TYPE	0x5
 
+/*
+ * IPQ_TFTP_MIN_ADDR: Starting address of Linux HLOS region.
+ * CONFIG_TZ_END_ADDR: Ending address of Trust Zone and starting
+ * address of WLAN Area.
+ * TFTP file can only be written in Linux HLOS region and WLAN AREA.
+ */
+#define IPQ_TFTP_MIN_ADDR		CONFIG_SYS_SDRAM_BASE
+#define CONFIG_TZ_END_ADDR		0x88000000
+#define CONFIG_SYS_SDRAM_END		(CONFIG_SYS_SDRAM_BASE + gd->ram_size)
+
 #define CONFIG_IPQ40XX_ENV
 #define CONFIG_ENV_IS_IN_NAND
 
