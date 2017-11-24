@@ -76,4 +76,5 @@ extern int dump_entries_s;
 #define MMC_DATA_TRANSFER_SDHCI_MODE 2
 #define MMC_MODE_HC		0x800
 
+#define SPI_DEFAULT_ADDR_LEN	3
 #endif  /*  __QCA_COMMON_H_ */

@@ -155,7 +155,7 @@ qca_smem_bootconfig_info_t qca_smem_bootconfig_info;
  *
  * NOTE: buf MUST be 4byte aligned, and len MUST be a multiple of 8.
  */
-static unsigned smem_read_alloc_entry(smem_mem_type_t type, void *buf, int len)
+unsigned smem_read_alloc_entry(smem_mem_type_t type, void *buf, int len)
 {
 	struct smem_alloc_info *ainfo;
 	unsigned *dest = buf;
@@ -253,23 +253,9 @@ unsigned int get_rootfs_active_partition(void)
 	return 0; /* alt partition not available */
 }
 
-/*
- * To determine the spi flash addr is in 3 byte
- * or 4 byte.
- */
-unsigned int get_smem_spi_addr_len(void)
+__weak unsigned int get_smem_spi_addr_len(void)
 {
-	int ret;
-	uint32_t spi_flash_addr_len;
-
-	ret = smem_read_alloc_entry(SMEM_SPI_FLASH_ADDR_LEN,
-					&spi_flash_addr_len, sizeof(uint32_t));
-	if (ret != 0) {
-		printf("SPI: using 3 byte address mode as default\n");
-		spi_flash_addr_len = 3;
-	}
-
-	return spi_flash_addr_len;
+	return SPI_DEFAULT_ADDR_LEN;
 }
 
 unsigned int get_partition_table_offset(void)
