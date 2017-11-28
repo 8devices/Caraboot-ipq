@@ -137,6 +137,7 @@ extern loff_t board_env_size;
 #define CONFIG_SYS_MALLOC_LEN		(CONFIG_ENV_SIZE_MAX + (1024 << 10))
 
 #define CONFIG_ENV_IS_IN_NAND		1
+#define CONFIG_FLASH_PROTECT
 
 /* Allow to overwrite serial and ethaddr */
 #define CONFIG_ENV_OVERWRITE
