@@ -193,6 +193,7 @@
 #define EXT_CSD_HC_ERASE_GRP_SIZE	224	/* RO */
 #define EXT_CSD_BOOT_MULT		226	/* RO */
 #define EXT_CSD_SEC_FEATURE_SUPPORT     231     /* RO */
+#define EXT_CSD_TRIM_MULT		232	/* RO */
 
 #define EXT_CSD_SEC_ER_EN       (1 << 0)
 #define EXT_CSD_SEC_GB_CL_EN    (1 << 4)
@@ -391,6 +392,7 @@ struct mmc {
 	char preinit;		/* start init as early as possible */
 	int ddr_mode;
 	uchar sec_feature_support;
+	unsigned int trim_timeout; /* In milliseconds */
 };
 
 struct mmc_hwpart_conf {

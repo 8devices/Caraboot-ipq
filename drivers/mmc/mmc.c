@@ -1235,8 +1235,10 @@ static int mmc_startup(struct mmc *mmc)
 		    ext_csd[EXT_CSD_BOOT_MULT])
 			mmc->part_config = ext_csd[EXT_CSD_PART_CONF];
 
-		if(ext_csd[EXT_CSD_SEC_FEATURE_SUPPORT])
+		if(ext_csd[EXT_CSD_SEC_FEATURE_SUPPORT]) {
 			mmc->sec_feature_support = ext_csd[EXT_CSD_SEC_FEATURE_SUPPORT];
+			mmc->trim_timeout = 300 * ext_csd[EXT_CSD_TRIM_MULT]; /* In milliseconds */
+		}
 		if (part_completed &&
 		    (ext_csd[EXT_CSD_PARTITIONING_SUPPORT] & ENHNCD_SUPPORT))
 			mmc->part_attr = ext_csd[EXT_CSD_PARTITIONS_ATTRIBUTE];

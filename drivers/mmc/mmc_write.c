@@ -71,12 +71,13 @@ unsigned long mmc_berase(int dev_num, lbaint_t start, lbaint_t blkcnt)
 	u32 start_rem, blkcnt_rem;
 	struct mmc *mmc = find_mmc_device(dev_num);
 	lbaint_t blk = 0, blk_r = 0;
-	int timeout = 2000;
+	int timeout;
 	int arg = MMC_ERASE_ARG;
 
 	if (!mmc)
 		return -1;
 
+	timeout = mmc->trim_timeout;
 	if (!(mmc->sec_feature_support & EXT_CSD_SEC_ER_EN)) {
 		return -1;
 	}
