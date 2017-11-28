@@ -511,11 +511,13 @@ static int ipq_pcie_parse_dt(const void *fdt, int id,
 		return err;
 	}
 
-	err = fdt_get_named_resource(fdt, node, "reg", "reg-names", "pci_phy",
-				     &pcie->pci_phy);
-	if (err < 0) {
-		error("resource \"cs\" not found");
-		return err;
+	if(pcie->version == PCIE_V2) {
+		err = fdt_get_named_resource(fdt, node, "reg", "reg-names", "pci_phy",
+					     &pcie->pci_phy);
+		if (err < 0) {
+			error("resource \"cs\" not found");
+			return err;
+		}
 	}
 	rst_gpio = fdtdec_get_int(fdt, node, "perst_gpio", 0);
 	if (rst_gpio <= 0) {
