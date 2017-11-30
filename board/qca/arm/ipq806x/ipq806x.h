@@ -86,6 +86,8 @@ static inline int gmac_cfg_is_valid(ipq_gmac_board_cfg_t *cfg)
 			(cfg->unit >= 0) && (cfg->unit < CONFIG_IPQ_NO_MACS));
 }
 
+__weak void aquantia_phy_reset(void) {}
+
 typedef enum {
 	SMEM_SPINLOCK_ARRAY = 7,
 	SMEM_AARM_PARTITION_TABLE = 9,
