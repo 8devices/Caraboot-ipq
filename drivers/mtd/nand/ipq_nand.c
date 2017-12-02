@@ -1713,6 +1713,7 @@ static void ipq_nand_hw_config(struct mtd_info *mtd, struct ipq_config *cfg)
 	uint32_t dev_cmd_vld;
 	struct ipq_nand_dev *dev = MTD_IPQ_NAND_DEV(mtd);
 	struct ebi2nd_regs *regs = dev->regs;
+	uint32_t ipq_oob_size;
 
 	dev->main_per_cw = cfg->main_per_cw;
 	dev->spare_per_cw = cfg->spare_per_cw;
@@ -1727,6 +1728,13 @@ static void ipq_nand_hw_config(struct mtd_info *mtd, struct ipq_config *cfg)
 		mtd->oobavail += cw_layout->oob_size;
 	}
 
+	ipq_oob_size = raw_cw_size * dev->cw_per_page - mtd->writesize;
+	if (mtd->oobsize > ipq_oob_size)
+		printf("ipq_nand: changing oobsize to %d from %d bytes\n",
+			ipq_oob_size, mtd->oobsize);
+
+	/* Make the device OOB size as QPIC supported OOB size. */
+	mtd->oobsize = ipq_oob_size;
 	if (dev->variant == QCA_NAND_QPIC) {
 		/*
 		 * On IPQ40xx with the QPIC controller, we use BCH for both ECC
@@ -1744,7 +1752,7 @@ static void ipq_nand_hw_config(struct mtd_info *mtd, struct ipq_config *cfg)
 		recovery_cycles = NAND_RECOVERY_CYCLES(7);
 		wr_rd_busy_gap = WR_RD_BSY_GAP(2);
 	} else {
-		bch_ecc_mode = 0;
+		bch_ecc_mode = 1;
 		/*
 		 * On IPQ806x, we use Reed-Solom ECC engine for 4-bit ECC and BCH ECC
 		 * engine for 8-bit ECC.
