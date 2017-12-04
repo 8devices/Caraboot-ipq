@@ -159,6 +159,29 @@ DECLARE_GLOBAL_DATA_PTR;
 #define PCIE_USB3_PCS_SW_RESET                          0x800
 #define PCIE_USB3_PCS_START_CONTROL                     0x808
 
+#define PCIE20_PARF_PHY_CTRL		0x40
+#define PHY_CTRL_PHY_TX0_TERM_OFFSET_MASK       (0x1f << 16)
+#define PHY_CTRL_PHY_TX0_TERM_OFFSET(x)         (x << 16)
+
+#define PCIE20_PARF_PHY_REFCLK		0x4C
+#define REF_SSP_EN				BIT(16)
+#define REF_USE_PAD				BIT(12)
+
+#define PCIE20_PARF_PCS_DEEMPH		0x34
+#define PCIE20_PARF_PCS_DEEMPH_TX_DEEMPH_GEN1(x) (x << 16)
+#define PCIE20_PARF_PCS_DEEMPH_TX_DEEMPH_GEN2_3_5DB(x) (x << 8)
+#define PCIE20_PARF_PCS_DEEMPH_TX_DEEMPH_GEN2_6DB(x) (x << 0)
+
+#define PCIE20_PARF_PCS_SWING		0x38
+#define PCIE20_PARF_PCS_SWING_TX_SWING_FULL(x)	(x << 8)
+#define PCIE20_PARF_PCS_SWING_TX_SWING_LOW(x)	(x << 0)
+
+#define PCIE20_PARF_CONFIG_BITS		0x50
+
+#define PCIE_SFAB_AXI_S5_FCLK_CTL 	0x00902154
+
+#define PCIE20_ELBI_SYS_CTRL		0x04
+
 static unsigned int local_buses[] = { 0, 0 };
 struct pci_controller pci_hose[PCI_MAX_DEVICES];
 static int phy_initialised;
@@ -195,6 +218,24 @@ struct ipq_pcie {
 	int linkup;
 	int version;
 };
+
+static void ipq_pcie_write_mask(uint32_t addr,
+				uint32_t clear_mask, uint32_t set_mask)
+{
+	uint32_t val;
+
+	val = (readl(addr) & ~clear_mask) | set_mask;
+	writel(val, addr);
+}
+
+static void ipq_pcie_parf_reset(uint32_t addr, int domain, int assert)
+
+{
+	if (assert)
+		ipq_pcie_write_mask(addr, 0, domain);
+	else
+		ipq_pcie_write_mask(addr, domain, 0);
+}
 
 void ipq_pcie_config_cfgtype(uint32_t phyaddr)
 {
@@ -455,18 +496,88 @@ void pcie_linkup(struct ipq_pcie *pcie)
 	}
 	ipq_pcie_config_controller(pcie);
 }
+
+void pcie_v0_linkup(struct ipq_pcie *pcie, int id)
+{
+	int j;
+	uint32_t val;
+	/* assert PCIe PARF reset while powering the core */
+	ipq_pcie_parf_reset(pcie->pci_rst.start, BIT(6), 0);
+
+	ipq_pcie_parf_reset(pcie->pci_rst.start, BIT(2), 1);
+	board_pcie_clock_init(id);
+	/*
+	 * de-assert PCIe PARF reset;
+	 * wait 1us before accessing PARF registers
+	 */
+	ipq_pcie_parf_reset(pcie->pci_rst.start, BIT(2), 0);
+	udelay(1);
+
+	/* enable PCIe clocks and resets */
+	val = (readl(pcie->parf.start + PCIE20_PARF_PHY_CTRL) & ~BIT(0));
+	writel(val, pcie->parf.start + PCIE20_PARF_PHY_CTRL);
+
+	ipq_pcie_write_mask(pcie->parf.start + PCIE20_PARF_PHY_CTRL,
+				PHY_CTRL_PHY_TX0_TERM_OFFSET_MASK,
+				PHY_CTRL_PHY_TX0_TERM_OFFSET(0));
+
+	/* PARF programming */
+	writel(PCIE20_PARF_PCS_DEEMPH_TX_DEEMPH_GEN1(0x18) |
+			PCIE20_PARF_PCS_DEEMPH_TX_DEEMPH_GEN2_3_5DB(0x18) |
+			PCIE20_PARF_PCS_DEEMPH_TX_DEEMPH_GEN2_6DB(0x22),
+			pcie->parf.start + PCIE20_PARF_PCS_DEEMPH);
+
+	writel(PCIE20_PARF_PCS_SWING_TX_SWING_FULL(0x78) |
+			PCIE20_PARF_PCS_SWING_TX_SWING_LOW(0x78),
+			pcie->parf.start + PCIE20_PARF_PCS_SWING);
+
+	writel((4<<24), pcie->parf.start + PCIE20_PARF_CONFIG_BITS);
+
+	ipq_pcie_write_mask(pcie->parf.start + PCIE20_PARF_PHY_REFCLK,
+				REF_USE_PAD, REF_SSP_EN);
+
+	/* enable access to PCIe slave port on system fabric */
+	if (id == 0) {
+		writel(BIT(4), PCIE_SFAB_AXI_S5_FCLK_CTL);
+	}
+
+	udelay(1);
+	/* de-assert PICe PHY, Core, POR and AXI clk domain resets */
+	ipq_pcie_parf_reset(pcie->pci_rst.start, BIT(5), 0);
+	ipq_pcie_parf_reset(pcie->pci_rst.start, BIT(4), 0);
+	ipq_pcie_parf_reset(pcie->pci_rst.start, BIT(3), 0);
+	ipq_pcie_parf_reset(pcie->pci_rst.start, BIT(0), 0);
+
+	/* enable link training */
+	ipq_pcie_write_mask( pcie->elbi.start + PCIE20_ELBI_SYS_CTRL, 0,
+			BIT(0));
+	udelay(500);
+
+	for (j = 0; j < 10; j++) {
+		val = readl(pcie->pci_dbi.start +
+				PCIE_0_TYPE0_LINK_CONTROL_LINK_STATUS_REG_1);
+		if (val & BIT(29)) {
+			printf("PCI%d Link Intialized\n", id);
+			pcie->linkup = 1;
+			break;
+		}
+		udelay(10000);
+	}
+	ipq_pcie_config_controller(pcie);
+
+}
+
 static int ipq_pcie_parse_dt(const void *fdt, int id,
 			       struct ipq_pcie *pcie)
 {
 	int err, rst_gpio, node;
+	char name[16];
 
-	if (id == 0) {
-		 node = fdt_path_offset(fdt, "pci0");
-	} else if (id == 1) {
-		 node = fdt_path_offset(fdt, "pci1");
-	} else {
-		printf("PCI is not defined in the device tree\n");
-		return -1;
+	sprintf(name, "pci%d", id);
+	node = fdt_path_offset(fdt, name);
+	if (node < 0) {
+		printf("PCI%d is not defined in the device tree\n", id);
+		return node;
 	}
 
 	err = fdt_get_named_resource(fdt, node, "reg", "reg-names", "pci_dbi",
@@ -703,6 +814,9 @@ static int pci_ipq_ofdata_to_platdata(int id, struct ipq_pcie *pcie)
 
 	board_pci_init(id);
 	switch(pcie->version) {
+		case PCIE_V0:
+			pcie_v0_linkup(pcie, id);
+			break;
 		case PCIE_V1:
 			pci_controller_init_v1(pcie);
 			pcie_linkup(pcie);

@@ -316,6 +316,24 @@ void qca_serial_init(struct ipq_serial_platdata *plat)
 
 }
 
+void board_pci_init(int id)
+{
+	int node, gpio_node;
+	char name[16];
+
+	sprintf(name, "pci%d", id);
+	node = fdt_path_offset(gd->fdt_blob, name);
+	if (node < 0) {
+		printf("Could not find PCI in device tree\n");
+		return;
+	}
+	gpio_node = fdt_subnode_offset(gd->fdt_blob, node, "pci_gpio");
+	if (gpio_node >= 0)
+		qca_gpio_init(gpio_node);
+
+	return;
+}
+
 void ipq_fdt_fixup_socinfo(void *blob)
 {
 	uint32_t cpu_type;
