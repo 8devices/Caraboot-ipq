@@ -260,11 +260,8 @@ int ipq_board_fw_download(unsigned int phy_addr)
 	/* check the smem info to see which flash used for booting */
 	if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
 		if (debug) {
-			printf("Using nand device %d\n", CONFIG_SPI_FLASH_INFO_IDX);
+			printf("Using nor device \n");
 		}
-		sprintf(runcmd, "nand device %d", CONFIG_SPI_FLASH_INFO_IDX);
-		run_command(runcmd, 0);
-
 	} else if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
 		if (debug) {
 			printf("Using nand device 0\n");
@@ -285,13 +282,24 @@ int ipq_board_fw_download(unsigned int phy_addr)
 		qca_set_part_entry(entries[i].name, sfi, entries[i].part, start, size);
 	}
 
-	if  ( (sfi->flash_type == SMEM_BOOT_NAND_FLASH) || (sfi->flash_type == SMEM_BOOT_SPI_FLASH)) {
+	if  (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
 		/*
 		 * Kernel is in a separate partition
 		 */
 		snprintf(runcmd, sizeof(runcmd),
 			 /* NOR is treated as psuedo NAND */
 			 "nand read 0x%x 0x%llx 0x%llx && ",
+			 CONFIG_SYS_LOAD_ADDR, ethphyfw.offset, ethphyfw.size);
+
+		if (debug)
+			printf("%s", runcmd);
+
+		if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
+			return CMD_RET_FAILURE;
+	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
+		snprintf(runcmd, sizeof(runcmd),
+			 "sf probe && "
+			 "sf read 0x%x 0x%llx 0x%llx && ",
 			 CONFIG_SYS_LOAD_ADDR, ethphyfw.offset, ethphyfw.size);
 
 		if (debug)
