@@ -419,6 +419,11 @@ int config_select(unsigned int addr, char *rcmd, int rcmd_size)
 	return -1;
 }
 
+__weak int switch_ce_channel_buf(unsigned int channel_id)
+{
+	return 0;
+}
+
 static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
 	char runcmd[256];
@@ -544,6 +549,12 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 
 	request += sizeof(mbn_header_t);
 
+	/* This sys call will switch the CE1 channel to register usage */
+	ret = switch_ce_channel_buf(0);
+
+	if (ret)
+		return CMD_RET_FAILURE;
+
 	ret = qca_scm_auth_kernel(&kernel_img_info,
 			sizeof(kernel_img_info));
 
@@ -551,6 +562,15 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 		printf("Kernel image authentication failed \n");
 		BUG();
 	}
+
+	/*
+	* This sys call will switch the CE1 channel to ADM usage
+	* so that HLOS can use it.
+	*/
+	ret = switch_ce_channel_buf(1);
+
+	if (ret)
+		return CMD_RET_FAILURE;
 
 	dcache_enable();
 #ifdef CONFIG_QCA_MMC

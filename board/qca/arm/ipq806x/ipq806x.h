@@ -42,6 +42,10 @@
  */
 #define RESET_WDT_BARK_TIME (5 * RESET_WDT_BITE_TIME)
 
+#define CE1_REG_USAGE           (0)
+#define CE1_ADM_USAGE           (1)
+#define CE1_RESOURCE            (1)
+
 typedef struct {
 	uint count;
 	u8 addr[7];
@@ -58,6 +62,11 @@ typedef struct {
 	ipq_gmac_phy_addr_t phy_addr;
 	const char phy_name[MDIO_NAME_LEN];
 } ipq_gmac_board_cfg_t;
+
+typedef struct {
+	unsigned int resource;
+	unsigned int channel_id;
+} switch_ce_chn_buf_t;
 
 #define gmac_board_cfg(_b, _sec, _p, _p0, _p1, _mp, _pn, ...)           \
 {                                                                       \

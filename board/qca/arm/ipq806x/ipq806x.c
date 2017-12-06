@@ -27,6 +27,7 @@
 #include <asm/arch-ipq806x/clk.h>
 #include "ipq806x.h"
 #include "qca_common.h"
+#include <asm/arch-qca-common/scm.h>
 
 ipq_gmac_board_cfg_t gmac_cfg[CONFIG_IPQ_NO_MACS];
 DECLARE_GLOBAL_DATA_PTR;
@@ -450,4 +451,18 @@ void set_flash_secondary_type(qca_smem_flash_info_t *smem)
 #endif
 	smem->flash_secondary_type = SMEM_BOOT_NAND_FLASH;
 	return;
+}
+
+int switch_ce_channel_buf(unsigned int channel_id)
+{
+	int ret;
+	switch_ce_chn_buf_t ce1_chn_buf;
+
+	ce1_chn_buf.resource   = CE1_RESOURCE;
+	ce1_chn_buf.channel_id = channel_id;
+
+	ret = scm_call(SCM_SVC_TZ, CE_CHN_SWITCH_CMD, &ce1_chn_buf,
+		sizeof(switch_ce_chn_buf_t), NULL, 0);
+
+	return ret;
 }
