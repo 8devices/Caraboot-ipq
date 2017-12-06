@@ -68,8 +68,35 @@ struct dumpinfo_t dumpinfo_n[] = {
 };
 int dump_entries_n = ARRAY_SIZE(dumpinfo_n);
 
-struct dumpinfo_t *dumpinfo_s = dumpinfo_n;
-int dump_entries_s = dump_entries_n;
+struct dumpinfo_t dumpinfo_s[] = {
+	/* Note1: when aligned access is set, the contents
+	 * are copied to a temporary location and so
+	 * the size of region should not exceed the size
+	 * of region pointed by IPQ_TEMP_DUMP_ADDR
+	 *
+	 * Note2: IPQ_NSSTCM_DUMP_ADDR should be the
+	 * first entry */
+	{ "NSSTCM.BIN",   IPQ_NSSTCM_DUMP_ADDR, 0x20000, 0 },
+	{ "IMEM_A.BIN",   0x2a000000, 0x0003f000, 0 },
+	{ "IMEM_C.BIN",   0x2a03f000, 0x00001000, 0 },
+	{ "IMEM_D.BIN",   0x2A040000, 0x00020000, 0 },
+	{ "CODERAM.BIN",  0x00020000, 0x00028000, 0 },
+	{ "SPS_RAM.BIN",  0x12000000, 0x0002C000, 0 },
+	{ "RPM_MSG.BIN",  0x00108000, 0x00005fff, 1 },
+	{ "SPS_BUFF.BIN", 0x12040000, 0x00004000, 0 },
+	{ "SPS_PIPE.BIN", 0x12800000, 0x00008000, 0 },
+	{ "LPASS.BIN",    0x28400000, 0x00020000, 0 },
+	{ "RPM_WDT.BIN",  0x0006206C, 0x00000004, 0 },
+	{ "CPU0_WDT.BIN", 0x0208A044, 0x00000004, 0 },
+	{ "CPU1_WDT.BIN", 0x0209A044, 0x00000004, 0 },
+	{ "CPU0_REG.BIN", 0x39013ea8, 0x000000AC, 0 },
+	{ "CPU1_REG.BIN", 0x39013f54, 0x000000AC, 0 },
+	{ "WLAN_FW.BIN",  0x41400000, 0x000FFF80, 0 },
+	{ "WLAN_FW_900B.BIN", 0x44000000, 0x00600000, 0 },
+	{ "EBICS0.BIN",   0x40000000, 0x20000000, 0 },
+	{ "EBI1CS1.BIN",  0x60000000, 0x20000000, 0 }
+};
+int dump_entries_s = ARRAY_SIZE(dumpinfo_s);
 
 extern int ipq_spi_init(u16);
 
