@@ -16,7 +16,10 @@
  */
 __weak void flush_cache(unsigned long start, unsigned long size)
 {
-	flush_dcache_range(start, start + size);
+	int dstatus = dcache_status();
+
+	if (dstatus)
+		flush_dcache_range(start, start + size);
 }
 
 /*
