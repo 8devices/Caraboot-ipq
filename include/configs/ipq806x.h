@@ -261,6 +261,12 @@ typedef struct {
 
 #define CONFIG_SPI_FLASH_BAR
 
+/*
+ *MTEST Configs
+ */
+#define CONFIG_SYS_MEMTEST_START	CONFIG_SYS_SDRAM_BASE + 0x1300000
+#define CONFIG_SYS_MEMTEST_END		CONFIG_SYS_MEMTEST_START + 0x100
+
 
 /*NAND Flash Configs*/
 #define CONFIG_CMD_NAND
