@@ -25,6 +25,8 @@
 		nand = "/nand@1A600000";
 		gmac_gpio = "/gmac1_gpio";
 		i2c0 = "/i2c@16380000";
+		pci0 = "/pci@1b500000";
+		pci1 = "/pci@1b700000";
 	};
 
 	serial@16340000 {
@@ -65,4 +67,29 @@
 			phy_name = "IPQ MDIO2";
 		};
 	};
+
+	pci@1b500000 {
+		pci_gpio {
+			gpio3 {
+				gpio = <3>;
+				func = <1>;
+				pull = <GPIO_PULL_UP>;
+				drvstr = <GPIO_12MA>;
+				oe = <GPIO_OE_ENABLE>;
+			};
+		};
+	};
+
+	pci@1b700000 {
+		pci_gpio {
+			gpio48 {
+				gpio = <48>;
+				func = <1>;
+				pull = <GPIO_PULL_UP>;
+				drvstr = <GPIO_12MA>;
+				oe = <GPIO_OE_ENABLE>;
+			};
+		};
+	};
+
 };

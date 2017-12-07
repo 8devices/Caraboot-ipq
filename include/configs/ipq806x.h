@@ -142,13 +142,14 @@
 /*
  * PCI Configs
  */
-#undef CONFIG_IPQ806X_PCI
-
-#ifdef CONFIG_IPQ806X_PCI
+#define CONFIG_PCI_IPQ
+#define PCI_MAX_DEVICES	3
+#ifdef CONFIG_PCI_IPQ
 #define CONFIG_PCI
 #define CONFIG_CMD_PCI
 #define CONFIG_PCI_SCAN_SHOW
 #endif
+
 
 /*
  * MMC Configs

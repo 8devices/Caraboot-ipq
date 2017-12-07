@@ -73,6 +73,7 @@ typedef struct {
 #endif
 
 void board_pci_init(int id);
+__weak void board_pcie_clock_init(int id) {}
 __weak void aquantia_phy_reset(void) {}
 
 /* Board specific parameters */

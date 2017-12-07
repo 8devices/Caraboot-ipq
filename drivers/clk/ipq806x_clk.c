@@ -435,8 +435,7 @@ void nand_clock_config(void)
 }
 #endif
 
-#ifdef CONFIG_IPQ806X_PCI
-void pcie_clock_shutdown(clk_offset_t *pci_clk)
+void pcie_clock_shutdown(pci_clk_offset_t *pci_clk)
 {
 	/* PCIE_ALT_REF_CLK_NS */
 	writel(0x0, pci_clk->alt_ref_clk_ns);
@@ -457,7 +456,7 @@ void pcie_clock_shutdown(clk_offset_t *pci_clk)
 	writel(0x0, pci_clk->aux_clk_ctl);
 }
 
-void pcie_clock_config(clk_offset_t *pci_clk)
+void pcie_clock_config(pci_clk_offset_t *pci_clk)
 {
 	/* PCIE_ALT_REF_CLK_NS */
 	writel(0x0A59, pci_clk->alt_ref_clk_ns);
@@ -481,7 +480,6 @@ void pcie_clock_config(clk_offset_t *pci_clk)
 	/* PCIE_AUX_CLK_CTL */
 	writel(0x10, pci_clk->aux_clk_ctl);
 }
-#endif /* CONFIG_IPQ806X_PCI */
 
 #ifdef CONFIG_QCA_MMC
 void emmc_pll_vote_clk_enable(void)

@@ -73,11 +73,49 @@
 #define emmc_clk_ns_mask (BM(BIT_POS_23, BIT_POS_16) | BM(BIT_POS_6, BIT_POS_0))
 #define emmc_en_mask BIT(11)
 
+#define PCIE_0_ACLK_CTL                         0x9022C0
+#define PCIE_1_ACLK_CTL                         0x903a80
+#define PCIE_2_ACLK_CTL                         0x903ac0
+#define PCIE_0_PCLK_CTL                         0x9022D0
+#define PCIE_1_PCLK_CTL                         0x903A90
+#define PCIE_2_PCLK_CTL                         0x903AD0
+#define PCIE_0_HCLK_CTL                         0x9022CC
+#define PCIE_1_HCLK_CTL                         0x903A8C
+#define PCIE_2_HCLK_CTL                         0x903ACC
+#define PCIE_0_AUX_CLK_CTL                      0x9022C8
+#define PCIE_1_AUX_CLK_CTL                      0x903A88
+#define PCIE_2_AUX_CLK_CTL                      0x903AC8
+#define PCIE_0_ALT_REF_CLK_NS                   0x903860
+#define PCIE_1_ALT_REF_CLK_NS                   0x903AA0
+#define PCIE_2_ALT_REF_CLK_NS                   0x903AE0
+#define PCIE_0_ALT_REF_CLK_ACR                  0x901344
+#define PCIE_1_ALT_REF_CLK_ACR                  0x901354
+#define PCIE_2_ALT_REF_CLK_ACR                  0x90135C
+#define PCIE_0_ACLK_FS                          0x9022C4
+#define PCIE_0_PCLK_FS                          0x9022D4
+#define PCIE_1_ACLK_FS                          0x903A84
+#define PCIE_1_PCLK_FS                          0x903A94
+#define PCIE_2_ACLK_FS                          0x903AC4
+#define PCIE_2_PCLK_FS                          0x903AD4
+#define PCIE20_0_PARF_PHY_REFCLK                0x1B60004C
+#define PCIE20_1_PARF_PHY_REFCLK                0x1B80004C
+#define PCIE20_2_PARF_PHY_REFCLK                0x1BA0004C
+
+typedef struct {
+        unsigned int aclk_ctl;
+        unsigned int pclk_ctl;
+        unsigned int hclk_ctl;
+        unsigned int aux_clk_ctl;
+        unsigned int alt_ref_clk_ns;
+        unsigned int alt_ref_clk_acr;
+        unsigned int aclk_fs;
+        unsigned int pclk_fs;
+        unsigned int parf_phy_refclk;
+} pci_clk_offset_t;
 
 void i2c_clock_config(void);
 
 /* Uart specific clock settings */
-
 void uart_pll_vote_clk_enable(void);
 void uart_clock_config(unsigned int gsbi_port, unsigned int m, unsigned int n,
 		unsigned int d);
