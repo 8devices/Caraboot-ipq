@@ -25,6 +25,8 @@
 #include <linux/mtd/ipq_nand.h>
 #include <asm/arch-qca-common/nand.h>
 #include <asm/arch-ipq806x/clk.h>
+#include <linux/usb/ipq_usb30.h>
+#include <linux/usb/dwc3.h>
 #include "ipq806x.h"
 #include "qca_common.h"
 #include <asm/arch-qca-common/scm.h>
@@ -493,3 +495,299 @@ int switch_ce_channel_buf(unsigned int channel_id)
 
 	return ret;
 }
+
+#ifdef CONFIG_USB_XHCI_IPQ
+__weak void ipq_reset_usb_phy(void *data)
+{
+	return;
+}
+
+static u16 dwc3_ipq_ssusb_read_phy_reg(unsigned int  addr, unsigned int ipq_base)
+{
+	u16 tmp_phy[3], i;
+	do {
+		for (i = 0; i < 3; i++) {
+			writel(addr, ipq_base +
+				IPQ_SSUSB_REG_QSCRATCH_SS_CR_PROTOCOL_DATA_IN);
+			writel(0x1, ipq_base +
+				IPQ_SSUSB_REG_QSCRATCH_SS_CR_PROTOCOL_CAP_ADDR);
+			while (0 != readl(ipq_base +
+				IPQ_SSUSB_REG_QSCRATCH_SS_CR_PROTOCOL_CAP_ADDR));
+			writel(0x1, ipq_base +
+				IPQ_SSUSB_REG_QSCRATCH_SS_CR_PROTOCOL_READ);
+			while (0 != readl(ipq_base +
+				IPQ_SSUSB_REG_QSCRATCH_SS_CR_PROTOCOL_READ));
+			tmp_phy[i] = (u16)readl(ipq_base +
+				IPQ_SSUSB_REG_QSCRATCH_SS_CR_PROTOCOL_DATA_OUT);
+		}
+	} while (tmp_phy[1] != tmp_phy[2]);
+	return tmp_phy[2];
+}
+
+static void dwc3_ipq_ssusb_write_phy_reg(u32 addr, u16 data, unsigned int ipq_base)
+{
+	writel(addr, ipq_base + IPQ_SSUSB_REG_QSCRATCH_SS_CR_PROTOCOL_DATA_IN);
+	writel(0x1, ipq_base + IPQ_SSUSB_REG_QSCRATCH_SS_CR_PROTOCOL_CAP_ADDR);
+	while (0 != readl(ipq_base +
+		IPQ_SSUSB_REG_QSCRATCH_SS_CR_PROTOCOL_CAP_ADDR));
+	writel(data, ipq_base + IPQ_SSUSB_REG_QSCRATCH_SS_CR_PROTOCOL_DATA_IN);
+	writel(0x1, ipq_base + IPQ_SSUSB_REG_QSCRATCH_SS_CR_PROTOCOL_CAP_DATA);
+	while (0 != readl(ipq_base +
+		IPQ_SSUSB_REG_QSCRATCH_SS_CR_PROTOCOL_CAP_DATA));
+	writel(0x1, ipq_base + IPQ_SSUSB_REG_QSCRATCH_SS_CR_PROTOCOL_WRITE);
+	while (0 != readl(ipq_base +
+		IPQ_SSUSB_REG_QSCRATCH_SS_CR_PROTOCOL_WRITE));
+}
+
+static void ipq_ssusb_clear_bits32(u32 offset, u32 bits, unsigned int ipq_base)
+{
+	u32 data;
+	data = readl(ipq_base+offset);
+	data = data & ~bits;
+	writel(data, ipq_base + offset);
+}
+
+static void ipq_ssusb_clear_and_set_bits32(u32 offset, u32 clear_bits, u32 set_bits, unsigned int ipq_base)
+{
+	u32 data;
+	data = readl(ipq_base + offset);
+	data = (data & ~clear_bits) | set_bits;
+	writel(data, ipq_base + offset);
+}
+
+static void partial_rx_reset_init(unsigned int ipq_base)
+{
+	u32 addr = DWC3_SSUSB_PHY_TX_ALT_BLOCK_REG;
+	u16 data = dwc3_ipq_ssusb_read_phy_reg(addr, ipq_base);
+	data |= DWC3_SSUSB_PHY_TX_ALT_BLOCK_EN_ALT_BUS;
+	dwc3_ipq_ssusb_write_phy_reg(addr, data, ipq_base);
+	return;
+}
+
+static void  uw_ssusb_pre_init(unsigned int ipq_base)
+{
+	u32  set_bits, tmp;
+
+	/* GCTL Reset ON */
+	writel(0x800, ipq_base + DWC3_SSUSB_REG_GCTL);
+	/* Config SS PHY CTRL */
+	set_bits = 0;
+	writel(0x80, ipq_base + IPQ_SS_PHY_CTRL_REG);
+	udelay(5);
+	ipq_ssusb_clear_bits32(IPQ_SS_PHY_CTRL_REG, 0x80, ipq_base);
+	udelay(5);
+	/* REF_USE_PAD */
+	set_bits = 0x0000000;  /* USE Internal clock */
+	set_bits |= IPQ_SSUSB_QSCRATCH_SS_PHY_CTRL_LANE0_PWR_PRESENT;
+	set_bits |= IPQ_SSUSB_QSCRATCH_SS_PHY_CTRL_REF_SS_PHY_EN;
+	writel(set_bits, ipq_base + IPQ_SS_PHY_CTRL_REG);
+	/* Config HS PHY CTRL */
+	set_bits = IPQ_SSUSB_REG_QSCRATCH_HS_PHY_CTRL_UTMI_OTG_VBUS_VALID;
+	/*
+	 * COMMONONN forces xo, bias and pll to stay on during suspend;
+	 * Allowing suspend (writing 1) kills Aragorn V1
+	 */
+	set_bits |= IPQ_SSUSB_REG_QSCRATCH_HS_PHY_CTRL_COMMONONN;
+	set_bits |= IPQ_SSUSB_REG_QSCRATCH_HS_PHY_CTRL_USE_CLKCORE;
+	set_bits |= IPQ_SSUSB_REG_QSCRATCH_HS_PHY_CTRL_FSEL_VAL;
+	/*
+	 * If the configuration of clocks is not bypassed in Host mode,
+	 * HS PHY suspend needs to be prohibited, otherwise - SS connection fails
+	 */
+	ipq_ssusb_clear_and_set_bits32(IPQ_SSUSB_REG_QSCRATCH_HS_PHY_CTRL, 0,
+					set_bits, ipq_base);
+	/* USB2 PHY Reset ON */
+	writel(DWC3_SSUSB_REG_GUSB2PHYCFG_PHYSOFTRST, ipq_base +
+		DWC3_SSUSB_REG_GUSB2PHYCFG(0));
+	/* USB3 PHY Reset ON */
+	writel(DWC3_SSUSB_REG_GUSB3PIPECTL_PHYSOFTRST, ipq_base +
+		DWC3_SSUSB_REG_GUSB3PIPECTL(0));
+	udelay(5);
+	/* USB3 PHY Reset OFF */
+	ipq_ssusb_clear_bits32(DWC3_SSUSB_REG_GUSB3PIPECTL(0),
+				DWC3_SSUSB_REG_GUSB3PIPECTL_PHYSOFTRST, ipq_base);
+	ipq_ssusb_clear_bits32(DWC3_SSUSB_REG_GUSB2PHYCFG(0),
+				DWC3_GUSB2PHYCFG_PHYSOFTRST, ipq_base);
+	udelay(5);
+	/* GCTL Reset OFF */
+	ipq_ssusb_clear_bits32(DWC3_SSUSB_REG_GCTL, DWC3_GCTL_CORESOFTRESET,
+				ipq_base);
+	udelay(5);
+	if (RX_TERM_VALUE) {
+		dwc3_ipq_ssusb_write_phy_reg(DWC3_SSUSB_PHY_RTUNE_RTUNE_CTRL_REG,
+						0, ipq_base);
+		dwc3_ipq_ssusb_write_phy_reg(DWC3_SSUSB_PHY_RTUNE_DEBUG_REG,
+						0x0448, ipq_base);
+		dwc3_ipq_ssusb_write_phy_reg(DWC3_SSUSB_PHY_RTUNE_DEBUG_REG,
+						RX_TERM_VALUE, ipq_base);
+	}
+	if (0 != RX_EQ_VALUE) { /* Values from 1 to 7 */
+		tmp =0;
+		/*
+		 * 1. Fixed EQ setting. This can be achieved as follows:
+		 * LANE0.RX_OVRD_IN_HI. RX_EQ_EN set to 0 - address 1006 bit 6
+		 * LANE0.RX_OVRD_IN_HI.RX_EQ_EN_OVRD set to 1 0- address 1006 bit 7
+		 * LANE0.RX_OVRD_IN_HI.RX_EQ set to 4 (also try setting 3 if possible) -
+		 * address 1006 bits 10:8 - please make this a variable, if unchanged the section is not executed
+		 * LANE0.RX_OVRD_IN_HI.RX_EQ_OVRD set to 1 - address 1006 bit 11
+		 */
+		tmp = dwc3_ipq_ssusb_read_phy_reg(DWC3_SSUSB_PHY_RX_OVRD_IN_HI_REG,
+							ipq_base);
+		tmp &= ~((u16)1 << DWC3_SSUSB_PHY_RX_OVRD_IN_HI_RX_EQ_EN);
+		tmp |= ((u16)1 << DWC3_SSUSB_PHY_RX_OVRD_IN_HI_RX_EQ_EN_OVRD);
+		tmp &= ~((u16) DWC3_SSUSB_PHY_RX_OVRD_IN_HI_RX_EQ_MASK <<
+			DWC3_SSUSB_PHY_RX_OVRD_IN_HI_RX_EQ);
+		tmp |= RX_EQ_VALUE << DWC3_SSUSB_PHY_RX_OVRD_IN_HI_RX_EQ;
+		tmp |= 1 << DWC3_SSUSB_PHY_RX_OVRD_IN_HI_RX_EQ_OVRD;
+		dwc3_ipq_ssusb_write_phy_reg(DWC3_SSUSB_PHY_RX_OVRD_IN_HI_REG,
+						tmp, ipq_base);
+	}
+	if ((113 != AMPLITUDE_VALUE) || (21 != TX_DEEMPH_3_5DB)) {
+		tmp = dwc3_ipq_ssusb_read_phy_reg(DWC3_SSUSB_PHY_TX_OVRD_DRV_LO_REG,
+			ipq_base);
+		tmp &= ~DWC3_SSUSB_PHY_TX_DEEMPH_MASK;
+		tmp |= (TX_DEEMPH_3_5DB << DWC3_SSUSB_PHY_TX_DEEMPH_SHIFT);
+		tmp &= ~DWC3_SSUSB_PHY_AMP_MASK;
+		tmp |= AMPLITUDE_VALUE;
+		tmp |= DWC3_SSUSB_PHY_AMP_EN;
+		dwc3_ipq_ssusb_write_phy_reg(DWC3_SSUSB_PHY_TX_OVRD_DRV_LO_REG,
+						tmp, ipq_base);
+	}
+	ipq_ssusb_clear_and_set_bits32(IPQ_SS_PHY_PARAM_CTRL_1_REG,
+					0x7, 0x5, ipq_base);
+	/* XHCI REV */
+	writel((1 << 2), ipq_base + IPQ_QSCRATCH_GENERAL_CFG);
+	writel(0x0c80c010, ipq_base + DWC3_SSUSB_REG_GUCTL);
+	partial_rx_reset_init(ipq_base);
+	set_bits = 0;
+	/* Test  U2EXIT_LFPS */
+	set_bits |= IPQ_SSUSB_REG_GCTL_U2EXIT_LFPS;
+	ipq_ssusb_clear_and_set_bits32(DWC3_SSUSB_REG_GCTL, 0,
+					set_bits, ipq_base);
+	set_bits = 0;
+	set_bits |= IPQ_SSUSB_REG_GCTL_U2RSTECN;
+	set_bits |= IPQ_SSUSB_REG_GCTL_U2EXIT_LFPS;
+	ipq_ssusb_clear_and_set_bits32(DWC3_SSUSB_REG_GCTL, 0,
+					set_bits, ipq_base);
+	writel(DWC3_GCTL_U2EXIT_LFPS | DWC3_GCTL_SOFITPSYNC |
+		DWC3_GCTL_PRTCAPDIR(1) |
+		DWC3_GCTL_U2RSTECN | DWC3_GCTL_PWRDNSCALE(2),
+		ipq_base + DWC3_GCTL);
+	writel((IPQ_SSUSB_QSCRATCH_SS_PHY_CTRL_MPLL_MULTI(0x19) |
+		IPQ_SSUSB_QSCRATCH_SS_PHY_CTRL_REF_SS_PHY_EN |
+		IPQ_SSUSB_QSCRATCH_SS_PHY_CTRL_LANE0_PWR_PRESENT),
+		ipq_base + IPQ_SS_PHY_CTRL_REG);
+	writel((DWC3_SSUSB_REG_GUSB2PHYCFG_SUSPENDUSB20 |
+		DWC3_SSUSB_REG_GUSB2PHYCFG_ENBLSLPM |
+		DWC3_SSUSB_REG_GUSB2PHYCFG_USBTRDTIM(9)),
+		ipq_base + DWC3_SSUSB_REG_GUSB2PHYCFG(0));
+	writel(DWC3_SSUSB_REG_GUSB3PIPECTL_ELASTIC_BUFFER_MODE |
+		DWC3_SSUSB_REG_GUSB3PIPECTL_TX_DE_EPPHASIS(1) |
+		DWC3_SSUSB_REG_GUSB3PIPECTL_TX_MARGIN(0)|
+		DWC3_SSUSB_REG_GUSB3PIPECTL_DELAYP1TRANS |
+		DWC3_SSUSB_REG_GUSB3PIPECTL_DELAYP1P2P3(1) |
+		DWC3_SSUSB_REG_GUSB3PIPECTL_U1U2EXITFAIL_TO_RECOV |
+		DWC3_SSUSB_REG_GUSB3PIPECTL_REQUEST_P1P2P3,
+		ipq_base + DWC3_SSUSB_REG_GUSB3PIPECTL(0));
+	writel(IPQ_SSUSB_REG_QSCRATCH_SS_PHY_PARAM_CTRL_1_LOS_LEVEL(0x9) |
+		IPQ_SSUSB_REG_QSCRATCH_SS_PHY_PARAM_CTRL_1_TX_DEEMPH_3_5DB(0x17) |
+		IPQ_SSUSB_REG_QSCRATCH_SS_PHY_PARAM_CTRL_1_TX_DEEMPH_6DB(0x20) |
+		IPQ_SSUSB_REG_QSCRATCH_SS_PHY_PARAM_CTRL_1_TX_SWING_FULL(0x6E),
+		ipq_base + IPQ_SS_PHY_PARAM_CTRL_1_REG);
+	writel(IPQ_SSUSB_REG_QSCRATCH_GENERAL_CFG_XHCI_REV(DWC3_SSUSB_XHCI_REV_10),
+		ipq_base + IPQ_QSCRATCH_GENERAL_CFG);
+}
+
+static void usb30_common_pre_init(int id, unsigned int ipq_base)
+{
+	unsigned int reg;
+
+	if (id == 0)
+		reg = USB30_RESET;
+	else
+		reg = USB30_1_RESET;
+
+	writel(IPQ_USB30_RESET_PHY_ASYNC_RESET, reg);
+	writel(IPQ_USB30_RESET_POWERON_ASYNC_RESET |
+		IPQ_USB30_RESET_PHY_ASYNC_RESET, reg);
+	writel(IPQ_USB30_RESET_MOC_UTMI_ASYNC_RESET |
+		IPQ_USB30_RESET_POWERON_ASYNC_RESET |
+		IPQ_USB30_RESET_PHY_ASYNC_RESET, reg);
+	writel(IPQ_USB30_RESET_SLEEP_ASYNC_RESET |
+		IPQ_USB30_RESET_MOC_UTMI_ASYNC_RESET |
+		IPQ_USB30_RESET_POWERON_ASYNC_RESET |
+		IPQ_USB30_RESET_PHY_ASYNC_RESET, reg);
+	writel(IPQ_USB30_RESET_MASTER_ASYNC_RESET |
+		IPQ_USB30_RESET_SLEEP_ASYNC_RESET |
+		IPQ_USB30_RESET_MOC_UTMI_ASYNC_RESET |
+		IPQ_USB30_RESET_POWERON_ASYNC_RESET |
+		IPQ_USB30_RESET_PHY_ASYNC_RESET, reg);
+	if (id == 0) {
+		writel(IPQ_USB30_RESET_PORT2_HS_PHY_ASYNC_RESET |
+			IPQ_USB30_RESET_MASTER_ASYNC_RESET |
+			IPQ_USB30_RESET_SLEEP_ASYNC_RESET |
+			IPQ_USB30_RESET_MOC_UTMI_ASYNC_RESET |
+			IPQ_USB30_RESET_POWERON_ASYNC_RESET |
+			IPQ_USB30_RESET_PHY_ASYNC_RESET, reg);
+	}
+	udelay(5);
+	writel(IPQ_USB30_RESET_MASK & ~(IPQ_USB30_RESET_PHY_ASYNC_RESET), reg);
+	writel(IPQ_USB30_RESET_MASK & ~(IPQ_USB30_RESET_POWERON_ASYNC_RESET |
+		IPQ_USB30_RESET_PHY_ASYNC_RESET), reg);
+	writel(IPQ_USB30_RESET_MASK & ~(IPQ_USB30_RESET_MOC_UTMI_ASYNC_RESET |
+		IPQ_USB30_RESET_POWERON_ASYNC_RESET |
+		IPQ_USB30_RESET_PHY_ASYNC_RESET), reg);
+	writel(IPQ_USB30_RESET_MASK & ~(IPQ_USB30_RESET_SLEEP_ASYNC_RESET |
+		IPQ_USB30_RESET_MOC_UTMI_ASYNC_RESET |
+		IPQ_USB30_RESET_POWERON_ASYNC_RESET |
+		IPQ_USB30_RESET_PHY_ASYNC_RESET), reg);
+	writel(IPQ_USB30_RESET_MASK & ~(IPQ_USB30_RESET_MASTER_ASYNC_RESET |
+		IPQ_USB30_RESET_SLEEP_ASYNC_RESET|
+		IPQ_USB30_RESET_MOC_UTMI_ASYNC_RESET |
+		IPQ_USB30_RESET_POWERON_ASYNC_RESET |
+		IPQ_USB30_RESET_PHY_ASYNC_RESET), reg);
+	if (id == 0) {
+		writel(IPQ_USB30_RESET_MASK &
+			~(IPQ_USB30_RESET_PORT2_HS_PHY_ASYNC_RESET |
+			IPQ_USB30_RESET_MASTER_ASYNC_RESET |
+			IPQ_USB30_RESET_SLEEP_ASYNC_RESET |
+			IPQ_USB30_RESET_MOC_UTMI_ASYNC_RESET |
+			IPQ_USB30_RESET_POWERON_ASYNC_RESET |
+			IPQ_USB30_RESET_PHY_ASYNC_RESET), reg);
+		reg = IPQ_TCSR_USB_CONTROLLER_TYPE_SEL;
+		if (reg) {
+			writel(0x3, reg);
+		}
+	}
+	writel((IPQ_SSUSB_REG_QSCRATCH_CGCTL_RAM1112_EN |
+		IPQ_SSUSB_REG_QSCRATCH_CGCTL_RAM13_EN),
+		ipq_base + IPQ_SSUSB_REG_QSCRATCH_CGCTL);
+	writel((IPQ_SSUSB_REG_QSCRATCH_RAM1_RAM13_EN |
+		IPQ_SSUSB_REG_QSCRATCH_RAM1RAM12_EN |
+		IPQ_SSUSB_REG_QSCRATCH_RAM1_RAM11_EN),
+		ipq_base + IPQ_SSUSB_REG_QSCRATCH_RAM1);
+}
+
+int ipq_board_usb_init(void)
+{
+	int i;
+	unsigned int ipq_base;
+
+	/* Configure the usb core clock */
+	usb_ss_core_clock_config(0, 1, 5, 32);
+	/* Configure the usb core clock */
+	usb_ss_utmi_clock_config(0, 1, 40, 1);
+
+	for (i = 0; i < CONFIG_USB_MAX_CONTROLLER_COUNT; i++) {
+
+		if (i == 0)
+			ipq_base = IPQ_XHCI_BASE_1;
+		else
+			ipq_base = IPQ_XHCI_BASE_2;
+
+		usb30_common_pre_init(0, ipq_base);
+		uw_ssusb_pre_init(ipq_base);
+	}
+	return 0;
+}
+#endif /* CONFIG_USB_XHCI_IPQ */

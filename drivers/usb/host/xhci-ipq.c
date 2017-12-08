@@ -44,10 +44,11 @@ struct ipq_xhci {
 	struct dwc3 *dwc3_reg;
 };
 
-void ipq_reset_usb_phy(struct ipq_xhci *ipq)
+void ipq_reset_usb_phy(void *data)
 {
 	unsigned int gcc_rst_ctrl;
 	struct ipq_xhci_platdata *platdata;
+	struct ipq_xhci *ipq = (struct ipq_xhci *)data;
 
 	platdata = dev_get_platdata(ipq->dev);
 	if (platdata == NULL) {
@@ -89,7 +90,7 @@ static int ipq_xhci_core_init(struct ipq_xhci *ipq)
 {
 	int ret = 0;
 
-	ipq_reset_usb_phy(ipq);
+	ipq_reset_usb_phy((void *)ipq);
 
 	ret = dwc3_core_init(ipq->dwc3_reg);
 	if (ret) {
