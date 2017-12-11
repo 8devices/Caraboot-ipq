@@ -548,8 +548,7 @@ int create_data_byte(uint16_t *data, uchar *buffer, int len)
 	if (len == 0) {
 	    return idx;
 	} else {
-		*data = (*data << 8);
-		*data |= QUP_I2C_DATA(buffer[idx]);
+		*data |= (QUP_I2C_DATA(buffer[idx]) << 8);
 		idx++;
 		len--;
 	}
