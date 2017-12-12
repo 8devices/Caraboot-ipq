@@ -42,6 +42,10 @@
 
 	spi {
 		status = "disabled";
+		wr_pipe_0 = <4>;
+		rd_pipe_0 = <5>;
+		wr_pipe_1 = <6>;
+		rd_pipe_1 = <7>;
 	};
 
 	nand@79B0000 {

@@ -282,6 +282,7 @@ static inline struct ipq_spi_slave *to_ipq_spi(struct spi_slave *slave)
 #define QUP1_DATA_PRODUCER_PIPE_GRP		0
 #define QUP1_DATA_CONSUMER_PIPE_GRP		0
 
+#define NO_OF_QUPS				2
 
 /* QUP EE */
 #define QUP_SPI_EE				0
