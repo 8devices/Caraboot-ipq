@@ -14,7 +14,6 @@
 #include <menu.h>
 #include <post.h>
 #include <u-boot/sha256.h>
-#include <asm/arch-qca-common/qca_common.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -284,14 +283,6 @@ static int abortboot_normal(int bootdelay)
 
 static int abortboot(int bootdelay)
 {
-#ifdef CONFIG_QCA_APPSBL_DLOAD
-	/* If kernel has crashed in previous boot, skipping abortboot */
-	if (qca_iscrashed()) {
-		printf("Crashdump magic found, initializing dump activity..\n");
-		return 0;
-	}
-#endif
-
 #ifdef CONFIG_AUTOBOOT_KEYED
 	return abortboot_keyed(bootdelay);
 #else

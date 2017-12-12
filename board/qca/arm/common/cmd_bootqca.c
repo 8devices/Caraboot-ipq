@@ -193,6 +193,26 @@ static int do_dumpqca_data(void)
  * requested to stop
  */
 #ifdef CONFIG_QCA_APPSBL_DLOAD
+static int inline do_dumpipq_data(void)
+{
+	uint64_t etime;
+
+	if (do_dumpqca_data() != CMD_RET_SUCCESS) {
+		printf("\nAuto crashdump saving failed!"
+		       "\nPress any key within 10s to take control of U-Boot");
+
+		etime = get_timer_masked() + (10 * CONFIG_SYS_HZ);
+		while (get_timer_masked() < etime) {
+			if (tstc())
+				break;
+		}
+
+		if (get_timer_masked() < etime)
+			return CMD_RET_FAILURE;
+	}
+	return CMD_RET_SUCCESS;
+}
+
 static int dump_func(void)
 {
 	uint64_t etime;
@@ -207,8 +227,8 @@ static int dump_func(void)
 		"\nHit any key within 10s to stop dump activity...");
 	while (!tstc()) {       /* while no incoming data */
 		if (get_timer_masked() >= etime) {
-			if (do_dumpqca_data() == CMD_RET_FAILURE)
-				printf("Crashdump saving failed!\n");
+			if (do_dumpipq_data() == CMD_RET_FAILURE)
+				return CMD_RET_FAILURE;
 			break;
 		}
 	}
@@ -217,30 +237,6 @@ static int dump_func(void)
 	 */
 	run_command("reset", 0);
 	return CMD_RET_SUCCESS;
-}
-
-int qca_iscrashed(void)
-{
-	u32 *addr = (u32 *)0x193D100;
-	unsigned long * dmagic1 = (unsigned long *) 0x2A03F000;
-	unsigned long * dmagic2 = (unsigned long *) 0x2A03F004;
-	volatile u32 val;
-	u32 rsp;
-	int ret;
-
-	if (is_scm_armv8()) {
-		ret =  qca_scm_call_read(SCM_SVC_IO, SCM_IO_READ, addr, &rsp);
-
-		if (rsp == DLOAD_MAGIC_COOKIE)
-			return 1;
-	} else {
-		ret = qca_scm_call(SCM_SVC_BOOT, SCM_SVC_RD,
-				   (void *)&val, sizeof(val));
-		if (val == DLOAD_MAGIC_COOKIE
-		    || ret && *dmagic1 == 0xE47B337D && *dmagic2 == 0x0501CAB0)
-			return 1;
-	}
-	return 0;
 }
 
 static int qca_appsbl_dload(void) {
