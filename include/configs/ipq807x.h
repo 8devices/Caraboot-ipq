@@ -104,7 +104,8 @@
 
 #define CONFIG_IPQ_FDT_HIGH		0x4A600000
 #define CONFIG_IPQ_NO_MACS		6
-
+#define CONFIG_ENV_IS_IN_SPI_FLASH	1
+#define CONFIG_ENV_SECT_SIZE        	(64 * 1024)
 /*
  * IPQ_TFTP_MIN_ADDR: Starting address of Linux HLOS region.
  * CONFIG_TZ_END_ADDR: Ending address of Trust Zone and starting

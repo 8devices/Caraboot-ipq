@@ -23,7 +23,9 @@ DECLARE_GLOBAL_DATA_PTR;
 extern int nand_env_device;
 extern env_t *nand_env_ptr;
 extern char *nand_env_name_spec;
+extern char *sf_env_name_spec;
 extern int nand_saveenv(void);
+extern int sf_saveenv(void);
 
 #ifdef CONFIG_QCA_MMC
 extern env_t *mmc_env_ptr;
@@ -134,18 +136,20 @@ int board_init(void)
 		BUG();
 	}
 
-	if (sfi->flash_type != SMEM_BOOT_MMC_FLASH) {
-		saveenv = nand_saveenv;
-		env_ptr = nand_env_ptr;
-		env_name_spec = nand_env_name_spec;
+	if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
+		saveenv = sf_saveenv;
+		env_name_spec = sf_env_name_spec;
 #ifdef CONFIG_QCA_MMC
-	} else {
+	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
 		saveenv = mmc_saveenv;
 		env_ptr = mmc_env_ptr;
 		env_name_spec = mmc_env_name_spec;
 #endif
+	} else {
+		saveenv = nand_saveenv;
+		env_ptr = nand_env_ptr;
+		env_name_spec = nand_env_name_spec;
 	}
-
 #endif
 	ret = ipq_board_usb_init();
 	if (ret < 0) {

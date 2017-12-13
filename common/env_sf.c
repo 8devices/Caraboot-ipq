@@ -40,12 +40,12 @@ static ulong env_new_offset	= CONFIG_ENV_OFFSET_REDUND;
 
 DECLARE_GLOBAL_DATA_PTR;
 
-char *env_name_spec = "SPI Flash";
+char *sf_env_name_spec = "SPI Flash";
 
 static struct spi_flash *env_flash;
 
 #if defined(CONFIG_ENV_OFFSET_REDUND)
-int saveenv(void)
+int sf_saveenv(void)
 {
 	env_t	env_new;
 	char	*saved_buffer = NULL, flag = OBSOLETE_FLAG;
@@ -53,9 +53,9 @@ int saveenv(void)
 	int	ret;
 
 	if (!env_flash) {
-		env_flash = spi_flash_probe(CONFIG_ENV_SPI_BUS,
-			CONFIG_ENV_SPI_CS,
-			CONFIG_ENV_SPI_MAX_HZ, CONFIG_ENV_SPI_MODE);
+		env_flash = spi_flash_probe(CONFIG_SF_DEFAULT_BUS,
+			CONFIG_SF_DEFAULT_CS,
+			CONFIG_SF_DEFAULT_SPEED, CONFIG_SF_DEFAULT_MODE);
 		if (!env_flash) {
 			set_default_env("!spi_flash_probe() failed");
 			return 1;
@@ -134,7 +134,7 @@ int saveenv(void)
 	return ret;
 }
 
-void env_relocate_spec(void)
+void sf_env_relocate_spec(void)
 {
 	int ret;
 	int crc1_ok = 0, crc2_ok = 0;
@@ -151,8 +151,8 @@ void env_relocate_spec(void)
 		goto out;
 	}
 
-	env_flash = spi_flash_probe(CONFIG_ENV_SPI_BUS, CONFIG_ENV_SPI_CS,
-			CONFIG_ENV_SPI_MAX_HZ, CONFIG_ENV_SPI_MODE);
+	env_flash = spi_flash_probe(CONFIG_SF_DEFAULT_BUS, CONFIG_SF_DEFAULT_CS,
+			CONFIG_SF_DEFAULT_SPEED, CONFIG_SF_DEFAULT_MODE);
 	if (!env_flash) {
 		set_default_env("!spi_flash_probe() failed");
 		goto out;
@@ -221,7 +221,7 @@ out:
 	free(tmp_env2);
 }
 #else
-int saveenv(void)
+int sf_saveenv(void)
 {
 	u32	saved_size, saved_offset, sector = 1;
 	char	*saved_buffer = NULL;
@@ -229,9 +229,9 @@ int saveenv(void)
 	env_t	env_new;
 
 	if (!env_flash) {
-		env_flash = spi_flash_probe(CONFIG_ENV_SPI_BUS,
-			CONFIG_ENV_SPI_CS,
-			CONFIG_ENV_SPI_MAX_HZ, CONFIG_ENV_SPI_MODE);
+		env_flash = spi_flash_probe(CONFIG_SF_DEFAULT_BUS,
+			CONFIG_SF_DEFAULT_CS,
+			CONFIG_SF_DEFAULT_SPEED, CONFIG_SF_DEFAULT_MODE);
 		if (!env_flash) {
 			set_default_env("!spi_flash_probe() failed");
 			return 1;
@@ -239,9 +239,9 @@ int saveenv(void)
 	}
 
 	/* Is the sector larger than the env (i.e. embedded) */
-	if (CONFIG_ENV_SECT_SIZE > CONFIG_ENV_SIZE) {
-		saved_size = CONFIG_ENV_SECT_SIZE - CONFIG_ENV_SIZE;
-		saved_offset = CONFIG_ENV_OFFSET + CONFIG_ENV_SIZE;
+	if (CONFIG_ENV_SECT_SIZE > CONFIG_ENV_RANGE) {
+		saved_size = CONFIG_ENV_SECT_SIZE - CONFIG_ENV_RANGE;
+		saved_offset = CONFIG_ENV_OFFSET + CONFIG_ENV_RANGE;
 		saved_buffer = malloc(saved_size);
 		if (!saved_buffer)
 			goto done;
@@ -252,29 +252,28 @@ int saveenv(void)
 			goto done;
 	}
 
-	if (CONFIG_ENV_SIZE > CONFIG_ENV_SECT_SIZE) {
+	if (CONFIG_ENV_RANGE > CONFIG_ENV_SECT_SIZE) {
 		sector = CONFIG_ENV_SIZE / CONFIG_ENV_SECT_SIZE;
 		if (CONFIG_ENV_SIZE % CONFIG_ENV_SECT_SIZE)
 			sector++;
 	}
-
 	ret = env_export(&env_new);
 	if (ret)
 		goto done;
 
 	puts("Erasing SPI flash...");
 	ret = spi_flash_erase(env_flash, CONFIG_ENV_OFFSET,
-		sector * CONFIG_ENV_SECT_SIZE);
+		CONFIG_ENV_RANGE);
 	if (ret)
 		goto done;
 
 	puts("Writing to SPI flash...");
 	ret = spi_flash_write(env_flash, CONFIG_ENV_OFFSET,
-		CONFIG_ENV_SIZE, &env_new);
+		CONFIG_ENV_RANGE, &env_new);
 	if (ret)
 		goto done;
 
-	if (CONFIG_ENV_SECT_SIZE > CONFIG_ENV_SIZE) {
+	if (CONFIG_ENV_SECT_SIZE > CONFIG_ENV_RANGE) {
 		ret = spi_flash_write(env_flash, saved_offset,
 			saved_size, saved_buffer);
 		if (ret)
@@ -291,14 +290,14 @@ int saveenv(void)
 	return ret;
 }
 
-void env_relocate_spec(void)
+void sf_env_relocate_spec(void)
 {
 	int ret;
 	char *buf = NULL;
 
 	buf = (char *)memalign(ARCH_DMA_MINALIGN, CONFIG_ENV_SIZE);
-	env_flash = spi_flash_probe(CONFIG_ENV_SPI_BUS, CONFIG_ENV_SPI_CS,
-			CONFIG_ENV_SPI_MAX_HZ, CONFIG_ENV_SPI_MODE);
+	env_flash = spi_flash_probe(CONFIG_SF_DEFAULT_BUS, CONFIG_SF_DEFAULT_CS,
+			CONFIG_SF_DEFAULT_SPEED, CONFIG_SF_DEFAULT_MODE);
 	if (!env_flash) {
 		set_default_env("!spi_flash_probe() failed");
 		if (buf)
@@ -307,7 +306,7 @@ void env_relocate_spec(void)
 	}
 
 	ret = spi_flash_read(env_flash,
-		CONFIG_ENV_OFFSET, CONFIG_ENV_SIZE, buf);
+		CONFIG_ENV_OFFSET, CONFIG_ENV_RANGE, buf);
 	if (ret) {
 		set_default_env("!spi_flash_read() failed");
 		goto out;
@@ -324,7 +323,7 @@ out:
 }
 #endif
 
-int env_init(void)
+int sf_env_init(void)
 {
 	/* SPI flash isn't usable before relocation */
 	gd->env_addr = (ulong)&default_environment[0];
