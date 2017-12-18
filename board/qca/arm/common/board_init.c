@@ -135,10 +135,11 @@ int board_init(void)
 		printf("BUG: unsupported flash type : %d\n", sfi->flash_type);
 		BUG();
 	}
-
 	if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
+#ifdef CONFIG_ENV_IS_IN_SPI_FLASH
 		saveenv = sf_saveenv;
 		env_name_spec = sf_env_name_spec;
+#endif
 #ifdef CONFIG_QCA_MMC
 	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
 		saveenv = mmc_saveenv;
