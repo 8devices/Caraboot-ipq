@@ -925,6 +925,7 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 			case FAL_SPEED_10:
 				if (i == aquantia_port) {
 					printf("10M speed not supported\n");
+					ppe_port_bridge_txmac_set(i + 1, status);
 					continue;
 				}
 				mac_speed = 0x0;
@@ -996,9 +997,9 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 		}
 		ipq807x_speed_clock_set(i, speed_clock1, speed_clock2);
 		if (i == aquantia_port)
-			ipq807x_uxsgmii_speed_set(i, mac_speed, duplex);
+			ipq807x_uxsgmii_speed_set(i, mac_speed, duplex, status);
 		else
-			ipq807x_pqsgmii_speed_set(i, mac_speed);
+			ipq807x_pqsgmii_speed_set(i, mac_speed, status);
 	}
 
 	if (linkup <= 0) {

@@ -124,8 +124,25 @@ void ipq807x_speed_clock_set(int port, int speed_clock1, int speed_clock2)
 	}
 }
 
-void ipq807x_pqsgmii_speed_set(int port, int speed)
+void ppe_port_bridge_txmac_set(int port_id, int status)
 {
+	uint32_t reg_value = 0;
+
+	ipq807x_ppe_reg_read(IPE_L2_BASE_ADDR + PORT_BRIDGE_CTRL_ADDRESS +
+		 (port_id * PORT_BRIDGE_CTRL_INC), &reg_value);
+	if (status == 0)
+		reg_value |= TX_MAC_EN;
+	else
+		reg_value &= ~TX_MAC_EN;
+
+	ipq807x_ppe_reg_write(IPE_L2_BASE_ADDR + PORT_BRIDGE_CTRL_ADDRESS +
+		 (port_id * PORT_BRIDGE_CTRL_INC), reg_value);
+
+}
+
+void ipq807x_pqsgmii_speed_set(int port, int speed, int status)
+{
+	ppe_port_bridge_txmac_set(port + 1, status);
 	ipq807x_ppe_reg_write(IPQ807X_PPE_MAC_SPEED + (0x200 * port), speed);
 	ipq807x_ppe_reg_write(IPQ807X_PPE_MAC_ENABLE + (0x200 * port), 0x73);
 }
@@ -165,17 +182,7 @@ void ppe_xgmac_speed_set(uint32_t uniphy_index, int speed)
 
 }
 
-void ppe_port_bridge_txmac_set(int port_id)
-{
-	uint32_t reg_value = 0;
 
-	ipq807x_ppe_reg_read(IPE_L2_BASE_ADDR + PORT_BRIDGE_CTRL_ADDRESS +
-		 (port_id * PORT_BRIDGE_CTRL_INC), &reg_value);
-	reg_value |= TX_MAC_EN;
-	ipq807x_ppe_reg_write(IPE_L2_BASE_ADDR + PORT_BRIDGE_CTRL_ADDRESS +
-		 (port_id * PORT_BRIDGE_CTRL_INC), reg_value);
-
-}
 
 void ppe_port_txmac_status_set(uint32_t uniphy_index)
 {
@@ -216,7 +223,7 @@ void ppe_mac_packet_filter_set(uint32_t uniphy_index)
 }
 
 void ipq807x_uxsgmii_speed_set(int port, int speed, int duplex,
-				int speed_clock1, int speed_clock2)
+				int status)
 {
 	uint32_t uniphy_index;
 
@@ -233,7 +240,7 @@ void ipq807x_uxsgmii_speed_set(int port, int speed, int duplex,
 	ppe_xgmac_speed_set(uniphy_index - 1, speed);
 	ppe_uniphy_usxgmii_duplex_set(uniphy_index, duplex);
 	ppe_uniphy_usxgmii_port_reset(uniphy_index);
-	ppe_port_bridge_txmac_set(port + 1);
+	ppe_port_bridge_txmac_set(port + 1, status);
 	ppe_port_txmac_status_set(uniphy_index - 1);
 	ppe_port_rxmac_status_set(uniphy_index - 1);
 	ppe_mac_packet_filter_set(uniphy_index - 1);
