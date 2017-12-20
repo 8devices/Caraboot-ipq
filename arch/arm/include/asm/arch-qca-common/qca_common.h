@@ -50,6 +50,8 @@ int qca_mmc_init(bd_t *, qca_mmc *);
 void board_mmc_deinit(void);
 
 void set_flash_secondary_type(qca_smem_flash_info_t *);
+void dump_func(void);
+int apps_iscrashed(void);
 
 struct dumpinfo_t{
 	char name[16]; /* use only file name in 8.3 format */

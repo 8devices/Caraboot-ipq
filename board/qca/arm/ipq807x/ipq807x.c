@@ -28,6 +28,7 @@
 #include <linux/linkage.h>
 #include <sdhci.h>
 
+#define DLOAD_MAGIC_COOKIE	0x10
 DECLARE_GLOBAL_DATA_PTR;
 
 #define GCNT_PSHOLD             0x004AB000
@@ -1023,4 +1024,14 @@ unsigned int get_smem_spi_addr_len(void)
 	}
 
 	return spi_flash_addr_len;
+}
+
+int apps_iscrashed(void)
+{
+	u32 *dmagic = (u32 *)0x193D100;
+
+	if (*dmagic == DLOAD_MAGIC_COOKIE)
+		return 1;
+
+	return 0;
 }

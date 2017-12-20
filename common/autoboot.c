@@ -14,6 +14,7 @@
 #include <menu.h>
 #include <post.h>
 #include <u-boot/sha256.h>
+#include <asm/arch-qca-common/qca_common.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -353,9 +354,26 @@ const char *bootdelay_process(void)
 	return s;
 }
 
+__weak int apps_iscrashed(void)
+{
+	return 0;
+}
+
 void autoboot_command(const char *s)
 {
 	debug("### main_loop: bootcmd=\"%s\"\n", s ? s : "<UNDEFINED>");
+
+#ifdef CONFIG_QCA_APPSBL_DLOAD
+	/*
+	 * If kernel has crashed in previous boot,
+	 * jump to crash dump collection.
+	 */
+	if (apps_iscrashed()) {
+		printf("Crashdump magic found, initializing dump activity..\n");
+		dump_func();
+		return;
+	}
+#endif
 
 	if (stored_bootdelay != -1 && s && !abortboot(stored_bootdelay)) {
 #if defined(CONFIG_AUTOBOOT_KEYED) && !defined(CONFIG_AUTOBOOT_KEYED_CTRLC)

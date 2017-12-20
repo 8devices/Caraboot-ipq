@@ -34,6 +34,7 @@
 #include "qca_common.h"
 #include "ipq_phy.h"
 
+#define DLOAD_MAGIC_COOKIE 0x10
 DECLARE_GLOBAL_DATA_PTR;
 
 qca_mmc mmc_host;
@@ -353,4 +354,14 @@ void fdt_fixup_auto_restart(void *blob)
 void set_flash_secondary_type(qca_smem_flash_info_t * smem)
 {
 	return;
+}
+
+int apps_iscrashed(void)
+{
+	u32 *dmagic = (u32 *)0x193D100;
+
+	if (*dmagic == DLOAD_MAGIC_COOKIE)
+		return 1;
+
+	return 0;
 }

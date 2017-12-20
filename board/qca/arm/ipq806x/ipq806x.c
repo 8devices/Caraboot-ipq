@@ -31,6 +31,9 @@
 #include "qca_common.h"
 #include <asm/arch-qca-common/scm.h>
 
+#define DLOAD_MAGIC_COOKIE_1 0xE47B337D
+#define DLOAD_MAGIC_COOKIE_2 0x0501CAB0
+
 ipq_gmac_board_cfg_t gmac_cfg[CONFIG_IPQ_NO_MACS];
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -151,11 +154,19 @@ unsigned long timer_read_counter(void)
 
 void reset_crashdump(void)
 {
+	unsigned long *dmagic1 = (unsigned long *) 0x2A03F000;
+	unsigned long *dmagic2 = (unsigned long *) 0x2A03F004;
+
+	*dmagic1 = 0;
+	*dmagic2 = 0;
+
 	return;
 }
 
 void reset_cpu(unsigned long a)
 {
+	reset_crashdump();
+
 	printf("\nResetting with watch dog!\n");
 
 	writel(0, APCS_WDT0_EN);
@@ -791,3 +802,15 @@ int ipq_board_usb_init(void)
 	return 0;
 }
 #endif /* CONFIG_USB_XHCI_IPQ */
+
+int apps_iscrashed(void)
+{
+	u32 *dmagic1 = (u32 *)0x2A03F000;
+	u32 *dmagic2 = (u32 *)0x2A03F004;
+
+	if (*dmagic1 == DLOAD_MAGIC_COOKIE_1
+	    && *dmagic2 == DLOAD_MAGIC_COOKIE_2)
+		return 1;
+
+	return 0;
+}
