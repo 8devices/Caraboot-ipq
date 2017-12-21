@@ -145,6 +145,7 @@ int board_mmc_init(bd_t *bis)
 	int ret = -ENODEV;
 	u32 *emmc_base;
 	int len;
+	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 
 	node = fdt_path_offset(gd->fdt_blob, "sdcc");
 
@@ -170,6 +171,9 @@ int board_mmc_init(bd_t *bis)
 		ret = qca_mmc_init(bis, &mmc_host);
 	}
 
+	if (!ret && sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
+		ret = board_mmc_env_init(mmc_host);
+	}
 out:
 	return ret;
 }
