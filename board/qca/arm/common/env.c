@@ -16,9 +16,12 @@
 #include <environment.h>
 
 extern void nand_env_relocate_spec(void);
-extern void sf_env_relocate_spec(void);
 extern int nand_env_init(void);
+
+#ifdef CONFIG_ENV_IS_IN_SPI_FLASH
+extern void sf_env_relocate_spec(void);
 extern int sf_env_init(void);
+#endif
 
 #ifdef CONFIG_QCA_MMC
 extern int mmc_env_init(void);
@@ -42,7 +45,9 @@ int env_init(void)
 			    &sfi.flash_density);
 
 	if (sfi.flash_type == SMEM_BOOT_SPI_FLASH) {
+#ifdef CONFIG_ENV_IS_IN_SPI_FLASH
 		ret = sf_env_init();
+#endif
 #ifdef CONFIG_QCA_MMC
 	} else if (sfi.flash_type == SMEM_BOOT_MMC_FLASH) {
 		ret = mmc_env_init();
@@ -66,8 +71,10 @@ void env_relocate_spec(void)
 
 	if (sfi.flash_type == SMEM_BOOT_NO_FLASH) {
 		set_default_env("!flashless boot");
+#ifdef CONFIG_ENV_IS_IN_SPI_FLASH
 	} else if (sfi.flash_type == SMEM_BOOT_SPI_FLASH) {
 		sf_env_relocate_spec();
+#endif
 #ifdef CONFIG_QCA_MMC
 	} else if (sfi.flash_type == SMEM_BOOT_MMC_FLASH) {
                 mmc_env_relocate_spec();
