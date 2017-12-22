@@ -22,7 +22,7 @@ __weak void arm_init_domains(void)
 {
 }
 
-static void cp_delay (void)
+void cp_delay (void)
 {
 	volatile int i;
 
@@ -84,7 +84,7 @@ __weak void dram_bank_mmu_setup(int bank)
 }
 
 /* to activate the MMU we need to set up virtual memory: use 1M areas */
-static inline void mmu_setup(void)
+void mmu_setup(void)
 {
 	int i;
 	u32 reg;
@@ -132,7 +132,7 @@ __weak void dram_bank_mmu_setup(int bank)
 }
 
 /* to activate the MMU we need to set up virtual memory: use 1M areas */
-static inline void mmu_setup(void)
+void mmu_setup(void)
 {
 	int i;
 	u32 reg;
@@ -176,7 +176,7 @@ static inline void mmu_setup(void)
 }
 #endif
 
-static int mmu_enabled(void)
+int mmu_enabled(void)
 {
 	return get_cr() & CR_M;
 }

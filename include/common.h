@@ -231,6 +231,11 @@ int run_command_repeatable(const char *cmd, int flag);
  */
 int run_command_list(const char *cmd, int len, int flag);
 
+extern void mmu_setup(void);
+extern int mmu_enabled(void);
+extern void cp_delay (void);
+void secondary_core_entry(char *argv, int *cmd_complete, int *cmd_result);
+
 /* arch/$(ARCH)/lib/board.c */
 void board_init_f(ulong);
 void board_init_r(gd_t *, ulong) __attribute__ ((noreturn));
