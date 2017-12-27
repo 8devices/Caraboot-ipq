@@ -957,6 +957,14 @@ int spi_flash_scan(struct spi_flash *flash)
 	}
 
 	if (!params->name) {
+#ifdef CONFIG_SPI_NAND
+		ret = spi_nand_flash_probe(spi, flash, idcode);
+
+		if (!ret) {
+			flash->addr_width = flash->size > 0x1000000 ? 4 : 3;
+			goto print_sf_info;
+		}
+#endif
 		printf("SF: Unsupported flash IDs: ");
 		printf("manuf %02x, jedec %04x, ext_jedec %04x\n",
 		       idcode[0], jedec, ext_jedec);
@@ -1120,6 +1128,7 @@ int spi_flash_scan(struct spi_flash *flash)
 	}
 #endif
 
+print_sf_info:
 #ifndef CONFIG_SPL_BUILD
 	printf("SF: Detected %s with page size ", flash->name);
 	print_size(flash->page_size, ", erase size ");

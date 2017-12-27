@@ -16,9 +16,10 @@
 #include <linux/mtd/nand.h>
 #include <spi_flash.h>
 #include <asm/errno.h>
-#include "spi_flash_internal.h"
 #include "spi_nand_dev.h"
 #include <malloc.h>
+#include "spi.h"
+#include <watchdog.h>
 
 #define CONFIG_SF_DEFAULT_SPEED		(48 * 1000 * 1000)
 #define TIMEOUT		5000
@@ -170,6 +171,41 @@ void winbond_norm_read_cmd(u8 *cmd, int column)
 	cmd[1] = (u8)(column >> 8);
 	cmd[2] = (u8)(column);
 	cmd[3] = 0;
+}
+
+int spi_nand_flash_cmd_poll_bit(struct spi_flash *flash, unsigned long timeout,
+				u8 cmd, u8 poll_bit, u8 *status)
+{
+	struct spi_slave *spi = flash->spi;
+	unsigned long timebase;
+	u8 cmd_buf[2];
+
+	cmd_buf[0] = 0x0F;
+	cmd_buf[1] = cmd;
+
+	timebase = get_timer(0);
+	do {
+		WATCHDOG_RESET();
+
+		spi_flash_cmd_read(spi, cmd_buf, 2, status, 1);
+		if ((*status & poll_bit) == 0)
+			break;
+
+	} while (get_timer(timebase) < timeout);
+
+	if ((*status & poll_bit) == 0)
+		return 0;
+
+	/* Timed out */
+	debug("SF: time out!\n");
+	return -1;
+}
+
+int spi_nand_flash_cmd_wait_ready(struct spi_flash *flash, u8 status_bit, u8 *status,
+					unsigned long timeout)
+{
+	return spi_nand_flash_cmd_poll_bit(flash, timeout,
+				0xC0, status_bit, status);
 }
 
 static int spinand_waitfunc(struct mtd_info *mtd, u8 val, u8 *status)
@@ -644,7 +680,7 @@ static int spi_nand_read(struct mtd_info *mtd, loff_t from, size_t len,
 	struct mtd_oob_ops ops = {0};
 	u32 ret;
 
-	ops.mode = MTD_OOB_AUTO;
+	ops.mode = MTD_OPS_AUTO_OOB;
 	ops.len = len;
 	ops.datbuf = (uint8_t *)buf;
 	ret = spi_nand_read_std(mtd, from, &ops);
@@ -748,6 +784,8 @@ static int spi_nand_write_std(struct mtd_info *mtd, loff_t to, struct mtd_oob_op
 		}
 		if (ops->ooblen)
 			ret = spi_nand_write_oob_data(mtd, to, ops);
+
+		ops->retlen += bytes;
 		write_len -= bytes;
 		if (!write_len)
 			break;
@@ -771,6 +809,7 @@ static int spi_nand_write(struct mtd_info *mtd, loff_t to, size_t len,
 	ops.len = len;
 	ops.datbuf = (uint8_t *)buf;
 	ret = spi_nand_write_std(mtd, to, &ops);
+	*retlen = ops.retlen;
 
 	return ret;
 }
@@ -789,10 +828,9 @@ static int spi_nand_write_oob(struct mtd_info *mtd, loff_t to,
 	return ret;
 }
 
-struct spi_flash *spi_nand_flash_probe(struct spi_slave *spi,
-                                                u8 *idcode)
+int spi_nand_flash_probe(struct spi_slave *spi, struct spi_flash *flash,
+							u8 *idcode)
 {
-	struct spi_flash *flash;
 	unsigned int i;
 
 	for (i = 0; i < ARRAY_SIZE(spi_nand_flash_tbl); i++) {
@@ -809,25 +847,16 @@ struct spi_flash *spi_nand_flash_probe(struct spi_slave *spi,
 	}
 
 	if (i == ARRAY_SIZE(spi_nand_flash_tbl)) {
-		printf("SF NAND unsupported id:%x:%x:%x:%x",
-			idcode[0], idcode[1], idcode[2], idcode[3]);
-		return NULL;
+		return -EINVAL;
 	}
-
-	flash = (struct spi_flash *)malloc(sizeof (*flash));
-	if (!flash) {
-		printf ("SF Failed to allocate memeory\n");
-		return NULL;
-	}
-
-	flash->spi = spi;
 
 	flash->name = params->name;
 	flash->page_size = params->page_size;
 	flash->sector_size = params->page_size;
+	flash->erase_size = params->erase_size;
 	flash->size = (params->page_size * params->nr_sectors * params->pages_per_sector);
 
-	return flash;
+	return 0;
 }
 
 static int spinand_unlock_protect(struct mtd_info *mtd)
@@ -962,20 +991,19 @@ int spi_nand_init(void)
 
 	mtd->priv = chip;
 	mtd->writesize = flash->page_size;
+	mtd->writebufsize = mtd->writesize;
 	mtd->erasesize = params->erase_size;
 	mtd->oobsize = params->oob_size;
 	mtd->size = flash->size;
 	mtd->type = MTD_NANDFLASH;
 	mtd->flags = MTD_CAP_NANDFLASH;
-	mtd->point = NULL;
-	mtd->unpoint = NULL;
-	mtd->read = spi_nand_read;
-	mtd->write = spi_nand_write;
-	mtd->erase = spi_nand_erase;
-	mtd->read_oob = spi_nand_read_oob;
-	mtd->write_oob = spi_nand_write_oob;
-	mtd->block_isbad = spi_nand_block_isbad;
-	mtd->block_markbad = spi_nand_block_markbad;
+	mtd->_read = spi_nand_read;
+	mtd->_write = spi_nand_write;
+	mtd->_erase = spi_nand_erase;
+	mtd->_read_oob = spi_nand_read_oob;
+	mtd->_write_oob = spi_nand_write_oob;
+	mtd->_block_isbad = spi_nand_block_isbad;
+	mtd->_block_markbad = spi_nand_block_markbad;
 
 	chip->page_shift = ffs(mtd->writesize) - 1;
 	chip->phys_erase_shift = ffs(mtd->erasesize) - 1;
