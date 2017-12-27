@@ -141,6 +141,40 @@ static inline int gmac_cfg_is_valid(ipq_gmac_board_cfg_t *cfg)
 
 __weak void aquantia_phy_reset(void) {}
 
+struct smem_ram_ptn {
+	char name[16];
+	unsigned start;
+	unsigned size;
+
+	/* RAM Partition attribute: READ_ONLY, READWRITE etc.  */
+	unsigned attr;
+
+	/* RAM Partition category: EBI0, EBI1, IRAM, IMEM */
+	unsigned category;
+
+	/* RAM Partition domain: APPS, MODEM, APPS & MODEM (SHARED) etc. */
+	unsigned domain;
+
+	/* RAM Partition type: system, bootloader, appsboot, apps etc. */
+	unsigned type;
+
+	/* reserved for future expansion without changing version number */
+	unsigned reserved2, reserved3, reserved4, reserved5;
+} __attribute__ ((__packed__));
+
+struct smem_ram_ptable {
+#define _SMEM_RAM_PTABLE_MAGIC_1 0x9DA5E0A8
+#define _SMEM_RAM_PTABLE_MAGIC_2 0xAF9EC4E2
+	unsigned magic[2];
+	unsigned version;
+	unsigned reserved1;
+	unsigned len;
+	struct smem_ram_ptn parts[32];
+	unsigned buf;
+} __attribute__ ((__packed__));
+
+int smem_ram_ptable_init(struct smem_ram_ptable *smem_ram_ptable);
+
 typedef enum {
 	SMEM_SPINLOCK_ARRAY = 7,
 	SMEM_AARM_PARTITION_TABLE = 9,

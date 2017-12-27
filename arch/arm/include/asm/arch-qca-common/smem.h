@@ -48,37 +48,6 @@ struct version_entry
 	char oem_version_string[OEM_VERSION_STRING_LENGTH];
 } __attribute__ ((__packed__));
 
-struct smem_ram_ptn {
-	char name[16];
-	unsigned long long start;
-	unsigned long long size;
-
-	/* RAM Partition attribute: READ_ONLY, READWRITE etc.  */
-	unsigned attr;
-
-	/* RAM Partition category: EBI0, EBI1, IRAM, IMEM */
-	unsigned category;
-
-	/* RAM Partition domain: APPS, MODEM, APPS & MODEM (SHARED) etc. */
-	unsigned domain;
-
-	/* RAM Partition type: system, bootloader, appsboot, apps etc. */
-	unsigned type;
-
-	/* reserved for future expansion without changing version number */
-	unsigned reserved2, reserved3, reserved4, reserved5;
-} __attribute__ ((__packed__));
-
-struct smem_ram_ptable {
-#define _SMEM_RAM_PTABLE_MAGIC_1 0x9DA5E0A8
-#define _SMEM_RAM_PTABLE_MAGIC_2 0xAF9EC4E2
-	unsigned magic[2];
-	unsigned version;
-	unsigned reserved1;
-	unsigned len;
-	unsigned buf;
-	struct smem_ram_ptn parts[32];
-} __attribute__ ((__packed__));
 
 unsigned int smem_get_board_platform_type(void);
 int smem_ptable_init(void);
@@ -91,7 +60,6 @@ int smem_getpart(char *name, uint32_t *start, uint32_t *size);
 unsigned int smem_get_board_machtype(void);
 uint32_t get_nand_block_size(uint8_t dev_id);
 unsigned int get_which_flash_param(char *part_name);
-int smem_ram_ptable_init(struct smem_ram_ptable *smem_ram_ptable);
 int smem_get_build_version(char *version_name, int buf_size, int index);
 
 typedef struct {
