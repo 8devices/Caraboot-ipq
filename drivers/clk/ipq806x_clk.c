@@ -54,7 +54,7 @@ void uart_pll_vote_clk_enable(void)
 
 	while((readl(PLL_LOCK_DET_STATUS_REG) & BIT(8)) == 0);
 }
-#ifdef CONFIG_IPQ806X_USB
+#ifdef CONFIG_USB_XHCI_IPQ
 /**
  * usb_pll_vote_clk_enable - enables PLL8
  */
@@ -82,7 +82,7 @@ static void uart_set_rate_mnd(unsigned int gsbi_port, unsigned int m,
 	clrbits_le32(GSBIn_UART_APPS_NS_REG(gsbi_port), BIT(7));
 }
 
-#ifdef CONFIG_IPQ806X_USB
+#ifdef CONFIG_USB_XHCI_IPQ
 /**
  * usb_set_rate_mnd - configures divider M and D values
  *
@@ -121,7 +121,7 @@ static void uart_branch_clk_enable_reg(unsigned int gsbi_port)
 	setbits_le32(GSBIn_UART_APPS_NS_REG(gsbi_port), BIT(9));
 }
 
-#ifdef CONFIG_IPQ806X_USB
+#ifdef CONFIG_USB_XHCI_IPQ
 /**
  * usb_local_clock_enable - configures N value and enables root clocks
  *
@@ -280,7 +280,7 @@ static void uart_set_gsbi_clk(unsigned int gsbi_port)
 	setbits_le32(GSBIn_HCLK_CTL_REG(gsbi_port), BIT(4));
 }
 
-#ifdef CONFIG_IPQ806X_USB
+#ifdef CONFIG_USB_XHCI_IPQ
 /**
  *
  * USB_clock_config - configures USB3.0 clocks

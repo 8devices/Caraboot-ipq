@@ -453,6 +453,20 @@
 		perst_gpio = <63>;
 	};
 
+	xhci@11000000 {
+		compatible = "qca,dwc3-ipq";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0x11000000 0xcd00>;
+	};
+
+	xhci@10000000 {
+		compatible = "qca,dwc3-ipq";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0x10000000 0xcd00>;
+	};
+
 	spi {
 		spi0 {
 			mosi_miso_clk {

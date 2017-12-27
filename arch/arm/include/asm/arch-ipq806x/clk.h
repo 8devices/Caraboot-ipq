@@ -113,6 +113,23 @@ typedef struct {
         unsigned int parf_phy_refclk;
 } pci_clk_offset_t;
 
+#define USB30_MASTER_CLK_CTL				REG(0x3B24)
+#define USB30_MASTER_1_CLK_CTL				REG(0x3B34)
+#define USB30_MASTER_CLK_MD				REG(0x3B28)
+#define USB30_MASTER_CLK_NS				REG(0x3B2C)
+#define USB30_MOC_UTMI_CLK_MD				REG(0x3B40)
+#define USB30_MOC_UTMI_CLK_NS				REG(0x3B44)
+#define USB30_MOC_UTMI_CLK_CTL				REG(0x3B48)
+#define USB30_MOC_1_UTMI_CLK_CTL			REG(0x3B4C)
+
+#define USB_clk_ns_mask  (BM(BIT_POS_23, BIT_POS_16) | BM(BIT_POS_6, BIT_POS_0))
+#define USB_en_mask  BIT(11)
+
+void usb_ss_core_clock_config(unsigned int usb_port, unsigned int m,
+		unsigned int n, unsigned int d);
+void usb_ss_utmi_clock_config(unsigned int usb_port, unsigned int m,
+		unsigned int n, unsigned int d);
+
 void i2c_clock_config(void);
 
 /* Uart specific clock settings */
