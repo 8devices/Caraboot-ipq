@@ -223,9 +223,9 @@ static int sdhci_transfer_data(struct sdhci_host *host, struct mmc_data *data,
  * in board config file.
  */
 #ifndef CONFIG_SDHCI_CMD_MAX_TIMEOUT
-#define CONFIG_SDHCI_CMD_MAX_TIMEOUT		3200
+#define CONFIG_SDHCI_CMD_MAX_TIMEOUT		5000
 #endif
-#define CONFIG_SDHCI_CMD_DEFAULT_TIMEOUT	200
+#define CONFIG_SDHCI_CMD_DEFAULT_TIMEOUT	1000
 
 static int sdhci_send_command(struct mmc *mmc, struct mmc_cmd *cmd,
 		       struct mmc_data *data)
@@ -341,16 +341,27 @@ static int sdhci_send_command(struct mmc *mmc, struct mmc_cmd *cmd,
 	flush_cache(start_addr, trans_bytes);
 #endif
 	udelay(5);
+	cmd_timeout = CONFIG_SDHCI_CMD_DEFAULT_TIMEOUT;
 	sdhci_writew(host, SDHCI_MAKE_CMD(cmd->cmdidx, flags), SDHCI_COMMAND);
 	start = get_timer(0);
 	do {
 		stat = sdhci_readl(host, SDHCI_INT_STATUS);
 		if (stat & SDHCI_INT_ERROR)
 			break;
-	} while (((stat & mask) != mask) &&
-		 (get_timer(start) < CONFIG_SDHCI_CMD_DEFAULT_TIMEOUT));
+		if (get_timer(start) > cmd_timeout) {
+			if (2 * cmd_timeout <= CONFIG_SDHCI_CMD_MAX_TIMEOUT) {
+			cmd_timeout += cmd_timeout;
+			printf("%s: MMC: %d busy "
+				"timeout increasing to: %u ms.\n",
+				__func__, mmc_dev, cmd_timeout);
+			} else {
+				printf("timeout.\n");
+				return TIMEOUT;
+			}
+		}
+	} while ((stat & mask) != mask);
 
-	if (get_timer(start) >= CONFIG_SDHCI_CMD_DEFAULT_TIMEOUT) {
+	if (get_timer(start) >= CONFIG_SDHCI_CMD_MAX_TIMEOUT) {
 		if (host->quirks & SDHCI_QUIRK_BROKEN_R1B)
 			return 0;
 		else {
