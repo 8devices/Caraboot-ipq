@@ -13,9 +13,10 @@
 
 #include "ipq40xx-soc.dtsi"
 #include <dt-bindings/qcom/gpio-ipq40xx.h>
+#include "nand_gpio.dtsi"
 / {
-	model ="QCA, IPQ40xx-DK04";
-	compatible = "qca,ipq40xx", "qca,ipq40xx-dk04";
+	model ="QCA, IPQ40xx-DK07";
+	compatible = "qca,ipq40xx", "qca,ipq40xx-dk07";
 
 	aliases {
 		console = "/serial@78af000";
@@ -39,55 +40,6 @@
 				func = <1>;
 				pull = <GPIO_NO_PULL>;
 				oe = <GPIO_OE_ENABLE>;
-			};
-		};
-	};
-
-	spi {
-		status = "ok";
-		spi_gpio {
-			gpio1 {
-				gpio = <12>;
-				func = <1>;
-				pull = <GPIO_PULL_UP>;
-				drvstr = <GPIO_2MA>;
-				oe = <GPIO_OE_DISABLE>;
-				vm = <GPIO_VM_ENABLE>;
-				od_en = <GPIO_OD_DISABLE>;
-				pu_res = <GPIO_PULL_RES2>;
-			};
-
-			gpio2 {
-				gpio = <13>;
-				func = <1>;
-				pull = <GPIO_PULL_UP>;
-				drvstr = <GPIO_2MA>;
-				oe = <GPIO_OE_DISABLE>;
-				vm = <GPIO_VM_ENABLE>;
-				od_en = <GPIO_OD_DISABLE>;
-				pu_res = <GPIO_PULL_RES2>;
-			};
-
-			gpio3 {
-				gpio = <14>;
-				func = <1>;
-				pull = <GPIO_PULL_UP>;
-				drvstr = <GPIO_2MA>;
-				oe = <GPIO_OE_DISABLE>;
-				vm = <GPIO_VM_ENABLE>;
-				od_en = <GPIO_OD_DISABLE>;
-				pu_res = <GPIO_PULL_RES2>;
-			};
-
-			gpio4 {
-				gpio = <15>;
-				func = <1>;
-				pull = <GPIO_PULL_UP>;
-				drvstr = <GPIO_2MA>;
-				oe = <GPIO_OE_DISABLE>;
-				vm = <GPIO_VM_ENABLE>;
-				od_en = <GPIO_OD_DISABLE>;
-				pu_res = <GPIO_PULL_RES2>;
 			};
 		};
 	};
@@ -159,50 +111,6 @@
 				od_en = <GPIO_OD_DISABLE>;
 				pu_res = <GPIO_PULL_RES2>;
 			};
-
-			gpio7 {
-				gpio = <29>;
-				func = <1>;
-				pull = <GPIO_PULL_UP>;
-				drvstr = <GPIO_10MA>;
-				oe = <GPIO_OE_DISABLE>;
-				vm = <GPIO_VM_ENABLE>;
-				od_en = <GPIO_OD_DISABLE>;
-				pu_res = <GPIO_PULL_RES2>;
-			};
-
-			gpio8 {
-				gpio = <30>;
-				func = <1>;
-				pull = <GPIO_PULL_UP>;
-				drvstr = <GPIO_10MA>;
-				oe = <GPIO_OE_DISABLE>;
-				vm = <GPIO_VM_ENABLE>;
-				od_en = <GPIO_OD_DISABLE>;
-				pu_res = <GPIO_PULL_RES2>;
-			};
-
-			gpio9 {
-				gpio = <31>;
-				func = <1>;
-				pull = <GPIO_PULL_UP>;
-				drvstr = <GPIO_10MA>;
-				oe = <GPIO_OE_DISABLE>;
-				vm = <GPIO_VM_ENABLE>;
-				od_en = <GPIO_OD_DISABLE>;
-				pu_res = <GPIO_PULL_RES2>;
-			};
-
-			gpio10 {
-				gpio = <32>;
-				func = <1>;
-				pull = <GPIO_NO_PULL>;
-				drvstr = <GPIO_10MA>;
-				oe = <GPIO_OE_DISABLE>;
-				vm = <GPIO_VM_ENABLE>;
-				od_en = <GPIO_OD_DISABLE>;
-				pu_res = <GPIO_PULL_RES2>;
-			};
 		};
 	};
 
@@ -232,6 +140,55 @@
 		};
 	};
 
+	ess-switch@c000000{
+		sw_gpio {
+			gpio1 {
+				gpio = <6>;
+				func = <1>;
+				pull = <GPIO_PULL_UP>;
+				drvstr = <GPIO_2MA>;
+				oe = <GPIO_OE_DISABLE>;
+				vm = <GPIO_VM_ENABLE>;
+				od_en = <GPIO_OD_DISABLE>;
+				pu_res = <GPIO_PULL_RES2>;
+			};
+
+			gpio2 {
+				gpio = <7>;
+				func = <1>;
+				pull = <GPIO_PULL_UP>;
+				drvstr = <GPIO_2MA>;
+				oe = <GPIO_OE_DISABLE>;
+				vm = <GPIO_VM_ENABLE>;
+				od_en = <GPIO_OD_DISABLE>;
+				pu_res = <GPIO_PULL_RES2>;
+			};
+
+			gpio3 {
+				gpio = <41>;
+				func = <0>;
+				pull = <GPIO_PULL_DOWN>;
+				drvstr = <GPIO_2MA>;
+				oe = <GPIO_OE_ENABLE>;
+				vm = <GPIO_VM_ENABLE>;
+				od_en = <GPIO_OD_DISABLE>;
+				pu_res = <GPIO_PULL_RES2>;
+			};
+
+			gpio4 {
+				/* overriding the default configuration of gpio52 */
+				gpio = <52>;
+				func = <0>;
+				pull = <GPIO_PULL_UP>;
+				drvstr = <GPIO_2MA>;
+				oe = <GPIO_OE_DISABLE>;
+				vm = <GPIO_VM_ENABLE>;
+				od_en = <GPIO_OD_DISABLE>;
+				pu_res = <GPIO_PULL_RES2>;
+			};
+		};
+	};
+
 	pci@40000000 {
 		status = "ok";
 		pci_gpio {
@@ -258,55 +215,6 @@
 				od_en = <GPIO_OD_DISABLE>;
 				pu_res = <GPIO_PULL_RES2>;
 			};
-
-			gpio3 {
-				gpio = <39>;
-				func = <0>;
-				out = <GPIO_OUT_HIGH>;
-				pull = <GPIO_PULL_UP>;
-				drvstr = <GPIO_2MA>;
-				oe = <GPIO_OE_ENABLE>;
-				vm = <GPIO_VM_ENABLE>;
-				od_en = <GPIO_OD_DISABLE>;
-				pu_res = <GPIO_PULL_RES2>;
-			};
-		};
-	};
-	ess-switch@c000000{
-		sw_gpio {
-			gpio1 {
-				gpio = <6>;
-				func = <1>;
-				pull = <GPIO_PULL_UP>;
-				drvstr = <GPIO_2MA>;
-				oe = <GPIO_OE_DISABLE>;
-				vm = <GPIO_VM_ENABLE>;
-				od_en = <GPIO_OD_DISABLE>;
-				pu_res = <GPIO_PULL_RES2>;
-			};
-
-			gpio2 {
-				gpio = <7>;
-				func = <1>;
-				pull = <GPIO_PULL_UP>;
-				drvstr = <GPIO_2MA>;
-				oe = <GPIO_OE_DISABLE>;
-				vm = <GPIO_VM_ENABLE>;
-				od_en = <GPIO_OD_DISABLE>;
-				pu_res = <GPIO_PULL_RES2>;
-			};
-
-			gpio3 {
-				gpio = <47>;
-				func = <0>;
-				pull = <GPIO_PULL_DOWN>;
-				drvstr = <GPIO_2MA>;
-				oe = <GPIO_OE_ENABLE>;
-				vm = <GPIO_VM_ENABLE>;
-				od_en = <GPIO_OD_DISABLE>;
-				pu_res = <GPIO_PULL_RES2>;
-			};
 		};
 	};
 };
-

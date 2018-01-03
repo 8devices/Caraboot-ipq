@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -13,35 +13,15 @@
 
 /dts-v1/;
 #include "ipq40xx-dk04.dtsi"
-#include "nand_gpio.dtsi"
 / {
-	machid = <0x8010001>;
+	machid = <0x8010101>;
 	ddr_size = <256>;
-	config_name = "config@ap.dk04.1-c1";
+	config_name = "config@ap.dk04.1-c2";
 
 	aliases {
 		uart2 = "/serial@78b0000";
 	};
 
-	nand@79B0000 {
-		status = "ok";
-		nand_gpio {
-			gpio18 {
-				gpio = <61>;
-				func = <1>;
-				pull = <GPIO_PULL_DOWN>;
-				drvstr = <GPIO_2MA>;
-				oe = <GPIO_OE_DISABLE>;
-				vm = <GPIO_VM_ENABLE>;
-				od_en = <GPIO_OD_DISABLE>;
-				pu_res = <GPIO_PULL_RES2>;
-			};
-		};
-	};
-
-	sdhci@7824000 {
-		status = "ok";
-	};
 	serial@78b0000 {
 		status = "ok";
 		serial_gpio {
@@ -57,6 +37,20 @@
 				func = <1>;
 				pull = <GPIO_NO_PULL>;
 				oe = <GPIO_OE_ENABLE>;
+			};
+		};
+	};
+	ess-switch@c000000{
+		sw_gpio {
+			gpio3 {
+				gpio = <67>;
+				func = <0>;
+				pull = <GPIO_PULL_DOWN>;
+				drvstr = <GPIO_2MA>;
+				oe = <GPIO_OE_ENABLE>;
+				vm = <GPIO_VM_ENABLE>;
+				od_en = <GPIO_OD_DISABLE>;
+				pu_res = <GPIO_PULL_RES2>;
 			};
 		};
 	};
