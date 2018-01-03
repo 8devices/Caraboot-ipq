@@ -36,6 +36,12 @@
 #include <asm/arch-qca-common/bam.h>
 #include "qca_qup_spi_bam.h"
 
+DECLARE_GLOBAL_DATA_PTR;
+
+static unsigned int read_pipe[NO_OF_QUPS];
+static unsigned int write_pipe[NO_OF_QUPS];
+static unsigned char qup_pipe_initialized = 0;
+
 static int check_bit_state(uint32_t reg_addr, int bit_num, int val,
 							int us_delay)
 {
@@ -161,37 +167,58 @@ void spi_init()
 	/* do nothing */
 }
 
+static void qup_pipe_init()
+{
+	char rd_pipe_name[10], wr_pipe_name[10];
+	int node,i;
+
+	qup_pipe_initialized = 1;
+	node = fdt_path_offset(gd->fdt_blob, "/spi");
+	if (node >= 0) {
+		for(i = 0; i < NO_OF_QUPS; i++) {
+
+		        snprintf(rd_pipe_name, sizeof(rd_pipe_name),
+				"rd_pipe_%01d", i);
+
+		        snprintf(wr_pipe_name, sizeof(wr_pipe_name),
+				"wr_pipe_%01d", i);
+
+			read_pipe[i] = fdtdec_get_uint(gd->fdt_blob,
+					node, rd_pipe_name, 0);
+			write_pipe[i] = fdtdec_get_uint(gd->fdt_blob,
+					node, wr_pipe_name, 0);
+		}
+	}
+}
+
 int qup_bam_init(struct ipq_spi_slave *ds)
 {
-	unsigned int read_pipe = QUP0_DATA_PRODUCER_PIPE;
-	unsigned int write_pipe = QUP0_DATA_CONSUMER_PIPE;
 	uint8_t read_pipe_grp = QUP0_DATA_PRODUCER_PIPE_GRP;
 	uint8_t write_pipe_grp = QUP0_DATA_CONSUMER_PIPE_GRP;
 	int bam_ret;
 
+	if (!qup_pipe_initialized)
+		qup_pipe_init();
+
 	/* Pipe numbers based on the QUP index */
 	if (ds->slave.bus == BLSP0_SPI) {
-		read_pipe = QUP0_DATA_PRODUCER_PIPE;
-		write_pipe = QUP0_DATA_CONSUMER_PIPE;
 		read_pipe_grp = QUP0_DATA_PRODUCER_PIPE_GRP;
 		write_pipe_grp = QUP0_DATA_CONSUMER_PIPE_GRP;
 	} else if (ds->slave.bus == BLSP1_SPI) {
-		read_pipe = QUP1_DATA_PRODUCER_PIPE;
-		write_pipe = QUP1_DATA_CONSUMER_PIPE;
 		read_pipe_grp = QUP1_DATA_PRODUCER_PIPE_GRP;
 		write_pipe_grp = QUP1_DATA_CONSUMER_PIPE_GRP;
 	}
 
 	bam.base = BLSP0_BAM_BASE;
 	/* Set Read Pipe Params */
-	bam.pipe[DATA_PRODUCER_PIPE_INDEX].pipe_num = read_pipe;
+	bam.pipe[DATA_PRODUCER_PIPE_INDEX].pipe_num = read_pipe[ds->slave.bus];
 	bam.pipe[DATA_PRODUCER_PIPE_INDEX].trans_type = BAM2SYS;
 	bam.pipe[DATA_PRODUCER_PIPE_INDEX].fifo.size = QUP_BAM_DATA_FIFO_SIZE;
 	bam.pipe[DATA_PRODUCER_PIPE_INDEX].fifo.head = qup_spi_data_desc_fifo;
 	bam.pipe[DATA_PRODUCER_PIPE_INDEX].lock_grp = read_pipe_grp;
 
 	/* Set Write pipe params. */
-	bam.pipe[DATA_CONSUMER_PIPE_INDEX].pipe_num = write_pipe;
+	bam.pipe[DATA_CONSUMER_PIPE_INDEX].pipe_num = write_pipe[ds->slave.bus];
 	bam.pipe[DATA_CONSUMER_PIPE_INDEX].trans_type = SYS2BAM;
 	bam.pipe[DATA_CONSUMER_PIPE_INDEX].fifo.size = QUP_BAM_DATA_FIFO_SIZE;
 	bam.pipe[DATA_CONSUMER_PIPE_INDEX].fifo.head = qup_spi_data_desc_fifo;
