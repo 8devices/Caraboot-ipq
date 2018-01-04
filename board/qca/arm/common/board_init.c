@@ -157,6 +157,8 @@ int board_init(void)
 		printf("WARN: ipq_board_usb_init failed\n");
 	}
 
+	aquantia_phy_reset_init();
+
 	return 0;
 }
 

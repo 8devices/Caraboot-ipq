@@ -73,6 +73,17 @@ int gpio_get_value(unsigned int gpio)
 	return (val & 1);
 }
 
+void gpio_direction_output(unsigned int gpio, unsigned int out)
+{
+	unsigned int *addr = (unsigned int *)GPIO_CONFIG_ADDR(gpio);
+	unsigned int val = 0;
+
+	gpio_set_value(gpio, out);
+	val = readl(addr);
+	val |= 1 << 9;
+	writel(val, addr);
+}
+
 int qca_gpio_init(int offset)
 {
 	struct qca_gpio_config gpio_config;

@@ -288,7 +288,20 @@ void emmc_sdhci_init(void)
 	writel(readl(MSM_SDC1_MCI_HC_MODE) | (0x1), MSM_SDC1_MCI_HC_MODE);
 }
 
-void aquantia_phy_reset(void)
+int get_aquantia_gpio()
+{
+	int aquantia_gpio = -1, node;
+
+	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
+	if (node >= 0)
+		aquantia_gpio = fdtdec_get_uint(gd->fdt_blob, node, "aquantia_gpio", -1);
+	else
+		return node;
+
+	return aquantia_gpio;
+}
+
+void aquantia_phy_reset_init(void)
 {
 	int aquantia_gpio = -1, node;
 	unsigned int *aquantia_gpio_base;
@@ -301,14 +314,22 @@ void aquantia_phy_reset(void)
 		if (aquantia_gpio >=0) {
 			aquantia_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(aquantia_gpio);
 			writel(0x203, aquantia_gpio_base);
-			gpio_set_value(aquantia_gpio, 0x0);
-			mdelay(500);
-			gpio_set_value(aquantia_gpio, 0x1);
-			mdelay(500);
+			gpio_direction_output(aquantia_gpio, 0x0);
 		}
 		aq_phy_initialised = 1;
 	}
 }
+
+void aquantia_phy_reset_init_done(void)
+{
+	int aquantia_gpio;
+
+	aquantia_gpio = get_aquantia_gpio();
+	if (aquantia_gpio >= 0) {
+		gpio_set_value(aquantia_gpio, 0x1);
+	}
+}
+
 void eth_clock_enable(void)
 {
 	int tlmm_base = 0x1025000;
@@ -372,7 +393,10 @@ void eth_clock_enable(void)
 	writel(2, tlmm_base + 0x4);
 	writel(7, tlmm_base + 0x1f000);
 	writel(7, tlmm_base + 0x20000);
-	aquantia_phy_reset();
+	aquantia_phy_reset_init();
+	mdelay(500);
+	aquantia_phy_reset_init_done();
+	mdelay(500);
 }
 
 int board_eth_init(bd_t *bis)
