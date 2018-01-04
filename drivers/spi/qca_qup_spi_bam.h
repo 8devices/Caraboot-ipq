@@ -121,6 +121,7 @@
 #define SLAVE_OPERATION				(0 << 5)
 #define CLK_ALWAYS_ON				(0 << 9)
 #define MX_CS_MODE					(1 << 8)
+#define CS_POLARITY_MASK			(1 << 4)
 #define NO_TRI_STATE				(1 << 0)
 #define FORCE_CS_MSK				(1 << 11)
 #define FORCE_CS_EN					(1 << 11)
@@ -297,5 +298,7 @@ static inline struct ipq_spi_slave *to_ipq_spi(struct spi_slave *slave)
 static struct bam_instance bam;
 struct bam_desc qup_spi_data_desc_fifo[QUP_BAM_DATA_FIFO_SIZE] __attribute__ ((aligned(BAM_DESC_SIZE)));
 
+#define CS_ASSERT				1
+#define CS_DEASSERT				0
 #endif /* _IPQ_SPI_BAM_H_ */
 

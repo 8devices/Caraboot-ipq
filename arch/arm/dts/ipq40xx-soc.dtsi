@@ -12,7 +12,7 @@
  */
 
 #include "skeleton.dtsi"
-
+#include <dt-bindings/qcom/gpio-ipq40xx.h>
 / {
 	serial@78af000 {
 		compatible = "qca,ipq-uartdm";
@@ -46,6 +46,24 @@
 		rd_pipe_0 = <5>;
 		wr_pipe_1 = <6>;
 		rd_pipe_1 = <7>;
+
+		spi0 {
+			cs0 {
+				gpio54_CS {
+					gpio = <54>;
+					func = <0>;
+					out = <GPIO_OUTPUT>;
+					pull = <GPIO_PULL_UP>;
+					drvstr = <GPIO_10MA>;
+					oe = <GPIO_OE_ENABLE>;
+					vm = <GPIO_VM_DISABLE>;
+					od_en = <GPIO_OD_DISABLE>;
+					pu_res = <GPIO_PULL_RES0>;
+
+				};
+			};
+		};
+
 	};
 
 	nand@79B0000 {
