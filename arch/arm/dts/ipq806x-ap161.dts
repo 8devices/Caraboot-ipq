@@ -23,6 +23,7 @@
 		console = "/serial@16340000";
 		nand = "/nand@1A600000";
 		gmac_gpio = "/gmac1_gpio";
+		i2c0 = "/i2c@16380000";
 		pci0 = "/pci@1b500000";
 		pci1 = "/pci@1b700000";
 		pci2 = "/pci@1b900000";
