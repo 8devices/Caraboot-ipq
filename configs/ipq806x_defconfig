@@ -16,6 +16,7 @@ CONFIG_FIT_VERBOSE=y
 # CONFIG_FIT_SIGNATURE is not set
 CONFIG_SYS_EXTRA_OPTIONS=""
 CONFIG_SYS_PROMPT="IPQ806x# "
+# CONFIG_CMD_ELF is not set
 
 #
 # Commands
@@ -24,8 +25,8 @@ CONFIG_SYS_PROMPT="IPQ806x# "
 #
 # Info commands
 #
-CONFIG_CMD_BDI=y
-CONFIG_CMD_CONSOLE=y
+# CONFIG_CMD_BDI is not set
+# CONFIG_CMD_CONSOLE is not set
 
 #
 # Boot commands
@@ -41,9 +42,9 @@ CONFIG_CMD_GO=y
 #
 # Environment commands
 #
-CONFIG_CMD_EXPORTENV=y
-CONFIG_CMD_IMPORTENV=y
-CONFIG_CMD_EDITENV=y
+# CONFIG_CMD_EXPORTENV is not set
+# CONFIG_CMD_IMPORTENV is not set
+# CONFIG_CMD_EDITENV is not set
 CONFIG_CMD_SAVEENV=y
 CONFIG_CMD_ENV_EXISTS=y
 
@@ -59,25 +60,25 @@ CONFIG_CMD_MEMTEST=y
 #
 # Device access commands
 #
-CONFIG_CMD_DM=y
+# CONFIG_CMD_DM is not set
 # CONFIG_CMD_DEMO is not set
-CONFIG_CMD_LOADB=y
-CONFIG_CMD_LOADS=y
-CONFIG_CMD_FLASH=y
+# CONFIG_CMD_LOADB is not set
+# CONFIG_CMD_LOADS is not set
+# CONFIG_CMD_FLASH is not set
 # CONFIG_CMD_NAND is not set
 # CONFIG_CMD_SF is not set
 # CONFIG_CMD_SPI is not set
 # CONFIG_CMD_I2C is not set
 # CONFIG_CMD_USB is not set
-CONFIG_CMD_FPGA=y
+# CONFIG_CMD_FPGA is not set
 
 #
 # Shell scripting commands
 #
 CONFIG_CMD_ECHO=y
-CONFIG_CMD_ITEST=y
+# CONFIG_CMD_ITEST is not set
 CONFIG_CMD_SOURCE=y
-CONFIG_CMD_SETEXPR=y
+# CONFIG_CMD_SETEXPR is not set
 
 #
 # Network commands
@@ -276,7 +277,7 @@ CONFIG_HAVE_PRIVATE_LIBGCC=y
 # CONFIG_USE_PRIVATE_LIBGCC is not set
 CONFIG_SYS_HZ=1000
 # CONFIG_SYS_VSNPRINTF is not set
-CONFIG_REGEX=y
+# CONFIG_REGEX is not set
 # CONFIG_LIB_RAND is not set
 # CONFIG_CMD_DHRYSTONE is not set
 # CONFIG_RSA is not set
