@@ -880,6 +880,8 @@ class Pack(object):
                 section_conf = "u-boot"
             elif section_conf == "rootfs" and (self.flash_type == "nand" or self.flash_type == "norplusnand"):
                 section_conf = "ubi"
+            elif section_conf == "wififw" and (self.flash_type == "nand" or self.flash_type == "norplusnand"):
+                section_conf = "wififw_ubi"
 
             script.start_activity("Flashing %s:" % section_conf)
 
@@ -1107,6 +1109,8 @@ class Pack(object):
                 section_conf = "u-boot"
             elif section_conf == "rootfs" and (self.flash_type == "nand" or self.flash_type == "norplusnand"):
                 section_conf = "ubi"
+            elif section_conf == "wififw" and (self.flash_type == "nand" or self.flash_type == "norplusnand"):
+                section_conf = "wififw_ubi"
             image_info = ImageInfo(section_conf + "-" + sha1(filename),
                                     filename, "firmware")
             if filename.lower() != "none":
