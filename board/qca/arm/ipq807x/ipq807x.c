@@ -923,6 +923,7 @@ void ipq_fdt_fixup_usb_device_mode(void *blob)
 {
 	int nodeoff, ret, node;
 	const char *usb_dr_mode = "peripheral"; /* Supported mode */
+	const char *usb_max_speed = "high-speed";/* Supported speed */
 	const char *usb_node[] = {"/soc/usb3@8A00000/dwc3@8A00000"};
 	const char *usb_cfg;
 
@@ -947,6 +948,13 @@ void ipq_fdt_fixup_usb_device_mode(void *blob)
 				  (strlen(usb_dr_mode) + 1));
 		if (ret)
 			printf("fixup_usb: 'dr_mode' cannot be set");
+
+		/* if mode is peripheral restricting to high-speed */
+		ret = fdt_setprop(blob, nodeoff, "maximum-speed",
+				  usb_max_speed,
+				  (strlen(usb_max_speed) + 1));
+		if (ret)
+			printf("fixup_usb: 'maximum-speed' cannot be set");
 	}
 }
 
