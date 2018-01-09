@@ -35,6 +35,7 @@
 #include <asm/errno.h>
 #include <asm/arch-qca-common/bam.h>
 #include "qca_qup_spi_bam.h"
+#include <asm/arch-qca-common/gpio.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -191,6 +192,71 @@ static void qup_pipe_init()
 	}
 }
 
+/*
+ * Function to assert and De-assert chip select
+ */
+static void CS_change(int port_num, int cs_num, int enable)
+{
+	unsigned int cs_gpio = 0;
+	uint32_t addr = 0;
+	uint32_t val = 0;
+        char spi_node_path[32];
+	int spi_cs_node = 0, spi_cs_gpio_node = 0;
+
+	snprintf(spi_node_path, sizeof(spi_node_path),
+			"/spi/spi%d/cs%d", port_num, cs_num);
+
+        spi_cs_node = fdt_path_offset(gd->fdt_blob, spi_node_path);
+	spi_cs_gpio_node = fdt_first_subnode(gd->fdt_blob, spi_cs_node);
+
+	cs_gpio = fdtdec_get_uint(gd->fdt_blob, spi_cs_gpio_node, "gpio", 0);
+
+	addr = GPIO_IN_OUT_ADDR(cs_gpio);
+	val = readl(addr);
+
+	val &= (~(GPIO_OUT));
+	if (!enable)
+		val |= (GPIO_OUT);
+	writel(val, addr);
+}
+
+/*
+ * BLSP TLMM configuration
+ */
+int blsp_pin_config(unsigned int port_num, int cs_num)
+{
+	char spi_node_path[32];
+	int spi_node = 0;
+
+	snprintf(spi_node_path, sizeof(spi_node_path),
+			"/spi/spi%d/cs%d", port_num, cs_num);
+
+        spi_node = fdt_path_offset(gd->fdt_blob, spi_node_path);
+	if (spi_node >= 0) {
+	        qca_gpio_init(spi_node);
+	} else {
+		printf("SPI : Node not found, skipping initialization\n");
+		return -1;
+	}
+
+	return 0;
+}
+
+int cs_is_valid(unsigned int port_num, int cs_num)
+{
+	char spi_node_path[32];
+	int spi_node = 0;
+
+	snprintf(spi_node_path, sizeof(spi_node_path),
+			"/spi/spi%d/cs%d", port_num, cs_num);
+
+        spi_node = fdt_path_offset(gd->fdt_blob, spi_node_path);
+	if (spi_node >= 0)
+	        return 1;
+	else
+		return 0;
+}
+
 int qup_bam_init(struct ipq_spi_slave *ds)
 {
 	uint8_t read_pipe_grp = QUP0_DATA_PRODUCER_PIPE_GRP;
@@ -316,6 +382,13 @@ struct spi_slave *spi_setup_slave(unsigned int bus, unsigned int cs,
 
 	/* DMA mode */
 	ds->use_dma = CONFIG_QUP_SPI_USE_DMA;
+
+	if (ds->slave.cs == 1 &&
+		cs_is_valid(ds->slave.bus, ds->slave.cs)) {
+		/* GPIO Configuration for SPI NAND */
+		blsp_pin_config(ds->slave.bus, ds->slave.cs);
+		CS_change(ds->slave.bus, ds->slave.cs, CS_DEASSERT);
+	}
 
 	return &ds->slave;
 err:
@@ -910,7 +983,14 @@ int spi_xfer(struct spi_slave *slave, unsigned int bitlen,
 				return ret;
 		}
 
-		write_force_cs(slave, 1);
+		if (ds->slave.cs == 1 &&
+			cs_is_valid(ds->slave.bus, ds->slave.cs)) {
+			/* SPI NAND CS Settings */
+			setbits_le32(ds->regs->io_control, CS_POLARITY_MASK);
+			CS_change(ds->slave.bus, ds->slave.cs, CS_ASSERT);
+		} else {
+			write_force_cs(slave, 1);
+		}
 	}
 
 	if (dout != NULL) {
@@ -926,7 +1006,14 @@ int spi_xfer(struct spi_slave *slave, unsigned int bitlen,
 	}
 
 	if (flags & SPI_XFER_END) {
-		write_force_cs(slave, 0);
+		if (ds->slave.cs == 1 &&
+			cs_is_valid(ds->slave.bus, ds->slave.cs)) {
+			/* SPI NAND CS Settings */
+			clrbits_le32(ds->regs->io_control, CS_POLARITY_MASK);
+			CS_change(ds->slave.bus, ds->slave.cs, CS_DEASSERT);
+		} else {
+			write_force_cs(slave, 0);
+		}
 	}
 
 	return ret;

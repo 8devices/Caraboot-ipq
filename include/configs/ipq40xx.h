@@ -153,7 +153,17 @@ typedef struct {
 #define CONFIG_USB_MAX_CONTROLLER_COUNT         2
 #endif
 
+/*
+ * SPI NAND SUPPORT
+ */
+#define CONFIG_IPQ40XX_SPI_NAND
+#ifdef CONFIG_IPQ40XX_SPI_NAND
+#define CONFIG_SPI_NAND
+#define CONFIG_SF_SPI_NAND_CS 1
+#define CONFIG_IPQ_SPI_NAND_INFO_IDX  1
+#endif
 #define CONFIG_QUP_SPI_USE_DMA 1
+
 /* L1 cache line size is 64 bytes, L2 cache line size is 128 bytes
  * Cache flush and invalidation based on L1 cache, so the cache line
  * size is configured to 64 */
