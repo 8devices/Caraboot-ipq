@@ -14,6 +14,7 @@
 /dts-v1/;
 #include "ipq40xx-dk07.dtsi"
 / {
+	spi_nor_available = <0>;
 	machid = <0x8010106>;
 	ddr_size = <512>;
 	config_name = "config@ap.dk07.1-c2";

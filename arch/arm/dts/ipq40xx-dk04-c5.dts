@@ -17,6 +17,7 @@
 / {
 	machid = <0x8010401>;
 	ddr_size = <256>;
+	spi_nand_available = <1>;
 	config_name = "config@ap.dk04.1-c5";
 
 	aliases {
