@@ -143,7 +143,7 @@ void i2c_qup_mini_core_init(void)
 /*
  * QUP I2C Hardware Initialisation
  */
-static int i2c_hw_init(void)
+static int i2c_hw_init(int qup_version)
 {
 	int ret;
 
@@ -154,14 +154,14 @@ static int i2c_hw_init(void)
 	ret = check_qup_state_valid();
 	if (ret)
 		return ret;
-
-	writel(0,(i2c_base_addr + QUP_CONFIG_OFFSET));
-
-	writel( clk_en, i2c_base_addr + QUP_CONFIG_OFFSET);
-	writel(0, i2c_base_addr + QUP_I2C_MASTER_CLK_CTL_OFFSET);
-	writel(0, i2c_base_addr + QUP_TEST_CTRL_OFFSET);
-	writel(0, i2c_base_addr + QUP_IO_MODES_OFFSET);
-	writel(0, i2c_base_addr + QUP_OPERATIONAL_MASK_OFFSET);
+	if (qup_version != qup_v1) {
+		writel(0,(i2c_base_addr + QUP_CONFIG_OFFSET));
+		writel( clk_en, i2c_base_addr + QUP_CONFIG_OFFSET);
+		writel(0, i2c_base_addr + QUP_I2C_MASTER_CLK_CTL_OFFSET);
+		writel(0, i2c_base_addr + QUP_TEST_CTRL_OFFSET);
+		writel(0, i2c_base_addr + QUP_IO_MODES_OFFSET);
+		writel(0, i2c_base_addr + QUP_OPERATIONAL_MASK_OFFSET);
+	}
 
 	i2c_qup_mini_core_init();
 
@@ -349,7 +349,7 @@ int i2c_read_data(struct i2c_qup_bus *i2c_bus, uchar chip, uint addr, int alen, 
 	}
 
 	if (!i2c_hw_initialized) {
-		i2c_hw_init();
+		i2c_hw_init(qup_v2);
 	}
 
 	writel(0x3C, i2c_base_addr + QUP_ERROR_FLAGS_OFFSET);
@@ -457,7 +457,7 @@ int i2c_read_data_qup_v1(struct i2c_qup_bus *i2c_bus, uchar chip, uint addr, int
 	}
 
 	if (!i2c_hw_initialized) {
-		i2c_hw_init();
+		i2c_hw_init(qup_v1);
 	}
 
 	writel(0x3C, i2c_base_addr + QUP_ERROR_FLAGS_OFFSET);
@@ -566,6 +566,70 @@ uint32_t i2c_frame_wr_tag(uchar chip, uint8_t data_len, int alen)
 	return tag;
 }
 
+int  i2c_write_data_qup_v1(struct i2c_qup_bus *i2c_bus, uchar chip, uint addr,
+					int alen, uchar *buffer, int len)
+{
+	int ret = 0;
+	int idx = 0;
+	int cfg;
+
+	if (!i2c_board_initialized) {
+		i2c_qca_board_init(i2c_bus);
+	}
+
+	if(!i2c_hw_initialized) {
+		i2c_hw_init(qup_v1);
+	}
+
+	/* Set to RUN state */
+	ret = config_i2c_state(QUP_STATE_RUN);
+	if (ret != SUCCESS)
+		goto out;
+
+	/* Configure the I2C Master clock */
+	cfg = ((src_clk_freq / (I2C_CLK_100KHZ * 2)) - 3) & 0xff;
+	writel(cfg, i2c_base_addr + QUP_I2C_MASTER_CLK_CTL_OFFSET);
+
+	/* Send the write request */
+	writel((qup_i2c_start_seq | QUP_I2C_ADDR(chip)),
+		i2c_base_addr + QUP_OUTPUT_FIFO_OFFSET);
+	writel((QUP_I2C_DATA_SEQ | QUP_I2C_DATA(addr)),
+		i2c_base_addr + QUP_OUTPUT_FIFO_OFFSET);
+
+	while (len) {
+		if (len == 1) {
+			writel((QUP_I2C_STOP_SEQ | QUP_I2C_DATA(buffer[idx])),
+			i2c_base_addr + QUP_OUTPUT_FIFO_OFFSET);
+		} else {
+			writel((QUP_I2C_DATA_SEQ | QUP_I2C_DATA(buffer[idx])),
+			i2c_base_addr + QUP_OUTPUT_FIFO_OFFSET);
+		}
+		len--;
+		idx++;
+
+		ret = check_fifo_status(WRITE);
+		if (ret != SUCCESS)
+			goto out;
+	}
+
+	ret = check_write_done();
+	if (ret != SUCCESS)
+		goto out;
+
+	/* Set to PAUSE state */
+	ret = config_i2c_state(QUP_STATE_PAUSE);
+	if (ret != SUCCESS)
+		goto out;
+
+	return ret;
+out:
+	/*
+	 * Put the I2C Core back in the Reset State to end the transfer.
+	 */
+	(void)config_i2c_state(QUP_STATE_RESET);
+	return ret;
+}
+
 int i2c_write_data(struct i2c_qup_bus *i2c_bus, uchar chip, uint addr, int alen, uchar *buffer, int len)
 {
 	int ret = 0;
@@ -587,7 +651,7 @@ int i2c_write_data(struct i2c_qup_bus *i2c_bus, uchar chip, uint addr, int alen,
 	}
 
 	if (!i2c_hw_initialized) {
-		i2c_hw_init();
+		i2c_hw_init(qup_v2);
 	}
 
 	writel(0x3C, i2c_base_addr + QUP_ERROR_FLAGS_OFFSET);
@@ -710,8 +774,12 @@ static int qup_i2c_xfer(struct udevice *bus, struct i2c_msg *msg,
 			else
 				ret = i2c_read_data(i2c_bus, msg->addr, 0, 0, msg->buf, msg->len);
 		} else {
-			ret = i2c_write_data(i2c_bus, msg->addr, 0, 0, msg->buf,
-					msg->len);
+			if (plat->type == qup_v1)
+				ret = i2c_write_data_qup_v1(i2c_bus, msg->addr, 0, 0, msg->buf,
+						msg->len);
+			else
+				ret = i2c_write_data(i2c_bus, msg->addr, 0, 0, msg->buf,
+						msg->len);
 		}
 		if (ret) {
 			printf("i2c_write: error sending\n");
