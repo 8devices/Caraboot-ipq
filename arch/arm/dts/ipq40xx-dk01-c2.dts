@@ -19,43 +19,6 @@
 	spi_nand_available = <1>;
 	config_name = "config@ap.dk01.1-c2";
 
-	ess-switch@c000000{
-		sw_gpio {
-			gpio1 {
-				gpio = <52>;
-				func = <2>;
-				pull = <GPIO_PULL_UP>;
-				drvstr = <GPIO_2MA>;
-				oe = <GPIO_OE_DISABLE>;
-				vm = <GPIO_VM_ENABLE>;
-				od_en = <GPIO_OD_DISABLE>;
-				pu_res = <GPIO_PULL_RES2>;
-			};
-
-			gpio2 {
-				gpio = <53>;
-				func = <2>;
-				pull = <GPIO_PULL_UP>;
-				drvstr = <GPIO_2MA>;
-				oe = <GPIO_OE_DISABLE>;
-				vm = <GPIO_VM_ENABLE>;
-				od_en = <GPIO_OD_DISABLE>;
-				pu_res = <GPIO_PULL_RES2>;
-			};
-
-			gpio3 {
-				gpio = <62>;
-				func = <0>;
-				pull = <GPIO_NO_PULL>;
-				drvstr = <GPIO_2MA>;
-				oe = <GPIO_OE_ENABLE>;
-				vm = <GPIO_VM_ENABLE>;
-				od_en = <GPIO_OD_DISABLE>;
-				pu_res = <GPIO_PULL_RES2>;
-			};
-		};
-	};
-
 	spi {
 		spi0 {
 			cs1 {
