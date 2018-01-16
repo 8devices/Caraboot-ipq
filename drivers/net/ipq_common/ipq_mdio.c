@@ -12,6 +12,7 @@
 */
 
 #include <common.h>
+#include <command.h>
 #include <miiphy.h>
 #include <phy.h>
 #include <asm/io.h>
@@ -182,3 +183,45 @@ int ipq_sw_mdio_init(const char *name)
 	sprintf(bus->name, name);
 	return mdio_register(bus);
 }
+
+static int do_ipq_mdio(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	char		op[2];
+	unsigned int	addr, reg;
+	unsigned short	data = 0;
+
+	if (argc < 2)
+		return CMD_RET_USAGE;
+
+	op[0] = argv[1][0];
+	if (strlen(argv[1]) > 1)
+		op[1] = argv[1][1];
+	else
+		op[1] = '\0';
+
+	if (argc >= 3)
+		addr = simple_strtoul(argv[2], NULL, 16);
+	if (argc >= 4)
+		reg = simple_strtoul(argv[3], NULL, 16);
+	if (argc >= 5)
+		data = simple_strtoul(argv[4], NULL, 16);
+
+	if (op[0] == 'r') {
+		data = ipq_mdio_read(addr, reg, NULL);
+		printf("0x%x\n", data);
+	} else if (op[0] == 'w') {
+		ipq_mdio_write(addr, reg, data);
+	} else {
+		return CMD_RET_USAGE;
+	}
+
+	return 0;
+}
+
+U_BOOT_CMD(
+	ipq_mdio, 5, 1, do_ipq_mdio,
+	"IPQ mdio utility commands",
+	"ipq_mdio read   <addr> <reg>               - read  IPQ MDIO PHY <addr> register <reg>\n"
+	"ipq_mdio write  <addr> <reg> <data>        - write IPQ MDIO PHY <addr> register <reg>\n"
+	"Addr and/or reg may be ranges, e.g. 0-7."
+);
