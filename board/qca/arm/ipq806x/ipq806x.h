@@ -139,7 +139,8 @@ static inline int gmac_cfg_is_valid(ipq_gmac_board_cfg_t *cfg)
 			(cfg->unit >= 0) && (cfg->unit < CONFIG_IPQ_NO_MACS));
 }
 
-__weak void aquantia_phy_reset(void) {}
+__weak void aquantia_phy_reset_init_done(void) {}
+__weak void aquantia_phy_reset_init(void) {}
 
 struct smem_ram_ptn {
 	char name[16];
