@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2008, Google Inc.
  * All rights reserved.
- * Copyright (c) 2009-2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2009-2018, The Linux Foundation. All rights reserved.
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -45,13 +45,27 @@ typedef unsigned long addr_t;
 
 static uint32_t hw_ver;
 
-struct cmd_element ce_array[100] __attribute__ ((aligned(16)));
-struct cmd_element ce_read_array[20] __attribute__ ((aligned(16)));
+struct cmd_element ce_array[100]
+			__attribute__ ((aligned(CONFIG_SYS_CACHELINE_SIZE)));
+struct cmd_element ce_read_array[20]
+			__attribute__ ((aligned(CONFIG_SYS_CACHELINE_SIZE)));
 static struct qpic_nand_dev qpic_nand_dev;
-struct bam_desc qpic_cmd_desc_fifo[QPIC_BAM_CMD_FIFO_SIZE] __attribute__ ((aligned(BAM_DESC_SIZE)));
-struct bam_desc qpic_data_desc_fifo[QPIC_BAM_DATA_FIFO_SIZE] __attribute__ ((aligned(BAM_DESC_SIZE)));
+struct bam_desc qpic_cmd_desc_fifo[QPIC_BAM_CMD_FIFO_SIZE]
+			__attribute__ ((aligned(CONFIG_SYS_CACHELINE_SIZE)));
+struct bam_desc qpic_data_desc_fifo[QPIC_BAM_DATA_FIFO_SIZE]
+			__attribute__ ((aligned(CONFIG_SYS_CACHELINE_SIZE)));
 static struct bam_instance bam;
 struct nand_ecclayout fake_ecc_layout;
+
+uint32_t ret_val __attribute__ ((aligned(CONFIG_SYS_CACHELINE_SIZE)));
+uint8_t read_bytes[4]
+		__attribute__ ((aligned(CONFIG_SYS_CACHELINE_SIZE)));
+uint32_t flash_sts[QPIC_NAND_MAX_CWS_IN_PAGE]
+		__attribute__ ((aligned(CONFIG_SYS_CACHELINE_SIZE)));
+uint32_t buffer_sts[QPIC_NAND_MAX_CWS_IN_PAGE]
+		__attribute__ ((aligned(CONFIG_SYS_CACHELINE_SIZE)));
+uint32_t status_write[QPIC_NAND_MAX_CWS_IN_PAGE]
+		__attribute__ ((aligned(CONFIG_SYS_CACHELINE_SIZE)));
 
 static int
 qpic_nand_read_page(struct mtd_info *mtd, uint32_t page,
@@ -115,11 +129,10 @@ static uint32_t
 qpic_nand_read_reg(uint32_t reg_addr,
 		   uint8_t flags)
 {
-	uint32_t val;
 	struct cmd_element *cmd_list_read_ptr = ce_read_array;
 
 	bam_add_cmd_element(cmd_list_read_ptr, reg_addr,
-			   (uint32_t)((addr_t)&val), CE_READ_TYPE);
+			   (uint32_t)((addr_t)&ret_val), CE_READ_TYPE);
 
 	/* Enqueue the desc for the above command */
 	bam_add_one_desc(&bam,
@@ -129,8 +142,11 @@ qpic_nand_read_reg(uint32_t reg_addr,
 			 BAM_DESC_CMD_FLAG| BAM_DESC_INT_FLAG | flags);
 
 	qpic_nand_wait_for_cmd_exec(1);
-
-	return val;
+#if !defined(CONFIG_SYS_DCACHE_OFF)
+	flush_dcache_range((unsigned long)&ret_val,
+			   (unsigned long)&ret_val + sizeof(ret_val));
+#endif
+	return ret_val;
 }
 
 /* Assume the BAM is in a locked state. */
@@ -509,6 +525,10 @@ onfi_probe_cmd_exec(struct mtd_info *mtd,
 
 	/* Wait for data to be available */
 	qpic_nand_wait_for_data(DATA_PRODUCER_PIPE_INDEX);
+#if !defined(CONFIG_SYS_DCACHE_OFF)
+	flush_dcache_range((unsigned long)data_ptr,
+			   (unsigned long)data_ptr + data_len);
+#endif
 
 	/* Check for errors */
 	nand_ret = qpic_nand_check_status(mtd, status);
@@ -750,7 +770,7 @@ qpic_nand_onfi_probe(struct mtd_info *mtd)
 	uint32_t cmd_vld = NAND_DEV_CMD_VLD_V1_4_20;
 	uint32_t dev_cmd1_reg = NAND_DEV_CMD1_V1_4_20;
 	unsigned char *buffer;
-	unsigned char onfi_str[4];
+	unsigned char *onfi_str = read_bytes;
 	uint32_t *id;
 	struct onfi_param_page *param_page;
 	int onfi_ret = NANDC_RESULT_SUCCESS;
@@ -1035,11 +1055,11 @@ static int qpic_nand_block_isbad(struct mtd_info *mtd, loff_t offs)
 {
 	unsigned cwperpage;
 	struct cfg_params params;
-	uint8_t bad_block[4];
 	unsigned nand_ret = NANDC_RESULT_SUCCESS;
 	uint32_t page;
 	struct nand_chip *chip = MTD_NAND_CHIP(mtd);
 	struct qpic_nand_dev *dev = MTD_QPIC_NAND_DEV(mtd);
+	uint8_t *bad_block = read_bytes;
 
 	/* Check for invalid offset */
 	if (offs > mtd->size)
@@ -1081,6 +1101,11 @@ static int qpic_nand_block_isbad(struct mtd_info *mtd, loff_t offs)
 		printf("Could not read bad block value\n");
 		return NANDC_RESULT_FAILURE;
 	}
+
+#if !defined(CONFIG_SYS_DCACHE_OFF)
+	flush_dcache_range((unsigned long)bad_block,
+			   (unsigned long)bad_block + sizeof(bad_block));
+#endif
 
 	if (dev->widebus) {
 		if (bad_block[0] != 0xFF && bad_block[1] != 0xFF) {
@@ -1182,6 +1207,11 @@ qpic_nand_add_wr_page_cws_cmd_desc(struct mtd_info *mtd, struct cfg_params *cfg,
 
 		qpic_nand_wait_for_cmd_exec(num_desc);
 
+#if !defined(CONFIG_SYS_DCACHE_OFF)
+		flush_dcache_range((unsigned long)status,
+				   (unsigned long)status + sizeof(status));
+#endif
+
 		status[i] = qpic_nand_check_status(mtd, status[i]);
 
 		num_desc = 0;
@@ -1258,7 +1288,6 @@ qpic_nand_write_page(struct mtd_info *mtd, uint32_t pg_addr,
 {
 	struct qpic_nand_dev *dev = MTD_QPIC_NAND_DEV(mtd);
 	struct cfg_params cfg;
-	uint32_t status[QPIC_NAND_MAX_CWS_IN_PAGE];
 	int nand_ret = NANDC_RESULT_SUCCESS;
 	unsigned i;
 
@@ -1278,11 +1307,11 @@ qpic_nand_write_page(struct mtd_info *mtd, uint32_t pg_addr,
 
 	qpic_add_wr_page_cws_data_desc(mtd, ops->datbuf, cfg_mode, ops->oobbuf);
 
-	qpic_nand_add_wr_page_cws_cmd_desc(mtd, &cfg, status, cfg_mode);
+	qpic_nand_add_wr_page_cws_cmd_desc(mtd, &cfg, status_write, cfg_mode);
 
 	/* Check for errors */
 	for(i = 0; i < (dev->cws_per_page); i++) {
-		nand_ret = qpic_nand_check_status(mtd, status[i]);
+		nand_ret = qpic_nand_check_status(mtd, status_write[i]);
 		if (nand_ret) {
 			printf(
 				"Failed to write CW %d for page: %d\n",
@@ -1705,6 +1734,7 @@ qpic_nand_read_page(struct mtd_info *mtd, uint32_t page,
 	uint16_t oob_bytes;
 	unsigned char *buffer, *ops_datbuf = ops->datbuf;
 	unsigned char *spareaddr, *ops_oobbuf = ops->oobbuf;
+	unsigned char *buffer_st, *spareaddr_st;
 	unsigned int max_bitflips = 0, uncorrectable_err_cws = 0;
 
 	params.addr0 = page << 16;
@@ -1752,6 +1782,10 @@ qpic_nand_read_page(struct mtd_info *mtd, uint32_t page,
 	} else {
 		spareaddr = ops->oobbuf;
 	}
+
+	buffer_st = buffer;
+	spareaddr_st = spareaddr;
+
 	/* Queue up the command and data descriptors for all the codewords in a page
 	 * and do a single bam transfer at the end.*/
 	for (i = 0; i < (dev->cws_per_page); i++) {
@@ -1890,6 +1924,17 @@ qpic_nand_read_page(struct mtd_info *mtd, uint32_t page,
 	}
 
 	qpic_nand_wait_for_data(DATA_PRODUCER_PIPE_INDEX);
+
+#if !defined(CONFIG_SYS_DCACHE_OFF)
+	flush_dcache_range((unsigned long)flash_sts,
+			   (unsigned long)flash_sts + sizeof(flash_sts));
+	flush_dcache_range((unsigned long)buffer_sts,
+			   (unsigned long)buffer_sts + sizeof(buffer_sts));
+	flush_dcache_range((unsigned long)buffer_st,
+			   (unsigned long)buffer);
+	flush_dcache_range((unsigned long)spareaddr_st,
+			   (unsigned long)spareaddr);
+#endif
 
 	/* Check status */
 	for (i = 0; i < (dev->cws_per_page) ; i ++) {
@@ -2273,6 +2318,11 @@ nand_result_t qpic_nand_blk_erase(struct mtd_info *mtd, uint32_t page)
 		BAM_DESC_INT_FLAG | BAM_DESC_CMD_FLAG);
 	num_desc = 2;
 	qpic_nand_wait_for_cmd_exec(num_desc);
+
+#if !defined(CONFIG_SYS_DCACHE_OFF)
+	flush_dcache_range((unsigned long)&status,
+			   (unsigned long)&status + sizeof(status));
+#endif
 
 	status = qpic_nand_check_status(mtd, status);
 

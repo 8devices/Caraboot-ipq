@@ -1,4 +1,4 @@
-/* Copyright (c) 2012,2015-2017 The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012,2015-2018 The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -398,6 +398,7 @@ int bam_add_one_desc(struct bam_instance *bam,
 
 #if !defined(CONFIG_SYS_DCACHE_OFF)
 	flush_dcache_range((addr_t)desc, ((addr_t)desc + BAM_DESC_SIZE));
+	flush_dcache_range((addr_t)data_ptr, (addr_t)data_ptr + len);
 #endif
 
 	/* Update the FIFO to point to the head */
@@ -423,6 +424,12 @@ struct cmd_element* bam_add_cmd_element(struct cmd_element *ptr,
 
 	/* Write the value to be written */
 	ptr->reg_data = value;
+
+#if !defined(CONFIG_SYS_DCACHE_OFF)
+	if(cmd_type == CE_READ_TYPE)
+		flush_dcache_range((addr_t)value,
+					((addr_t)value + sizeof(uint32_t)));
+#endif
 
 	/* Return the address to add the next element to */
 	return ptr + 1;
