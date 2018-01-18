@@ -134,8 +134,10 @@ void board_nand_init(void)
 	gpio_node = fdt_path_offset(gd->fdt_blob, "/spi/spi_gpio");
 	if (gpio_node >= 0) {
 		qca_gpio_init(gpio_node);
-		ipq_spi_init(CONFIG_IPQ_SPI_NOR_INFO_IDX);
 	}
+
+	if (fdtdec_get_uint(gd->fdt_blob, 0, "spi_nor_available", 0))
+		ipq_spi_init(CONFIG_IPQ_SPI_NOR_INFO_IDX);
 
 #ifdef CONFIG_SPI_NAND
 	if (fdtdec_get_uint(gd->fdt_blob, 0, "spi_nand_available", 0))

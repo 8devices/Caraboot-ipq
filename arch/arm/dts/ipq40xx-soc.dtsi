@@ -14,6 +14,7 @@
 #include "skeleton.dtsi"
 #include <dt-bindings/qcom/gpio-ipq40xx.h>
 / {
+	spi_nor_available = <1>;
 	serial@78af000 {
 		compatible = "qca,ipq-uartdm";
 		reg = <0x78af000 0x200>;
