@@ -125,6 +125,12 @@ static int init_baudrate(void)
 static int display_banner(void)
 {
 	printf("\n\n%s\n\n", version_string);
+
+	printf("=====================================\n"
+		"Caraboot "CONFIG_CARABOOT_RELEASE" (IPQ4018) U-boot\n"
+		"http://www.8devices.com/\n"
+		"-------------------------------------\n");
+
 	debug("U-Boot code: %08lX -> %08lX  BSS: -> %08lX\n",
 	       _TEXT_BASE,
 	       _bss_start_ofs + _TEXT_BASE, _bss_end_ofs + _TEXT_BASE);
