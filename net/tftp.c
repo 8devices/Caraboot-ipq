@@ -467,6 +467,8 @@ static void icmp_handler(unsigned type, unsigned code, unsigned dest,
 {
 	if (type == ICMP_NOT_REACH && code == ICMP_NOT_REACH_PORT) {
 		/* Oh dear the other end has gone away */
+		printf("TFTP server dies: print the pkt buffer\n");
+		print_buffer(0, pkt, 1, len, 0);
 		restart("TFTP server died");
 	}
 }
@@ -542,7 +544,11 @@ static void tftp_handler(uchar *pkt, unsigned dest, struct in_addr sip,
 		debug("Got OACK: %s %s\n",
 		      pkt, pkt + strlen((char *)pkt) + 1);
 		tftp_state = STATE_OACK;
-		tftp_remote_port = src;
+		if (tftp_remote_port != src) {
+			printf("\nGot TFTP_OACK: TFTP remote port: changes from %d to %d\n",
+				tftp_remote_port, src);
+			tftp_remote_port = src;
+		}
 		/*
 		 * Check for 'blksize' option.
 		 * Careful: "i" is signed, "len" is unsigned, thus
@@ -595,7 +601,11 @@ static void tftp_handler(uchar *pkt, unsigned dest, struct in_addr sip,
 		    tftp_state == STATE_RECV_WRQ) {
 			/* first block received */
 			tftp_state = STATE_DATA;
-			tftp_remote_port = src;
+			if (tftp_remote_port != src) {
+				printf("\nGot TFTP_DATA: TFTP remote port: changes from %d to %d\n",
+					tftp_remote_port, src);
+				tftp_remote_port = src;
+			}
 			new_transfer();
 
 #ifdef CONFIG_MCAST_TFTP
