@@ -1134,7 +1134,7 @@ board_ipq40xx_params_t board_params[] = {
 		.spi_nand_available = 1,
 		.nor_nand_available = 0,
 		.nor_emmc_available = 0,
-		.dtb_config_name = { "config@ap.jalapeno" },
+		.dtb_config_name = { "config@1", "config@ap.jalapeno" },
 	},
 	{
 		.machid = MACH_TYPE_IPQ40XX_8DEV_JALAPENO_V2,
@@ -1150,7 +1150,7 @@ board_ipq40xx_params_t board_params[] = {
 		.spi_nand_available = 1,
 		.nor_nand_available = 0,
 		.nor_emmc_available = 0,
-		.dtb_config_name = { "config@ap.jalapeno-v2" },
+		.dtb_config_name = { "config@1", "config@ap.jalapeno-v2" },
 	},
 	{
 		.machid = MACH_TYPE_IPQ40XX_AP_DK04_1_C1,
