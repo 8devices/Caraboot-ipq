@@ -12,6 +12,7 @@
 #include <part.h>
 #include <div64.h>
 #include <linux/math64.h>
+#include <linux/log2.h>
 #include "mmc_private.h"
 
 static ulong mmc_erase_t(struct mmc *mmc, ulong start, lbaint_t blkcnt, int arg)
@@ -72,7 +73,9 @@ unsigned long mmc_berase(int dev_num, lbaint_t start, lbaint_t blkcnt)
 	struct mmc *mmc = find_mmc_device(dev_num);
 	lbaint_t blk = 0, blk_r = 0;
 	int timeout;
+	unsigned int qty = 0;
 	int arg = MMC_ERASE_ARG;
+	unsigned long erase_shift;
 
 	if (!mmc)
 		return -1;
@@ -81,6 +84,22 @@ unsigned long mmc_berase(int dev_num, lbaint_t start, lbaint_t blkcnt)
 	if (!(mmc->sec_feature_support & EXT_CSD_SEC_ER_EN)) {
 		return -1;
 	}
+
+	if (is_power_of_2(mmc->erase_grp_size))
+		erase_shift = __ffs(mmc->erase_grp_size) - 1;
+	else
+		erase_shift = 0;
+
+	if (erase_shift)
+		qty += (((start+blkcnt) >> erase_shift) -
+			(start >> erase_shift)) + 1;
+	else if (IS_SD(mmc))
+		qty += blkcnt;
+	else
+		qty += (((start+blkcnt) / mmc->erase_grp_size) -
+			(start / mmc->erase_grp_size)) + 1;
+
+	timeout *= qty;
 	/*
 	 * We want to see if the requested start or total block count are
 	 * unaligned.  We discard the whole numbers and only care about the
