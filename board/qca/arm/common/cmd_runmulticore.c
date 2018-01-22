@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -102,9 +102,21 @@ static int do_runmulticore(cmd_tbl_t *cmdtp,
 	int core_status = 0;
 	int core_on_status = 0;
 	char *ptr = NULL;
+	cmd_tbl_t *cmd;
 
 	if ((argc <= 1) || (argc > 4))
 		return CMD_RET_USAGE;
+
+	/* Prohibits 'runmulticore' command on secondary cores */
+	for (i = 1; i < argc; i++) {
+		cmd = find_cmd(argv[i]);
+		if (cmd
+		    && !strncmp(cmd->name, "runmulticore", 12)) {
+			printf("command '%s' unallowed on secondary cores!\n",
+				cmd->name);
+			return CMD_RET_FAILURE;
+		}
+	}
 
 	/* Setting up stack for secondary cores */
 	memset(core, 0, sizeof(core));
