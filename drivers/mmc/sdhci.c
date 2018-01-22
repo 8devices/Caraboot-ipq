@@ -91,9 +91,9 @@ static struct adma_desc *sdhci_prepare_descriptors(void *data, uint32_t len)
 		list[0].tran_att = SDHCI_ADMA_TRANS_VALID | SDHCI_ADMA_TRANS_DATA
 							  | SDHCI_ADMA_TRANS_END;
 
-		invalidate_dcache_range((uint32_t)list & ~(CACHE_LINE_SIZE - 1),
-					ALIGN((uint32_t)list + sizeof(struct adma_desc),CACHE_LINE_SIZE));
-
+#if !defined(CONFIG_SYS_DCACHE_OFF)
+		flush_cache((unsigned long)list, sizeof(struct adma_desc));
+#endif
 	} else {
 		list_len = len / SDHCI_ADMA_DESC_LINE_SZ;
 		remain = len - (list_len * SDHCI_ADMA_DESC_LINE_SZ);
@@ -124,10 +124,12 @@ static struct adma_desc *sdhci_prepare_descriptors(void *data, uint32_t len)
 			list[list_len - 1].len = (len < SDHCI_ADMA_DESC_LINE_SZ) ? len : (SDHCI_ADMA_DESC_LINE_SZ & 0xffff);
 			list[list_len - 1].tran_att = SDHCI_ADMA_TRANS_VALID | SDHCI_ADMA_TRANS_DATA |
 										   SDHCI_ADMA_TRANS_END;
-		}
 
-		invalidate_dcache_range((uint32_t)list & ~(CACHE_LINE_SIZE - 1),
-					ALIGN((uint32_t)list + table_len,CACHE_LINE_SIZE));
+#if !defined(CONFIG_SYS_DCACHE_OFF)
+		flush_cache((unsigned long)list, table_len);
+#endif
+	}
+
 
 	return list;
 }
@@ -295,11 +297,11 @@ static int sdhci_send_command(struct mmc *mmc, struct mmc_cmd *cmd,
 		if (data->flags == MMC_DATA_READ)
 			mode |= SDHCI_TRNS_READ;
 
-#ifdef CONFIG_MMC_SDMA
 		if (data->flags == MMC_DATA_READ)
 			start_addr = (unsigned long)data->dest;
 		else
 			start_addr = (unsigned long)data->src;
+#ifdef CONFIG_MMC_SDMA
 		if ((host->quirks & SDHCI_QUIRK_32BIT_DMA_ADDR) &&
 				(start_addr & 0x7) != 0x0) {
 			is_aligned = 0;
@@ -337,7 +339,8 @@ static int sdhci_send_command(struct mmc *mmc, struct mmc_cmd *cmd,
 	}
 
 	sdhci_writel(host, cmd->cmdarg, SDHCI_ARGUMENT);
-#ifdef CONFIG_MMC_SDMA
+#if defined(CONFIG_MMC_SDMA) || (defined(CONFIG_MMC_ADMA) && \
+				!defined(CONFIG_SYS_DCACHE_OFF))
 	flush_cache(start_addr, trans_bytes);
 #endif
 	udelay(5);
