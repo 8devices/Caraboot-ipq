@@ -46,7 +46,9 @@ dtb-$(CONFIG_ARCH_IPQ40xx) += ipq40xx-dk01-c1.dtb \
 		ipq40xx-dk04-c5.dtb \
 		ipq40xx-dk07-c1.dtb \
 		ipq40xx-dk07-c2.dtb \
-		ipq40xx-dk07-c3.dtb
+		ipq40xx-dk07-c3.dtb \
+		ipq40xx-dk01-s1.dtb \
+		ipq40xx-dk06-c1.dtb
 
 dtb-$(CONFIG_ARCH_ROCKCHIP) += \
 	rk3288-firefly.dtb \
