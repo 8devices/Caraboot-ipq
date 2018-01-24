@@ -368,6 +368,20 @@ int smem_get_boot_flash(uint32_t *flash_type,
 	return 0;
 }
 
+int ipq_smem_get_boot_version(char *version_name, int buf_size)
+{
+	int ret;
+	qca_platform_v1 platform_info;
+
+	ret = smem_read_alloc_entry(SMEM_HW_SW_BUILD_ID, &platform_info,
+					sizeof(qca_platform_v1));
+	if (ret != 0)
+		return -ENOMSG;
+
+	snprintf(version_name, buf_size, "%s\n", platform_info.build_id);
+	return ret;
+}
+
 int smem_get_build_version(char *version_name, int buf_size, int index)
 {
 	int ret;
