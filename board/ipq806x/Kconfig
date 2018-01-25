@@ -11,5 +11,13 @@ config SYS_VENDOR
 
 config SYS_CONFIG_NAME
 	default "ipq806x"
+config IPQ806X_I2C
+	bool "ipq806x i2c"
+
+config USB_XHCI_IPQ
+	bool "ipq806x usb"
+
+config PCI_IPQ
+	bool "ipq806x pci"
 
 endif
