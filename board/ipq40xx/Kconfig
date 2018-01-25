@@ -12,4 +12,12 @@ config SYS_VENDOR
 config SYS_CONFIG_NAME
 	default "ipq40xx"
 
+config IPQ40XX_I2C
+	bool "ipq40xx i2c"
+
+config USB_XHCI_IPQ
+	bool "ipq40xx usb"
+
+config PCI_IPQ
+	bool "ipq40xx pci"
 endif
