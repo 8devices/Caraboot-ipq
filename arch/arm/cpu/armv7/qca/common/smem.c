@@ -39,8 +39,6 @@
 
 extern int nand_env_device;
 
-#define BUILD_ID_LEN 32
-
 typedef struct smem_pmic_type
 {
 	unsigned pmic_model;

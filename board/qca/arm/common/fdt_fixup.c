@@ -130,6 +130,14 @@ void ipq_fdt_fixup_version(void *blob)
 		if (ret)
 			debug("fdt-fixup: unable to set TZ version(%d)\n", ret);
 	}
+	/* for ipq806x, get the tz_version through scm_call */
+	else if (!ipq_get_tz_version(ver, sizeof(ver))) {
+		debug("TZ Build Version:  %s\n", ver);
+		ret = fdt_setprop(blob, nodeoff, "tz_version",
+				ver, strlen(ver));
+		if (ret)
+			debug("fdt-fixup: unable to set TZ version(%d)\n", ret);
+	}
 
 #ifdef RPM_VERSION
 	if (!smem_get_build_version(ver, sizeof(ver), RPM_VERSION)) {

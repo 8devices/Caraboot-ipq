@@ -278,4 +278,9 @@ __weak void board_pcie_clock_init(int id) {}
 void ipq_fdt_fixup_socinfo(void *blob);
 int ipq_board_usb_init(void);
 
+__weak int ipq_get_tz_version(char *version_name, int buf_size)
+{
+	return 1;
+}
+
 #endif /* _IPQ807X_H_ */

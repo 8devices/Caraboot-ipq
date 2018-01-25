@@ -27,6 +27,7 @@
 #define SCM_SVC_WR			0x10
 #define SCM_SVC_RD			0x12
 #define QFPROM_IS_AUTHENTICATE_CMD	0x7
+#define TZBSP_BUILD_VER_QUERY_CMD	0x4
 
 /* scm_v8 */
 #define SCM_VAL				0x0

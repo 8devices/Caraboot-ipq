@@ -76,6 +76,10 @@ void board_pci_init(int id);
 __weak void board_pcie_clock_init(int id) {}
 __weak void aquantia_phy_reset_init_done(void) {}
 __weak void aquantia_phy_reset_init(void) {}
+__weak int ipq_get_tz_version(char *version_name, int buf_size)
+{
+	return 1;
+}
 
 /* Board specific parameters */
 typedef struct {

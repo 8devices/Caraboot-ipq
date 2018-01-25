@@ -818,3 +818,16 @@ int apps_iscrashed(void)
 
 	return 0;
 }
+
+int ipq_get_tz_version(char *version_name, int buf_size)
+{
+	int ret;
+
+	ret = scm_call(SCM_SVC_INFO, TZBSP_BUILD_VER_QUERY_CMD, NULL,
+			0, version_name, BUILD_ID_LEN);
+	if(ret)
+		return -ENOMSG;
+
+	snprintf(version_name, buf_size, "%s\n", version_name);
+	return 0;
+}

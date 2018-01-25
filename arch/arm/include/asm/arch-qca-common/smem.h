@@ -27,6 +27,7 @@
 #define VARIANT_STRING_LENGTH		20
 #define SEP2_LENGTH			1
 #define OEM_VERSION_STRING_LENGTH	32
+#define BUILD_ID_LEN			32
 
 enum {
 	SMEM_BOOT_NO_FLASH        = 0,
