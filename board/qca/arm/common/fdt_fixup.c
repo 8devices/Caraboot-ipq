@@ -122,6 +122,14 @@ void ipq_fdt_fixup_version(void *blob)
 		if (ret)
 			debug("fdt-fixup: unable to set Boot version(%d)\n", ret);
 	}
+	/* ipq806x doesn't have image version table in SMEM */
+	else if (!ipq_smem_get_boot_version(ver, sizeof(ver))) {
+		debug("BOOT Build Version:  %s\n", ver);
+		ret = fdt_setprop(blob, nodeoff, "boot_version",
+				ver, strlen(ver));
+		if (ret)
+			debug("fdt-fixup: unable to set Boot version(%d)\n", ret);
+	}
 
 	if (!smem_get_build_version(ver, sizeof(ver), TZ_VERSION)) {
 		debug("TZ Build Version:  %s\n", ver);
