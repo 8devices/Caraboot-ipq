@@ -173,7 +173,7 @@ CONFIG_SIMPLE_BUS=y
 #
 # I2C support
 #
-CONFIG_IPQ806X_I2C=y
+# CONFIG_IPQ806X_I2C is not set
 # CONFIG_DM_I2C_COMPAT is not set
 # CONFIG_CROS_EC_KEYB is not set
 
@@ -212,7 +212,7 @@ CONFIG_IPQ806X_I2C=y
 #
 # PCI
 #
-CONFIG_PCI_IPQ=y
+# CONFIG_PCI_IPQ is not set
 # CONFIG_DM_PCI is not set
 
 #
@@ -253,7 +253,7 @@ CONFIG_REQUIRE_SERIAL_CONSOLE=y
 #
 # USB support
 #
-CONFIG_USB_XHCI_IPQ=y
+# CONFIG_USB_XHCI_IPQ is not set
 CONFIG_USB=y
 CONFIG_DM_USB=y
 
