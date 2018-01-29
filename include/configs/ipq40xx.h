@@ -62,7 +62,6 @@
 #define CONFIG_NR_DRAM_BANKS		1
 #define CONFIG_OF_LIBFDT		1
 
-#define CONFIG_IPQ40XX_I2C		1
 #ifdef CONFIG_IPQ40XX_I2C
 #define CONFIG_SYS_I2C_QUP
 #define CONFIG_CMD_I2C
@@ -144,7 +143,6 @@ typedef struct {
  * USB Support
  */
 
-#define CONFIG_USB_XHCI_IPQ
 #ifdef CONFIG_USB_XHCI_IPQ
 #define CONFIG_USB_XHCI
 #define CONFIG_USB_XHCI_DWC3
@@ -298,7 +296,6 @@ typedef struct {
 #define CONFIG_SYS_MMC_ENV_DEV  0
 #endif
 
-#define CONFIG_PCI_IPQ
 #define PCI_MAX_DEVICES	1
 #ifdef CONFIG_PCI_IPQ
 #define CONFIG_PCI
