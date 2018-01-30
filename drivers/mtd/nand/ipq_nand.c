@@ -1759,6 +1759,8 @@ int ipq_nand_scan(struct mtd_info *mtd)
 	uint32_t nand_id2;
 	uint32_t onfi_sig;
 	struct nand_chip *chip = MTD_NAND_CHIP(mtd);
+	struct ipq_nand_dev *dev = MTD_IPQ_NAND_DEV(mtd);
+	struct ebi2nd_regs *regs = dev->regs;
 
 	ret = ipq_nand_onfi_probe(mtd, &onfi_sig);
 	if (ret < 0)
@@ -1791,7 +1793,13 @@ int ipq_nand_scan(struct mtd_info *mtd)
 		if (ret < 0)
 			return ret;
 	}
-
+	writel(0x04E00480, &regs->xfr_step1);
+	writel(0x41F0419A, &regs->xfr_step2);
+	writel(0x81E08180, &regs->xfr_step3);
+	writel(0xD000C000, &regs->xfr_step4);
+	writel(0xC000C000, &regs->xfr_step5);
+	writel(0xC000C000, &regs->xfr_step6);
+	writel(0xC000C000, &regs->xfr_step7);
 	mtd->type = MTD_NANDFLASH;
 	mtd->flags = MTD_CAP_NANDFLASH;
 
