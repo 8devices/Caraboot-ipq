@@ -205,13 +205,23 @@ void psci_sys_reset(void)
 	__invoke_psci_fn_smc(0x84000009, 0, 0, 0);
 }
 
+void qcom_scm_pshold(void)
+{
+	int ret;
+
+	ret = scm_call(SCM_SVC_BOOT, SCM_CMD_TZ_PSHOLD, NULL, 0, NULL, 0);
+
+	if (ret != 0)
+		writel(0, GCNT_PSHOLD);
+}
+
 void reset_cpu(unsigned long a)
 {
 	reset_crashdump();
 	if (is_scm_armv8()) {
 		psci_sys_reset();
 	} else {
-		writel(0, GCNT_PSHOLD);
+		qcom_scm_pshold();
 	}
 	while(1);
 }
