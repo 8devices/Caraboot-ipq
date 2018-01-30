@@ -881,6 +881,24 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 		}
 	}
 
+	ar8033_gpio_node = fdt_path_offset(gd->fdt_blob, "/ar8033_gpio");
+
+	if (ar8033_gpio_node != 0) {
+		bb_nodes[i] = malloc(sizeof(struct bitbang_nodes));
+		memset(bb_nodes[i], 0, sizeof(struct bitbang_nodes));
+
+		offset = fdt_first_subnode(gd->fdt_blob, ar8033_gpio_node);
+		bb_nodes[i]->mdio = fdtdec_get_uint(gd->fdt_blob, offset, "gpio", 0);
+
+		offset = fdt_next_subnode(gd->fdt_blob, offset);
+		bb_nodes[i]->mdc = fdtdec_get_uint(gd->fdt_blob, offset, "gpio", 0);
+
+		bb_miiphy_buses[i].priv = bb_nodes[i];
+		strlcpy(bb_miiphy_buses[i].name, "8033",
+				sizeof(bb_miiphy_buses[i].name));
+		miiphy_register(bb_miiphy_buses[i].name, bb_miiphy_read, bb_miiphy_write);
+	}
+
 	/* set the mac address in environment for unconfigured GMAC */
 	if (ret >= 0) {
 		for (; i < CONFIG_IPQ_NO_MACS; i++) {
@@ -899,24 +917,6 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 			}
 			sprintf(ethaddr, "eth%daddr", (i + 1));
 		}
-	}
-
-	ar8033_gpio_node = fdt_path_offset(gd->fdt_blob, "/ar8033_gpio");
-
-	if (ar8033_gpio_node != 0) {
-		bb_nodes[i] = malloc(sizeof(struct bitbang_nodes));
-		memset(bb_nodes[i], 0, sizeof(struct bitbang_nodes));
-
-		offset = fdt_first_subnode(gd->fdt_blob, ar8033_gpio_node);
-		bb_nodes[i]->mdio = fdtdec_get_uint(gd->fdt_blob, offset, "gpio", 0);
-
-		offset = fdt_next_subnode(gd->fdt_blob, offset);
-		bb_nodes[i]->mdc = fdtdec_get_uint(gd->fdt_blob, offset, "gpio", 0);
-
-		bb_miiphy_buses[i].priv = bb_nodes[i];
-		strncpy(bb_miiphy_buses[i].name, "8033",
-				sizeof(bb_miiphy_buses[i].name));
-		miiphy_register(bb_miiphy_buses[i].name, bb_miiphy_read, bb_miiphy_write);
 	}
 
 	return 0;
