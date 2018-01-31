@@ -51,6 +51,7 @@ void board_mmc_deinit(void);
 
 void set_flash_secondary_type(qca_smem_flash_info_t *);
 void dump_func(void);
+int do_dumpqca_flash_data(const char *);
 int apps_iscrashed(void);
 
 struct dumpinfo_t{

@@ -370,7 +370,11 @@ void autoboot_command(const char *s)
 	 */
 	if (apps_iscrashed()) {
 		printf("Crashdump magic found, initializing dump activity..\n");
-		dump_func();
+		s = getenv("dump_to_flash");
+		if (s)
+			do_dumpqca_flash_data(s);	/* write core dump data to flash */
+		else
+			dump_func();
 		return;
 	}
 #endif
