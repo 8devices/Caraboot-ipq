@@ -1363,13 +1363,13 @@ int do_dumpqca_flash_data(const char *offset)
 #endif
 	} else {
 		printf("command not supported for this flash memory\n");
-		return CMD_RET_FAILURE;
+		return -EINVAL;
 	}
 
 	ret_val = str2off(offset, &crashdump_offset);
 
 	if (!ret_val)
-		return CMD_RET_USAGE;
+		return -EINVAL;
 
 	g_crashdump_data.cpu_context = kernel_crashdump_address;
 	tlv_msg.msg_buffer = kernel_crashdump_address + CONFIG_CPU_CONTEXT_DUMP_SIZE;
@@ -1384,11 +1384,11 @@ int do_dumpqca_flash_data(const char *offset)
 
 	if (ret_val) {
 		printf("crashdump data writing in flash failure\n");
-		return CMD_RET_FAILURE;
+		return -EPERM;
 	}
 
 	printf("crashdump data writing in flash successful\n");
 
-	return CMD_RET_SUCCESS;
+	return 0;
 }
 #endif
