@@ -42,6 +42,18 @@
  */
 #define RESET_WDT_BARK_TIME (5 * RESET_WDT_BITE_TIME)
 
+#define L2ESR_IND_ADDR          (0x204)
+
+/* L2ESR bit fields */
+#define L2ESR_MPDCD             BIT(0)
+#define L2ESR_MPSLV             BIT(1)
+#define L2ESR_TSESB             BIT(2)
+#define L2ESR_TSEDB             BIT(3)
+#define L2ESR_DSESB             BIT(4)
+#define L2ESR_DSEDB             BIT(5)
+#define L2ESR_MSE               BIT(6)
+#define L2ESR_MPLDREXNOK        BIT(8)
+
 #define CE1_REG_USAGE           (0)
 #define CE1_ADM_USAGE           (1)
 #define CE1_RESOURCE            (1)

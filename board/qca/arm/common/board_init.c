@@ -62,6 +62,20 @@ int board_init(void)
 	int ret;
 	uint32_t start_blocks;
 	uint32_t size_blocks;
+
+#ifdef CONFIG_IPQ_REPORT_L2ERR
+        u32 l2esr;
+
+        /* Record any kind of L2 errors caused during
+         * the previous boot stages as we are clearing
+         * the L2 errors before jumping to linux.
+         * Refer to cleanup_before_linux() */
+#ifndef CONFIG_SYS_DCACHE_OFF
+        l2esr = get_l2_indirect_reg(L2ESR_IND_ADDR);
+#endif
+        report_l2err(l2esr);
+#endif
+
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 
 	gd->bd->bi_boot_params = QCA_BOOT_PARAMS_ADDR;
@@ -249,6 +263,35 @@ int dram_init(void)
 	return 0;
 }
 
+#ifdef CONFIG_IPQ_REPORT_L2ERR
+void report_l2err(u32 l2esr)
+{
+        if (l2esr & L2ESR_MPDCD)
+                printf("L2 Master port decode error\n");
+
+        if (l2esr & L2ESR_MPSLV)
+                printf("L2 master port slave error\n");
+
+        if (l2esr & L2ESR_TSESB)
+                printf("L2 tag soft error, single-bit\n");
+
+        if (l2esr & L2ESR_TSEDB)
+                printf("L2 tag soft error, double-bit\n");
+
+        if (l2esr & L2ESR_DSESB)
+                printf("L2 data soft error, single-bit\n");
+
+        if (l2esr & L2ESR_DSEDB)
+                printf("L2 data soft error, double-bit\n");
+
+        if (l2esr & L2ESR_MSE)
+                printf("L2 modified soft error\n");
+
+        if (l2esr & L2ESR_MPLDREXNOK)
+                printf("L2 master port LDREX received Normal OK response\n");
+}
+#endif
+
 void enable_caches(void)
 {
 	icache_enable();
@@ -259,7 +302,7 @@ void disable_caches(void)
 	icache_disable();
 }
 
-void clear_l2cache_err(void)
+__weak void clear_l2cache_err(void)
 {
 	return;
 }

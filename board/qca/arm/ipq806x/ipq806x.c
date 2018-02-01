@@ -831,3 +831,19 @@ int ipq_get_tz_version(char *version_name, int buf_size)
 	snprintf(version_name, buf_size, "%s\n", version_name);
 	return 0;
 }
+
+void clear_l2cache_err(void)
+{
+        unsigned int val;
+#ifndef CONFIG_SYS_DCACHE_OFF
+        val = get_l2_indirect_reg(L2ESR_IND_ADDR);
+#endif
+
+#ifdef CONFIG_IPQ_REPORT_L2ERR
+        report_l2err(val);
+#endif
+
+#ifndef CONFIG_SYS_DCACHE_OFF
+        set_l2_indirect_reg(L2ESR_IND_ADDR, val);
+#endif
+}

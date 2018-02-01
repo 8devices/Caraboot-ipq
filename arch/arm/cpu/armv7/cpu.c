@@ -75,6 +75,8 @@ int cleanup_before_linux_select(int flags)
 	 */
 	cpu_cache_initialization();
 
+	clear_l2cache_err();
+
 	return 0;
 }
 

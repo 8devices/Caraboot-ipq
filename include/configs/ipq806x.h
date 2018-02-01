@@ -328,7 +328,7 @@ typedef struct {
 
 /* Enabling this flag will report any L2 errors.
  * By default we are disabling it */
-/*#define CONFIG_IPQ_REPORT_L2ERR*/
+#define CONFIG_IPQ_REPORT_L2ERR
 
 /*
  * Location in IMEM which contains the physical address of
