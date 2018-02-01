@@ -414,6 +414,18 @@ char *find_value(char *buffer, char *search, int size)
 }
 
 /**
+ * check_nand_preamble() compares first 12 bytes of section with
+ * pre defined PREAMBLE value and returns 0 if both value matches
+ */
+int check_nand_preamble(uint8_t *mfp)
+{
+	char magic[12] = { 0xd1, 0xdc, 0x4b, 0x84,
+			   0x34, 0x10, 0xd7, 0x73,
+			   0x5a, 0x43, 0x0b, 0x7d };
+	return memcmp(magic, mfp, sizeof(magic));
+}
+
+/**
  * get_sw_id_from_component_bin() parses the MBN header & checks image size v/s
  * code size. If both differ, it means signature & certificates are
  * appended at end.
@@ -452,7 +464,7 @@ int get_sw_id_from_component_bin(struct image_section *section)
 
 	mbn_hdr = (Mbn_Hdr *)fp;
 	if (strstr(section->file, sections[4].type)) {
-		uint32_t preamble = sections[2].is_present ? SBL_NAND_PREAMBLE : 0;
+		uint32_t preamble = !check_nand_preamble(fp) ? SBL_NAND_PREAMBLE : 0;
 		Sbl_Hdr *sbl_hdr = (Sbl_Hdr *)(fp + preamble);
 
 		sig_cert_size = sbl_hdr->image_size - sbl_hdr->code_size;
@@ -922,7 +934,7 @@ int split_code_signature_cert_from_component_bin(struct image_section *section,
 
 	mbn_hdr = (Mbn_Hdr *)fp;
 	if (strstr(section->file, sections[4].type)) {
-		uint32_t preamble = sections[2].is_present ? SBL_NAND_PREAMBLE : 0;
+		uint32_t preamble = !check_nand_preamble(fp) ? SBL_NAND_PREAMBLE : 0;
 
 		sbl_hdr = (Sbl_Hdr *)(fp + preamble);
 		src_offset = preamble;
