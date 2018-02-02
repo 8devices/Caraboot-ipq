@@ -166,6 +166,12 @@ void reset_crashdump(void)
 
 void reset_cpu(unsigned long a)
 {
+	int reset_s17_gpio_node;
+
+	reset_s17_gpio_node = fdt_path_offset(gd->fdt_blob, "/reset_s17_gpio");
+	if (reset_s17_gpio_node)
+		qca_gpio_init(reset_s17_gpio_node);
+
 	reset_crashdump();
 
 	printf("\nResetting with watch dog!\n");
