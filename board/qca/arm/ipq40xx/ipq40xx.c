@@ -337,3 +337,8 @@ int apps_iscrashed(void)
 
 	return 0;
 }
+
+unsigned int get_smem_spi_addr_len(void)
+{
+	return SPI_MAX_ADDR_LEN;
+}
