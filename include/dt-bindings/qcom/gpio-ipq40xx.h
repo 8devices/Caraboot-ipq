@@ -55,6 +55,12 @@
 #define GPIO_14MA	6
 #define GPIO_16MA	7
 
+/* GPIO TLMM for IPQ40XX: Drive Strength */
+#define DRV_TYPE_A	7
+#define DRV_TYPE_B	3
+#define DRV_TYPE_C	1
+#define DRV_TYPE_D	0
+
 /* GPIO TLMM: Status */
 #define GPIO_OE_DISABLE	0
 #define GPIO_OE_ENABLE	1
