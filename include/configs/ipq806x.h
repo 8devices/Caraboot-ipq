@@ -130,6 +130,8 @@
 
 #define CONFIG_OF_COMBINE		1
 
+#define CONFIG_CMD_BOOTZ
+
 /*
  * I2C Configs
  */
