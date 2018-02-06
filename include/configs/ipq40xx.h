@@ -302,4 +302,6 @@ typedef struct {
 #define CONFIG_CMD_PCI
 #define CONFIG_PCI_SCAN_SHOW
 #endif
+
+#define CONFIG_IPQ_4B_ADDR_SWITCH_REQD
 #endif /* _IPQ40XX_H */
