@@ -97,6 +97,11 @@
 #define CONFIG_SYS_MALLOC_LEN           (CONFIG_ENV_SIZE_MAX + (512 << 10))
 
 /*
+*Run command support
+*/
+#define	CONFIG_CMD_RUN
+
+/*
  * select serial console configuration
  */
 #define CONFIG_CONS_INDEX		1
