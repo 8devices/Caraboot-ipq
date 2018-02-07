@@ -279,9 +279,9 @@ int get_partition_info_efi(block_dev_desc_t * dev_desc, int part,
 		     - info->start;
 	info->blksz = dev_desc->blksz;
 
-	sprintf((char *)info->name, "%s",
+	snprintf((char *)info->name, sizeof(info->name), "%s",
 			print_efiname(&gpt_pte[part - 1]));
-	sprintf((char *)info->type, "U-Boot");
+	snprintf((char *)info->type, sizeof(info->type), "U-Boot");
 	info->bootable = is_bootable(&gpt_pte[part - 1]);
 #ifdef CONFIG_PARTITION_UUIDS
 	uuid_bin_to_str(gpt_pte[part - 1].unique_partition_guid.b, info->uuid,

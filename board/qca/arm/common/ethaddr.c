@@ -113,12 +113,12 @@ void set_ethmac_addr(void)
 			 * dts entry for the ethernet entries, which in turn
 			 * will be picked up by the HLOS driver
 			 */
-			sprintf(mac, "%x:%x:%x:%x:%x:%x",
+			snprintf(mac, sizeof(mac), "%x:%x:%x:%x:%x:%x",
 					mac_addr[0], mac_addr[1],
 					mac_addr[2], mac_addr[3],
 					mac_addr[4], mac_addr[5]);
 			setenv(ethaddr, mac);
 		}
-		sprintf(ethaddr, "eth%daddr", (i + 1));
+		snprintf(ethaddr, sizeof(ethaddr), "eth%daddr", (i + 1));
 	}
 }

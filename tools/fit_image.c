@@ -100,7 +100,8 @@ static int fit_handle_file(struct image_tool_params *params)
 				params->imagefile, params->cmdname);
 		return (EXIT_FAILURE);
 	}
-	sprintf (tmpfile, "%s%s", params->imagefile, MKIMAGE_TMPFILE_SUFFIX);
+	snprintf (tmpfile, MKIMAGE_MAX_TMPFILE_LEN, "%s%s", params->imagefile, 
+					MKIMAGE_TMPFILE_SUFFIX);
 
 	/* We either compile the source file, or use the existing FIT image */
 	if (params->datafile) {

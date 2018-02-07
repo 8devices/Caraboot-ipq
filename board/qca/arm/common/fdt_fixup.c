@@ -258,6 +258,7 @@ int ft_board_setup(void *blob, bd_t *bd)
 	u64 memory_size = gd->ram_size;
 	char *mtdparts = NULL;
 	char parts_str[4096];
+	int len = sizeof(parts_str);
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 	struct flash_node_info nodes[] = {
 		{ "qcom,msm-nand", MTD_DEV_TYPE_NAND, 0 },
@@ -276,20 +277,20 @@ int ft_board_setup(void *blob, bd_t *bd)
 	ipq_fdt_mem_rsvd_fixup(blob);
 #endif
 	if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
-		sprintf(parts_str, "mtdparts=nand0");
+		snprintf(parts_str, sizeof(parts_str), "mtdparts=nand0");
 	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
 		/* Patch NOR block size and density for
 		 * generic probe case */
 		ipq_fdt_fixup_spi_nor_params(blob);
-		sprintf(parts_str, "mtdparts=" QCA_SPI_NOR_DEVICE);
+		snprintf(parts_str,sizeof(parts_str), "mtdparts=" QCA_SPI_NOR_DEVICE);
 
 		if (sfi->flash_secondary_type == SMEM_BOOT_NAND_FLASH)
-			sprintf(parts_str,
+			snprintf(parts_str, sizeof(parts_str),
 				"mtdparts=nand0:64M@0(rootfs);nand1");
 	}
 	mtdparts = parts_str;
 	if (mtdparts) {
-		qca_smem_part_to_mtdparts(mtdparts);
+		qca_smem_part_to_mtdparts(mtdparts,len);
 		if (mtdparts[0] != '\0') {
 			debug("mtdparts = %s\n", mtdparts);
 			setenv("mtdparts", mtdparts);

@@ -116,7 +116,7 @@ int smem_bootconfig_info(void);
 unsigned int get_smem_spi_addr_len(void);
 unsigned int get_rootfs_active_partition(void);
 unsigned int get_mibib_active_partition(void);
-void qca_smem_part_to_mtdparts(char *mtdid);
+void qca_smem_part_to_mtdparts(char *mtdid, int len);
 int ipq_smem_get_socinfo_cpu_type(uint32_t *cpu_type);
 int ipq_smem_get_socinfo_version(uint32_t *version);
 #endif
