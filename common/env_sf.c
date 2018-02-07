@@ -214,8 +214,6 @@ void sf_env_relocate_spec(void)
 	}
 
 err_read:
-	spi_flash_free(env_flash);
-	env_flash = NULL;
 out:
 	free(tmp_env1);
 	free(tmp_env2);
@@ -316,7 +314,6 @@ void sf_env_relocate_spec(void)
 	if (ret)
 		gd->env_valid = 1;
 out:
-	spi_flash_free(env_flash);
 	if (buf)
 		free(buf);
 	env_flash = NULL;

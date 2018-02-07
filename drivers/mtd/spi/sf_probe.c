@@ -17,6 +17,8 @@
 
 #include "sf_internal.h"
 
+struct spi_flash *spi_flash_ptr[MAX_SF_BUS_NUM][MAX_SF_CS_NUM] = {NULL};
+
 /**
  * spi_flash_probe_slave() - Probe for a SPI flash device on a bus
  *
@@ -83,10 +85,16 @@ struct spi_flash *spi_flash_probe(unsigned int busnum, unsigned int cs,
 {
 	struct spi_slave *bus;
 
+	if (spi_flash_ptr[busnum][cs] != NULL)
+		return spi_flash_ptr[busnum][cs];
+
 	bus = spi_setup_slave(busnum, cs, max_hz, spi_mode);
 	if (!bus)
 		return NULL;
-	return spi_flash_probe_tail(bus);
+
+	spi_flash_ptr[busnum][cs] = spi_flash_probe_tail(bus);
+
+	return spi_flash_ptr[busnum][cs];
 }
 
 #ifdef CONFIG_OF_SPI_FLASH
@@ -104,11 +112,15 @@ struct spi_flash *spi_flash_probe_fdt(const void *blob, int slave_node,
 
 void spi_flash_free(struct spi_flash *flash)
 {
+	if (flash) {
 #ifdef CONFIG_SPI_FLASH_MTD
-	spi_flash_mtd_unregister();
+		spi_flash_mtd_unregister();
 #endif
-	spi_free_slave(flash->spi);
-	free(flash);
+		spi_free_slave(flash->spi);
+		free(flash);
+	}
+
+	memset(spi_flash_ptr, NULL, sizeof(spi_flash_ptr));
 }
 
 #else /* defined CONFIG_DM_SPI_FLASH */
