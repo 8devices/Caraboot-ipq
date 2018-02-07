@@ -447,20 +447,16 @@ void board_pci_init(int id)
 void ipq_fdt_fixup_socinfo(void *blob)
 {
 	uint32_t cpu_type;
-	int nodeoff, ret;
+	int ret;
 
 	ret = ipq_smem_get_socinfo_cpu_type(&cpu_type);
 	if (ret) {
 		printf("ipq: fdt fixup cannot get socinfo\n");
 		return;
 	}
-	nodeoff = fdt_node_offset_by_compatible(blob, -1, "qcom,ipq8064");
 
-	if (nodeoff < 0) {
-		printf("ipq: fdt fixup cannot find compatible node\n");
-		return;
-	}
-	ret = fdt_setprop(blob, nodeoff, "cpu_type",
+	/* Add "cpu_type" to root node of the devicetree*/
+	ret = fdt_setprop(blob, 0, "cpu_type",
 			&cpu_type, sizeof(cpu_type));
 	if (ret)
 		printf("%s: cannot set cpu type %d\n", __func__, ret);
