@@ -19,6 +19,7 @@
 #include <asm/arch-qca-common/smem.h>
 #include "qca_common.h"
 #include <sdhci.h>
+#include <malloc.h>
 
 #ifdef CONFIG_QCA_MMC
 #ifndef CONFIG_SDHCI_SUPPORT
@@ -45,6 +46,8 @@ int get_eth_mac_address(uchar *enetaddr, uint no_of_macs)
 	disk_partition_t disk_info;
 	struct mmc *mmc;
 	char mmc_blks[512];
+	u8 *tmp_block_buf;
+	u32 blks_cnt;
 #endif
 	if (sfi->flash_type != SMEM_BOOT_MMC_FLASH) {
 		if (qca_smem_flash_info.flash_type == SMEM_BOOT_SPI_FLASH)
@@ -80,13 +83,25 @@ int get_eth_mac_address(uchar *enetaddr, uint no_of_macs)
 		 * ART partition 0th position will contain MAC address.
 		 * Read 1 block.
 		 */
-		if (ret == 0) {
+		if (ret > 0) {
 			mmc = mmc_host.mmc;
-			ret = mmc->block_dev.block_read
-				(mmc_host.dev_num, disk_info.start,
-						1, mmc_blks);
-			memcpy(enetaddr, mmc_blks, length);
-                }
+			blks_cnt = (length / disk_info.blksz) + 1;
+			if (blks_cnt > disk_info.size)
+				blks_cnt = disk_info.size;
+
+			tmp_block_buf = malloc(blks_cnt * disk_info.blksz);
+
+			if (NULL == tmp_block_buf) {
+				printf("memory allocation failed..\n");
+				return -ENOMEM;
+			}
+
+			ret = mmc->block_dev.block_read(mmc_host.dev_num,
+					disk_info.start, blks_cnt,
+					tmp_block_buf);
+			memcpy(enetaddr, tmp_block_buf, length);
+			free(tmp_block_buf);
+		}
 		if (ret < 0)
 			printf("ART partition read failed..\n");
 #endif
