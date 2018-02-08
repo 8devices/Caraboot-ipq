@@ -334,10 +334,15 @@ int config_select(unsigned int addr, char *rcmd, int rcmd_size)
 		}
 	}
 
-	if (fit_conf_get_node((void *)addr, dtb_config_name) >= 0) {
-		snprintf(rcmd, rcmd_size, "bootm 0x%x#%s\n",
-			 addr, dtb_config_name);
-		return 0;
+	char *tok = strtok(dtb_config_name, ",");
+
+	while(tok != NULL){
+		if (fit_conf_get_node((void *)addr, tok) >= 0) {
+			snprintf(rcmd, rcmd_size, "bootm 0x%x#%s\n",
+				 addr, tok);
+			return 0;
+		}
+		tok = strtok(NULL, ",");
 	}
 
 	printf("Config not availabale\n");
