@@ -832,6 +832,11 @@ static int pci_ipq_ofdata_to_platdata(int id, struct ipq_pcie *pcie)
 	return 0;
 }
 
+__weak void ipq_wifi_pci_power_enable()
+{
+	return;
+}
+
 void pci_init_board (void)
 {
 	struct ipq_pcie *pcie;
@@ -855,6 +860,7 @@ void pci_init_board (void)
 		break;
 	}
 
+	ipq_wifi_pci_power_enable();
 	for (i = 0; i < PCI_MAX_DEVICES; i++) {
 		pcie->linkup = 0;
 		pci_ipq_ofdata_to_platdata(i, pcie);
