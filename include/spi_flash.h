@@ -30,6 +30,8 @@
 #ifndef CONFIG_SF_DEFAULT_BUS
 # define CONFIG_SF_DEFAULT_BUS		0
 #endif
+#define MAX_SF_BUS_NUM			5
+#define MAX_SF_CS_NUM			5
 
 struct spi_slave;
 

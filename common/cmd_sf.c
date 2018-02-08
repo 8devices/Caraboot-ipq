@@ -135,8 +135,7 @@ static int do_spi_flash_probe(int argc, char * const argv[])
 
 	flash = dev_get_uclass_priv(new);
 #else
-	if (flash)
-		spi_flash_free(flash);
+	spi_flash_free(flash);
 
 	new = spi_flash_probe(bus, cs, speed, mode);
 	flash = new;
