@@ -48,9 +48,9 @@
 		mmc_gpio {
 			gpio1 {
 				gpio = <23>;
-				func = <1>;
+				func = <1>;	/* sdio0 */
 				pull = <GPIO_PULL_UP>;
-				drvstr = <GPIO_10MA>;
+				drvstr = <DRV_TYPE_C>;
 				oe = <GPIO_OE_DISABLE>;
 				vm = <GPIO_VM_ENABLE>;
 				od_en = <GPIO_OD_DISABLE>;
@@ -59,9 +59,9 @@
 
 			gpio2 {
 				gpio = <24>;
-				func = <1>;
+				func = <1>;	/* sdio1 */
 				pull = <GPIO_PULL_UP>;
-				drvstr = <GPIO_10MA>;
+				drvstr = <DRV_TYPE_C>;
 				oe = <GPIO_OE_DISABLE>;
 				vm = <GPIO_VM_ENABLE>;
 				od_en = <GPIO_OD_DISABLE>;
@@ -70,9 +70,9 @@
 
 			gpio3 {
 				gpio = <25>;
-				func = <1>;
+				func = <1>;	/* sdio2 */
 				pull = <GPIO_PULL_UP>;
-				drvstr = <GPIO_10MA>;
+				drvstr = <DRV_TYPE_C>;
 				oe = <GPIO_OE_DISABLE>;
 				vm = <GPIO_VM_ENABLE>;
 				od_en = <GPIO_OD_DISABLE>;
@@ -81,9 +81,9 @@
 
 			gpio4 {
 				gpio = <26>;
-				func = <1>;
+				func = <1>;	/* sdio3 */
 				pull = <GPIO_PULL_UP>;
-				drvstr = <GPIO_10MA>;
+				drvstr = <DRV_TYPE_C>;
 				oe = <GPIO_OE_DISABLE>;
 				vm = <GPIO_VM_ENABLE>;
 				od_en = <GPIO_OD_DISABLE>;
@@ -92,9 +92,9 @@
 
 			gpio5 {
 				gpio = <27>;
-				func = <1>;
+				func = <1>;	/* sdio_clk */
 				pull = <GPIO_PULL_UP>;
-				drvstr = <GPIO_16MA>;
+				drvstr = <DRV_TYPE_A>;
 				oe = <GPIO_OE_DISABLE>;
 				vm = <GPIO_VM_ENABLE>;
 				od_en = <GPIO_OD_DISABLE>;
@@ -103,9 +103,9 @@
 
 			gpio6 {
 				gpio = <28>;
-				func = <1>;
+				func = <1>;	/* sdio_cmd */
 				pull = <GPIO_PULL_UP>;
-				drvstr = <GPIO_10MA>;
+				drvstr = <DRV_TYPE_C>;
 				oe = <GPIO_OE_DISABLE>;
 				vm = <GPIO_VM_ENABLE>;
 				od_en = <GPIO_OD_DISABLE>;

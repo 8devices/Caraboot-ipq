@@ -98,7 +98,7 @@
 				gpio = <23>;
 				func = <1>;
 				pull = <GPIO_PULL_UP>;
-				drvstr = <GPIO_10MA>;
+				drvstr = <DRV_TYPE_C>;
 				oe = <GPIO_OE_DISABLE>;
 				vm = <GPIO_VM_ENABLE>;
 				od_en = <GPIO_OD_DISABLE>;
@@ -109,7 +109,7 @@
 				gpio = <24>;
 				func = <1>;
 				pull = <GPIO_PULL_UP>;
-				drvstr = <GPIO_10MA>;
+				drvstr = <DRV_TYPE_C>;
 				oe = <GPIO_OE_DISABLE>;
 				vm = <GPIO_VM_ENABLE>;
 				od_en = <GPIO_OD_DISABLE>;
@@ -120,7 +120,7 @@
 				gpio = <25>;
 				func = <1>;
 				pull = <GPIO_PULL_UP>;
-				drvstr = <GPIO_10MA>;
+				drvstr = <DRV_TYPE_C>;
 				oe = <GPIO_OE_DISABLE>;
 				vm = <GPIO_VM_ENABLE>;
 				od_en = <GPIO_OD_DISABLE>;
@@ -130,7 +130,7 @@
 			gpio4 {
 				gpio = <26>;
 				func = <1>;
-				pull = <GPIO_PULL_UP>;
+				pull = <DRV_TYPE_C>;
 				drvstr = <GPIO_10MA>;
 				oe = <GPIO_OE_DISABLE>;
 				vm = <GPIO_VM_ENABLE>;
@@ -142,7 +142,7 @@
 				gpio = <27>;
 				func = <1>;
 				pull = <GPIO_PULL_UP>;
-				drvstr = <GPIO_16MA>;
+				drvstr = <DRV_TYPE_A>;
 				oe = <GPIO_OE_DISABLE>;
 				vm = <GPIO_VM_ENABLE>;
 				od_en = <GPIO_OD_DISABLE>;
@@ -153,7 +153,7 @@
 				gpio = <28>;
 				func = <1>;
 				pull = <GPIO_PULL_UP>;
-				drvstr = <GPIO_10MA>;
+				drvstr = <DRV_TYPE_C>;
 				oe = <GPIO_OE_DISABLE>;
 				vm = <GPIO_VM_ENABLE>;
 				od_en = <GPIO_OD_DISABLE>;
@@ -164,7 +164,7 @@
 				gpio = <29>;
 				func = <1>;
 				pull = <GPIO_PULL_UP>;
-				drvstr = <GPIO_10MA>;
+				drvstr = <DRV_TYPE_C>;
 				oe = <GPIO_OE_DISABLE>;
 				vm = <GPIO_VM_ENABLE>;
 				od_en = <GPIO_OD_DISABLE>;
@@ -175,7 +175,7 @@
 				gpio = <30>;
 				func = <1>;
 				pull = <GPIO_PULL_UP>;
-				drvstr = <GPIO_10MA>;
+				drvstr = <DRV_TYPE_C>;
 				oe = <GPIO_OE_DISABLE>;
 				vm = <GPIO_VM_ENABLE>;
 				od_en = <GPIO_OD_DISABLE>;
@@ -186,7 +186,7 @@
 				gpio = <31>;
 				func = <1>;
 				pull = <GPIO_PULL_UP>;
-				drvstr = <GPIO_10MA>;
+				drvstr = <DRV_TYPE_C>;
 				oe = <GPIO_OE_DISABLE>;
 				vm = <GPIO_VM_ENABLE>;
 				od_en = <GPIO_OD_DISABLE>;
@@ -196,8 +196,8 @@
 			gpio10 {
 				gpio = <32>;
 				func = <1>;
-				pull = <GPIO_NO_PULL>;
-				drvstr = <GPIO_10MA>;
+				pull = <GPIO_PULL_UP>;
+				drvstr = <DRV_TYPE_C>;
 				oe = <GPIO_OE_DISABLE>;
 				vm = <GPIO_VM_ENABLE>;
 				od_en = <GPIO_OD_DISABLE>;
