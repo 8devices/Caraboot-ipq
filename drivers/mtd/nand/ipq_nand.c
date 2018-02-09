@@ -709,13 +709,13 @@ static int ipq_check_read_status(struct mtd_info *mtd, uint32_t status)
 	if (status & MPU_ERROR_MASK)
 		return -EPERM;
 
-	if ((status & OP_ERR_MASK) && !cw_erased) {
-		mtd->ecc_stats.failed++;
+	if ((status & OP_ERR_MASK) && !cw_erased)
 		return -EBADMSG;
-	}
 
-	if (num_errors)
-		mtd->ecc_stats.corrected++;
+	if (num_errors) {
+		mtd->ecc_stats.corrected += num_errors;
+		return num_errors;
+	}
 
 	return 0;
 }
@@ -769,8 +769,6 @@ static int ipq_nand_handle_erased_pg(struct mtd_info *mtd,
 		return ret;
 	}
 
-	mtd->ecc_stats.failed--;
-
 	return 0;
 }
 
@@ -792,21 +790,21 @@ static int ipq_read_cw(struct mtd_info *mtd, u_int cwno,
 		return ret;
 
 	ret = ipq_check_read_status(mtd, status);
+	if (ret < 0 && ret != -EBADMSG)
+		return ret;
 
 	if (ops->datbuf != NULL) {
 		hw2memcpy(ops->datbuf, &regs->buffn_acc[cwl->data_offs >> 2],
 			  cwl->data_size);
 
 		ret = ipq_nand_handle_erased_pg(mtd, ops, cwl, ret);
-		if (ret < 0)
-			return ret;
 
 		ops->retlen += cwl->data_size;
 		ops->datbuf += cwl->data_size;
 	}
 
 	if (ops->oobbuf != NULL) {
-		if (ret < 0)
+		if (ret < 0 && ret != EBADMSG)
 			return ret;
 		hw2memcpy(ops->oobbuf, &regs->buffn_acc[cwl->oob_offs >> 2],
 			  cwl->oob_size);
@@ -815,7 +813,7 @@ static int ipq_read_cw(struct mtd_info *mtd, u_int cwno,
 		ops->oobbuf += cwl->oob_size;
 	}
 
-	return 0;
+	return ret;
 }
 
 /*
@@ -841,6 +839,7 @@ static int ipq_read_page(struct mtd_info *mtd, u_long pageno,
 	u_int i;
 	struct ipq_nand_dev *dev = MTD_IPQ_NAND_DEV(mtd);
 	int ret = 0;
+	unsigned int max_bitflips = 0;
 
 	ipq_init_cw_count(mtd, dev->cw_per_page - 1);
 	ipq_init_rw_pageno(mtd, pageno);
@@ -849,12 +848,19 @@ static int ipq_read_page(struct mtd_info *mtd, u_long pageno,
 	for (i = 0; i < dev->cw_per_page; i++) {
 		ret = ipq_read_cw(mtd, i, ops);
 		if (ret < 0) {
+			if (ret == -EBADMSG) {
+				mtd->ecc_stats.failed++;
+				continue;
+			}
+
 			ipq_reset_cw_counter(mtd, i + 1);
 			return ret;
 		}
+
+		max_bitflips = max_t(unsigned int, max_bitflips, ret);
 	}
 
-	return ret;
+	return max_bitflips;
 }
 
 /*
@@ -967,10 +973,11 @@ static int ipq_nand_read_oob(struct mtd_info *mtd, loff_t from,
 	u_long start;
 	u_long pages;
 	u_long i;
-	uint32_t corrected;
 	struct nand_chip *chip = MTD_NAND_CHIP(mtd);
 	struct ipq_nand_dev *dev = MTD_IPQ_NAND_DEV(mtd);
 	int ret = 0;
+	unsigned int max_bitflips = 0;
+	unsigned int ecc_failures = mtd->ecc_stats.failed;
 
 	/* We don't support MTD_OOB_PLACE as of yet. */
 	if (ops->mode == MTD_OPS_PLACE_OOB)
@@ -995,8 +1002,6 @@ static int ipq_nand_read_oob(struct mtd_info *mtd, loff_t from,
 	debug("Start of page: %lu\n", start);
 	debug("No of pages to read: %lu\n", pages);
 
-	corrected = mtd->ecc_stats.corrected;
-
 	for (i = start; i < (start + pages); i++) {
 		struct mtd_oob_ops page_ops;
 
@@ -1012,16 +1017,17 @@ static int ipq_nand_read_oob(struct mtd_info *mtd, loff_t from,
 		if (ret < 0)
 			goto done;
 
+		max_bitflips = max_t(unsigned int, max_bitflips, ret);
 		ipq_nand_read_datcopy(mtd, ops);
 		ipq_nand_read_oobcopy(mtd, ops);
 	}
 
-	if (mtd->ecc_stats.corrected != corrected)
-		ret = -EUCLEAN;
+	if (ecc_failures != mtd->ecc_stats.failed)
+		ret = -EBADMSG;
 
 done:
 	ipq_exit_raw_mode(mtd);
-	return ret;
+	return ret ? ret : max_bitflips;
 }
 
 static int ipq_nand_read(struct mtd_info *mtd, loff_t from, size_t len,
