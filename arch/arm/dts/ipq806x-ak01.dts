@@ -23,4 +23,27 @@
 		console = "/serial@16340000";
 		nand = "/nand@1A600000";
 	};
+
+	ak01_gmac_reset_gpio {
+		gpio32 {
+			gpio = <32>;
+			func = <0>;
+			out = <GPIO_OUT_LOW>;
+			pull = <GPIO_NO_PULL>;
+			drvstr = <GPIO_2MA>;
+			oe = <GPIO_OE_DISABLE>;
+		};
+	};
+
+	ak01_gmac_config_gpio {
+		gpio32 {
+			gpio = <32>;
+			func = <0>;
+			out = <GPIO_OUT_HIGH>;
+			pull = <GPIO_PULL_UP>;
+			drvstr = <GPIO_12MA>;
+			oe = <GPIO_OE_ENABLE>;
+		};
+	};
+
 };
