@@ -1687,6 +1687,7 @@ int ipq_nand_scan(struct mtd_info *mtd)
 	mtd->_sync = ipq_nand_sync;
 
 	mtd->ecclayout = NULL;
+	mtd->bitflip_threshold = DIV_ROUND_UP(mtd->ecc_strength * 3, 4);
 
 	chip->page_shift = ffs(mtd->writesize) - 1;
 	chip->phys_erase_shift = ffs(mtd->erasesize) - 1;
@@ -1735,6 +1736,7 @@ static void ipq_nand_hw_config(struct mtd_info *mtd, struct ipq_config *cfg)
 
 	/* Make the device OOB size as QPIC supported OOB size. */
 	mtd->oobsize = ipq_oob_size;
+	mtd->ecc_strength = cfg->ecc_mode;
 	if (dev->variant == QCA_NAND_QPIC) {
 		/*
 		 * On IPQ40xx with the QPIC controller, we use BCH for both ECC
