@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -62,7 +62,7 @@ asmlinkage void secondary_core_entry(char *argv, int *cmd_complete,
 	}
 
 	/* Update here as ncessary - secondary entry point */
-	*cmd_result = cli_simple_run_command(argv, 0);
+	*cmd_result = cli_simple_run_command(argv, CMD_FLAG_SEC_CORE);
 	*cmd_complete = 1;
 
 	state = CPU_POWER_DOWN;
@@ -92,7 +92,7 @@ int is_psci_cpu_off(unsigned int cpuid)
 	return err;
 }
 
-static int do_runmulticore(cmd_tbl_t *cmdtp,
+int do_runmulticore(cmd_tbl_t *cmdtp,
 			   int flag, int argc, char *const argv[])
 {
 	int j;
