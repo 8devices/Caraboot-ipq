@@ -97,6 +97,7 @@ struct ipq_config {
  * @main_per_cw:        no. of bytes in the codeword that will be ECCed
  * @spare_per_cw:	no. of bytes in the codeword that will NOT be ECCed
  * @cw_per_page:        the no. of codewords in a page
+ * @raw_cw_size:        the raw codeword size
  * @ecc_page_layout:    the mapping of data and oob buf in AUTO mode
  * @raw_page_layout:    the mapping of data and oob buf in RAW mode
  * @curr_page_layout:   currently selected page layout ECC or raw
@@ -110,6 +111,10 @@ struct ipq_config {
  * @pad_oob:            the pad buffer for out-of-band data
  * @zero_page:          the zero page written for marking bad blocks
  * @zero_oob:           the zero OOB written for marking bad blocks
+ * @tmp_datbuf:		the temp data buffer which will be used for raw read
+ *			for erased cw bitflips detection
+ * @tmp_oobbuf:		the temp oob buffer which will be used for raw read
+ *			for erased cw bitflips detection
  * @read_cmd:           the controller cmd to do a read
  * @write_cmd:          the controller cmd to do a write
  * @oob_per_page:       the no. of OOB bytes per page, depends on OOB mode
@@ -121,6 +126,7 @@ struct ipq_nand_dev {
 	u_int spare_per_cw;
 
 	u_int cw_per_page;
+	u_int raw_cw_size;
 	struct ipq_cw_layout *ecc_page_layout;
 	struct ipq_cw_layout *raw_page_layout;
 	struct ipq_cw_layout *curr_page_layout;
@@ -137,6 +143,8 @@ struct ipq_nand_dev {
 	u_char *pad_oob;
 	u_char *zero_page;
 	u_char *zero_oob;
+	u_char *tmp_datbuf;
+	u_char *tmp_oobbuf;
 
 	uint32_t read_cmd;
 	uint32_t write_cmd;
@@ -510,6 +518,9 @@ struct nand_ecclayout fake_ecc_layout;
 
 #define NAND_READY_TIMEOUT      100000 /* 1 SEC */
 
+static int ipq_read_page(struct mtd_info *mtd, u_long pageno,
+			 struct mtd_oob_ops *ops);
+
 /*
  * The flash buffer does not like byte accesses. A plain memcpy might
  * perform byte access, which can clobber the data to the
@@ -830,6 +841,98 @@ static void ipq_reset_cw_counter(struct mtd_info *mtd, u_int start_cw)
 		ipq_exec_cmd(mtd, dev->read_cmd, &status);
 }
 
+static int
+ipq_nand_check_erased_buf(unsigned char *buf, int len, int bitflips_threshold)
+{
+	int bitflips = 0;
+
+	for (; len > 0; len--, buf++) {
+		bitflips += 8 - hweight8(*buf);
+		if (unlikely(bitflips > bitflips_threshold))
+			return -EBADMSG;
+	}
+
+	return bitflips;
+}
+
+/*
+ * Now following logic is being added to identify the erased codeword
+ * bitflips.
+ * 1. Maintain the bitmasks for the codewords which generated uncorrectable
+ *    error.
+ * 2. Read the raw data again in temp buffer and count the number of zeros.
+ *    Since spare bytes are unused in ECC layout and won’t affect ECC
+ *    correctability so no need to count number of zero in spare bytes.
+ * 3. If the number of zero is below ECC correctability then it can be
+ *    treated as erased CW. In this case, make all the data/oob of actual user
+ *    buffers as 0xff.
+ */
+static int
+ipq_nand_check_erased_page(struct mtd_info *mtd, uint32_t page,
+			   unsigned char *datbuf,
+			   unsigned char *oobbuf,
+			   unsigned int uncorrectable_err_cws,
+			   unsigned int *max_bitflips)
+{
+	struct mtd_oob_ops raw_page_ops;
+	struct ipq_nand_dev *dev = MTD_IPQ_NAND_DEV(mtd);
+	unsigned char *tmp_datbuf;
+	unsigned int tmp_datasize, datasize, oobsize;
+	int i, start_cw, last_cw, ret, data_bitflips;
+
+	raw_page_ops.mode = MTD_OPS_RAW;
+	raw_page_ops.len = mtd->writesize;
+	raw_page_ops.ooblen =  mtd->oobsize;
+	raw_page_ops.datbuf = dev->tmp_datbuf;
+	raw_page_ops.oobbuf = dev->tmp_oobbuf;
+	raw_page_ops.retlen = 0;
+	raw_page_ops.oobretlen = 0;
+
+	ipq_enter_raw_mode(mtd);
+	ret = ipq_read_page(mtd, page, &raw_page_ops);
+	ipq_exit_raw_mode(mtd);
+	if (ret)
+		return ret;
+
+	start_cw = ffs(uncorrectable_err_cws) - 1;
+	last_cw = fls(uncorrectable_err_cws);
+
+	tmp_datbuf = dev->tmp_datbuf + start_cw * dev->raw_cw_size;
+	tmp_datasize = dev->raw_cw_size - dev->spare_per_cw;
+	datasize = dev->main_per_cw;
+	datbuf += start_cw * datasize;
+
+	for (i = start_cw; i < last_cw;
+	     i++, datbuf += datasize, tmp_datbuf += dev->raw_cw_size) {
+		if (!(BIT(i) & uncorrectable_err_cws))
+			continue;
+
+		data_bitflips =
+			ipq_nand_check_erased_buf(tmp_datbuf, tmp_datasize,
+						  mtd->ecc_strength);
+		if (data_bitflips < 0) {
+			mtd->ecc_stats.failed++;
+			continue;
+		}
+
+		*max_bitflips =
+			max_t(unsigned int, *max_bitflips, data_bitflips);
+
+		/* check if its last CW in Linux layout */
+		if (i == dev->cw_per_page - 1 && dev->main_per_cw != 512) {
+			oobsize = dev->cw_per_page << 2;
+			datasize = dev->main_per_cw - oobsize;
+			if (oobbuf)
+				memset(oobbuf, 0xff, oobsize);
+		}
+
+		if (datbuf)
+			memset(datbuf, 0xff, datasize);
+	}
+
+	return 0;
+}
+
 /*
  * Read a page worth of data and oob.
  */
@@ -839,7 +942,9 @@ static int ipq_read_page(struct mtd_info *mtd, u_long pageno,
 	u_int i;
 	struct ipq_nand_dev *dev = MTD_IPQ_NAND_DEV(mtd);
 	int ret = 0;
-	unsigned int max_bitflips = 0;
+	unsigned int max_bitflips = 0, uncorrectable_err_cws = 0;
+	unsigned char *ops_datbuf = ops->datbuf;
+	unsigned char *ops_oobbuf = ops->oobbuf;
 
 	ipq_init_cw_count(mtd, dev->cw_per_page - 1);
 	ipq_init_rw_pageno(mtd, pageno);
@@ -849,7 +954,7 @@ static int ipq_read_page(struct mtd_info *mtd, u_long pageno,
 		ret = ipq_read_cw(mtd, i, ops);
 		if (ret < 0) {
 			if (ret == -EBADMSG) {
-				mtd->ecc_stats.failed++;
+				uncorrectable_err_cws |= BIT(i);
 				continue;
 			}
 
@@ -858,6 +963,15 @@ static int ipq_read_page(struct mtd_info *mtd, u_long pageno,
 		}
 
 		max_bitflips = max_t(unsigned int, max_bitflips, ret);
+	}
+
+	if (uncorrectable_err_cws) {
+		ret = ipq_nand_check_erased_page(mtd, pageno, ops_datbuf,
+						       ops_oobbuf,
+						       uncorrectable_err_cws,
+						       &max_bitflips);
+		if (ret < 0)
+			return ret;
 	}
 
 	return max_bitflips;
@@ -1714,7 +1828,6 @@ static void ipq_nand_hw_config(struct mtd_info *mtd, struct ipq_config *cfg)
 	u_int i;
 	u_int enable_bch;
 	u_int bch_ecc_mode;
-	u_int raw_cw_size;
 	u_int busy_timeout, recovery_cycles;
 	u_int wr_rd_busy_gap, rs_ecc_parity_bytes;
 	uint32_t dev_cmd_vld;
@@ -1727,7 +1840,8 @@ static void ipq_nand_hw_config(struct mtd_info *mtd, struct ipq_config *cfg)
 	dev->cw_per_page = cfg->cw_per_page;
 	dev->ecc_page_layout = cfg->ecc_page_layout;
 	dev->raw_page_layout = cfg->raw_page_layout;
-	raw_cw_size = cfg->main_per_cw + cfg->spare_per_cw + cfg->ecc_per_cw + 1;
+	dev->raw_cw_size =
+		cfg->main_per_cw + cfg->spare_per_cw + cfg->ecc_per_cw + 1;
 
 	mtd->oobavail = 0;
 	for (i = 0; i < dev->cw_per_page; i++) {
@@ -1735,7 +1849,7 @@ static void ipq_nand_hw_config(struct mtd_info *mtd, struct ipq_config *cfg)
 		mtd->oobavail += cw_layout->oob_size;
 	}
 
-	ipq_oob_size = raw_cw_size * dev->cw_per_page - mtd->writesize;
+	ipq_oob_size = dev->raw_cw_size * dev->cw_per_page - mtd->writesize;
 	if (mtd->oobsize > ipq_oob_size)
 		printf("ipq_nand: changing oobsize to %d from %d bytes\n",
 			ipq_oob_size, mtd->oobsize);
@@ -1790,7 +1904,7 @@ static void ipq_nand_hw_config(struct mtd_info *mtd, struct ipq_config *cfg)
 			     | DISABLE_STATUS_AFTER_WRITE(0)
 			     | MSB_CW_PER_PAGE(0)
 			     | CW_PER_PAGE(cfg->cw_per_page - 1)
-			     | UD_SIZE_BYTES(raw_cw_size)
+			     | UD_SIZE_BYTES(dev->raw_cw_size)
 			     | RS_ECC_PARITY_SIZE_BYTES(0)
 			     | SPARE_SIZE_BYTES(0)
 			     | NUM_ADDR_CYCLES(5));
@@ -1857,12 +1971,13 @@ int ipq_nand_post_scan_init(struct mtd_info *mtd, enum ipq_nand_layout layout)
 	struct nand_chip *chip = MTD_NAND_CHIP(mtd);
 	struct nand_onfi_params *nand_onfi = MTD_ONFI_PARAMS(mtd);
 	int ret = 0;
-	char *buf;
+	u_char *buf;
 
-	alloc_size = (mtd->writesize   /* For dev->pad_dat */
-		      + mtd->oobsize   /* For dev->pad_oob */
-		      + mtd->writesize /* For dev->zero_page */
-		      + mtd->oobsize); /* For dev->zero_oob */
+	/*
+	 * allocate buffer for dev->pad_dat, dev->pad_oob, dev->zero_page,
+	 * dev->zero_oob, dev->tmp_datbuf, dev->tmp_oobbuf
+	 */
+	alloc_size = 3 * (mtd->writesize + mtd->oobsize);
 
 	dev->buffers = malloc(alloc_size);
 	if (dev->buffers == NULL) {
@@ -1886,6 +2001,13 @@ int ipq_nand_post_scan_init(struct mtd_info *mtd, enum ipq_nand_layout layout)
 
 	memset(dev->zero_page, 0x0, mtd->writesize);
 	memset(dev->zero_oob, 0x0, mtd->oobsize);
+
+	dev->tmp_datbuf = buf;
+	buf += mtd->writesize;
+	dev->tmp_oobbuf = buf;
+	buf += mtd->oobsize;
+
+	/* Register with MTD subsystem. */
 
 	if (dev->variant == QCA_NAND_QPIC)
 		configs = qpic_configs[layout];
