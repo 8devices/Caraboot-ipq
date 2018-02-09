@@ -32,6 +32,7 @@ struct image_section {
 	int local_version;
 	char *version_file;
 	int is_present;
+	char *img_code;
 	int (*pre_op)(struct image_section *);
 	int (*get_sw_id)(struct image_section *);
 	int (*split_components)(struct image_section *, char **, char**, char**);
