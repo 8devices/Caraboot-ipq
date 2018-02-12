@@ -85,7 +85,7 @@
 
 #undef CONFIG_BOARD_EARLY_INIT_F
 
-#undef CONFIG_HW_WATCHDOG
+#define CONFIG_HW_WATCHDOG
 
 /* Environment */
 #define CONFIG_MSM_PCOMM
