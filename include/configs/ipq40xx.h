@@ -154,6 +154,11 @@ typedef struct {
 #endif
 
 /*
+*Run command support
+*/
+#define	 CONFIG_CMD_RUN
+
+/*
  * SPI NAND SUPPORT
  */
 #define CONFIG_IPQ40XX_SPI_NAND
