@@ -415,7 +415,8 @@ static int do_nand(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		}
 
 		dev = (int)simple_strtoul(argv[2], NULL, 10);
-		set_dev(dev);
+		if (set_dev(dev))
+			return 1;
 
 		return 0;
 	}
