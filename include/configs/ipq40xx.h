@@ -174,6 +174,7 @@ typedef struct {
  * size is configured to 64 */
 #define CONFIG_SYS_CACHELINE_SIZE	64
 #define CONFIG_SYS_DCACHE_OFF
+#define CONFIG_CMD_CACHE
 
 #define CONFIG_QCA_BAM                 1
 /*
