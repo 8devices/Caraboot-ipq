@@ -277,6 +277,14 @@ static inline void* ipq807x_alloc_mem(u32 size)
 	return p;
 }
 
+static inline void* ipq807x_alloc_memalign(u32 size)
+{
+	void *p = memalign(CONFIG_SYS_CACHELINE_SIZE, size);
+	if (p != NULL)
+		memset(p, 0, size);
+	return p;
+}
+
 static inline void ipq807x_free_mem(void *ptr)
 {
 	if (ptr)
