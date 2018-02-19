@@ -16,5 +16,5 @@
 / {
 	machid = <0x8010200>;
 	ddr_size = <128>;
-	config_name = "config@ap.dk01.1-c3";
+	config_name = "config@ap.dk01.1-c3,config@ap.dk01.1-c1";
 };
