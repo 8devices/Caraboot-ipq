@@ -205,6 +205,7 @@ int board_eth_init(bd_t *bis)
 		ipq40xx_register_switch(ipq_qca8075_phy_init);
 		break;
 	case MACH_TYPE_IPQ40XX_AP_DK07_1_C1:
+	case MACH_TYPE_IPQ40XX_AP_DK07_1_C3:
 		/* 8075 out of reset */
 		mdelay(100);
 		gpio_set_value(41, 1);
