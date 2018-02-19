@@ -389,7 +389,10 @@ struct spi_slave *spi_setup_slave(unsigned int bus, unsigned int cs,
 		blsp_pin_config(ds->slave.bus, ds->slave.cs);
 		CS_change(ds->slave.bus, ds->slave.cs, CS_DEASSERT);
 	}
-
+#if !defined(CONFIG_SYS_DCACHE_OFF)
+	flush_cache((unsigned long)ds,
+		    (unsigned long)sizeof(struct ipq_spi_slave));
+#endif
 	return &ds->slave;
 err:
 	free(ds);
@@ -648,6 +651,9 @@ static int blsp_spi_bam_begin_xfer(struct ipq_spi_slave *ds, const u8 *buffer,
 
 	rem_bytes = bytes;
 
+#if !defined(CONFIG_SYS_DCACHE_OFF)
+	flush_cache((unsigned long)buffer, (unsigned long)bytes);
+#endif
 	while (rem_bytes) {
 		tx_bytes_to_send = min_t(u32, bytes,
 			SPI_MAX_TRFR_BTWN_RESETS);
@@ -708,6 +714,10 @@ static int blsp_spi_bam_begin_xfer(struct ipq_spi_slave *ds, const u8 *buffer,
 				bam_sys_gen_event(&bam, DATA_PRODUCER_PIPE_INDEX,
 						  num_desc);
 				blsp_spi_wait_for_data(DATA_PRODUCER_PIPE_INDEX);
+#if !defined(CONFIG_SYS_DCACHE_OFF)
+				flush_cache((unsigned long)buffer,
+					    (unsigned long)bytes);
+#endif
 				num_desc = 0;
 				rx_bytes_rcvd += data_xfer_size;
 				buffer = buffer + data_xfer_size;

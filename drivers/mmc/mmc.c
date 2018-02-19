@@ -257,7 +257,9 @@ static ulong mmc_bread(int dev_num, lbaint_t start, lbaint_t blkcnt, void *dst)
 		debug("%s: Failed to set blocklen\n", __func__);
 		return 0;
 	}
-
+#if !defined(CONFIG_SYS_DCACHE_OFF)
+	flush_cache((unsigned long)dst, blkcnt * mmc->read_bl_len);
+#endif
 	do {
 		cur = (blocks_todo > mmc->cfg->b_max) ?
 			mmc->cfg->b_max : blocks_todo;
@@ -269,6 +271,9 @@ static ulong mmc_bread(int dev_num, lbaint_t start, lbaint_t blkcnt, void *dst)
 		start += cur;
 		dst += cur * mmc->read_bl_len;
 	} while (blocks_todo > 0);
+#if !defined(CONFIG_SYS_DCACHE_OFF)
+	flush_cache((unsigned long)dst, blkcnt * mmc->read_bl_len);
+#endif
 
 	return blkcnt;
 }

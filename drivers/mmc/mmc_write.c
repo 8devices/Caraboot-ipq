@@ -233,6 +233,10 @@ ulong mmc_bwrite(int dev_num, lbaint_t start, lbaint_t blkcnt, const void *src)
 	if (mmc_set_blocklen(mmc, mmc->write_bl_len))
 		return 0;
 
+#if !defined(CONFIG_SYS_DCACHE_OFF)
+	flush_cache((unsigned long)src,
+		    (unsigned long)blkcnt * mmc->write_bl_len);
+#endif
 	do {
 		cur = (blocks_todo > mmc->cfg->b_max) ?
 			mmc->cfg->b_max : blocks_todo;
