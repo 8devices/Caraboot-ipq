@@ -205,7 +205,7 @@ void psci_sys_reset(void)
 	__invoke_psci_fn_smc(0x84000009, 0, 0, 0);
 }
 
-void qcom_scm_pshold(void)
+void qti_scm_pshold(void)
 {
 	int ret;
 
@@ -221,7 +221,7 @@ void reset_cpu(unsigned long a)
 	if (is_scm_armv8()) {
 		psci_sys_reset();
 	} else {
-		qcom_scm_pshold();
+		qti_scm_pshold();
 	}
 	while(1);
 }
