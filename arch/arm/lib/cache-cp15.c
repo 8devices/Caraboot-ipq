@@ -191,6 +191,7 @@ static void cache_enable(uint32_t cache_bit)
 		mmu_setup();
 	reg = get_cr();	/* get control reg. */
 	cp_delay();
+	invalidate_dcache_all();
 	set_cr(reg | cache_bit);
 }
 
