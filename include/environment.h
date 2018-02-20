@@ -153,6 +153,10 @@ extern char *env_name_spec;
 #define ENV_SIZE (CONFIG_ENV_RANGE - ENV_HEADER_SIZE)
 #endif
 
+#ifndef CONFIG_ENV_SIZE_MAX
+#define CONFIG_ENV_SIZE_MAX CONFIG_ENV_SIZE
+#endif
+
 typedef struct environment_s {
 	uint32_t	crc;		/* CRC32 over data bytes	*/
 #ifdef CONFIG_SYS_REDUNDAND_ENVIRONMENT
