@@ -202,14 +202,14 @@ int get_sections(void)
 		for (i = 0, sec = &sections[0]; i < NO_OF_SECTIONS; i++, sec++) {
 			if (strstr(file->d_name, sec->type)) {
 				if (sec->pre_op) {
-					strncat(sec->tmp_file, file->d_name,
+					strlcat(sec->tmp_file, file->d_name,
 							sizeof(sec->tmp_file));
 					if (!sec->pre_op(sec)) {
 						printf("Error extracting kernel from ubi\n");
 						return 0;
 					}
 				} else {
-					strncat(sec->file, file->d_name,
+					strlcat(sec->file, file->d_name,
 							sizeof(sec->file));
 				}
 				if (!check_mbn_elf(&sec)) {
@@ -247,7 +247,7 @@ int load_sections(void)
 		for (i = 0, sec = &sections[0]; i < NO_OF_SECTIONS; i++, sec++) {
 			if (strstr(file->d_name, sec->type)) {
 				if (sec->pre_op) {
-					strncat(sec->tmp_file, file->d_name,
+					strlcat(sec->tmp_file, file->d_name,
 							sizeof(sec->tmp_file));
 					if (!sec->pre_op(sec)) {
 						printf("Error extracting %s from ubi\n",
@@ -256,7 +256,7 @@ int load_sections(void)
 						return 0;
 					}
 				} else {
-					strncat(sec->file, file->d_name,
+					strlcat(sec->file, file->d_name,
 							sizeof(sec->file));
 				}
 				sec->is_present = PRESENT;
@@ -403,7 +403,7 @@ char *find_value(char *buffer, char *search, int size)
 	for (i = 0; i < CERT_SIZE; i++) {
 		for (j = 0; search[j] && (buffer[i + j] == search[j]); j++);
 		if (search[j] == '\0') {
-			strncpy(value, &buffer[i - size], size);
+			strlcpy(value, &buffer[i - size], size);
 			value[size - 1] = '\0';
 			return value;
 		}
@@ -1219,7 +1219,7 @@ int generate_hash(char *cert, char *sw_file, char *hw_file)
 		free(oem_model_id_str);
 		return 0;
 	}
-	strncpy(sw_file, tmp, 32);
+	strlcpy(sw_file, tmp, 32);
 
 	generate_hwid_opad(hw_id_str, oem_id_str, oem_model_id_str, &hwid_xor_opad);
 	tmp = create_xor_ipad_opad(f_hw_xor, &hwid_xor_opad);
@@ -1230,7 +1230,7 @@ int generate_hash(char *cert, char *sw_file, char *hw_file)
 		free(oem_model_id_str);
 		return 0;
 	}
-	strncpy(hw_file, tmp, 32);
+	strlcpy(hw_file, tmp, 32);
 
 	free(sw_id_str);
 	free(hw_id_str);
