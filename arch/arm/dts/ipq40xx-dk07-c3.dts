@@ -17,5 +17,5 @@
 	spi_nor_available = <0>;
 	machid = <0x8010206>;
 	ddr_size = <512>;
-	config_name = "config@ap.dk07.1-c1";
+	config_name = "config@ap.dk07.1-c3";
 };
