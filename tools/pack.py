@@ -328,9 +328,21 @@ class FlashScript(object):
         """
 
         if fatal:
+            """Check cmd strings to display reason for failure."""
+
+            if "imxtract" in cmd:
+                self.script.append("failreason='error: failed on image extraction'\n")
+            elif "erase" in cmd:
+                self.script.append("failreason='error: failed on partition erase'\n")
+            elif "write" in cmd:
+                self.script.append("failreason='error: failed on partition write'\n")
+            else:
+                pass
+
             self.script.append(cmd
                                + ' || setenv stdout serial'
                                + ' && echo "$failedmsg"'
+                               + ' && echo "$failreason"'
                                + ' && exit 1\n')
         else:
             self.script.append(cmd + "\n")
