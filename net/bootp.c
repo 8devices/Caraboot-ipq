@@ -660,7 +660,7 @@ void bootp_reset(void)
 	bootp_num_ids = 0;
 	bootp_try = 0;
 	bootp_start = get_timer(0);
-	bootp_timeout = 250;
+	bootp_timeout = 5000;
 }
 
 void bootp_request(void)
