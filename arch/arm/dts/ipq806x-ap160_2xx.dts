@@ -63,4 +63,21 @@
 		};
 	};
 
+	ar8033_gpio {
+		gpio2 {
+			gpio = <2>;
+			func = <0>;
+			pull = <GPIO_NO_PULL>;
+			drvstr = <GPIO_8MA>;
+			oe = <GPIO_OE_DISABLE>;
+		};
+		gpio66 {
+			gpio = <66>;
+			func = <0>;
+			pull = <GPIO_NO_PULL>;
+			drvstr = <GPIO_16MA>;
+			oe = <GPIO_OE_DISABLE>;
+		};
+	};
+
 };
