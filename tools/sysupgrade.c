@@ -923,9 +923,7 @@ int split_code_signature_cert_from_component_bin(struct image_section *section,
 	}
 	sig_cert_size = mbn_hdr->image_size - mbn_hdr->code_size;
 	if (sig_cert_size != SIG_CERT_2_SIZE && sig_cert_size != SIG_CERT_3_SIZE) {
-		printf("Error: Image without version information\n");
-		close(fd);
-		return 0;
+		printf("WARNING: signature certificate size is different\n");
 	}
 	src_size = mbn_hdr->sig_ptr - mbn_hdr->image_dest_ptr + MBN_HDR_SIZE;
         *src = malloc(src_size + 1);
