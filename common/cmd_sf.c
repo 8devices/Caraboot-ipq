@@ -347,6 +347,22 @@ static int do_spi_flash_erase(int argc, char * const argv[])
 	return ret == 0 ? 0 : 1;
 }
 
+static int do_spi_flash_berase(int argc, char * const argv[])
+{
+	switch (spi_flash_berase(flash)) {
+	case 0:
+		return 0;
+	case -ENOTSUPP:
+		printf("SPI flash %s not supported\n", argv[0]);
+		return 1;
+	default:
+		printf("SPI flash %s failed\n", argv[0]);
+		return 1;
+	}
+
+	return 1;
+}
+
 static int do_spi_protect(int argc, char * const argv[])
 {
 	int ret = 0;
@@ -576,6 +592,8 @@ static int do_spi_flash(cmd_tbl_t *cmdtp, int flag, int argc,
 	else if (!strcmp(cmd, "test"))
 		ret = do_spi_flash_test(argc, argv);
 #endif
+	else if (strcmp(cmd, "bulkerase") == 0)
+		ret = do_spi_flash_berase(argc, argv);
 	else
 		ret = -1;
 
@@ -613,5 +631,7 @@ U_BOOT_CMD(
 	"					  or to start of mtd `partition'\n"
 	"sf protect lock/unlock sector len	- protect/unprotect 'len' bytes starting\n"
 	"					  at address 'sector'\n"
+	"sf bulkerase				- Erase entire flash chip\n"
+	"						(Not supported on all devices)\n"
 	SF_TEST_HELP
 );

@@ -114,6 +114,9 @@ struct spi_flash {
 			const void *buf);
 	int (*erase)(struct spi_flash *flash, u32 offset, size_t len);
 #endif
+
+	u16 berase_timeout;				/* Bulk erase timeout */
+	int (*berase)(struct spi_flash *flash);		/* Bulk Erase */
 };
 
 struct dm_spi_flash_ops {
@@ -247,6 +250,14 @@ static inline int spi_flash_protect(struct spi_flash *flash, u32 ofs, u32 len,
 		return flash->flash_lock(flash, ofs, len);
 	else
 		return flash->flash_unlock(flash, ofs, len);
+}
+
+static inline int spi_flash_berase(struct spi_flash *flash)
+{
+	if (!flash->berase)
+		return -ENOTSUPP;
+
+	return flash->berase(flash);
 }
 
 void spi_boot(void) __noreturn;

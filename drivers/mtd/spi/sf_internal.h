@@ -12,6 +12,7 @@
 
 #include <linux/types.h>
 #include <linux/compiler.h>
+#include <linux/compat.h>
 
 /* Dual SPI flash memories - see SPI_COMM_DUAL_... */
 enum spi_dual_flash {
@@ -115,6 +116,7 @@ enum spi_nor_option_flags {
 #define SPI_FLASH_PROG_TIMEOUT		(2 * CONFIG_SYS_HZ)
 #define SPI_FLASH_PAGE_ERASE_TIMEOUT	(5 * CONFIG_SYS_HZ)
 #define SPI_FLASH_SECTOR_ERASE_TIMEOUT	(10 * CONFIG_SYS_HZ)
+#define SPI_FLASH_BERASE_TIMEOUT(f)	((f)->berase_timeout * CONFIG_SYS_HZ)
 
 /* SST specific */
 #ifdef CONFIG_SPI_FLASH_SST
@@ -147,6 +149,7 @@ struct spi_flash_params {
 	u32 nr_sectors;
 	u8 e_rd_cmd;
 	u16 flags;
+	u16 bulkerase_timeout;		/* in seconds */
 };
 
 extern const struct spi_flash_params spi_flash_params_table[];
