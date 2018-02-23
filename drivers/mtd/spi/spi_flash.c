@@ -19,6 +19,10 @@
 
 #include "sf_internal.h"
 
+#if defined CONFIG_SPI_FLASH_SPANSION
+#define CMD_S25FSXX_BE	0x60
+#endif
+
 DECLARE_GLOBAL_DATA_PTR;
 
 static void spi_flash_addr(struct spi_flash *flash, u32 addr, u8 *cmd)
@@ -265,6 +269,37 @@ static int spi_flash_cmd_wait_ready(struct spi_flash *flash,
 
 	return -ETIMEDOUT;
 }
+
+#if defined CONFIG_SPI_FLASH_SPANSION
+int spi_flash_cmd_berase(struct spi_flash *flash, u8 erase_cmd)
+{
+	int ret;
+
+	ret = spi_claim_bus(flash->spi);
+	if (ret) {
+		debug("SF: Unable to claim SPI bus\n");
+		return ret;
+	}
+
+	ret = spi_flash_cmd_write_enable(flash);
+	if (ret)
+		goto out;
+
+	ret = spi_flash_cmd_write(flash->spi, &erase_cmd, 1, NULL, 0);
+	if (ret)
+		goto out;
+
+	ret = spi_flash_cmd_wait_ready(flash, SPI_FLASH_BERASE_TIMEOUT(flash));
+out:
+	spi_release_bus(flash->spi);
+	return ret;
+}
+
+static int bulk_erase(struct spi_flash *flash)
+{
+	return spi_flash_cmd_berase(flash, CMD_S25FSXX_BE);
+}
+#endif
 
 int spi_flash_write_common(struct spi_flash *flash, const u8 *cmd,
 		size_t cmd_len, const void *buf, size_t buf_len)
@@ -1158,6 +1193,13 @@ print_sf_info:
 	     (flash->size > SPI_FLASH_16MB_BOUN << 1))) {
 		puts("SF: Warning - Only lower 16MiB accessible,");
 		puts(" Full access #define CONFIG_SPI_FLASH_BAR\n");
+	}
+#endif
+
+#if defined CONFIG_SPI_FLASH_SPANSION
+	if (params->bulkerase_timeout) {
+		flash->berase = bulk_erase;
+		flash->berase_timeout = params->bulkerase_timeout;
 	}
 #endif
 
