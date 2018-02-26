@@ -399,13 +399,13 @@ void eth_clock_enable(void)
 	 */
 
 	/* bring phy out of reset */
-	writel(0x203, tlmm_base);
-	writel(0, tlmm_base + 0x4);
-	writel(2, tlmm_base + 0x4);
 	writel(7, tlmm_base + 0x1f000);
 	writel(7, tlmm_base + 0x20000);
+	writel(0x203, tlmm_base);
+	writel(0, tlmm_base + 0x4);
 	aquantia_phy_reset_init();
 	mdelay(500);
+	writel(2, tlmm_base + 0x4);
 	aquantia_phy_reset_init_done();
 	mdelay(500);
 }
