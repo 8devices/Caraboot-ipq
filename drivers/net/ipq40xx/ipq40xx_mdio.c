@@ -118,7 +118,7 @@ int ipq40xx_sw_mdio_init(const char *name)
 	bus->read = ipq40xx_phy_read;
 	bus->write = ipq40xx_phy_write;
 	bus->reset = NULL;
-	sprintf(bus->name, name);
+	snprintf(bus->name, MDIO_NAME_LEN, name);
 	return mdio_register(bus);
 }
 

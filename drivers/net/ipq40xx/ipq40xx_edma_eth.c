@@ -897,7 +897,7 @@ int ipq40xx_edma_init(ipq40xx_edma_board_cfg_t *edma_cfg)
 			dev[i]->enetaddr[4],
 			dev[i]->enetaddr[5]);
 
-		sprintf(dev[i]->name, "eth%d", i);
+		snprintf(dev[i]->name, sizeof(dev[i]->name), "eth%d", i);
 		ipq40xx_edma_dev[i]->dev  = dev[i];
 		ipq40xx_edma_dev[i]->mac_unit = edma_cfg->unit;
 		ipq40xx_edma_dev[i]->c_info = c_info[i];

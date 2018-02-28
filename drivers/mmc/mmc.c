@@ -1485,14 +1485,16 @@ static int mmc_startup(struct mmc *mmc)
 #if !defined(CONFIG_SPL_BUILD) || \
 		(defined(CONFIG_SPL_LIBCOMMON_SUPPORT) && \
 		!defined(CONFIG_USE_TINY_PRINTF))
-	sprintf(mmc->block_dev.vendor, "Man %06x Snr %04x%04x",
-		mmc->cid[0] >> 24, (mmc->cid[2] & 0xffff),
+	snprintf(mmc->block_dev.vendor, sizeof(mmc->block_dev.vendor),
+		"Man %06x Snr %04x%04x", mmc->cid[0] >> 24, (mmc->cid[2] & 0xffff),
 		(mmc->cid[3] >> 16) & 0xffff);
-	sprintf(mmc->block_dev.product, "%c%c%c%c%c%c", mmc->cid[0] & 0xff,
+	snprintf(mmc->block_dev.product, sizeof(mmc->block_dev.product),
+		"%c%c%c%c%c%c", mmc->cid[0] & 0xff,
 		(mmc->cid[1] >> 24), (mmc->cid[1] >> 16) & 0xff,
 		(mmc->cid[1] >> 8) & 0xff, mmc->cid[1] & 0xff,
 		(mmc->cid[2] >> 24) & 0xff);
-	sprintf(mmc->block_dev.revision, "%d.%d", (mmc->cid[2] >> 20) & 0xf,
+	snprintf(mmc->block_dev.revision, sizeof(mmc->block_dev.revision),
+		 "%d.%d", (mmc->cid[2] >> 20) & 0xf,
 		(mmc->cid[2] >> 16) & 0xf);
 #else
 	mmc->block_dev.vendor[0] = 0;

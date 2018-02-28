@@ -180,7 +180,7 @@ int ipq_sw_mdio_init(const char *name)
 	bus->read = ipq_phy_read;
 	bus->write = ipq_phy_write;
 	bus->reset = NULL;
-	sprintf(bus->name, name);
+	snprintf(bus->name, MDIO_NAME_LEN, name);
 	return mdio_register(bus);
 }
 
