@@ -174,13 +174,13 @@ int board_eth_init(bd_t *bis)
 	case MACH_TYPE_IPQ40XX_AP_DK01_1_S1:
 	case MACH_TYPE_IPQ40XX_AP_DK01_1_C2:
 		/* 8075 out of reset */
-		mdelay(100);
+		mdelay(1);
 		gpio_set_value(62, 1);
 		ipq40xx_register_switch(ipq_qca8075_phy_init);
 		break;
 	case MACH_TYPE_IPQ40XX_AP_DK01_1_C1:
 		/* 8075 out of reset */
-		mdelay(100);
+		mdelay(1);
 		gpio_set_value(59, 1);
 		ipq40xx_register_switch(ipq_qca8075_phy_init);
 		break;
@@ -188,19 +188,19 @@ int board_eth_init(bd_t *bis)
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C1:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C3:
 		/* 8075 out of reset */
-		mdelay(100);
+		mdelay(1);
 		gpio_set_value(47, 1);
 		ipq40xx_register_switch(ipq_qca8075_phy_init);
 		break;
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C2:
 		/* 8075 out of reset */
-		mdelay(100);
+		mdelay(1);
 		gpio_set_value(67, 1);
 		ipq40xx_register_switch(ipq_qca8075_phy_init);
 		break;
 	case MACH_TYPE_IPQ40XX_AP_DK06_1_C1:
 		/* 8075 out of reset */
-		mdelay(100);
+		mdelay(1);
 		gpio_set_value(19, 1);
 		ipq40xx_register_switch(ipq_qca8075_phy_init);
 		break;
@@ -208,7 +208,7 @@ int board_eth_init(bd_t *bis)
 	case MACH_TYPE_IPQ40XX_AP_DK07_1_C2:
 	case MACH_TYPE_IPQ40XX_AP_DK07_1_C3:
 		/* 8075 out of reset */
-		mdelay(100);
+		mdelay(1);
 		gpio_set_value(41, 1);
 		ipq40xx_register_switch(ipq_qca8075_phy_init);
 		break;
