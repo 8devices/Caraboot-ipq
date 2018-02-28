@@ -32,6 +32,7 @@
 #include <common.h>
 #include <asm/arch-qca-common/bam.h>
 #define HLOS_EE_INDEX          0
+#define TIMEOUT		2000
 
 /* Resets pipe registers and state machines */
 void bam_pipe_reset(struct bam_instance *bam,
@@ -56,13 +57,17 @@ int bam_wait_for_interrupt(struct bam_instance *bam,
                            enum p_int_type interrupt)
 {
 	uint32_t val;
+	uint32_t start;
 
 	while (1)
 	{
+		start = get_timer(0);
 		/* Wait for a interrupt on the right pipe */
 		do{
 			/* Determine the pipe causing the interrupt */
 			val = readl(BAM_IRQ_SRCS(bam->base, bam->ee));
+			if(get_timer(start) >= TIMEOUT)
+				return BAM_RESULT_FAILURE;
 			/* Flush out the right most global interrupt bit */
 		} while (!((val & BAM_IRQ_SRCS_PIPE_MASK) &
 				   (1 << bam->pipe[pipe_num].pipe_num)));
