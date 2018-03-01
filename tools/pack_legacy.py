@@ -40,7 +40,7 @@ within U-Boot. The procedure to use this script is listed below.
      with address location where the image has been loaded. The script
      expects the variable 'imgaddr' to be set.
 
-     u-boot> imgaddr=0x88000000 source $imgaddr:script
+     u-boot> imgaddr=$fileaddr source $imgaddr:script
 
 Host-side Pre-req
 
@@ -83,6 +83,9 @@ import re
 import hashlib
 
 version = "1.1"
+
+TABLE_VERSION_AK = 3
+TABLE_VERSION_DK = 4
 
 #
 # Python 2.6 and earlier did not have OrderedDict use the backport
@@ -221,7 +224,6 @@ class MIBIB(object):
     TABLE_FMT = "<LLLL"
     TABLE_MAGIC1 = 0x55EE73AA
     TABLE_MAGIC2 = 0xE35EBDDB
-    TABLE_VERSION = 4
 
     Entry = namedtuple("Entry", "name offset length"
                         " attr1 attr2 attr3 which_flash")
@@ -235,6 +237,7 @@ class MIBIB(object):
         self.nand_blocksize = nand_blocksize
         self.nand_chipsize = nand_chipsize
         self.__partitions = OrderedDict()
+        self.tableversion = TABLE_VERSION_AK
 
     def __validate(self, part_fp):
         """Validate the MIBIB by checking for magic bytes."""
@@ -262,9 +265,11 @@ class MIBIB(object):
             or mtable.magic2 != MIBIB.TABLE_MAGIC2):
             error("invalid sys part. table, magic byte not present")
 
-        if mtable.version != MIBIB.TABLE_VERSION:
+        if (mtable.version != TABLE_VERSION_AK
+            and mtable.version != TABLE_VERSION_DK):
             error("unsupported partition table version")
 
+        self.tableversion = mtable.version
         for i in range(mtable.numparts):
             mentry_str = part_fp.read(struct.calcsize(MIBIB.ENTRY_FMT))
             mentry = struct.unpack(MIBIB.ENTRY_FMT, mentry_str)
@@ -933,10 +938,14 @@ class Pack(object):
 
         self.flinfo = flinfo
         if flinfo.type == "nand":
-            self.ipq_nand = False
+            if mibib.tableversion == TABLE_VERSION_AK:
+                self.ipq_nand = True
+            else:
+                self.ipq_nand = False
             script = NandScript(flinfo, self.ipq_nand, self.spi_nand)
         elif flinfo.type == "nor" or flinfo.type == "norplusnand":
-            self.spi_nand = self.bconf.get(board_section, "spi_nand_available")
+            if mibib.tableversion == TABLE_VERSION_DK:
+                self.spi_nand = self.bconf.get(board_section, "spi_nand_available")
             self.ipq_nand = False
             script = NorScript(flinfo, self.spi_nand)
         elif flinfo.type == "emmc":
@@ -1246,6 +1255,7 @@ class ArgParser(object):
         self.bconf_fname = "boardconfig"
         self.part_fname = None
         self.fconf_fname = None
+        self.genitb_fname = None
 
     def __init_pagesize(self, pagesize):
         """Set the pagesize, from the command line argument.
@@ -1393,9 +1403,10 @@ class ArgParser(object):
         fconf_fname = None
         bconf = False
         bconf_fname = None
+        genitb_fname = None
 
         try:
-            opts, args = getopt(argv[1:], "Bib:hp:t:o:c:m:f:F:")
+            opts, args = getopt(argv[1:], "Bib:hp:t:o:c:m:f:F:M:")
         except GetoptError, e:
             raise UsageError(e.msg)
 
@@ -1420,6 +1431,8 @@ class ArgParser(object):
                 bconf = True
             elif option == "-F":
                 bconf_fname = value
+            elif option == "-M":
+                genitb_fname= value
 
         if len(args) != 1:
             raise UsageError("insufficient arguments")
@@ -1442,6 +1455,8 @@ class ArgParser(object):
         self.bconf = bconf
         if bconf_fname != None:
             self.bconf_fname = bconf_fname
+
+        self.genitb_fname = genitb_fname
 
     def usage(self, msg):
         """Print error message and command usage information.
@@ -1472,6 +1487,8 @@ class ArgParser(object):
         print "              default is IDIR-TYPE-SIZE-COUNT.img"
         print "              if the filename is relative, it is relative"
         print "              to the parent of IDIR."
+        print "   -M         specifies script name to build single ITB with multiple dtb's,"
+        print "              default disabled."
         print
         print "NOTE: The above invocation method of pack is deprecated."
         print "The new pack invocation uses a board config file to retrieve"
@@ -1507,6 +1524,17 @@ def main():
     except UsageError, e:
         parser.usage(e.args[0])
         sys.exit(1)
+
+    if parser.genitb_fname:
+       prc = subprocess.Popen(['sh', parser.genitb_fname])
+       prc.wait()
+
+       if prc.returncode != 0:
+          print 'ERROR: unable to create ITB'
+          return prc.returncode
+       else:
+          print '...ITB binary created'
+
 
     pack = Pack()
     if parser.bconf:
