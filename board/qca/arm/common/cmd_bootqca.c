@@ -28,6 +28,8 @@
 #include <nand.h>
 #include <spi_flash.h>
 #include <spi.h>
+#include <asm/arch-qca-common/iomap.h>
+#include <asm/io.h>
 
 #define DLOAD_MAGIC_COOKIE 0x10
 #define XMK_STR(x)#x
@@ -106,6 +108,40 @@ static int tftpdump (int is_aligned_access, uint32_t memaddr, uint32_t size, cha
 
 }
 
+__weak int scm_set_boot_addr(void)
+{
+	return -1;
+}
+
+static int krait_release_secondary(void)
+{
+	writel(0xa4, CPU1_APCS_SAW2_VCTL);
+	barrier();
+	udelay(512);
+
+	writel(0x109, CPU1_APCS_CPU_PWR_CTL);
+	writel(0x101, CPU1_APCS_CPU_PWR_CTL);
+	barrier();
+	udelay(1);
+
+	writel(0x121, CPU1_APCS_CPU_PWR_CTL);
+	barrier();
+	udelay(2);
+
+	writel(0x120, CPU1_APCS_CPU_PWR_CTL);
+	barrier();
+	udelay(2);
+
+	writel(0x100, CPU1_APCS_CPU_PWR_CTL);
+	barrier();
+	udelay(100);
+
+	writel(0x180, CPU1_APCS_CPU_PWR_CTL);
+	barrier();
+
+	return 0;
+}
+
 static int do_dumpqca_data(void)
 {
 	char *serverip = NULL;
@@ -132,6 +168,11 @@ static int do_dumpqca_data(void)
 	if (ret == 0 && buf == 1) {
 		dumpinfo = dumpinfo_s;
 		dump_entries = dump_entries_s;
+	}
+
+	if (scm_set_boot_addr() == 0) {
+		/* Pull Core-1 out of reset, iff scm call succeeds */
+		krait_release_secondary();
 	}
 
 	for (indx = 0; indx < dump_entries; indx++) {

@@ -927,6 +927,30 @@ int ipq_get_tz_version(char *version_name, int buf_size)
 	return 0;
 }
 
+void forever(void) { while (1); }
+/*
+ * Set the cold/warm boot address for one of the CPU cores.
+ */
+int scm_set_boot_addr(void)
+{
+	int ret;
+	struct {
+		unsigned int flags;
+		unsigned long addr;
+	} cmd;
+
+	cmd.addr = (unsigned long)forever;
+	cmd.flags = SCM_FLAG_COLDBOOT_CPU1;
+
+	ret = scm_call(SCM_SVC_BOOT, SCM_BOOT_ADDR,
+				&cmd, sizeof(cmd), NULL, 0);
+	if (ret) {
+		printf("--- %s: scm_call failed ret = %d\n", __func__, ret);
+	}
+
+	return ret;
+}
+
 void clear_l2cache_err(void)
 {
         unsigned int val;
