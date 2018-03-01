@@ -28,6 +28,8 @@
 #define SCM_SVC_RD			0x12
 #define QFPROM_IS_AUTHENTICATE_CMD	0x7
 #define TZBSP_BUILD_VER_QUERY_CMD	0x4
+#define SCM_BOOT_ADDR			0x1
+#define SCM_FLAG_COLDBOOT_CPU1		0x1
 
 /* scm_v8 */
 #define SCM_VAL				0x0
