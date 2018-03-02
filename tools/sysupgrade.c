@@ -200,7 +200,7 @@ int get_sections(void)
 
 	while ((file = readdir(dir)) != NULL) {
 		for (i = 0, sec = &sections[0]; i < NO_OF_SECTIONS; i++, sec++) {
-			if (strstr(file->d_name, sec->type)) {
+			if (!strncmp(file->d_name, sec->type, strlen(sec->type))) {
 				if (sec->pre_op) {
 					strlcat(sec->tmp_file, file->d_name,
 							sizeof(sec->tmp_file));
@@ -245,7 +245,7 @@ int load_sections(void)
 
 	while ((file = readdir(dir)) != NULL) {
 		for (i = 0, sec = &sections[0]; i < NO_OF_SECTIONS; i++, sec++) {
-			if (strstr(file->d_name, sec->type)) {
+			if (!strncmp(file->d_name, sec->type, strlen(sec->type))) {
 				if (sec->pre_op) {
 					strlcat(sec->tmp_file, file->d_name,
 							sizeof(sec->tmp_file));
