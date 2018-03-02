@@ -47,6 +47,7 @@ enum {
 	E_FSR		= 1 << 2,
 	SST_WR		= 1 << 3,
 	WR_QPP		= 1 << 4,
+	SECT_64K	= 1 << 5,
 };
 
 enum spi_nor_option_flags {

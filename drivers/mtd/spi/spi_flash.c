@@ -16,6 +16,7 @@
 #include <spi.h>
 #include <spi_flash.h>
 #include <linux/log2.h>
+#include <linux/sizes.h>
 
 #include "sf_internal.h"
 
@@ -370,6 +371,12 @@ int spi_flash_cmd_erase_ops(struct spi_flash *flash, u32 offset, size_t len)
 	}
 
 	cmd[0] = flash->erase_cmd;
+
+	if (!(offset % SZ_64K || len % SZ_64K) && (flash->flags & SECT_64K)) {
+		erase_size = SZ_64K;
+		cmd[0] = CMD_ERASE_64K;
+	}
+
 	while (len) {
 		erase_addr = offset;
 
@@ -1078,6 +1085,8 @@ int spi_flash_scan(struct spi_flash *flash)
 	if (params->flags & SECT_4K) {
 		flash->erase_cmd = CMD_ERASE_4K;
 		flash->erase_size = 4096 << flash->shift;
+		if (flash->sector_size == SZ_64K)
+			flash->flags |= SECT_64K;
 	} else if (params->flags & SECT_32K) {
 		flash->erase_cmd = CMD_ERASE_32K;
 		flash->erase_size = 32768 << flash->shift;
