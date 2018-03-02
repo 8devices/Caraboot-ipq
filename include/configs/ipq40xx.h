@@ -70,6 +70,8 @@
 
 #define CONFIG_IPQ_APPSBL_IMG_TYPE	0x5
 
+#define CONFIG_SYS_DEVICE_NULLDEV
+
 /*
  * IPQ_TFTP_MIN_ADDR: Starting address of Linux HLOS region.
  * CONFIG_TZ_END_ADDR: Ending address of Trust Zone and starting
