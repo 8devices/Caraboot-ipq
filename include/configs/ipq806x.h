@@ -87,6 +87,8 @@
 
 #define CONFIG_HW_WATCHDOG
 
+#define CONFIG_SYS_DEVICE_NULLDEV
+
 /* Environment */
 #define CONFIG_MSM_PCOMM
 #define CONFIG_ARCH_CPU_INIT
