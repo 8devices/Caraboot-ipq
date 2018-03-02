@@ -136,7 +136,8 @@ static void setup_commandline_tag(bd_t *bd, char *commandline)
 	params->hdr.size =
 		(sizeof (struct tag_header) + strlen (p) + 1 + 4) >> 2;
 
-	strcpy (params->u.cmdline.cmdline, p);
+	strlcpy (params->u.cmdline.cmdline, p,
+				sizeof(params->u.cmdline.cmdline));
 
 	params = tag_next (params);
 }
