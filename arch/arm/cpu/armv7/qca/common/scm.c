@@ -518,4 +518,6 @@ int qca_scm_dload(unsigned int magic_cookie)
 		ret = scm_call(SCM_SVC_BOOT, SCM_CMD_TZ_FORCE_DLOAD_ID, &magic_cookie,
 			sizeof(magic_cookie), NULL, 0);
 	}
+
+	return ret;
 }
