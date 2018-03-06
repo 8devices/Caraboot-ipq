@@ -79,21 +79,24 @@ static struct adma_desc *sdhci_prepare_descriptors(void *data, uint32_t len)
 	uint32_t table_len = 0;
 
 	if (len <= SDHCI_ADMA_DESC_LINE_SZ) {
-		list = (struct adma_desc *) memalign(CACHE_LINE_SIZE, sizeof(struct adma_desc));
+		list = (struct adma_desc *)memalign(CACHE_LINE_SIZE,
+				sizeof(struct adma_desc));
 
 		if (!list) {
 			printf("Error allocating memory\n");
 			assert(0);
-		}
-
-		list[0].addr = (uint32_t)data;
-		list[0].len = (len < SDHCI_ADMA_DESC_LINE_SZ) ? len : (SDHCI_ADMA_DESC_LINE_SZ & 0xffff);
-		list[0].tran_att = SDHCI_ADMA_TRANS_VALID | SDHCI_ADMA_TRANS_DATA
-							  | SDHCI_ADMA_TRANS_END;
+		} else {
+			list[0].addr = (uint32_t)data;
+			list[0].len = (len < SDHCI_ADMA_DESC_LINE_SZ) ? len :
+				(SDHCI_ADMA_DESC_LINE_SZ & 0xffff);
+			list[0].tran_att = SDHCI_ADMA_TRANS_VALID |
+				SDHCI_ADMA_TRANS_DATA | SDHCI_ADMA_TRANS_END;
 
 #if !defined(CONFIG_SYS_DCACHE_OFF)
-		flush_cache((unsigned long)list, sizeof(struct adma_desc));
+			flush_cache((unsigned long)list,
+				    sizeof(struct adma_desc));
 #endif
+		}
 	} else {
 		list_len = len / SDHCI_ADMA_DESC_LINE_SZ;
 		remain = len - (list_len * SDHCI_ADMA_DESC_LINE_SZ);
@@ -108,26 +111,29 @@ static struct adma_desc *sdhci_prepare_descriptors(void *data, uint32_t len)
 		if (!list) {
 			printf("Allocating memory failed\n");
 			assert(0);
-		}
+		} else {
+			memset((void *)list, 0, table_len);
 
-		memset((void *) list, 0, table_len);
-
-		for (i = 0; i < (list_len - 1); i++) {
+			for (i = 0; i < (list_len - 1); i++) {
 				list[i].addr = (uint32_t)data;
 				list[i].len = (SDHCI_ADMA_DESC_LINE_SZ & 0xffff);
-				list[i].tran_att = SDHCI_ADMA_TRANS_VALID | SDHCI_ADMA_TRANS_DATA;
+				list[i].tran_att = SDHCI_ADMA_TRANS_VALID |
+					SDHCI_ADMA_TRANS_DATA;
 				data += SDHCI_ADMA_DESC_LINE_SZ;
 				len -= SDHCI_ADMA_DESC_LINE_SZ;
 			}
 
 			list[list_len - 1].addr = (uint32_t)data;
-			list[list_len - 1].len = (len < SDHCI_ADMA_DESC_LINE_SZ) ? len : (SDHCI_ADMA_DESC_LINE_SZ & 0xffff);
-			list[list_len - 1].tran_att = SDHCI_ADMA_TRANS_VALID | SDHCI_ADMA_TRANS_DATA |
-										   SDHCI_ADMA_TRANS_END;
+			list[list_len - 1].len = (len < SDHCI_ADMA_DESC_LINE_SZ)
+				? len : (SDHCI_ADMA_DESC_LINE_SZ & 0xffff);
+			list[list_len - 1].tran_att = SDHCI_ADMA_TRANS_VALID |
+				SDHCI_ADMA_TRANS_DATA
+				| SDHCI_ADMA_TRANS_END;
 
 #if !defined(CONFIG_SYS_DCACHE_OFF)
-		flush_cache((unsigned long)list, table_len);
+			flush_cache((unsigned long)list, table_len);
 #endif
+		}
 	}
 
 
