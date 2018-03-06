@@ -252,13 +252,12 @@ int usb_init(void)
 		}
 		controllers_initialized++;
 		usb_started = true;
-	}
 
-	/*
-	 * lowlevel init done, now scan the bus for devices i.e. search HUBs
-	 * and configure them, first scan primary controllers.
-	 */
-	uclass_foreach_dev(bus, uc) {
+		/*
+		 * lowlevel init done, now scan the bus for devices i.e. search HUBs
+		 * and configure them, first scan primary controllers.
+		 */
+
 		if (!device_active(bus))
 			continue;
 
