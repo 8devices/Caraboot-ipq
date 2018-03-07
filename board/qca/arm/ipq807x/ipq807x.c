@@ -425,7 +425,7 @@ int board_eth_init(bd_t *bis)
 
 int board_mmc_init(bd_t *bis)
 {
-	int ret;
+	int ret = 0;
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 
 #ifndef CONFIG_SDHCI_SUPPORT
@@ -705,7 +705,8 @@ static void usb_init_ssphy(int index)
 	}
 	else if (index == 1) {
 		phybase = USB1_SSPHY_BASE;
-	}
+	} else
+		return;
 
 	out_8( phybase + USB3_PHY_POWER_DOWN_CONTROL,0x1);
 	out_8(phybase + QSERDES_COM_SYSCLK_EN_SEL,0x1a);
