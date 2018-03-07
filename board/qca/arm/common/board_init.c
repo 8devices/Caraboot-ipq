@@ -37,6 +37,15 @@ env_t *env_ptr;
 char *env_name_spec;
 int (*saveenv)(void);
 
+#define ADSS_AUDIO_RXM_CBCR_REG			0x0770012C
+#define ADSS_AUDIO_RXB_CBCR_REG			0x0770010C
+#define ADSS_AUDIO_TXB_CBCR_REG			0x0770014C
+#define ADSS_AUDIO_SPDIF_CBCR_REG		0x07700154
+#define ADSS_AUDIO_SPDIF_DIV2_CBCR_REG		0x0770015C
+#define ADSS_AUDIO_TXM_CBCR_REG			0x0770016C
+#define ADSS_AUDIO_PCM_CBCR_REG			0x077001AC
+#define ADSS_AUDIO_SPDIF_IN_FAST_CBCR_REG	0x077001EC
+
 loff_t board_env_offset;
 loff_t board_env_range;
 loff_t board_env_size;
@@ -55,6 +64,25 @@ __weak
 void board_pci_deinit(void)
 {
 	return 0;
+}
+
+/*
+ * The audio block is out of reset by default due to which the
+ * audio clock blocks are also turned on. When audio TLMM is
+ * enabled in kernel, the clocks will also be available at the
+ * pins which causes pop noise during kernel bootup.
+ * To avoid this, the clocks are turned off in u-boot.
+ */
+static void disable_audio_clks(void)
+{
+	writel(0, ADSS_AUDIO_RXM_CBCR_REG);
+	writel(0, ADSS_AUDIO_RXB_CBCR_REG);
+	writel(0, ADSS_AUDIO_TXB_CBCR_REG);
+	writel(0, ADSS_AUDIO_SPDIF_CBCR_REG);
+	writel(0, ADSS_AUDIO_SPDIF_DIV2_CBCR_REG);
+	writel(0, ADSS_AUDIO_TXM_CBCR_REG);
+	writel(0, ADSS_AUDIO_PCM_CBCR_REG);
+	writel(0, ADSS_AUDIO_SPDIF_IN_FAST_CBCR_REG);
 }
 
 int board_init(void)
@@ -172,6 +200,7 @@ int board_init(void)
 	}
 
 	aquantia_phy_reset_init();
+	disable_audio_clks();
 
 	return 0;
 }
