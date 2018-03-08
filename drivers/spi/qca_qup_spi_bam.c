@@ -51,6 +51,12 @@ static unsigned int cs_gpio_array_dk01[NUM_PORTS][NUM_CS] = {
 	},
 };
 
+static unsigned int cs_gpio_array_dk01_jalapeno_v1[NUM_PORTS][NUM_CS] = {
+	{
+		QUP0_SPI_CS_0, QUP0_SPI_CS_1_DK01_JALAPENO_V1,
+	},
+};
+
 static unsigned int cs_gpio_array_dk04[NUM_PORTS][NUM_CS] = {
 	{
 		QUP0_SPI_CS_0, QUP0_SPI_CS_1_DK04,
@@ -335,6 +341,8 @@ struct spi_slave *spi_setup_slave(unsigned int bus, unsigned int cs,
 		/* GPIO Configuration for SPI port */
 		if (gd->bd->bi_arch_number == MACH_TYPE_IPQ40XX_AP_DK04_1_C5)
 			cs_gpio_array = cs_gpio_array_dk04;
+		if (gd->bd->bi_arch_number == MACH_TYPE_IPQ40XX_8DEV_JALAPENO)
+			cs_gpio_array = cs_gpio_array_dk01_jalapeno_v1;
 		blsp_pin_config(ds->slave.bus, ds->slave.cs);
 		CS_change(ds->slave.bus, ds->slave.cs, CS_DEASSERT);
 	}
