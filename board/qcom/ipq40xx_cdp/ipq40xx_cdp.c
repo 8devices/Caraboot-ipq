@@ -1071,6 +1071,10 @@ void ft_board_setup(void *blob, bd_t *bd)
 #ifndef CONFIG_QCA_APPSBL_DLOAD
 	ipq_fdt_mem_rsvd_fixup(blob);
 #endif
+
+
+/* LEDE will use partitions from FDT */
+#if 0
 	if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
 		mtdparts = "mtdparts=nand0";
 	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
@@ -1094,7 +1098,7 @@ void ft_board_setup(void *blob, bd_t *bd)
 			mtdparts = "mtdparts=spi0.0";
 		}
 	}
-
+#endif
 
 	if (mtdparts) {
 		mtdparts = qca_smem_part_to_mtdparts(mtdparts);

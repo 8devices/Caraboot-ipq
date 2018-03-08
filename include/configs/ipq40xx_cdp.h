@@ -157,8 +157,8 @@ typedef struct {
 #define QCA_BOOT_PARAMS_ADDR	(QCA_KERNEL_START_ADDR + 0x100)
 #endif
 
-#define QCA_ROOT_FS_PART_NAME           "rootfs"
-#define QCA_ROOT_FS_ALT_PART_NAME       QCA_ROOT_FS_PART_NAME "_1"
+#define QCA_ROOT_FS_PART_NAME           "rootfs1"
+#define QCA_ROOT_FS_ALT_PART_NAME       "rootfs2"
 
 /* Environment */
 #define CONFIG_IPQ40XX_ENV
@@ -264,13 +264,16 @@ typedef struct {
 #define CONFIG_QCA8033_PHY	1
 #define CONFIG_MII
 #define CONFIG_CMD_MII
-#define CONFIG_IPADDR	192.168.1.11
+#define CONFIG_IPADDR	192.168.2.100
+#define CONFIG_SERVERIP	192.168.2.254
 #define CONFIG_IPQ_NO_MACS	2
 /*
  * CRASH DUMP ENABLE
  */
 
+/* Disabled crashdump saves 11Mb of RAM.
 #define CONFIG_QCA_APPSBL_DLOAD	1
+*/
 
 #ifdef CONFIG_QCA_APPSBL_DLOAD
 #define CONFIG_CMD_TFTPPUT
@@ -302,11 +305,35 @@ typedef struct {
 #define CONFIG_MTD_DEVICE
 #define CONFIG_MTD_PARTITIONS
 #define CONFIG_CMD_MTDPARTS
+#define MTDPARTS_DEFAULT	"mtdparts=nand1:0x8000000@0x0(ubi)"
+#define MTDIDS_DEFAULT		"nand1=nand1"
 
 #define CONFIG_RBTREE		/* for ubi */
 #define CONFIG_CMD_UBI
 #define CONFIG_BOOTCOMMAND	"bootipq"
-#define CONFIG_BOOTDELAY	2
+#define CONFIG_BOOTDELAY	1
 #define CONFIG_IPQ_FDT_HIGH	0x87000000
+#define CONFIG_CMD_BOOTD
+
+#define CONFIG_CMD_MISC
+
+#define CONFIG_EXTRA_ENV_SETTINGS								\
+	"bootcmd=run setup && run bootlinux\0"							\
+	"setup=partname=1 && setenv bootargs ubi.mtd=ubi ${args_common}\0"	\
+	"args_common=rootfstype=squashfs\0" 				\
+	"bootlinux=run boot1 boot2 boot3 boot4 boot5|| reset\0"					\
+	"boot1=echo Booting from partition: ${partname}\0"					\
+	"boot2=nand device default\0"					\
+	"boot3=set mtdparts mtdparts=nand1:0x8000000@0x0(ubi)\0"	\
+	"boot4=ubi part ubi && ubi read 84000000 kernel\0"				\
+	"boot5=cfgsel 84000000 && run bootfdtcmd\0"						\
+	"do_recovery=run rec1 rec2 rec3 rec4; reset\0"			\
+	"rec1=echo Doing firmware recovery!\0"							\
+	"rec2=sleep 2 && tftpboot ${tftp_loadaddr} ${recovery_file}\0"				\
+	"rec3=nand device default && nand erase.chip\0"						\
+	"rec4=nand write ${fileaddr} 0x0 ${filesize}\0"						\
+	"tftp_loadaddr=0x84000000\0"								\
+	"recovery_file=fwupdate.bin\0"								\
+
 
 #endif /* _IPQCDP_H */
