@@ -907,7 +907,7 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 	char *lstatus[] = {"up", "Down"};
 	char *dp[] = {"Half", "Full"};
 	int linkup=0;
-	int mac_speed, speed_clock1, speed_clock2;
+	int mac_speed = 0, speed_clock1 = 0, speed_clock2 = 0;
 	int phy_addr, port_8033 = -1, node, aquantia_port = -1;
 
 	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");

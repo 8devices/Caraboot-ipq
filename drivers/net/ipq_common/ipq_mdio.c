@@ -187,7 +187,7 @@ int ipq_sw_mdio_init(const char *name)
 static int do_ipq_mdio(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	char		op[2];
-	unsigned int	addr, reg;
+	unsigned int	addr = 0, reg = 0;
 	unsigned short	data = 0;
 
 	if (argc < 2)
