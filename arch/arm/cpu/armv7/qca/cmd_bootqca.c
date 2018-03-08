@@ -555,3 +555,26 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 U_BOOT_CMD(bootipq, 2, 0, do_bootipq,
 	   "bootipq from flash device",
 	   "bootipq [debug] - Load image(s) and boots the kernel\n");
+
+static int do_config_select(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+{
+	int addr, ret;
+	char runcmd[256];
+
+	if (argc > 1)
+		addr = simple_strtol(argv[1], NULL, 16);
+	else
+		addr = CONFIG_SYS_LOAD_ADDR;
+
+	ret = config_select(addr, gboard_param->dtb_config_name,
+				runcmd, sizeof(runcmd));
+
+	if (!ret)
+		setenv("bootfdtcmd", runcmd);
+
+	return ret;
+}
+
+U_BOOT_CMD(cfgsel, 2, 0, do_config_select,
+	   "cfgsel select config from FIT image",
+	   "cfgsel [addr] - Select config from FIT image and set $bootfdtcmd\n");

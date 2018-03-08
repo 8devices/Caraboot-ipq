@@ -472,7 +472,14 @@ int do_nand(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 			return 0;
 		}
 
-		dev = (int)simple_strtoul(argv[2], NULL, 10);
+		if (strcmp(argv[2], "default") == 0) {
+			dev = 1;
+			setenv("mtdids", "nand1=nand1");
+		}
+		else {
+			dev = (int)simple_strtoul(argv[2], NULL, 10);
+		}
+
 		ret = set_dev(dev);
 
 		return ret;
