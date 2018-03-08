@@ -189,7 +189,7 @@ int nand_saveenv(void)
 		{
 			.name = "NAND",
 			.erase_opts = {
-				.length = CONFIG_ENV_RANGE,
+				.length = board_env_size,
 				.offset = CONFIG_ENV_OFFSET,
 			},
 		},
