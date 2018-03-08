@@ -849,7 +849,7 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 
 		ipq_gmac_mii_clk_init(ipq_gmac_macs[i], clk_div_val, gmac_cfg);
 
-		strncpy((char *)ipq_gmac_macs[i]->phy_name, gmac_cfg->phy_name,
+		strlcpy((char *)ipq_gmac_macs[i]->phy_name, gmac_cfg->phy_name,
 					sizeof(ipq_gmac_macs[i]->phy_name));
 		bb_nodes[i] = malloc(sizeof(struct bitbang_nodes));
 		if (bb_nodes[i] == NULL)
