@@ -244,6 +244,177 @@ void ipq_fdt_mem_rsvd_fixup(void *blob)
 	}
 }
 
+struct vlan_tag {
+	unsigned int r0;
+	unsigned int r1;
+};
+
+/*
+ * Logic to patch Ethernet params.
+ */
+int ipq40xx_patch_eth_params(void *blob, unsigned long gmac_no)
+{
+	int nodeoff, nodeoff_c;
+	int ret, i;
+	struct vlan_tag vlan;
+	const char *eth2_prop[] = {"/soc/edma/gmac2", "/soc/edma/gmac3",
+							"/soc/edma/gmac4"};
+	const char *alias_prop[] = {"ethernet2", "ethernet3", "ethernet4"};
+	const char *gmac_node[] = {"gmac2", "gmac3", "gmac4"};
+
+	nodeoff = fdt_path_offset(blob, "/aliases");
+	if (nodeoff < 0) {
+		printf("ipq: fdt fixup unable to find compatible node\n");
+		return -1;
+	} else {
+		debug("Node Found\n");
+	}
+
+	for (i = 0; i < (gmac_no - 2); i++) {
+		ret = fdt_setprop(blob, nodeoff, alias_prop[i],
+			eth2_prop[i], (strlen(eth2_prop[i]) + 1));
+		if (ret)
+			debug("%d: unable to patch alias\n", ret);
+		nodeoff_c = fdt_path_offset(blob, "/soc/edma");
+		if (nodeoff_c < 0) {
+			printf("ipq: unable to find compatiable edma node\n");
+			return -1;
+		}
+
+		ret = fdt_add_subnode(blob, nodeoff_c, gmac_node[i]);
+		if (ret < 0)
+			debug("%d: unable to add node\n", ret);
+	}
+
+	switch (gmac_no) {
+	case 3:
+		nodeoff_c = fdt_path_offset(blob, "/soc/edma/gmac1");
+		if (nodeoff_c < 0) {
+			printf("ipq: unable to find compatiable edma node\n");
+			return -1;
+		}
+		vlan.r0 = htonl(0x1);
+		vlan.r1 = htonl(0x10);
+		ret = fdt_setprop(blob, nodeoff_c, "vlan_tag",
+			&vlan, sizeof(vlan));
+		if (ret)
+			debug("%d: unable to set property\n", ret);
+
+		nodeoff_c = fdt_path_offset(blob, "/soc/edma/gmac2");
+		if (nodeoff_c < 0) {
+			printf("ipq: unable to find compatiable edma node\n");
+			return -1;
+		}
+		vlan.r0 = htonl(0x3);
+		vlan.r1 = htonl(0xE);
+		ret = fdt_setprop(blob, nodeoff_c, "vlan_tag",
+			&vlan, sizeof(vlan));
+		if (ret)
+			debug("%d: unable to set property\n", ret);
+		break;
+	case 4:
+		nodeoff_c = fdt_path_offset(blob, "/soc/edma/gmac1");
+		if (nodeoff_c < 0) {
+			printf("ipq: unable to find compatiable edma node\n");
+			return -1;
+		}
+		vlan.r0 = htonl(0x1);
+		vlan.r1 = htonl(0x10);
+		ret = fdt_setprop(blob, nodeoff_c, "vlan_tag",
+			&vlan, sizeof(vlan));
+		if (ret)
+			debug("%d: unable to set property\n", ret);
+
+		nodeoff_c = fdt_path_offset(blob, "/soc/edma/gmac2");
+		if (nodeoff_c < 0) {
+			printf("ipq: unable to find compatiable edma node\n");
+			return -1;
+		}
+		vlan.r0 = htonl(0x3);
+		vlan.r1 = htonl(0x8);
+		ret = fdt_setprop(blob, nodeoff_c, "vlan_tag",
+			&vlan, sizeof(vlan));
+		if (ret)
+			debug("%d: unable to set property\n", ret);
+
+		nodeoff_c = fdt_path_offset(blob, "/soc/edma/gmac3");
+		if (nodeoff_c < 0) {
+			printf("ipq: unable to find compatiable edma node\n");
+			return -1;
+		}
+		vlan.r0 = htonl(0x4);
+		vlan.r1 = htonl(0x6);
+		ret = fdt_setprop(blob, nodeoff_c, "vlan_tag",
+			&vlan, sizeof(vlan));
+		if (ret)
+			debug("%d: unable to set property\n", ret);
+		break;
+	case 5:
+		nodeoff_c = fdt_path_offset(blob, "/soc/edma/gmac1");
+		if (nodeoff_c < 0) {
+			printf("ipq: unable to find compatiable edma node\n");
+			return -1;
+		}
+		vlan.r0 = htonl(0x1);
+		vlan.r1 = htonl(0x10);
+		ret = fdt_setprop(blob, nodeoff_c, "vlan_tag",
+			&vlan, sizeof(vlan));
+		if (ret)
+			debug("%d: unable to set property\n", ret);
+
+		nodeoff_c = fdt_path_offset(blob, "/soc/edma/gmac2");
+		if (nodeoff_c < 0) {
+			printf("ipq: unable to find compatiable edma node\n");
+			return -1;
+		}
+		vlan.r0 = htonl(0x3);
+		vlan.r1 = htonl(0x8);
+		ret = fdt_setprop(blob, nodeoff_c, "vlan_tag",
+			&vlan, sizeof(vlan));
+		if (ret)
+			debug("%d: unable to set property\n", ret);
+
+		nodeoff_c = fdt_path_offset(blob, "/soc/edma/gmac3");
+		if (nodeoff_c < 0) {
+			printf("ipq: unable to find compatiable edma node\n");
+			return -1;
+		}
+		vlan.r0 = htonl(0x4);
+		vlan.r1 = htonl(0x4);
+		ret = fdt_setprop(blob, nodeoff_c, "vlan_tag",
+			&vlan, sizeof(vlan));
+		if (ret)
+			debug("%d: unable to set property\n", ret);
+
+		nodeoff_c = fdt_path_offset(blob, "/soc/edma/gmac4");
+		if (nodeoff_c < 0) {
+			printf("ipq: unable to find compatiable edma node\n");
+			return -1;
+		}
+		vlan.r0 = htonl(0x5);
+		vlan.r1 = htonl(0x2);
+		ret = fdt_setprop(blob, nodeoff_c, "vlan_tag",
+			&vlan, sizeof(vlan));
+		if (ret)
+			debug("%d: unable to set property\n", ret);
+		break;
+	}
+	nodeoff = fdt_node_offset_by_compatible(blob,
+			-1, "qcom,ess-edma");
+	if (nodeoff < 0) {
+		printf("ipq: unable to find compatible edma node\n");
+		return -1;
+	}
+
+	gmac_no = htonl(gmac_no);
+	ret = fdt_setprop(blob, nodeoff, "qcom,num_gmac",
+		&gmac_no, sizeof(gmac_no));
+	if (ret)
+		debug("%d: unable to set property\n", ret);
+	return 0;
+}
+
+
 /*
  * For newer kernel that boot with device tree (3.14+), all of memory is
  * described in the /memory node, including areas that the kernel should not be
@@ -256,6 +427,8 @@ int ft_board_setup(void *blob, bd_t *bd)
 {
 	u64 memory_start = CONFIG_SYS_SDRAM_BASE;
 	u64 memory_size = gd->ram_size;
+	unsigned long gmac_no;
+	char *s;
 	char *mtdparts = NULL;
 	char parts_str[4096];
 	int len = sizeof(parts_str);
@@ -300,6 +473,10 @@ int ft_board_setup(void *blob, bd_t *bd)
 		ipq_fdt_fixup_mtdparts(blob, nodes);
 	}
 	ipq_fdt_fixup_socinfo(blob);
+	s = (getenv("gmacnumber"));
+	strict_strtoul(s, 16, &gmac_no);
+	if (gmac_no > 2 && gmac_no < 6)
+		ipq40xx_patch_eth_params(blob, gmac_no);
 	dcache_disable();
 	fdt_fixup_ethernet(blob);
 	ipq_fdt_fixup_usb_device_mode(blob);
