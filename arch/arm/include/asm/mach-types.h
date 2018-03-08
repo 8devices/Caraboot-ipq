@@ -1134,6 +1134,7 @@ extern unsigned int __machine_arch_type;
 #define MACH_TYPE_IPQ40XX_DB_DK01_1_C1	0x1010002
 #define MACH_TYPE_IPQ40XX_DB_DK02_1_C1	0x1010003
 #define MACH_TYPE_IPQ40XX_TB832		0x1010004
+#define MACH_TYPE_IPQ40XX_8DEV_JALAPENO	0x9000001
 
 #ifdef CONFIG_ARCH_EBSA110
 # ifdef machine_arch_type
