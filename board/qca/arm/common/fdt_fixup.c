@@ -540,9 +540,11 @@ int ft_board_setup(void *blob, bd_t *bd)
 	}
 	ipq_fdt_fixup_socinfo(blob);
 	s = (getenv("gmacnumber"));
-	strict_strtoul(s, 16, &gmac_no);
-	if (gmac_no > 2 && gmac_no < 6)
-		ipq40xx_patch_eth_params(blob, gmac_no);
+	if (s) {
+		strict_strtoul(s, 16, &gmac_no);
+		if (gmac_no > 2 && gmac_no < 6)
+			ipq40xx_patch_eth_params(blob, gmac_no);
+	}
 	dcache_disable();
 	fdt_fixup_ethernet(blob);
 	ipq_fdt_fixup_usb_device_mode(blob);
