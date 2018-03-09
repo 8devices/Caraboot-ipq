@@ -1427,28 +1427,41 @@ int is_image_authenticated(void)
 int sec_image_auth()
 {
 	int fd, i, len;
-	char buf[256];
+	char *buf = NULL;
 
 	fd = open(SEC_AUTHENTICATE_FILE, O_RDWR);
 	if (-1 == fd) {
 		perror(SEC_AUTHENTICATE_FILE);
 		return 1;
 	}
-
+	buf = (char*)malloc(SIG_SIZE);
+	if (buf == NULL) {
+		perror("Memory allocation failed\n");
+		close(fd);
+		return 1;
+	}
 	for (i = 0; i < NO_OF_SECTIONS; i++) {
 		if (!sections[i].is_present) {
 			continue;
 		}
 
-		len = snprintf(buf, sizeof(buf), "%s %s", sections[i].img_code, sections[i].file);
+		len = snprintf(buf, SIG_SIZE, "%s %s", sections[i].img_code, sections[i].file);
+		if (len < 0 || len > SIG_SIZE) {
+			perror("Array out of Index\n");
+			free(buf);
+			close(fd);
+			return 1;
+		}
 		if (write(fd, buf, len) != len) {
 			perror("write");
+			free(buf);
 			close(fd);
 			printf("%s Image authentication failed\n", buf);
 			return 1;
 		}
 	}
 	close(fd);
+	free(buf);
 	return 0;
 }
 
