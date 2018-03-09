@@ -43,6 +43,14 @@
 DECLARE_GLOBAL_DATA_PTR;
 
 /*
+ * CS GPIO number array cs_gpio_array[port_num][cs_num]
+ * cs_gpio_array[0][x] -- GSBI5
+ * cs_gpio_array[1][x] -- GSBI6
+ * cs_gpio_array[2][x] -- GSBI7
+ */
+static unsigned int cs_gpio_array[NUM_PORTS][NUM_CS];
+
+/*
  * GSBI HCLK state register bit
  * hclk_state[0] -- GSBI5
  * hclk_state[1] -- GSBI6
@@ -203,18 +211,11 @@ static int check_qup_clk_state(unsigned int core_num, int enable)
  */
 static void CS_change(int port_num, int cs_num, int enable)
 {
-	unsigned int cs_gpio = 0;
+	unsigned int cs_gpio;
 	uint32_t addr = 0;
 	uint32_t val = 0;
-        char spi_node_path[32];
-	int spi_cs_node = 0, spi_cs_gpio_node = 0;
 
-	sprintf(spi_node_path, "/spi/spi%d/cs%d", port_num, cs_num);
-
-        spi_cs_node = fdt_path_offset(gd->fdt_blob, spi_node_path);
-	spi_cs_gpio_node = fdt_first_subnode(gd->fdt_blob, spi_cs_node);
-
-	cs_gpio = fdtdec_get_uint(gd->fdt_blob, spi_cs_gpio_node, "gpio", 0);
+	cs_gpio = cs_gpio_array[port_num][cs_num];
 
 	addr = GPIO_IN_OUT_ADDR(cs_gpio);
 	val = readl(addr);
@@ -232,6 +233,21 @@ int gsbi_pin_config(unsigned int port_num, int cs_num)
 {
 	char spi_node_path[32];
 	int spi_node = 0;
+	int i,j;
+	int spi_cs_node = 0, spi_cs_gpio_node = 0;
+
+	for (i = 0; i < NUM_PORTS; i++) {
+		for (j = 0; j < NUM_CS; j++) {
+			sprintf(spi_node_path, "/spi/spi%d/cs%d", i, j);
+			spi_cs_node = fdt_path_offset
+					(gd->fdt_blob, spi_node_path);
+			spi_cs_gpio_node = fdt_first_subnode
+					(gd->fdt_blob, spi_cs_node);
+			cs_gpio_array[i][j] = fdtdec_get_uint
+				(gd->fdt_blob, spi_cs_gpio_node, "gpio", 0);
+		}
+	}
+
 	/* Hold the GSBIn (core_num) core in reset */
 	clrsetbits_le32(GSBIn_RESET_REG(GSBI_IDX_TO_GSBI(port_num)),
 			GSBI1_RESET_MSK, GSBI1_RESET);
