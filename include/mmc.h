@@ -90,6 +90,10 @@
 #define MMC_CMD_SET_BLOCK_COUNT         23
 #define MMC_CMD_WRITE_SINGLE_BLOCK	24
 #define MMC_CMD_WRITE_MULTIPLE_BLOCK	25
+#define MMC_CMD_SET_WRITE_PROT		28
+#define MMC_CMD_CLR_WRITE_PROT		29
+#define MMC_CMD_SEND_WRITE_PROT		30
+#define MMC_CMD_SEND_WRITE_PROT_TYPE	31
 #define MMC_CMD_ERASE_GROUP_START	35
 #define MMC_CMD_ERASE_GROUP_END		36
 #define MMC_CMD_ERASE			38
@@ -167,6 +171,17 @@
 #define SD_SWITCH_CHECK		0
 #define SD_SWITCH_SWITCH	1
 
+#define MMC_RESP_TIMEOUT		2000
+#define MMC_ADDR_OUT_OF_RANGE(resp)	((resp >> 31) & 0x01)
+
+/*
+ * CSD fields
+*/
+#define WP_GRP_ENABLE(csd)		((csd[3] & 0x80000000) >> 31)
+#define WP_GRP_SIZE(csd)		((csd[2] & 0x0000001f))
+#define ERASE_GRP_MULT(csd)		((csd[2] & 0x000003e0) >> 5)
+#define ERASE_GRP_SIZE(csd)		((csd[2] & 0x00007c00) >> 10)
+
 /*
  * EXT_CSD fields
  */
@@ -181,6 +196,7 @@
 #define EXT_CSD_WR_REL_PARAM		166	/* R */
 #define EXT_CSD_WR_REL_SET		167	/* R/W */
 #define EXT_CSD_RPMB_MULT		168	/* RO */
+#define EXT_CSD_USER_WP			171	/* R/W */
 #define EXT_CSD_ERASE_GROUP_DEF		175	/* R/W */
 #define EXT_CSD_BOOT_BUS_WIDTH		177
 #define EXT_CSD_PART_CONF		179	/* R/W */
@@ -240,6 +256,11 @@
 
 #define EXT_CSD_WR_DATA_REL_USR		(1 << 0)	/* user data area WR_REL */
 #define EXT_CSD_WR_DATA_REL_GP(x)	(1 << ((x)+1))	/* GP part (x+1) WR_REL */
+
+#define EXT_CSD_US_PERM_WP_DIS		(1 << 4)
+#define EXT_CSD_US_PWR_WP_DIS		(1 << 3)
+#define EXT_CSD_US_PERM_WP_EN		(1 << 2)
+#define EXT_CSD_US_PWR_WP_EN		(1 << 0)
 
 #define R1_ILLEGAL_COMMAND		(1 << 22)
 #define R1_APP_CMD			(1 << 5)
@@ -379,6 +400,8 @@ struct mmc {
 	uint write_bl_len;
 	uint erase_grp_size;	/* in 512-byte sectors */
 	uint hc_wp_grp_size;	/* in 512-byte sectors */
+	uint wp_grp_size;
+	uint wp_grp_enable;
 	u64 capacity;
 	u64 capacity_user;
 	u64 capacity_boot;
@@ -505,6 +528,9 @@ struct pci_device_id;
  */
 int pci_mmc_init(const char *name, struct pci_device_id *mmc_supported,
 		 int num_ids);
+
+int mmc_write_protect(struct mmc *mmc, unsigned int start_blk,
+		      unsigned int cnt_blk, int set_clr);
 
 /* Set block count limit because of 16 bit register limit on some hardware*/
 #ifndef CONFIG_SYS_MMC_MAX_BLK_COUNT

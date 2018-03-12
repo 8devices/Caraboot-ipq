@@ -96,6 +96,7 @@ typedef struct disk_partition {
 #ifdef CONFIG_PARTITION_TYPE_GUID
 	char	type_guid[37];	/* type GUID as string, if exists	*/
 #endif
+	int readonly;		/* read-only flag is set		*/
 } disk_partition_t;
 
 /* Misc _get_dev functions */

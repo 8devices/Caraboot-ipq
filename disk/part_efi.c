@@ -70,6 +70,14 @@ static inline int is_bootable(gpt_entry *p)
 			sizeof(efi_guid_t));
 }
 
+static inline int is_readonly(gpt_entry *p)
+{
+	/* bit 60 of gpt attribute denotes read-only flag */
+	if (p->attributes.raw & ((unsigned long long)1 << 60))
+		return 1;
+	return 0;
+}
+
 static int validate_gpt_header(gpt_header *gpt_h, lbaint_t lba,
 		lbaint_t lastlba)
 {
@@ -283,6 +291,7 @@ int get_partition_info_efi(block_dev_desc_t * dev_desc, int part,
 			print_efiname(&gpt_pte[part - 1]));
 	snprintf((char *)info->type, sizeof(info->type), "U-Boot");
 	info->bootable = is_bootable(&gpt_pte[part - 1]);
+	info->readonly = is_readonly(&gpt_pte[part - 1]);
 #ifdef CONFIG_PARTITION_UUIDS
 	uuid_bin_to_str(gpt_pte[part - 1].unique_partition_guid.b, info->uuid,
 			UUID_STR_FORMAT_GUID);

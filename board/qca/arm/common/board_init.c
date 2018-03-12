@@ -16,7 +16,10 @@
 #include <asm/arch-qca-common/smem.h>
 #include <asm/arch-qca-common/uart.h>
 #include <asm/arch-qca-common/gpio.h>
+#include <memalign.h>
 #include <fdtdec.h>
+#include <mmc.h>
+#include <sdhci.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -31,6 +34,12 @@ extern int sf_saveenv(void);
 extern env_t *mmc_env_ptr;
 extern char *mmc_env_name_spec;
 extern int mmc_saveenv(void);
+
+#ifndef CONFIG_SDHCI_SUPPORT
+extern qca_mmc mmc_host;
+#else
+extern struct sdhci_host mmc_host;
+#endif
 #endif
 
 env_t *env_ptr;
@@ -222,6 +231,39 @@ int board_early_init_f(void)
 	return 0;
 }
 
+#ifdef CONFIG_FLASH_PROTECT
+void board_flash_protect(void)
+{
+	unsigned int num_part;
+	int i;
+#ifdef CONFIG_QCA_MMC
+	block_dev_desc_t *mmc_dev;
+	disk_partition_t info;
+
+	mmc_dev = mmc_get_dev(mmc_host.dev_num);
+	if (mmc_dev != NULL && mmc_dev->type != DEV_TYPE_UNKNOWN) {
+		ALLOC_CACHE_ALIGN_BUFFER_PAD(gpt_header,
+					     gpt_head, 1, mmc_dev->blksz);
+		if (mmc_dev->block_read(mmc_dev->dev,
+		    (lbaint_t)GPT_PRIMARY_PARTITION_TABLE_LBA,
+		    1, gpt_head) == 1) {
+			num_part = le32_to_cpu(gpt_head->num_partition_entries);
+			for (i = 1; i <= num_part; i++) {
+				if (!get_partition_info_efi(mmc_dev, i, &info)
+				    && info.readonly
+				    && !mmc_write_protect(mmc_host.mmc,
+							  info.start,
+							  info.size, 1))
+					printf("\"%s\""
+						"-protected MMC partition\n",
+						info.name);
+			}
+		}
+	}
+#endif
+}
+#endif
+
 int board_late_init(void)
 {
 	unsigned int machid;
@@ -238,6 +280,9 @@ int board_late_init(void)
 		setenv_addr("machid", (void *)machid);
 		gd->bd->bi_arch_number = machid;
 	}
+#ifdef CONFIG_FLASH_PROTECT
+	board_flash_protect();
+#endif
 	set_ethmac_addr();
 	return 0;
 }
