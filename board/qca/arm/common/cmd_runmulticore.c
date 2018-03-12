@@ -106,8 +106,6 @@ int do_runmulticore(cmd_tbl_t *cmdtp,
 	if ((argc <= 1) || (argc > 4))
 		return CMD_RET_USAGE;
 
-	dcache_disable();
-
 	/* Setting up stack for secondary cores */
 	memset(core, 0, sizeof(core));
 
@@ -205,9 +203,6 @@ int do_runmulticore(cmd_tbl_t *cmdtp,
 	for (i = 1; i < argc; i++) {
 		free(core[i - 1].stack_top_ptr);
 	}
-
-	invalidate_dcache_all();
-	dcache_enable();
 
 	return CMD_RET_SUCCESS;
 }
