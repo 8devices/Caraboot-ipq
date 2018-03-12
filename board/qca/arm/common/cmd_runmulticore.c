@@ -206,7 +206,6 @@ int do_runmulticore(cmd_tbl_t *cmdtp,
 		free(core[i - 1].stack_top_ptr);
 	}
 
-	invalidate_dcache_all();
 	dcache_enable();
 
 	return CMD_RET_SUCCESS;
