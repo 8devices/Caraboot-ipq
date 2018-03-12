@@ -335,7 +335,6 @@ typedef struct {
  * size is configured to 64 */
 #define CONFIG_SYS_CACHELINE_SIZE  64
 #define CONFIG_SYS_DCACHE_OFF
-#define CONFIG_CMD_CACHE
 
 /* Enabling this flag will report any L2 errors.
  * By default we are disabling it */
