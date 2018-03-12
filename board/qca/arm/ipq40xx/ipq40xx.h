@@ -81,6 +81,8 @@ __weak int ipq_get_tz_version(char *version_name, int buf_size)
 	return 1;
 }
 
+void disable_audio_clks(void);
+
 /* Board specific parameters */
 typedef struct {
 	unsigned int machid;
