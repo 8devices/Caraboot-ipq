@@ -65,6 +65,11 @@ void board_pci_deinit(void)
 {
 	return 0;
 }
+__weak
+void disable_audio_clks(void)
+{
+	return 0;
+}
 
 int board_init(void)
 {
@@ -181,6 +186,7 @@ int board_init(void)
 	}
 
 	aquantia_phy_reset_init();
+	disable_audio_clks();
 
 	return 0;
 }
