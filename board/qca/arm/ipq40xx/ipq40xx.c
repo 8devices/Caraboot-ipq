@@ -76,7 +76,7 @@ struct dumpinfo_t dumpinfo_n[] = {
 int dump_entries_n = ARRAY_SIZE(dumpinfo_n);
 
 struct dumpinfo_t dumpinfo_s[] = {
-	{ "EBICS0.bin", CONFIG_QCA_KERNEL_CRASHDUMP_ADDRESS,
+	{ "EBICS_S0.BIN", CONFIG_QCA_KERNEL_CRASHDUMP_ADDRESS,
 	  CONFIG_CPU_CONTEXT_DUMP_SIZE, 0 },
 };
 
