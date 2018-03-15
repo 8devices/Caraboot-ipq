@@ -883,7 +883,7 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 
 	ar8033_gpio_node = fdt_path_offset(gd->fdt_blob, "/ar8033_gpio");
 
-	if (ar8033_gpio_node != 0) {
+	if (ar8033_gpio_node >= 0) {
 		bb_nodes[i] = malloc(sizeof(struct bitbang_nodes));
 		memset(bb_nodes[i], 0, sizeof(struct bitbang_nodes));
 
