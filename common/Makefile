@@ -193,6 +193,7 @@ COBJS-y += dlmalloc.o
 COBJS-y += image.o
 COBJS-y += memsize.o
 COBJS-y += stdio.o
+COBJS-$(CONFIG_FACTORY_MODE) += factory.o
 
 
 COBJS	:= $(sort $(COBJS-y))

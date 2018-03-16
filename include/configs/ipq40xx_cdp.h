@@ -321,6 +321,11 @@ typedef struct {
 
 #define CONFIG_LZMA
 
+// Factory
+#define CONFIG_FACTORY_MODE
+#define CONFIG_FACTORY_IMG_FILENAME    "jalapeno.bin"
+#define CONFIG_FACTORY_IMG_LOAD_ADDR   "0x84000000"
+
 #define CONFIG_EXTRA_ENV_SETTINGS								\
 	"bootcmd=run setup && run bootlinux\0"							\
 	"setup=partname=1 && setenv bootargs ubi.mtd=ubi ${args_common}\0"	\

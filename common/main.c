@@ -42,6 +42,9 @@
 #include <post.h>
 #include <linux/ctype.h>
 #include <menu.h>
+#ifdef CONFIG_FACTORY_MODE
+#include <factory.h>
+#endif
 
 #if defined(CONFIG_SILENT_CONSOLE) || defined(CONFIG_POST) || defined(CONFIG_CMDLINE_EDITING)
 DECLARE_GLOBAL_DATA_PTR;
@@ -380,6 +383,10 @@ void main_loop (void)
 # ifdef CONFIG_AUTOBOOT_KEYED
 		int prev = disable_ctrlc(1);	/* disable Control C checking */
 # endif
+
+#ifdef CONFIG_FACTORY_MODE
+		factory_mode_start();
+#endif
 
 		run_command(s, 0);
 
