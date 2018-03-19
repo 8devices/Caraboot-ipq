@@ -287,12 +287,14 @@ static int scm_call_64(u32 svc_id, u32 cmd_id, struct qca_scm_desc *desc)
 
 	desc->ret[0] = desc->ret[1] = desc->ret[2] = 0;
 
+	flush_dcache_all();
 	ret = __qca_scm_call_armv8_32(fn_id, desc->arginfo,
 			desc->args[0], desc->args[1],
 			desc->args[2], desc->x5,
 			&desc->ret[0], &desc->ret[1],
 			&desc->ret[2]);
 
+	invalidate_dcache_all();
 	return ret;
 }
 
@@ -320,8 +322,10 @@ bool is_scm_armv8(void)
         x0 = QCA_SCM_SIP_FNID(SCM_SVC_INFO, QCA_IS_CALL_AVAIL_CMD) |
                         QCA_SMC_ATOMIC_MASK;
 
+	flush_dcache_all();
         ret = __qca_scm_call_armv8_32(x0, QCA_SCM_ARGS(1), x0, 0, 0, 0,
                                   &ret1, NULL, NULL);
+	invalidate_dcache_all();
         if (ret || !ret1)
                 scm_version = SCM_LEGACY;
         else
