@@ -600,10 +600,10 @@ void emmc_clock_config(int mode)
 		udelay(10);
 	}
 	if (mode == MMC_DATA_TRANSFER_MODE) {
-		/*52 MHz pll8 */
-		emmc_set_rate_mnd(13, 32);
+		/*48 MHz pll8 */
+		emmc_set_rate_mnd(1, 8);
 		emmc_pll_vote_clk_enable();
-		emmc_local_clock_enable(13, 32, 3, 3, 3);
+		emmc_local_clock_enable(1, 8, 1, 3, 3);
 		emmc_clock_reset();
 		udelay(10);
 	}
