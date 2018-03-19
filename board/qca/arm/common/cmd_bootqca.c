@@ -540,9 +540,6 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 		return CMD_RET_FAILURE;
 
 	dcache_enable();
-#ifdef CONFIG_QCA_MMC
-	board_mmc_deinit();
-#endif
 
 	board_pci_deinit();
 #ifdef CONFIG_USB_XHCI_IPQ
