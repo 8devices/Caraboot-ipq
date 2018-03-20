@@ -179,6 +179,8 @@ typedef struct {
 #define CONFIG_INITRD_TAG		1
 #define CONFIG_FIT
 #define CONFIG_SYS_HUSH_PARSER
+#define CONFIG_SYS_LONGHELP
+#define CONFIG_AUTO_COMPLETE		1
 #define CONFIG_SYS_NULLDEV
 #define CONFIG_CMD_XIMG
 #define CONFIG_CMD_NET
@@ -267,6 +269,7 @@ typedef struct {
 #define CONFIG_IPADDR	192.168.2.100
 #define CONFIG_SERVERIP	192.168.2.254
 #define CONFIG_IPQ_NO_MACS	2
+#define CONFIG_CMD_TFTPPUT
 /*
  * CRASH DUMP ENABLE
  */
@@ -276,7 +279,6 @@ typedef struct {
 */
 
 #ifdef CONFIG_QCA_APPSBL_DLOAD
-#define CONFIG_CMD_TFTPPUT
 /* We will be uploading very big files */
 #undef CONFIG_NET_RETRY_COUNT
 #define CONFIG_NET_RETRY_COUNT 500
