@@ -17,6 +17,7 @@
 #include <asm/io.h>
 #include <asm/errno.h>
 
+#ifdef CONFIG_QCA_MMC
 #define GCC_SDCC1_MISC  0x1818014
 #define GCC_SDCC1_APPS_CBCR 0x181800C
 #define GCC_SDCC1_APPS_RCGR 0x1818008
@@ -57,6 +58,7 @@ void emmc_clock_disable(void)
 	writel(0x0, GCC_SDCC1_MISC);
 
 }
+#endif
 
 void uart2_configure_mux(void)
 {
@@ -182,6 +184,7 @@ void i2c_clock_config(void)
 }
 #endif
 
+#ifdef CONFIG_IPQ40XX_PCI
 int pcie_clock_enable(int clk_addr)
 {
 	unsigned int count = PCIE_TIMEOUT_CNT;
@@ -205,3 +208,4 @@ void pcie_clock_disable(int clk_addr)
 {
 	writel(0, clk_addr);
 }
+#endif

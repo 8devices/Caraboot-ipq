@@ -99,7 +99,7 @@
 #define CONFIG_SYS_I2C_SPEED	0
 #endif
 
-#define CONFIG_IPQ40XX_PCI
+/* #define CONFIG_IPQ40XX_PCI */
 #ifdef CONFIG_IPQ40XX_PCI
 #define CONFIG_PCI
 #define CONFIG_CMD_PCI
@@ -199,7 +199,7 @@ typedef struct {
  * CONFIG_IPQ_NAND: QPIC NAND in FIFO/block mode.
  * BAM is enabled by default.
  */
-#define CONFIG_QPIC_NAND
+/* #define CONFIG_QPIC_NAND */
 #define CONFIG_CMD_NAND
 #define CONFIG_CMD_NAND_YAFFS
 #define CONFIG_CMD_MEMORY
@@ -261,7 +261,7 @@ typedef struct {
 #define CONFIG_SYS_RX_ETH_BUFFER	16
 #define CONFIG_IPQ40XX_MDIO	1
 #define CONFIG_QCA8075_PHY	1
-#define CONFIG_QCA8033_PHY	1
+/* #define CONFIG_QCA8033_PHY	1 */
 #define CONFIG_MII
 #define CONFIG_CMD_MII
 #define CONFIG_IPADDR	192.168.2.100
@@ -290,7 +290,7 @@ typedef struct {
 #define CONFIG_SYS_MAX_NAND_DEVICE	(CONFIG_IPQ_MAX_NAND_DEVICE + \
 					 CONFIG_IPQ_MAX_SPI_DEVICE)
 
-#define CONFIG_QCA_MMC
+/* #define CONFIG_QCA_MMC */
 
 #ifdef CONFIG_QCA_MMC
 #define CONFIG_CMD_MMC

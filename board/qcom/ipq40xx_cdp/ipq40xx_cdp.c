@@ -423,6 +423,7 @@ void board_nand_init(void)
 #ifdef CONFIG_IPQ_NAND
 	ipq_nand_init(IPQ_NAND_LAYOUT_LINUX, QCOM_NAND_QPIC);
 #else
+#ifdef CONFIG_QPIC_NAND
 	if ((gboard_param->machid == MACH_TYPE_IPQ40XX_AP_DK04_1_C1) ||
 		(gboard_param->machid == MACH_TYPE_IPQ40XX_DB_DK02_1_C1) ||
 		(gboard_param->machid == MACH_TYPE_IPQ40XX_AP_DK04_1_C3) ||
@@ -457,6 +458,7 @@ void board_nand_init(void)
 		if (gboard_param->nand_gpio)
 			qpic_nand_init(&config);
 	}
+#endif /* CONFIG_QPIC_NAND */
 #endif
 	if ((gboard_param->machid == MACH_TYPE_IPQ40XX_AP_DK01_1_C2) ||
 		(gboard_param->machid == MACH_TYPE_IPQ40XX_AP_DK05_1_C1) ||
@@ -632,7 +634,9 @@ int board_eth_init(bd_t *bis)
 		if (gpio) {
 			qca_configure_gpio(gpio, gboard_param->rgmii_gpio_count);
 		}
+#ifdef CONFIG_QCA8033_PHY
 		ipq40xx_register_switch(ipq40xx_qca8033_phy_init);
+#endif
 		break;
 	default:
 		break;
