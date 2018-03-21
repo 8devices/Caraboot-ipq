@@ -162,6 +162,14 @@ static inline void* ipq40xx_alloc_mem(u32 size)
 	return malloc(size);
 }
 
+static inline void* ipq40xx_alloc_memalign(u32 size)
+{
+	void *p = memalign(CONFIG_SYS_CACHELINE_SIZE, size);
+	if (p != 0)
+		memset(p, 0, size);
+	return p;
+}
+
 static inline void ipq40xx_free_mem(void *ptr)
 {
 	if (ptr)

@@ -171,6 +171,10 @@ static int ipq40xx_edma_alloc_rx_buf(
 		sw_desc->length = length;
 		rx_desc = (&((struct edma_rx_free_desc *)(erdr->hw_desc))[i]);
 		rx_desc->buffer_addr = cpu_to_le64(sw_desc->dma);
+
+		flush_dcache_range((unsigned long)rx_desc,
+				(unsigned long)rx_desc +
+				sizeof(struct edma_rx_free_desc));
 		if (unlikely(++i == erdr->count))
 			i = 0;
 	}
@@ -384,7 +388,6 @@ static int ipq40xx_edma_tx_map_and_fill(
 		sw_desc = ipq40xx_edma_get_tx_buffer(c_info, tpd, queue_id);
 		sw_desc->dma = virt_to_phys(skb);
 
-
 		tpd->addr = cpu_to_le32(sw_desc->dma);
 		tpd->len  = cpu_to_le16(buf_len);
 
@@ -403,6 +406,13 @@ static int ipq40xx_edma_tx_map_and_fill(
 
 		sw_desc->data = skb;
 		sw_desc->flags |= EDMA_SW_DESC_FLAG_LAST;
+
+		flush_dcache_range((unsigned long)tpd,
+				(unsigned long)tpd +
+				sizeof( struct edma_tx_desc));
+		flush_dcache_range((unsigned long)(tpd->addr),
+				(unsigned long)(tpd->addr) +
+				PKTSIZE_ALIGN);
 	}
 	return 0;
 }
@@ -458,6 +468,9 @@ static void ipq40xx_edma_tx_complete(
 	while (sw_next_to_clean != hw_next_to_clean) {
 		sw_desc = &etdr->sw_desc[sw_next_to_clean];
 		ipq40xx_edma_tx_unmap_and_free(sw_desc);
+		flush_dcache_range((unsigned long)sw_desc,
+				(unsigned long)sw_desc +
+				sizeof(struct edma_sw_desc));
 		sw_next_to_clean = (sw_next_to_clean + 1) % etdr->count;
 		etdr->sw_next_to_clean = sw_next_to_clean;
 	}
@@ -487,7 +500,12 @@ static int ipq40xx_edma_rx_complete(
 	int rx = CONFIG_SYS_RX_ETH_BUFFER;
 	sw_next_to_clean = erdr->sw_next_to_clean;
 
+	invalidate_dcache_range((unsigned long)&erdr->sw_desc[0],
+			(unsigned long)(&erdr->sw_desc[0] +
+			sizeof(struct edma_sw_desc) *
+			CONFIG_SYS_RX_ETH_BUFFER));
 	while (rx) {
+
 		sw_desc = &erdr->sw_desc[sw_next_to_clean];
 		ipq40xx_edma_read_reg(EDMA_REG_RFD_IDX_Q(queue_id), &data);
 		hw_next_to_clean = (data >> RFD_CONS_IDX_SHIFT) &
@@ -496,6 +514,11 @@ static int ipq40xx_edma_rx_complete(
 		if (hw_next_to_clean == sw_next_to_clean) {
 			break;
 		}
+
+		invalidate_dcache_range((unsigned long)sw_desc->data,
+				(unsigned long)(sw_desc->data +
+				PKTSIZE_ALIGN));
+
 		skb = sw_desc->data;
 
 		/* Get RRD */
@@ -715,12 +738,12 @@ static int ipq40xx_edma_alloc_ring(
 	erd->sw_next_to_fill = 0;
 	erd->sw_next_to_clean = 0;
 	/* Allocate SW descriptors */
-	erd->sw_desc = ipq40xx_alloc_mem(erd->size);
+	erd->sw_desc = ipq40xx_alloc_memalign(erd->size);
 	if (!erd->sw_desc)
 		return -ENOMEM;
 
 	 /* Alloc HW descriptors */
-	erd->hw_desc = ipq40xx_alloc_mem(erd->size);
+	erd->hw_desc = ipq40xx_alloc_memalign(erd->size);
 	erd->dma = virt_to_phys(erd->hw_desc);
 	if (!erd->hw_desc) {
 		ipq40xx_free_mem(erd->sw_desc);
@@ -791,7 +814,7 @@ static int ipq40xx_edma_alloc_tx_rx_queue(
 	struct ipq40xx_edma_desc_ring *rfd_ring;
 	/* Tx queue allocation*/
 	for (i = 0; i < c_info->num_tx_queues; i++) {
-		etdr = ipq40xx_alloc_mem(
+		etdr = ipq40xx_alloc_memalign(
 			sizeof(struct ipq40xx_edma_desc_ring));
 		if (!etdr)
 			goto err;
@@ -800,7 +823,7 @@ static int ipq40xx_edma_alloc_tx_rx_queue(
 	}
 	/* Rx Queue allocation */
 	for (i = 0; i < c_info->num_rx_queues; i++) {
-		rfd_ring = ipq40xx_alloc_mem(
+		rfd_ring = ipq40xx_alloc_memalign(
 			sizeof(struct ipq40xx_edma_desc_ring));
 		if (!rfd_ring)
 			goto err;
