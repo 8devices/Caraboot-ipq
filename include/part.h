@@ -197,6 +197,7 @@ int get_partition_info_efi_by_name(block_dev_desc_t *dev_desc,
 	const char *name, disk_partition_t *info);
 void print_part_efi (block_dev_desc_t *dev_desc);
 int   test_part_efi (block_dev_desc_t *dev_desc);
+int get_partition_count_efi(block_dev_desc_t * dev_desc);
 
 /**
  * write_gpt_table() - Write the GUID Partition Table to disk

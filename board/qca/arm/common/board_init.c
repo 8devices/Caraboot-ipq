@@ -240,30 +240,32 @@ int board_early_init_f(void)
 #ifdef CONFIG_FLASH_PROTECT
 void board_flash_protect(void)
 {
-	unsigned int num_part;
+	int num_part;
 	int i;
+	int ret;
 #ifdef CONFIG_QCA_MMC
 	block_dev_desc_t *mmc_dev;
 	disk_partition_t info;
 
 	mmc_dev = mmc_get_dev(mmc_host.dev_num);
 	if (mmc_dev != NULL && mmc_dev->type != DEV_TYPE_UNKNOWN) {
-		ALLOC_CACHE_ALIGN_BUFFER_PAD(gpt_header,
-					     gpt_head, 1, mmc_dev->blksz);
-		if (mmc_dev->block_read(mmc_dev->dev,
-		    (lbaint_t)GPT_PRIMARY_PARTITION_TABLE_LBA,
-		    1, gpt_head) == 1) {
-			num_part = le32_to_cpu(gpt_head->num_partition_entries);
-			for (i = 1; i <= num_part; i++) {
-				if (!get_partition_info_efi(mmc_dev, i, &info)
-				    && info.readonly
-				    && !mmc_write_protect(mmc_host.mmc,
-							  info.start,
-							  info.size, 1))
-					printf("\"%s\""
-						"-protected MMC partition\n",
-						info.name);
-			}
+		num_part = get_partition_count_efi(mmc_dev);
+		if (num_part < 0) {
+			printf("Both primary & backup GPT are invalid, skipping mmc write protection.\n");
+			return;
+		}
+
+		for (i = 1; i <= num_part; i++) {
+			ret = get_partition_info_efi(mmc_dev, i, &info);
+			if (ret == -1)
+				return;
+			if (!ret && info.readonly
+			    && !mmc_write_protect(mmc_host.mmc,
+						  info.start,
+						  info.size, 1))
+				printf("\"%s\""
+					"-protected MMC partition\n",
+					info.name);
 		}
 	}
 #endif

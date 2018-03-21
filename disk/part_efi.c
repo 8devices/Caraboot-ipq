@@ -340,6 +340,37 @@ int test_part_efi(block_dev_desc_t * dev_desc)
 	return 0;
 }
 
+int get_partition_count_efi(block_dev_desc_t * dev_desc)
+{
+	ALLOC_CACHE_ALIGN_BUFFER_PAD(gpt_header, gpt_head, 1, dev_desc->blksz);
+	gpt_entry *gpt_pte = NULL;
+
+	if (!dev_desc) {
+		printf("%s: Invalid Argument(s)\n", __func__);
+		return -1;
+	}
+
+	/* This function validates AND fills in the GPT header and PTE */
+	if (is_gpt_valid(dev_desc, GPT_PRIMARY_PARTITION_TABLE_LBA,
+			gpt_head, &gpt_pte) != 1) {
+		printf("%s: *** ERROR: Invalid GPT ***\n", __func__);
+		if (is_gpt_valid(dev_desc, (dev_desc->lba - 1),
+				 gpt_head, &gpt_pte) != 1) {
+			printf("%s: *** ERROR: Invalid Backup GPT ***\n",
+			       __func__);
+			if (gpt_pte != NULL)
+				free(gpt_pte);
+			return -1;
+		} else {
+			printf("%s: ***        Using Backup GPT ***\n",
+			       __func__);
+		}
+	}
+
+	free(gpt_pte);
+	return le32_to_cpu(gpt_head->num_partition_entries);
+}
+
 /**
  * set_protective_mbr(): Set the EFI protective MBR
  * @param dev_desc - block device descriptor
