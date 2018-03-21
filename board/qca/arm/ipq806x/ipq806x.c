@@ -968,3 +968,15 @@ void clear_l2cache_err(void)
         set_l2_indirect_reg(L2ESR_IND_ADDR, val);
 #endif
 }
+
+void enable_caches(void)
+{
+	icache_enable();
+	dcache_enable();
+}
+
+void disable_caches(void)
+{
+	icache_disable();
+	dcache_disable();
+}
