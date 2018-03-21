@@ -385,6 +385,11 @@ static int mmc_send_op_cond_iter(struct mmc *mmc, int use_arg)
 	if (err)
 		return err;
 	mmc->ocr = cmd.response[0];
+
+	/*1ms delay is added to give cards time to respond*/
+	if(!use_arg)
+		udelay(1000);
+
 	return 0;
 }
 
@@ -416,6 +421,7 @@ static int mmc_complete_op_cond(struct mmc *mmc)
 	uint start;
 	int err;
 
+	udelay(100);
 	mmc->op_cond_pending = 0;
 	if (!(mmc->ocr & OCR_BUSY)) {
 		start = get_timer(0);
