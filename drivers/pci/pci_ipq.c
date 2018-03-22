@@ -573,7 +573,7 @@ static int ipq_pcie_parse_dt(const void *fdt, int id,
 	int err, rst_gpio, node;
 	char name[16];
 
-	sprintf(name, "pci%d", id);
+	snprintf(name, sizeof(name), "pci%d", id);
 	node = fdt_path_offset(fdt, name);
 	if (node < 0) {
 		printf("PCI%d is not defined in the device tree\n", id);

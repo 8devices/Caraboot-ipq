@@ -1663,7 +1663,7 @@ int ipq807x_edma_init(void *edma_board_cfg)
 	memset(enet_addr, 0, sizeof(enet_addr));
 	memset(&ledma_cfg, 0, sizeof(ledma_cfg));
 	edma_cfg = &ledma_cfg;
-	strcpy(edma_cfg->phy_name, "IPQ MDIO0");
+	strlcpy(edma_cfg->phy_name, "IPQ MDIO0", sizeof(edma_cfg->phy_name));
 
 	/* Getting the MAC address from ART partition */
 	ret = get_eth_mac_address(enet_addr, IPQ807X_EDMA_DEV);
@@ -1727,7 +1727,7 @@ int ipq807x_edma_init(void *edma_board_cfg)
 			dev[i]->enetaddr[4],
 			dev[i]->enetaddr[5]);
 
-		sprintf(dev[i]->name, "eth%d", i);
+		snprintf(dev[i]->name, sizeof(dev[i]->name), "eth%d", i);
 
 		ipq807x_edma_dev[i]->dev  = dev[i];
 		ipq807x_edma_dev[i]->mac_unit = edma_cfg->unit;
