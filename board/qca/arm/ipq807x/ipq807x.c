@@ -540,7 +540,7 @@ void board_pci_init(int id)
 	int node, gpio_node;
 	char name[16];
 
-	sprintf(name, "pci%d", id);
+	snprintf(name, sizeof(name), "pci%d", id);
 	node = fdt_path_offset(gd->fdt_blob, name);
 	if (node < 0) {
 		printf("Could not find PCI in device tree\n");
@@ -562,7 +562,7 @@ void board_pci_deinit()
 	struct fdt_resource pci_phy;
 
 	for (i = 0; i < PCI_MAX_DEVICES; i++) {
-		sprintf(name, "pci%d", i);
+		snprintf(name, sizeof(name), "pci%d", i);
 		node = fdt_path_offset(gd->fdt_blob, name);
 		if (node < 0) {
 			printf("Could not find PCI in device tree\n");

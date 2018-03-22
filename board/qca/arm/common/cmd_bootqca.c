@@ -365,13 +365,16 @@ int config_select(unsigned int addr, char *rcmd, int rcmd_size)
 			return -1;
 		}
 
-		sprintf((char *)dtb_config_name, "%s", config);
+		snprintf((char *)dtb_config_name,
+			 sizeof(dtb_config_name), "%s", config);
 
 		ipq_smem_get_socinfo_version((uint32_t *)&soc_version);
 		if(SOCINFO_VERSION_MAJOR(soc_version) >= 2) {
-			sprintf(dtb_config_name + strlen("config@"), "v%d.0-%s",
-					SOCINFO_VERSION_MAJOR(soc_version),
-					config + strlen("config@"));
+			snprintf(dtb_config_name + strlen("config@"),
+				 sizeof(dtb_config_name) - strlen("config@"),
+				 "v%d.0-%s",
+				 SOCINFO_VERSION_MAJOR(soc_version),
+				 config + strlen("config@"));
 		}
 	}
 
@@ -417,7 +420,8 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 		if (debug) {
 			printf("Using nand device %d\n", CONFIG_SPI_FLASH_INFO_IDX);
 		}
-		sprintf(runcmd, "nand device %d", CONFIG_SPI_FLASH_INFO_IDX);
+		snprintf(runcmd, sizeof(runcmd),
+			 "nand device %d", CONFIG_SPI_FLASH_INFO_IDX);
 		run_command(runcmd, 0);
 
 	} else if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
