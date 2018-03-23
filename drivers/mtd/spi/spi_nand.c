@@ -25,6 +25,8 @@
 #define TIMEOUT		5000
 #define MFID_GIGA	0xc8
 #define MFID_ATO	0x9b
+#define TOSHIBA_NORM_READ_MASK	0x1F
+
 /* Macronix Specific Defines */
 #define MFID_MACRONIX   	0xc2
 #define MACRONIX_WRAP		((0 & 0x3) << 6)
@@ -38,9 +40,11 @@ struct nand_chip nand_chip[CONFIG_SYS_MAX_NAND_DEVICE];
 int verify_3bit_ecc(int status);
 int verify_2bit_ecc(int status);
 int verify_dummy_ecc(int status);
+int verify_2bit_toshiba_ecc(int status);
 void gigadevice_norm_read_cmd(u8 *cmd, int column);
 void macronix_norm_read_cmd(u8 *cmd, int column);
 void winbond_norm_read_cmd(u8 *cmd, int column);
+void toshiba_norm_read_cmd(u8 *cmd, int column);
 int spi_nand_die_select(struct mtd_info *mtd, struct spi_flash *flash,
 			int die_id);
 
@@ -143,7 +147,22 @@ static struct spi_nand_flash_params spi_nand_flash_tbl[] = {
 		.die_select = spi_nand_die_select,
 		.name = "W25M02GV",
         },
-
+	{
+		.id = { 0x00, 0x98, 0xcd, 0x98 },
+		.page_size = 4096,
+		.erase_size = 0x00040000,
+		.no_of_dies = 1,
+		.prev_die_id = INT_MAX,
+		.pages_per_die = 0x20000,
+		.pages_per_sector = 64,
+		.nr_sectors = 2048,
+		.oob_size = 128,
+		.protec_bpx = 0xC7,
+		.norm_read_cmd = toshiba_norm_read_cmd,
+		.verify_ecc = verify_2bit_toshiba_ecc,
+		.die_select = NULL,
+		.name = "TC58CVG2S0F",
+	},
 };
 
 struct spi_nand_flash_params *params;
@@ -169,6 +188,14 @@ void winbond_norm_read_cmd(u8 *cmd, int column)
 {
 	cmd[0] = IPQ40XX_SPINAND_CMD_NORM_READ;
 	cmd[1] = (u8)(column >> 8);
+	cmd[2] = (u8)(column);
+	cmd[3] = 0;
+}
+
+void toshiba_norm_read_cmd(u8 *cmd, int column)
+{
+	cmd[0] = IPQ40XX_SPINAND_CMD_NORM_READ;
+	cmd[1] = ((u8)(column >> 8) & TOSHIBA_NORM_READ_MASK);
 	cmd[2] = (u8)(column);
 	cmd[3] = 0;
 }
@@ -571,6 +598,18 @@ int verify_2bit_ecc(int status)
 	    (ecc_status == SPINAND_2BIT_ECC_MASK))
 		return ECC_ERR;
 	else if (ecc_status == SPINAND_2BIT_ECC_CORRECTED)
+		return ECC_CORRECTED;
+	else
+		return 0;
+}
+
+int verify_2bit_toshiba_ecc(int status)
+{
+	int ecc_status = (status & SPINAND_2BIT_ECC_MASK);
+
+	if (ecc_status == SPINAND_2BIT_ECC_ERROR)
+		return ECC_ERR;
+	else if (ecc_status == SPINAND_2BIT_ECC_CORRECTED_TOSHIBA)
 		return ECC_CORRECTED;
 	else
 		return 0;
