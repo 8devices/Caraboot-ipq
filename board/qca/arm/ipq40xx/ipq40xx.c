@@ -484,11 +484,13 @@ unsigned int get_smem_spi_addr_len(void)
 void enable_caches(void)
 {
 	icache_enable();
+	dcache_enable();
 }
 
 void disable_caches(void)
 {
 	icache_disable();
+	dcache_disable();
 }
 
 unsigned int get_dts_machid(unsigned int machid)
