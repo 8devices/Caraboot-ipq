@@ -274,9 +274,13 @@ void invalidate_dcache_all(void)
  */
 void flush_dcache_all(void)
 {
-	v7_maint_dcache_all(ARMV7_DCACHE_CLEAN_INVAL_ALL);
+	int dstatus = dcache_status();
 
-	v7_outer_cache_flush_all();
+	if (dstatus)
+	{
+		v7_maint_dcache_all(ARMV7_DCACHE_CLEAN_INVAL_ALL);
+		v7_outer_cache_flush_all();
+	}
 }
 
 /*
