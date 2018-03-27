@@ -461,5 +461,5 @@ int apps_iscrashed(void)
 
 unsigned int get_smem_spi_addr_len(void)
 {
-	return SPI_MAX_ADDR_LEN;
+	return SPI_DEFAULT_ADDR_LEN;
 }
