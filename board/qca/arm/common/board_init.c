@@ -345,16 +345,6 @@ void report_l2err(u32 l2esr)
 }
 #endif
 
-__weak void enable_caches(void)
-{
-	icache_enable();
-}
-
-__weak void disable_caches(void)
-{
-	icache_disable();
-}
-
 __weak void clear_l2cache_err(void)
 {
 	return;

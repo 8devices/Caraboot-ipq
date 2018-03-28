@@ -995,6 +995,16 @@ void set_flash_secondary_type(qca_smem_flash_info_t *smem)
 	return;
 };
 
+void enable_caches(void)
+{
+	icache_enable();
+}
+
+void disable_caches(void)
+{
+	icache_disable();
+}
+
 /*
  * To determine the spi flash addr is in 3 byte
  * or 4 byte.
