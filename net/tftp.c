@@ -70,7 +70,7 @@ static struct in_addr tftp_remote_ip;
 /* The UDP port at their end */
 static int	tftp_remote_port;
 /* The UDP port at our end */
-static int	tftp_our_port;
+int	tftp_our_port;
 static int	timeout_count;
 /* packet sequence number */
 static ulong	tftp_cur_block;

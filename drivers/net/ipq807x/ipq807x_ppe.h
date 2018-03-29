@@ -49,6 +49,61 @@ union port_mux_ctrl_u {
 	struct port_mux_ctrl bf;
 };
 
+enum {
+	TCP_PKT,
+	UDP_PKT,
+};
+
+#define ADPT_ACL_HPPE_IPV4_DIP_RULE 4
+#define MAX_RULE 512
+
+struct ipo_rule_reg {
+        uint32_t  rule_field_0:32;
+        uint32_t  rule_field_1:20;
+        uint32_t  fake_mac_header:1;
+        uint32_t  range_en:1;
+        uint32_t  inverse_en:1;
+        uint32_t  rule_type:4;
+        uint32_t  src_type:2;
+        uint32_t  src_0:3;
+        uint32_t  src_1:5;
+        uint32_t  pri:9;
+        uint32_t  res_chain:1;
+        uint32_t  post_routing_en:1;
+        uint32_t  _reserved0:16;
+};
+
+union ipo_rule_reg_u {
+        uint32_t val[3];
+        struct ipo_rule_reg bf;
+};
+
+struct ipo_mask_reg {
+        uint32_t  maskfield_0:32;
+        uint32_t  maskfield_1:21;
+        uint32_t  _reserved0:11;
+};
+
+union ipo_mask_reg_u {
+        uint32_t val[2];
+        struct ipo_mask_reg bf;
+};
+
+struct ipo_action {
+        uint32_t  dest_info_change_en:1;
+	uint32_t  fwd_cmd:2;
+	uint32_t  _reserved0:29;
+	uint32_t  _reserved1:32;
+	uint32_t  _reserved2:32;
+	uint32_t  _reserved3:32;
+	uint32_t  _reserved4:32;
+};
+
+union ipo_action_u {
+        uint32_t val[5];
+        struct ipo_action bf;
+};
+
 #define IPQ807X_PORT_MUX_CTRL			0x10
 #define PORT4_PCS_SEL_GMII_FROM_PCS0		1
 #define PORT4_PCS_SEL_RGMII 			0
@@ -180,3 +235,13 @@ union port_mux_ctrl_u {
 #define PORT_BRIDGE_CTRL_INC		0x4
 #define TX_MAC_EN			(1 << 16)
 
+#define IPO_CSR_BASE_ADDR		0x0b0000
+
+#define IPO_RULE_REG_ADDRESS 		0x0
+#define IPO_RULE_REG_INC		0x10
+
+#define IPO_MASK_REG_ADDRESS		0x2000
+#define IPO_MASK_REG_INC		0x10
+
+#define IPO_ACTION_ADDRESS 		0x8000
+#define IPO_ACTION_INC			0x20
