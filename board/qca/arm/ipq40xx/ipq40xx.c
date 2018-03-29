@@ -463,3 +463,14 @@ unsigned int get_smem_spi_addr_len(void)
 {
 	return SPI_MAX_ADDR_LEN;
 }
+
+
+void enable_caches(void)
+{
+	icache_enable();
+}
+
+void disable_caches(void)
+{
+	icache_disable();
+}
