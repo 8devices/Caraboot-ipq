@@ -346,6 +346,6 @@ typedef struct {
 	"tftp_loadaddr=0x84000000\0"								\
 	"recovery_file=fwupdate.bin\0"								\
 
-#define CONFIG_CARABOOT_RELEASE "v4.2-dev"
+#define CONFIG_CARABOOT_RELEASE "v4.2"
 
 #endif /* _IPQCDP_H */
