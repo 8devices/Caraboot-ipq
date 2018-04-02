@@ -22,9 +22,27 @@
 	aliases {
 		console = "/serial@16340000";
 		nand = "/nand@1A600000";
+		gmac_gpio = "/gmac1_gpio";
 		pci0 = "/pci@1b500000";
 		pci1 = "/pci@1b700000";
 		pci2 = "/pci@1b900000";
+	};
+
+	gmac_cfg {
+		gmac_count = <1>;
+
+		gmac1_cfg {
+			base = <0x37000000>;
+			unit = <0>;
+			is_macsec = <0>;
+			mac_pwr0 = <0>;
+			mac_pwr1 = <0>;
+			mac_conn_to_phy = <0>;
+			phy_interface_type = <4>;
+			phy_address_count = <1>;
+			phy_address = <4>;
+			phy_name = "IPQ MDIO0";
+		};
 	};
 
 	pci@1b500000 {
