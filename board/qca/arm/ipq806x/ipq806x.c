@@ -372,7 +372,6 @@ int board_eth_init(bd_t *bis)
 			ipq_register_switch(ipq_athrs17_init);
 			break;
 	}
-	ipq_register_switch(ipq_athrs17_init);
 
 	status = ipq_gmac_init(gmac_cfg);
 	return status;
