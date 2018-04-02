@@ -294,7 +294,6 @@ static int scm_call_64(u32 svc_id, u32 cmd_id, struct qca_scm_desc *desc)
 			&desc->ret[0], &desc->ret[1],
 			&desc->ret[2]);
 
-	invalidate_dcache_all();
 	return ret;
 }
 
@@ -325,7 +324,6 @@ bool is_scm_armv8(void)
 	flush_dcache_all();
         ret = __qca_scm_call_armv8_32(x0, QCA_SCM_ARGS(1), x0, 0, 0, 0,
                                   &ret1, NULL, NULL);
-	invalidate_dcache_all();
         if (ret || !ret1)
                 scm_version = SCM_LEGACY;
         else
@@ -385,6 +383,23 @@ void __attribute__ ((noreturn)) execute_tzt(void *entry_addr)
 }
 
 
+/* We need to invalidate the buffer written by TZ before we use in u-boot
+ * In some calls TZ writes to desc.args[0].
+ * This arg is passed with an address of local variable with size 1.
+ * This is not cache aligned and invalidate_dcache_range won't
+ * invalidate this cache line at all. To avoid this we are passing a
+ * buffer which is cache aligned and we will copy contents of this
+ * buffer back to buffer passed by callers.
+ */
+/* Just aliging the address of local variable with cache line is also
+ * not correct as the other stack contents will also be invalidated wrongly
+ * Hence creating a seperate cache aligned buffer
+ */
+#ifndef CONFIG_SYS_CACHELINE_SIZE
+#define CONFIG_SYS_CACHELINE_SIZE	128
+#endif
+static uint8_t tz_buf[CONFIG_SYS_CACHELINE_SIZE]  __aligned(CONFIG_SYS_CACHELINE_SIZE);
+
 int qca_scm_call(u32 svc_id, u32 cmd_id, void *buf, size_t len)
 {
 	int ret = 0;
@@ -393,10 +408,15 @@ int qca_scm_call(u32 svc_id, u32 cmd_id, void *buf, size_t len)
 	{
 		struct qca_scm_desc desc = {0};
 
+		memcpy(tz_buf, buf, len);
 		desc.arginfo = QCA_SCM_ARGS(2, SCM_READ_OP);
-		desc.args[0] = (u32)buf;
+		desc.args[0] = (u32)tz_buf;
 		desc.args[1] = len;
 		ret = scm_call_64(svc_id, cmd_id, &desc);
+		/* qca_scm_call is called with len 1, hence tz_buf is enough */
+		invalidate_dcache_range(tz_buf,
+			tz_buf + CONFIG_SYS_CACHELINE_SIZE);
+		memcpy(buf, tz_buf, len);
 	}
 	else
 	{
@@ -449,19 +469,6 @@ int qca_scm_auth_kernel(void *cmd_buf,
 				NULL, 0);
 	}
 
-	return ret;
-}
-
-int qca_scm_call_read(u32 svc_id, u32 cmd_id, u32 *addr, u32 *rsp)
-{
-	int ret = 0;
-
-	struct qca_scm_desc desc = {0};
-	desc.arginfo = QCA_SCM_ARGS(1, SCM_READ_OP);
-	desc.args[0] = (u32)addr;
-	ret = scm_call_64(svc_id, cmd_id, &desc);
-	if (!ret)
-		*rsp = desc.ret[0];
 	return ret;
 }
 
