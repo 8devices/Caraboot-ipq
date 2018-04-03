@@ -387,8 +387,7 @@ static int mmc_send_op_cond_iter(struct mmc *mmc, int use_arg)
 	mmc->ocr = cmd.response[0];
 
 	/*1ms delay is added to give cards time to respond*/
-	if(!use_arg)
-		udelay(1000);
+	udelay(1000);
 
 	return 0;
 }
@@ -400,7 +399,7 @@ static int mmc_send_op_cond(struct mmc *mmc)
 	/* Some cards seem to need this */
 	mmc_go_idle(mmc);
 
- 	/* Asking to the card its capabilities */
+	/* Asking to the card its capabilities */
 	for (i = 0; i < 2; i++) {
 		err = mmc_send_op_cond_iter(mmc, i != 0);
 		if (err)
