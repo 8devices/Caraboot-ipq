@@ -1240,21 +1240,25 @@ do_generic_probe:
 	}
 
 	flash->addr_width = SPI_FLASH_3B_ADDR_LEN;
-	if ((flash->size > SPI_FLASH_16MB_BOUN) &&
-		(get_smem_spi_addr_len() == SPI_FLASH_4B_ADDR_LEN)) {
-#ifndef CONFIG_IPQ_4B_ADDR_SWITCH_REQD
-		if (idcode[0] == SPI_FLASH_CFI_MFR_WINBOND)
+	if (flash->size > SPI_FLASH_16MB_BOUN) {
+		if (get_smem_spi_addr_len() == SPI_FLASH_4B_ADDR_LEN) {
 			flash->addr_width = SPI_FLASH_4B_ADDR_LEN;
-#else
-		if (idcode[0] == SPI_FLASH_CFI_MFR_GIGA) {
-			ret = spi_flash_cmd(spi, SPI_FLASH_CMD_EN4B, NULL, 0);
-			if (ret) {
-				printf("SF:Failed to switch to 4 byte mode\n");
-				flash->size = 0x1000000;
-			} else
-				flash->addr_width = SPI_FLASH_4B_ADDR_LEN;
-		}
+		} else {
+#ifdef CONFIG_IPQ_4B_ADDR_SWITCH_REQD
+			if (idcode[0] == SPI_FLASH_CFI_MFR_GIGA ||
+			    idcode[0] == SPI_FLASH_CFI_MFR_WINBOND) {
+				ret = spi_flash_cmd(spi,
+						    SPI_FLASH_CMD_EN4B,
+						    NULL, 0);
+				if (ret) {
+					printf("SF:Failed to switch to 4 byte mode\n");
+					flash->size = 0x1000000;
+				} else
+					flash->addr_width =
+						SPI_FLASH_4B_ADDR_LEN;
+			}
 #endif
+		}
 	}
 	printf("SPI_ADDR_LEN=%x\n",flash->addr_width);
 
