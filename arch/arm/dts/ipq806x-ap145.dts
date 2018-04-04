@@ -22,6 +22,7 @@
 	aliases {
 		console = "/serial@16340000";
 		nand = "/nand@1A600000";
+		i2c0 = "/i2c@16380000";
 		gmac_gpio = "/gmac1_gpio";
 		sdcc = "/sdcc@12400000";
 	};
