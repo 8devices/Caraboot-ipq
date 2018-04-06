@@ -30,7 +30,6 @@
 #include "ipq806x.h"
 #include "qca_common.h"
 #include <asm/arch-qca-common/scm.h>
-#include <watchdog.h>
 
 #define DLOAD_MAGIC_COOKIE_1 0xE47B337D
 #define DLOAD_MAGIC_COOKIE_2 0x0501CAB0
@@ -185,13 +184,6 @@ void reset_cpu(unsigned long a)
 
 	while(1);
 }
-
-#ifdef CONFIG_HW_WATCHDOG
-void hw_watchdog_reset(void)
-{
-	writel(1, APCS_WDT0_RST);
-}
-#endif
 
 int board_mmc_init(bd_t *bis)
 {
