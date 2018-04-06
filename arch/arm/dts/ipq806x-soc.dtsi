@@ -17,10 +17,6 @@
 / {
 	config_name = "config@1";
 
-	config {
-		bootcmd = "bootipq";
-	};
-
 	serial@16340000 {
 		status = "disabled";
 		compatible = "qca,ipq-uartdm";
