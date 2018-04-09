@@ -963,9 +963,11 @@ void clear_l2cache_err(void)
 void enable_caches(void)
 {
 	icache_enable();
+	dcache_enable();
 }
 
 void disable_caches(void)
 {
 	icache_disable();
+	dcache_disable();
 }
