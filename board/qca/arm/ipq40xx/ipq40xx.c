@@ -199,9 +199,10 @@ int board_eth_init(bd_t *bis)
 		gpio_set_value(59, 1);
 		ipq40xx_register_switch(ipq_qca8075_phy_init);
 		break;
-	case MACH_TYPE_IPQ40XX_AP_DK04_1_C4:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C1:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C3:
+	case MACH_TYPE_IPQ40XX_AP_DK04_1_C4:
+	case MACH_TYPE_IPQ40XX_AP_DK04_1_C6:
 		/* 8075 out of reset */
 		mdelay(1);
 		gpio_set_value(47, 1);
@@ -379,6 +380,19 @@ void disable_audio_clks(void)
 
 void ipq_fdt_fixup_socinfo(void *blob)
 {
+	int nodeoff, ret;
+	const char *model = "Qualcomm Technologies, Inc. IPQ4019/AP-DK04.1-C6";
+
+	nodeoff = fdt_path_offset(blob, "/");
+
+	if (nodeoff < 0) {
+		printf("ipq: fdt fixup cannot find root node\n");
+		return;
+	}
+
+	if (gd->bd->bi_arch_number == MACH_TYPE_IPQ40XX_AP_DK04_1_C6)
+		ret = fdt_setprop(blob, nodeoff, "model",
+			  model, (strlen(model) + 1));
 	return;
 }
 
@@ -473,4 +487,15 @@ void enable_caches(void)
 void disable_caches(void)
 {
 	icache_disable();
+}
+
+unsigned int get_dts_machid(unsigned int machid)
+{
+	switch (machid)
+	{
+		case MACH_TYPE_IPQ40XX_AP_DK04_1_C6:
+			return MACH_TYPE_IPQ40XX_AP_DK04_1_C1;
+		default:
+			return machid;
+	}
 }

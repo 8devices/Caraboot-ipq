@@ -420,6 +420,11 @@ unsigned int smem_read_platform_type(union qca_platform *platform_type)
 	return status;
 }
 
+__weak unsigned int get_dts_machid(unsigned int machid)
+{
+	return machid;
+}
+
 unsigned int smem_get_board_platform_type()
 {
 	union qca_platform platform_type;
