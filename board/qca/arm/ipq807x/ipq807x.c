@@ -39,7 +39,6 @@ qca_mmc mmc_host;
 struct sdhci_host mmc_host;
 #endif
 
-extern asmlinkage void __invoke_psci_fn_smc(unsigned long, unsigned long, unsigned long, unsigned long);
 
 extern loff_t board_env_offset;
 extern loff_t board_env_range;
@@ -1088,5 +1087,33 @@ int set_uuid_bootargs(char *boot_args, char *part_name, int buflen, bool gpt_fla
 	if (gpt_flag && strlcpy(boot_args, " gpt", buflen) >= buflen)
 		return -EINVAL;
 
+	return 0;
+}
+
+int is_secondary_core_off(unsigned int cpuid)
+{
+	int err;
+
+	err = __invoke_psci_fn_smc(ARM_PSCI_TZ_FN_AFFINITY_INFO, cpuid, 0, 0);
+
+	return err;
+}
+
+void bring_secondary_core_down(unsigned int state)
+{
+	__invoke_psci_fn_smc(ARM_PSCI_TZ_FN_CPU_OFF, state, 0, 0);
+}
+
+int bring_sec_core_up(unsigned int cpuid, unsigned int entry, unsigned int arg)
+{
+	int err;
+
+	err = __invoke_psci_fn_smc(ARM_PSCI_TZ_FN_CPU_ON, cpuid, entry, arg);
+	if (err) {
+		printf("Enabling CPU%d via psci failed!\n", cpuid);
+		return -1;
+	}
+
+	printf("Enabled CPU%d via psci successfully!\n", cpuid);
 	return 0;
 }
