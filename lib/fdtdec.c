@@ -1250,6 +1250,7 @@ static int parse_combined_fdt(unsigned long machid)
 
 int fdtdec_setup(void)
 {
+	unsigned int machid;
 #if CONFIG_IS_ENABLED(OF_CONTROL)
 # ifdef CONFIG_OF_EMBED
 	/* Get a pointer to the FDT */
@@ -1263,8 +1264,9 @@ int fdtdec_setup(void)
 		gd->fdt_blob = (ulong *)&__bss_end;
 #  else
 #ifdef CONFIG_OF_COMBINE
+	machid = smem_get_board_platform_type();
 	gd->fdt_blob = (ulong *)
-			parse_combined_fdt(smem_get_board_platform_type());
+			parse_combined_fdt(get_dts_machid(machid));
 #else
 	/* FDT is at end of image */
 	gd->fdt_blob = (ulong *)&_end;
