@@ -38,7 +38,6 @@
 
 static int debug = 0;
 static char mtdids[256];
-
 DECLARE_GLOBAL_DATA_PTR;
 static qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 int ipq_fs_on_nand ;
@@ -272,6 +271,8 @@ static int set_fs_bootargs(int *fs_on_nand)
 {
 	char *bootargs;
 	unsigned int active_part = 0;
+	int ret = 0;
+	char boot_args[MAX_BOOT_ARGS_SIZE] = {'\0'};
 
 #define nand_rootfs "ubi.mtd=" QCA_ROOT_FS_PART_NAME " root=mtd:ubi_rootfs rootfstype=squashfs"
 
@@ -298,15 +299,23 @@ static int set_fs_bootargs(int *fs_on_nand)
 				setenv("fsbootargs", bootargs);
 		} else {
 			if (smem_bootconfig_info() == 0) {
+				bootargs = boot_args;
 				active_part = get_rootfs_active_partition();
 				if (active_part) {
 					bootargs = "rootfsname=rootfs_1";
+					ret  = set_uuid_bootargs(bootargs, "rootfs_1", sizeof(boot_args), false);
 				} else {
 					bootargs = "rootfsname=rootfs";
+					ret  = set_uuid_bootargs(bootargs, "rootfs", sizeof(boot_args), false);
 				}
 			} else {
 				bootargs = "rootfsname=rootfs";
+				ret  = set_uuid_bootargs(bootargs, "rootfs", sizeof(boot_args), false);
 			}
+
+			if (ret)
+				return ret;
+
 			*fs_on_nand = 0;
 
 			snprintf(mtdids, sizeof(mtdids), "nand%d="
@@ -326,15 +335,22 @@ static int set_fs_bootargs(int *fs_on_nand)
 #ifdef CONFIG_QCA_MMC
 	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
 		if (smem_bootconfig_info() == 0) {
+			bootargs = boot_args;
 			active_part = get_rootfs_active_partition();
 			if (active_part) {
 				bootargs = "rootfsname=rootfs_1 gpt";
+				ret  = set_uuid_bootargs(bootargs, "rootfs_1", sizeof(boot_args), true);
 			} else {
 				bootargs = "rootfsname=rootfs gpt";
+				ret  = set_uuid_bootargs(bootargs, "rootfs", sizeof(boot_args), true);
 			}
 		} else {
 			bootargs = "rootfsname=rootfs gpt";
+			ret  = set_uuid_bootargs(bootargs, "rootfs", sizeof(boot_args), true);
 		}
+
+		if (ret)
+			return ret;
 
 		*fs_on_nand = 0;
 		if (getenv("fsbootargs") == NULL)

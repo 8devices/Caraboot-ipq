@@ -503,3 +503,11 @@ unsigned int get_dts_machid(unsigned int machid)
 			return machid;
 	}
 }
+
+/**
+ * Set the uuid in bootargs variable for mounting rootfilesystem
+ */
+int set_uuid_bootargs(char *boot_args, char *part_name, int buflen, bool gpt_flag)
+{
+	return 0;
+}
