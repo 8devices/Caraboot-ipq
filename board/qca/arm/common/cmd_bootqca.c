@@ -178,10 +178,16 @@ static int do_dumpqca_data(void)
 	for (indx = 0; indx < dump_entries; indx++) {
 		printf("\nProcessing %s:", dumpinfo[indx].name);
 
-		if (dumpinfo[indx].is_redirected)
+		if (dumpinfo[indx].is_redirected) {
 			memaddr = *((uint32_t *)(dumpinfo[indx].start));
-		else
+			if (!memaddr) {
+				printf("Crashdump for %s is not available.\n",
+					dumpinfo[indx].name);
+				continue;
+			}
+		} else {
 			memaddr = dumpinfo[indx].start;
+		}
 
 		if (dumpinfo[indx].offset)
 			memaddr += dumpinfo[indx].offset;
