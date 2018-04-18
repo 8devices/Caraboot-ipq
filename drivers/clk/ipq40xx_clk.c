@@ -50,11 +50,21 @@ void emmc_clock_config(int mode)
 		writel(0x1, GCC_SDCC1_APPS_CBCR);
 		udelay(10);
 	}
+	if (mode == MMC_DATA_TRANSFER_SDHCI_MODE) {
+		/* Set root clock generator to bypass mode */
+		writel(0x0, GCC_SDCC1_APPS_CBCR);
+		udelay(10);
+		/* Choose divider for 192MHz */
+		writel(0x0, GCC_SDCC1_MISC);
+		/* Enable root clock generator */
+		writel(0x1, GCC_SDCC1_APPS_CBCR);
+		udelay(10);
+	}
 }
 void emmc_clock_disable(void)
 {
-	/* Clear divider */
-	writel(0x0, GCC_SDCC1_MISC);
+	writel(0x0, GCC_SDCC1_APPS_CBCR);
+	udelay(10);
 
 }
 

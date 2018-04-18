@@ -248,7 +248,7 @@ int board_eth_init(bd_t *bis)
 void emmc_clock_reset(void)
 {
 	writel(0x1, GCC_SDCC1_BCR);
-	udelay(10);
+	udelay(100);
 	writel(0x0, GCC_SDCC1_BCR);
 }
 
@@ -315,6 +315,8 @@ int board_mmc_init(bd_t *bis)
 
 void board_mmc_deinit(void)
 {
+	emmc_clock_reset();
+	udelay(10);
 	emmc_clock_disable();
 }
 #endif
