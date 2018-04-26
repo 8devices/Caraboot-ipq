@@ -971,3 +971,11 @@ void disable_caches(void)
 	icache_disable();
 	dcache_disable();
 }
+
+/**
+ * Set the uuid in bootargs variable for mounting rootfilesystem
+ */
+int set_uuid_bootargs(char *boot_args, char *part_name, int buflen, bool gpt_flag)
+{
+	return 0;
+}

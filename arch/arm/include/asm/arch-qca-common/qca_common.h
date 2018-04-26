@@ -53,6 +53,7 @@ void set_flash_secondary_type(qca_smem_flash_info_t *);
 void dump_func(void);
 int do_dumpqca_flash_data(const char *);
 int apps_iscrashed(void);
+int set_uuid_bootargs(char *boot_args, char *part_name, int buflen, bool gpt_flag);
 
 struct dumpinfo_t{
 	char name[16]; /* use only file name in 8.3 format */
@@ -80,4 +81,6 @@ extern int dump_entries_s;
 
 #define SPI_DEFAULT_ADDR_LEN	3
 #define SPI_MAX_ADDR_LEN	4
+
+#define MAX_BOOT_ARGS_SIZE 	64
 #endif  /*  __QCA_COMMON_H_ */
