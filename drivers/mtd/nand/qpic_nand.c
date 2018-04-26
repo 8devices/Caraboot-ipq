@@ -1381,7 +1381,8 @@ static void qpic_nand_get_info_flash_dev(struct mtd_info *mtd,
 	struct qpic_nand_dev *dev = MTD_QPIC_NAND_DEV(mtd);
 	mtd->writesize = dev->page_size = flash_dev->pagesize;
 	mtd->erasesize = dev->block_size = flash_dev->erasesize;
-	mtd->oobsize = dev->spare_size = (flash_dev->pagesize >> 5);
+	mtd->oobsize = dev->spare_size = flash_dev->oobsize ?
+		flash_dev->oobsize : (flash_dev->pagesize >> 5);
 }
 
 
