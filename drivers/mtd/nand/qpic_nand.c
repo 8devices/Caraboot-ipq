@@ -1454,6 +1454,7 @@ static int qpic_nand_get_info(struct mtd_info *mtd, uint32_t flash_id)
 	const struct nand_manufacturers *flash_man;
 	const struct nand_flash_dev *flash_dev;
 	struct qpic_nand_dev *dev = MTD_QPIC_NAND_DEV(mtd);
+	uint32_t min_oobsize_8bit_ecc;
 
 	man_id = NAND_ID_MAN(flash_id);
 	dev_id = NAND_ID_DEV(flash_id);
@@ -1483,7 +1484,14 @@ static int qpic_nand_get_info(struct mtd_info *mtd, uint32_t flash_id)
 	else
 		qpic_nand_get_info_flash_dev(mtd, flash_dev);
 
-	mtd->ecc_strength = 4;
+	min_oobsize_8bit_ecc =
+		(mtd->writesize / CHUNK_SIZE) * NAND_CW_SPARE_SIZE_8_BIT_ECC;
+
+	/*
+	 * Calculate the minimum required oobsize for using 8 bit ecc and use
+	 * 8 bit ecc if this chip oobsize equal or more than that.
+	 */
+	mtd->ecc_strength = mtd->oobsize >= min_oobsize_8bit_ecc ? 8 : 4;
 
 	dev->num_blocks = mtd->size;
 	dev->num_blocks /= (dev->block_size);
