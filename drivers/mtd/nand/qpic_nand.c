@@ -612,7 +612,6 @@ qpic_nand_onfi_save_params(struct mtd_info *mtd,
 
 	dev->page_size = param_page->data_per_pg;
 	mtd->writesize = dev->page_size;
-	mtd->writebufsize =  mtd->writesize;
 	dev->block_size = param_page->pgs_per_blk * (dev->page_size);
 	mtd->erasesize = dev->block_size;
 	dev->num_blocks = param_page->blks_per_LUN;
@@ -703,6 +702,7 @@ qpic_nand_save_config(struct mtd_info *mtd)
 	mtd->oobavail = (DATA_BYTES_IN_IMG_PER_CW - USER_DATA_BYTES_PER_CW) *
 				dev->cws_per_page;
 	dev->oob_per_page = mtd->oobavail;
+	mtd->writebufsize =  mtd->writesize;
 	/* BAD_BLOCK_BYTE_NUM = Page Size - (CW_PER_PAGE * Codeword Size) + 1
 	 * Note: Set CW_PER_PAGE to 1 less than the actual number.
 	 */
