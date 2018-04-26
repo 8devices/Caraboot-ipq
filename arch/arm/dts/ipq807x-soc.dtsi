@@ -335,4 +335,7 @@
 
 	};
 
+	mmc: sdhci@07824000 {
+		compatible = "qcom,sdhci-msm";
+	};
 };

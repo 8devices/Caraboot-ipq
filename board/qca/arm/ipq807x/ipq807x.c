@@ -425,8 +425,15 @@ int board_eth_init(bd_t *bis)
 
 int board_mmc_init(bd_t *bis)
 {
+	int node;
 	int ret = 0;
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
+
+	node = fdt_path_offset(gd->fdt_blob, "mmc");
+	if (node < 0) {
+		printf("sdhci: Node Not found, skipping initialization\n");
+		return -1;
+	}
 
 #ifndef CONFIG_SDHCI_SUPPORT
 	mmc_host.base = MSM_SDC1_BASE;
