@@ -200,7 +200,6 @@ size_t strlcat(char *dest, const char *src, size_t count)
 	dest[len] = 0;
 	return res;
 }
-EXPORT_SYMBOL(strlcat);
 #endif
 
 #ifndef __HAVE_ARCH_STRCMP
@@ -548,11 +547,30 @@ void * memcpy(void *dest, const void *src, size_t count)
 }
 #endif
 
-size_t memscpy(void *dest, size_t dst_size, const void *src, size_t copy_size) {
+#ifndef __HAVE_ARCH_MEMSCPY
+/**
+ * memscpy - Copy one area of memory to another
+ * @dest: Where to copy to
+ * @src: Where to copy from
+ * @dst_size: The size of destination buffer area
+ * @copy_size: The size of source buffer area
+ *
+ * You should not use this function where memcpy
+ * was used to copy null terminated buffer, the
+ * replacement function is strlcpy() and strlcat()
+ * depending on situation.
+ *
+ * The aim of memscpy() is to prevent buffer overflow
+ * by taking both destination buffer size and source
+ * buffer size.
+ */
+size_t memscpy(void *dest, size_t dst_size, const void *src, size_t copy_size) 
+{
 	size_t min_size = dst_size < copy_size ? dst_size : copy_size;
 	memcpy(dest, src, min_size);
 	return min_size;
 }
+#endif
 
 #ifndef __HAVE_ARCH_MEMMOVE
 /**

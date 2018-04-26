@@ -83,6 +83,9 @@ extern void * memset(void *,int,__kernel_size_t);
 #ifndef __HAVE_ARCH_MEMCPY
 extern void * memcpy(void *,const void *,__kernel_size_t);
 #endif
+#ifndef __HAVE_ARCH_MEMSCPY
+extern size_t memscpy(void *dest, size_t dst_size, const void *src, size_t copy_size);
+#endif
 #ifndef __HAVE_ARCH_MEMMOVE
 extern void * memmove(void *,const void *,__kernel_size_t);
 #endif
