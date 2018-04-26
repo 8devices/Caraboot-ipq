@@ -612,7 +612,6 @@ qpic_nand_onfi_save_params(struct mtd_info *mtd,
 
 	dev->page_size = param_page->data_per_pg;
 	mtd->writesize = dev->page_size;
-	mtd->writebufsize =  mtd->writesize;
 	dev->block_size = param_page->pgs_per_blk * (dev->page_size);
 	mtd->erasesize = dev->block_size;
 	dev->num_blocks = param_page->blks_per_LUN;
@@ -703,6 +702,7 @@ qpic_nand_save_config(struct mtd_info *mtd)
 	mtd->oobavail = (DATA_BYTES_IN_IMG_PER_CW - USER_DATA_BYTES_PER_CW) *
 				dev->cws_per_page;
 	dev->oob_per_page = mtd->oobavail;
+	mtd->writebufsize =  mtd->writesize;
 	/* BAD_BLOCK_BYTE_NUM = Page Size - (CW_PER_PAGE * Codeword Size) + 1
 	 * Note: Set CW_PER_PAGE to 1 less than the actual number.
 	 */
@@ -1381,7 +1381,8 @@ static void qpic_nand_get_info_flash_dev(struct mtd_info *mtd,
 	struct qpic_nand_dev *dev = MTD_QPIC_NAND_DEV(mtd);
 	mtd->writesize = dev->page_size = flash_dev->pagesize;
 	mtd->erasesize = dev->block_size = flash_dev->erasesize;
-	mtd->oobsize = dev->spare_size = (flash_dev->pagesize >> 5);
+	mtd->oobsize = dev->spare_size = flash_dev->oobsize ?
+		flash_dev->oobsize : (flash_dev->pagesize >> 5);
 }
 
 
@@ -1454,6 +1455,7 @@ static int qpic_nand_get_info(struct mtd_info *mtd, uint32_t flash_id)
 	const struct nand_manufacturers *flash_man;
 	const struct nand_flash_dev *flash_dev;
 	struct qpic_nand_dev *dev = MTD_QPIC_NAND_DEV(mtd);
+	uint32_t min_oobsize_8bit_ecc;
 
 	man_id = NAND_ID_MAN(flash_id);
 	dev_id = NAND_ID_DEV(flash_id);
@@ -1483,7 +1485,14 @@ static int qpic_nand_get_info(struct mtd_info *mtd, uint32_t flash_id)
 	else
 		qpic_nand_get_info_flash_dev(mtd, flash_dev);
 
-	mtd->ecc_strength = 4;
+	min_oobsize_8bit_ecc =
+		(mtd->writesize / CHUNK_SIZE) * NAND_CW_SPARE_SIZE_8_BIT_ECC;
+
+	/*
+	 * Calculate the minimum required oobsize for using 8 bit ecc and use
+	 * 8 bit ecc if this chip oobsize equal or more than that.
+	 */
+	mtd->ecc_strength = mtd->oobsize >= min_oobsize_8bit_ecc ? 8 : 4;
 
 	dev->num_blocks = mtd->size;
 	dev->num_blocks /= (dev->block_size);

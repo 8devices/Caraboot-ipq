@@ -211,9 +211,11 @@
 
 #define NAND_CW_SIZE_4_BIT_ECC			528
 #define NAND_CW_SIZE_8_BIT_ECC			532
-
 /* Indicates the data bytes in the user data portion of the code word. */
 #define USER_DATA_BYTES_PER_CW			512
+
+#define NAND_CW_SPARE_SIZE_8_BIT_ECC		(NAND_CW_SIZE_8_BIT_ECC - \
+						 USER_DATA_BYTES_PER_CW)
 
 /* Indicates the number of bytes covered by BCH ECC logic when
  * a codeword is written to a NAND flash device.
