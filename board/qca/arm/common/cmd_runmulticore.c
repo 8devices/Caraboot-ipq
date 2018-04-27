@@ -23,6 +23,8 @@ DECLARE_GLOBAL_DATA_PTR;
 #define SECONDARY_CORE_STACKSZ (8 * 1024)
 #define CPU_POWER_DOWN (1 << 16)
 
+extern void *globl_core_array;
+
 struct cpu_entry_arg {
 	void *stack_ptr;
 	volatile void *gd_ptr;
@@ -34,8 +36,9 @@ struct cpu_entry_arg {
 };
 
 extern void secondary_cpu_init(void);
+extern void bring_secondary_core_down(int);
 
-static struct cpu_entry_arg core[NR_CPUS - 1];
+struct cpu_entry_arg core[NR_CPUS - 1];
 
 asmlinkage void secondary_core_entry(char *argv, int *cmd_complete,
 					int *cmd_result)
@@ -72,6 +75,7 @@ int do_runmulticore(cmd_tbl_t *cmdtp,
 	/* Setting up stack for secondary cores */
 	memset(core, 0, sizeof(core));
 
+	globl_core_array = core;
 	for (i = 1; i < argc; i++) {
 		ptr = malloc(SECONDARY_CORE_STACKSZ);
 		if (NULL == ptr) {
@@ -87,6 +91,9 @@ int do_runmulticore(cmd_tbl_t *cmdtp,
 		core[i - 1].stack_top_ptr = ptr;
 		core[i - 1].stack_ptr = (ptr + (SECONDARY_CORE_STACKSZ) - 0xf0);
 
+		core[i - 1].cpu_up = 0;
+		core[i - 1].cmd_complete = 0;
+		core[i - 1].cmd_result = -1;
 		core[i - 1].gd_ptr = gd;
 		core[i - 1].arg_ptr = argv[i];
 	}
@@ -105,7 +112,6 @@ int do_runmulticore(cmd_tbl_t *cmdtp,
 		if (ret) {
 			panic("Some problem to getting core %d up\n", i);
 		}
-
 		while ((delay < 5) && (!(core[i - 1].cpu_up))) {
 			mdelay(1000);
 			delay++;

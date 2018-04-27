@@ -34,6 +34,10 @@
 #endif /* !DO_DEPS_ONLY */
 
 #define CONFIG_IPQ806X
+#define CONFIG_SMP_CMD_SUPPORT
+#ifdef CONFIG_SMP_CMD_SUPPORT
+#define NR_CPUS				2
+#endif
 
 #define CONFIG_SYS_NO_FLASH
 #define CONFIG_SYS_CACHELINE_SIZE   64

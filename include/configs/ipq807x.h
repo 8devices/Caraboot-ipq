@@ -107,9 +107,9 @@
 #define CONFIG_ENV_IS_IN_SPI_FLASH	1
 #define CONFIG_ENV_SECT_SIZE        	(64 * 1024)
 
-#define CONFIG_SMP_PSCI_CMD
+#define CONFIG_SMP_CMD_SUPPORT
 
-#ifdef CONFIG_SMP_PSCI_CMD
+#ifdef CONFIG_SMP_CMD_SUPPORT
 #define NR_CPUS				4
 #endif
 /*

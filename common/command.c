@@ -510,7 +510,7 @@ enum command_ret_t cmd_process(int flag, int argc, char * const argv[],
 		return 1;
 	}
 
-#if defined(CONFIG_SMP_PSCI_CMD)
+#if defined(CONFIG_SMP_CMD_SUPPORT)
 	if ((flag & CMD_FLAG_SEC_CORE) &&
 	    (cmdtp->cmd == do_runmulticore)) {
 		printf("Restricted command '%s' for secondary core\n", argv[0]);
