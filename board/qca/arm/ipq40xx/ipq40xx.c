@@ -39,6 +39,12 @@
 #define TCSR_USB_HSPHY_DEVICE_MODE		0x00C700E70
 DECLARE_GLOBAL_DATA_PTR;
 
+#define CPU0_APCS_SAW2_VCTL	0x0b089014
+#define CPU0_APCS_CPU_PWR_CTL	0x0b088004
+
+#define CPU_APCS_SAW2_VCTL(cpuid) (CPU0_APCS_SAW2_VCTL + (cpuid * 0x10000))
+#define CPU_APCS_CPU_PWR_CTL(cpuid) (CPU0_APCS_CPU_PWR_CTL + (cpuid * 0x10000))
+
 #ifndef CONFIG_SDHCI_SUPPORT
 qca_mmc mmc_host;
 #else
@@ -508,5 +514,112 @@ unsigned int get_dts_machid(unsigned int machid)
  */
 int set_uuid_bootargs(char *boot_args, char *part_name, int buflen, bool gpt_flag)
 {
+	return 0;
+}
+extern void dk_secondary_cpu_init(void);
+extern void dk_secondary_cpu_reinit(void);
+/*
+ * Set the cold/warm boot address for one of the CPU cores.
+ */
+int scm_set_boot_addr(bool enable_sec_core)
+{
+	int ret;
+	struct {
+		unsigned int flags;
+		unsigned long addr;
+	} cmd;
+
+	if (!enable_sec_core)
+		return -1;
+
+	cmd.addr = (unsigned long)dk_secondary_cpu_init;
+	cmd.flags = 0xff;
+
+	ret = scm_call(SCM_SVC_BOOT, SCM_BOOT_ADDR,
+				&cmd, sizeof(cmd), NULL, 0);
+	if (ret) {
+		printf("--- %s: scm_call failed ret = %d\n", __func__, ret);
+	}
+
+	return ret;
+}
+
+int is_secondary_core_off(unsigned int cpuid)
+{
+	return 1;
+}
+
+static int secondary_core_already_reset[NR_CPUS];
+static int scm_boot_addr_already_set;
+extern int get_cpu_id(void);
+static volatile int core_var;
+
+volatile void bring_secondary_core_down(unsigned int state)
+{
+	int current_cpu_id;
+
+	current_cpu_id = (1 << get_cpu_id());
+	core_var &= (~current_cpu_id);
+	while (!(core_var & current_cpu_id)) {
+		cp_delay();
+	}
+	dk_secondary_cpu_reinit();
+}
+
+static int kpssv1_release_secondary(unsigned int cpuid)
+{
+	dcache_enable();
+
+	writel(0xa4, CPU_APCS_SAW2_VCTL(cpuid));
+	barrier();
+	udelay(512);
+
+	writel(0x109, CPU_APCS_CPU_PWR_CTL(cpuid));
+	writel(0x101, CPU_APCS_CPU_PWR_CTL(cpuid));
+	barrier();
+	udelay(1);
+
+	writel(0x121, CPU_APCS_CPU_PWR_CTL(cpuid));
+	barrier();
+	udelay(2);
+
+	writel(0x120, CPU_APCS_CPU_PWR_CTL(cpuid));
+	barrier();
+	udelay(2);
+
+	writel(0x100, CPU_APCS_CPU_PWR_CTL(cpuid));
+	barrier();
+	udelay(100);
+
+	writel(0x180, CPU_APCS_CPU_PWR_CTL(cpuid));
+	barrier();
+
+	dcache_disable();
+
+	return 0;
+}
+int bring_sec_core_up(unsigned int cpuid, unsigned int entry, unsigned int arg)
+{
+	int err = 0;
+
+	if (!secondary_core_already_reset[cpuid]) {
+		if (!scm_boot_addr_already_set) {
+			err = scm_set_boot_addr(true);
+			core_var = 0;
+			if (!err) {
+				scm_boot_addr_already_set = 1;
+				kpssv1_release_secondary(cpuid);
+				secondary_core_already_reset[cpuid] = 1;
+			} else
+				return err;
+		} else {
+			kpssv1_release_secondary(cpuid);
+			secondary_core_already_reset[cpuid] = 1;
+		}
+	} else {
+		core_var |= (1 << cpuid);
+	}
+
+
 	return 0;
 }
