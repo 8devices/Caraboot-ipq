@@ -306,14 +306,17 @@ static int set_fs_bootargs(int *fs_on_nand)
 				active_part = get_rootfs_active_partition();
 				if (active_part) {
 					bootargs = "rootfsname=rootfs_1";
-					ret  = set_uuid_bootargs(bootargs, "rootfs_1", sizeof(boot_args), false);
+					if (sfi->rootfs.offset == 0xBAD0FF5E)
+						ret  = set_uuid_bootargs(bootargs, "rootfs_1", sizeof(boot_args), false);
 				} else {
 					bootargs = "rootfsname=rootfs";
-					ret  = set_uuid_bootargs(bootargs, "rootfs", sizeof(boot_args), false);
+					if (sfi->rootfs.offset == 0xBAD0FF5E)
+						ret  = set_uuid_bootargs(bootargs, "rootfs", sizeof(boot_args), false);
 				}
 			} else {
 				bootargs = "rootfsname=rootfs";
-				ret  = set_uuid_bootargs(bootargs, "rootfs", sizeof(boot_args), false);
+				if (sfi->rootfs.offset == 0xBAD0FF5E)
+					ret  = set_uuid_bootargs(bootargs, "rootfs", sizeof(boot_args), false);
 			}
 
 			if (ret)
