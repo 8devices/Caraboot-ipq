@@ -191,6 +191,33 @@ int board_init(void)
 	return 0;
 }
 
+int get_current_flash_type(uint32_t *flash_type)
+{
+	int ret;
+
+	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
+
+	/* get current boot mode from smem and set in env*/
+	ret = ipq_smem_get_boot_flash(flash_type);
+	if (ret) {
+		printf("ipq: fdt fixup cannot get boot mode\n");
+		return ret;
+	}
+
+	if (*flash_type == SMEM_BOOT_SPI_FLASH) {
+		if (get_which_flash_param("rootfs") ||
+		    sfi->flash_secondary_type == SMEM_BOOT_NAND_FLASH)
+			*flash_type = SMEM_BOOT_NORPLUSNAND;
+		else {
+			if ((sfi->rootfs.offset == 0xBAD0FF5E) ||
+			    sfi->flash_secondary_type == SMEM_BOOT_MMC_FLASH)
+				*flash_type = SMEM_BOOT_NORPLUSEMMC;
+		}
+	}
+
+	return ret;
+}
+
 void get_kernel_fs_part_details(void)
 {
 	int ret, i;
@@ -275,6 +302,9 @@ void board_flash_protect(void)
 int board_late_init(void)
 {
 	unsigned int machid;
+	uint32_t flash_type;
+	int ret;
+
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 
 	if (sfi->flash_type != SMEM_BOOT_MMC_FLASH) {
@@ -288,6 +318,12 @@ int board_late_init(void)
 		setenv_addr("machid", (void *)machid);
 		gd->bd->bi_arch_number = machid;
 	}
+
+	/* get current boot mode from smem and set in env*/
+	ret = get_current_flash_type(&flash_type);
+	if (!ret)
+		setenv_ulong("flash_type", (unsigned long)flash_type);
+
 #ifdef CONFIG_FLASH_PROTECT
 	board_flash_protect();
 #endif

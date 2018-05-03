@@ -429,6 +429,18 @@ int ipq_smem_get_boot_version(char *version_name, int buf_size)
 	return ret;
 }
 
+int ipq_smem_get_boot_flash(uint32_t *flash_name)
+{
+	int ret;
+
+	ret = smem_read_alloc_entry(SMEM_BOOT_FLASH_TYPE,
+				flash_name, sizeof(uint32_t));
+	if (ret != 0)
+		return -ENOMSG;
+
+	return ret;
+}
+
 int smem_get_build_version(char *version_name, int buf_size, int index)
 {
 	int ret;
