@@ -121,6 +121,7 @@ typedef struct {
 
 #define QCA_BOOT_PARAMS_ADDR	(QCA_KERNEL_START_ADDR + 0x100)
 #endif
+#define CONFIG_FLASH_PROTECT
 
 /* Environment */
 #define CONFIG_ARCH_CPU_INIT

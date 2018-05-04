@@ -88,6 +88,7 @@
 #undef CONFIG_HW_WATCHDOG
 
 #define CONFIG_SYS_DEVICE_NULLDEV
+#define CONFIG_FLASH_PROTECT
 
 /* Environment */
 #define CONFIG_MSM_PCOMM
