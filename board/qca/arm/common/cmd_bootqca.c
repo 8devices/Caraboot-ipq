@@ -301,20 +301,20 @@ static int set_fs_bootargs(int *fs_on_nand)
 			if (getenv("fsbootargs") == NULL)
 				setenv("fsbootargs", bootargs);
 		} else {
+			bootargs = boot_args;
 			if (smem_bootconfig_info() == 0) {
-				bootargs = boot_args;
 				active_part = get_rootfs_active_partition();
 				if (active_part) {
-					bootargs = "rootfsname=rootfs_1";
+					strlcpy(bootargs, "rootfsname=rootfs_1", sizeof(boot_args));
 					if (sfi->rootfs.offset == 0xBAD0FF5E)
 						ret  = set_uuid_bootargs(bootargs, "rootfs_1", sizeof(boot_args), false);
 				} else {
-					bootargs = "rootfsname=rootfs";
+					strlcpy(bootargs, "rootfsname=rootfs", sizeof(boot_args));
 					if (sfi->rootfs.offset == 0xBAD0FF5E)
 						ret  = set_uuid_bootargs(bootargs, "rootfs", sizeof(boot_args), false);
 				}
 			} else {
-				bootargs = "rootfsname=rootfs";
+				strlcpy(bootargs, "rootfsname=rootfs", sizeof(boot_args));
 				if (sfi->rootfs.offset == 0xBAD0FF5E)
 					ret  = set_uuid_bootargs(bootargs, "rootfs", sizeof(boot_args), false);
 			}
@@ -340,18 +340,19 @@ static int set_fs_bootargs(int *fs_on_nand)
 
 #ifdef CONFIG_QCA_MMC
 	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
+		bootargs = boot_args;
 		if (smem_bootconfig_info() == 0) {
-			bootargs = boot_args;
 			active_part = get_rootfs_active_partition();
 			if (active_part) {
-				bootargs = "rootfsname=rootfs_1 gpt";
+				strlcpy(bootargs, "rootfsname=rootfs_1 gpt", sizeof(boot_args));
 				ret  = set_uuid_bootargs(bootargs, "rootfs_1", sizeof(boot_args), true);
 			} else {
+				strlcpy(bootargs, "rootfsname=rootfs gpt", sizeof(boot_args));
 				bootargs = "rootfsname=rootfs gpt";
 				ret  = set_uuid_bootargs(bootargs, "rootfs", sizeof(boot_args), true);
 			}
 		} else {
-			bootargs = "rootfsname=rootfs gpt";
+			strlcpy(bootargs, "rootfsname=rootfs gpt", sizeof(boot_args));
 			ret  = set_uuid_bootargs(bootargs, "rootfs", sizeof(boot_args), true);
 		}
 
