@@ -151,13 +151,12 @@ void board_nand_init(void)
 		qca_gpio_init(gpio_node);
 	}
 
-	if (fdtdec_get_uint(gd->fdt_blob, 0, "spi_nor_available", 0))
-		ipq_spi_init(CONFIG_IPQ_SPI_NOR_INFO_IDX);
-
 #ifdef CONFIG_SPI_NAND
 	if (fdtdec_get_uint(gd->fdt_blob, 0, "spi_nand_available", 0))
 		spi_nand_init();
 #endif
+	if (fdtdec_get_uint(gd->fdt_blob, 0, "spi_nor_available", 0))
+		ipq_spi_init(CONFIG_IPQ_SPI_NOR_INFO_IDX);
 }
 
 static void ipq40xx_edma_common_init(void)
