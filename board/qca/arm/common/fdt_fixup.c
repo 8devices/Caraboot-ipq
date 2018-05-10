@@ -499,6 +499,7 @@ int ft_board_setup(void *blob, bd_t *bd)
 	char parts_str[4096];
 	int len = sizeof(parts_str);
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
+	int activepart = 0;
 	struct flash_node_info nodes[] = {
 		{ "qcom,msm-nand", MTD_DEV_TYPE_NAND, 0 },
 		{ "qcom,qcom_nand", MTD_DEV_TYPE_NAND, 0 },
@@ -523,9 +524,22 @@ int ft_board_setup(void *blob, bd_t *bd)
 		ipq_fdt_fixup_spi_nor_params(blob);
 		snprintf(parts_str,sizeof(parts_str), "mtdparts=" QCA_SPI_NOR_DEVICE);
 
-		if (sfi->flash_secondary_type == SMEM_BOOT_NAND_FLASH)
-			snprintf(parts_str, sizeof(parts_str),
-				"mtdparts=nand0:64M@0(rootfs);nand1");
+		if (sfi->flash_secondary_type == SMEM_BOOT_NAND_FLASH) {
+			if(smem_bootconfig_info() == 0)
+				activepart = get_rootfs_active_partition();
+			if (!activepart) {
+				snprintf(parts_str, sizeof(parts_str),
+				"mtdparts=nand0:0x%x@0(rootfs),\
+				0x%x@0x%x(rootfs_1);nand1",
+				IPQ_NAND_ROOTFS_SIZE,
+				IPQ_NAND_ROOTFS_SIZE, IPQ_NAND_ROOTFS_SIZE);
+			} else {
+				snprintf(parts_str, sizeof(parts_str),
+				"mtdparts=nand0:0x%x@0x%x(rootfs),\
+				0x%x@0(rootfs_1);nand1",IPQ_NAND_ROOTFS_SIZE,
+				IPQ_NAND_ROOTFS_SIZE, IPQ_NAND_ROOTFS_SIZE);
+			}
+		}
 	}
 	mtdparts = parts_str;
 	if (mtdparts) {
