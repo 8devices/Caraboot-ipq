@@ -510,7 +510,7 @@ extern ushort		net_our_vlan;		/* Our VLAN */
 extern ushort		net_native_vlan;	/* Our Native VLAN */
 
 extern int		net_restart_wrap;	/* Tried all network devices */
-
+extern int 		tftp_our_port;
 enum proto_t {
 	BOOTP, RARP, ARP, TFTPGET, DHCP, PING, DNS, NFS, CDP, NETCONS, SNTP,
 	TFTPSRV, TFTPPUT, LINKLOCAL
