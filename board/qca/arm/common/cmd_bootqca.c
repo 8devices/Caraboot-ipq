@@ -71,6 +71,41 @@ kernel_img_info_t kernel_img_info;
 
 char dtb_config_name[64];
 
+__weak int scm_set_boot_addr(void)
+{
+	return -1;
+}
+
+static int krait_release_secondary(void)
+{
+	writel(0xa4, CPU1_APCS_SAW2_VCTL);
+	barrier();
+	udelay(512);
+
+	writel(0x109, CPU1_APCS_CPU_PWR_CTL);
+	writel(0x101, CPU1_APCS_CPU_PWR_CTL);
+	barrier();
+	udelay(1);
+
+	writel(0x121, CPU1_APCS_CPU_PWR_CTL);
+	barrier();
+	udelay(2);
+
+	writel(0x120, CPU1_APCS_CPU_PWR_CTL);
+	barrier();
+	udelay(2);
+
+	writel(0x100, CPU1_APCS_CPU_PWR_CTL);
+	barrier();
+	udelay(100);
+
+	writel(0x180, CPU1_APCS_CPU_PWR_CTL);
+	barrier();
+
+	return 0;
+}
+
+#ifdef CONFIG_QCA_APPSBL_DLOAD
 static int tftpdump (int is_aligned_access, uint32_t memaddr, uint32_t size, char *name)
 {
 	char runcmd[128];
@@ -105,40 +140,6 @@ static int tftpdump (int is_aligned_access, uint32_t memaddr, uint32_t size, cha
 
 	return CMD_RET_SUCCESS;
 
-}
-
-__weak int scm_set_boot_addr(void)
-{
-	return -1;
-}
-
-static int krait_release_secondary(void)
-{
-	writel(0xa4, CPU1_APCS_SAW2_VCTL);
-	barrier();
-	udelay(512);
-
-	writel(0x109, CPU1_APCS_CPU_PWR_CTL);
-	writel(0x101, CPU1_APCS_CPU_PWR_CTL);
-	barrier();
-	udelay(1);
-
-	writel(0x121, CPU1_APCS_CPU_PWR_CTL);
-	barrier();
-	udelay(2);
-
-	writel(0x120, CPU1_APCS_CPU_PWR_CTL);
-	barrier();
-	udelay(2);
-
-	writel(0x100, CPU1_APCS_CPU_PWR_CTL);
-	barrier();
-	udelay(100);
-
-	writel(0x180, CPU1_APCS_CPU_PWR_CTL);
-	barrier();
-
-	return 0;
 }
 
 static int do_dumpqca_data(void)
@@ -238,7 +239,6 @@ static int do_dumpqca_data(void)
  * Inovke the dump routine and in case of failure, do not stop unless the user
  * requested to stop
  */
-#ifdef CONFIG_QCA_APPSBL_DLOAD
 void dump_func(void)
 {
 	uint64_t etime;
@@ -751,7 +751,6 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 		dcache_disable();
 		return CMD_RET_FAILURE;
 	}
-
 #ifndef CONFIG_QCA_APPSBL_DLOAD
 	reset_crashdump();
 #endif
