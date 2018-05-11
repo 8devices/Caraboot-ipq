@@ -649,6 +649,49 @@ unsigned int get_which_flash_param(char *part_name)
 	return flash_var;
 }
 
+/*
+ * getpart_offset_size - retreive partition offset and size
+ * @part_name - partition name
+ * @offset - location where the offset of partition to be stored
+ * @size - location where partition size to be stored
+ *
+ * Retreive partition offset and size in bytes with respect to the
+ * partition specific flash block size
+ */
+int getpart_offset_size(char *part_name, uint32_t *offset, uint32_t *size)
+{
+	int i;
+	uint32_t bsize;
+	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
+
+	for (i = 0; i < smem_ptable.len; i++) {
+		struct smem_ptn *p = &smem_ptable.parts[i];
+		loff_t psize;
+		if (!strncmp(p->name, part_name, SMEM_PTN_NAME_MAX)) {
+			bsize = get_part_block_size(p, sfi);
+			if (p->size == (~0u)) {
+				/*
+				 * Partition size is 'till end of device', calculate
+				 * appropriately
+				 */
+				psize = nand_info[get_device_id_by_part(p)].size
+					- (((loff_t)p->start) * bsize);
+			} else {
+				psize = ((loff_t)p->size) * bsize;
+			}
+
+		*offset = ((loff_t)p->start) * bsize;
+		*size = psize;
+		break;
+		}
+	}
+
+	if (i == smem_ptable.len)
+		return -ENOENT;
+
+	return 0;
+}
+
 int do_smeminfo(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
