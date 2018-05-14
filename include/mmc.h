@@ -299,6 +299,16 @@
 
 /* Driver model support */
 
+#define MMC_MID_MASK (0xFF << 24)
+#define MMC_MID_SANDISK (0x45 << 24)
+
+/*
+ * Quirks
+ */
+/* Some of Sandisk eMMC seeing more delay for secure trim,
+ * below quirk will use trim instead secure trim for erase */
+#define MMC_QUIRK_SECURE_TRIM (1 << 0)
+
 /**
  * struct mmc_uclass_priv - Holds information about a device used by the uclass
  */
@@ -416,6 +426,7 @@ struct mmc {
 	int ddr_mode;
 	uchar sec_feature_support;
 	unsigned int trim_timeout; /* In milliseconds */
+	u32 quirks;
 };
 
 struct mmc_hwpart_conf {

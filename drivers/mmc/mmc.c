@@ -1511,6 +1511,10 @@ static int mmc_startup(struct mmc *mmc)
 #if !defined(CONFIG_SPL_BUILD) || defined(CONFIG_SPL_LIBDISK_SUPPORT)
 	init_part(&mmc->block_dev);
 #endif
+	/* Add device specific quirks */
+	if (((mmc->cid[0] & MMC_MID_MASK) == MMC_MID_SANDISK) &&
+		(strncmp(mmc->block_dev.product, "SEM08", 5) == 0))
+		mmc->quirks |= MMC_QUIRK_SECURE_TRIM;
 
 	return 0;
 }
