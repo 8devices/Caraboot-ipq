@@ -140,25 +140,38 @@ unsigned long mmc_berase(int dev_num, lbaint_t start, lbaint_t blkcnt)
 
 		return blk;
 	} else {
-		err = mmc_erase_t(mmc, start, blkcnt, arg);
+		if ( mmc->quirks & MMC_QUIRK_SECURE_TRIM ) {
+			arg = MMC_TRIM_ARG;
+			err = mmc_erase_t(mmc, start, blkcnt, arg);
 
-		if (err)
-			return -1;
+			if (err)
+				return -1;
 
-		/* Waiting for the ready status */
-		if (mmc_send_status(mmc, timeout))
-			return -1;
+			/* Waiting for the ready status */
+			if (mmc_send_status(mmc, timeout))
+				return -1;
+		} else {
+			err = mmc_erase_t(mmc, start, blkcnt, arg);
 
-		arg = MMC_SECURE_TRIM2_ARG;
-		err = mmc_erase_t(mmc, start, blkcnt, arg);
+			if (err)
+				return -1;
 
-		if (err)
-			return -1;
+			/* Waiting for the ready status */
+			if (mmc_send_status(mmc, timeout))
+				return -1;
 
-		/* Waiting for the ready status */
-		if (mmc_send_status(mmc, timeout)) {
-			return 0;
+			arg = MMC_SECURE_TRIM2_ARG;
+			err = mmc_erase_t(mmc, start, blkcnt, arg);
+
+			if (err)
+				return -1;
+
+			/* Waiting for the ready status */
+			if (mmc_send_status(mmc, timeout)) {
+				return 0;
+			}
 		}
+
 		return  blkcnt;
 	}
 
