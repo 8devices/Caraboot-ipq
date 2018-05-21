@@ -529,14 +529,14 @@ int ft_board_setup(void *blob, bd_t *bd)
 				activepart = get_rootfs_active_partition();
 			if (!activepart) {
 				snprintf(parts_str, sizeof(parts_str),
-				"mtdparts=nand0:0x%x@0(rootfs),\
-				0x%x@0x%x(rootfs_1);nand1",
+				"mtdparts=nand0:0x%x@0(rootfs),"
+				"0x%x@0x%x(rootfs_1);nand1",
 				IPQ_NAND_ROOTFS_SIZE,
 				IPQ_NAND_ROOTFS_SIZE, IPQ_NAND_ROOTFS_SIZE);
 			} else {
 				snprintf(parts_str, sizeof(parts_str),
-				"mtdparts=nand0:0x%x@0x%x(rootfs),\
-				0x%x@0(rootfs_1);nand1",IPQ_NAND_ROOTFS_SIZE,
+				"mtdparts=nand0:0x%x@0x%x(rootfs),"
+				"0x%x@0(rootfs_1);nand1",IPQ_NAND_ROOTFS_SIZE,
 				IPQ_NAND_ROOTFS_SIZE, IPQ_NAND_ROOTFS_SIZE);
 			}
 		}
