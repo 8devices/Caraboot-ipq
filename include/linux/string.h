@@ -39,6 +39,9 @@ extern char * strcat(char *, const char *);
 #ifndef __HAVE_ARCH_STRNCAT
 extern char * strncat(char *, const char *, __kernel_size_t);
 #endif
+#ifndef __HAVE_ARCH_STRLCAT
+extern size_t strlcat(char *, const char *, __kernel_size_t);
+#endif
 #ifndef __HAVE_ARCH_STRCMP
 extern int strcmp(const char *,const char *);
 #endif
@@ -79,6 +82,9 @@ extern void * memset(void *,int,__kernel_size_t);
 #endif
 #ifndef __HAVE_ARCH_MEMCPY
 extern void * memcpy(void *,const void *,__kernel_size_t);
+#endif
+#ifndef __HAVE_ARCH_MEMSCPY
+extern size_t memscpy(void *dest, size_t dst_size, const void *src, size_t copy_size);
 #endif
 #ifndef __HAVE_ARCH_MEMMOVE
 extern void * memmove(void *,const void *,__kernel_size_t);

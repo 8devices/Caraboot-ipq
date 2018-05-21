@@ -175,6 +175,33 @@ char * strncat(char *dest, const char *src, size_t count)
 }
 #endif
 
+#ifndef __HAVE_ARCH_STRLCAT
+/**
+ * strlcat - Append a length-limited, %NUL-terminated string to another
+ * @dest: The string to be appended to
+ * @src: The string to append to it
+ * @count: The size of the destination buffer.
+ *
+ */
+size_t strlcat(char *dest, const char *src, size_t count)
+{
+	size_t dsize = strlen(dest);
+	size_t len = strlen(src);
+	size_t res = dsize + len;
+
+	/* This would be a bug */
+	BUG_ON(dsize >= count);
+
+	dest += dsize;
+	count -= dsize;
+	if (len >= count)
+		len = count-1;
+	memcpy(dest, src, len);
+	dest[len] = 0;
+	return res;
+}
+#endif
+
 #ifndef __HAVE_ARCH_STRCMP
 /**
  * strcmp - Compare two strings
@@ -517,6 +544,31 @@ void * memcpy(void *dest, const void *src, size_t count)
 		*d8++ = *s8++;
 
 	return dest;
+}
+#endif
+
+#ifndef __HAVE_ARCH_MEMSCPY
+/**
+ * memscpy - Copy one area of memory to another
+ * @dest: Where to copy to
+ * @src: Where to copy from
+ * @dst_size: The size of destination buffer area
+ * @copy_size: The size of source buffer area
+ *
+ * You should not use this function where memcpy
+ * was used to copy null terminated buffer, the
+ * replacement function is strlcpy() and strlcat()
+ * depending on situation.
+ *
+ * The aim of memscpy() is to prevent buffer overflow
+ * by taking both destination buffer size and source
+ * buffer size.
+ */
+size_t memscpy(void *dest, size_t dst_size, const void *src, size_t copy_size) 
+{
+	size_t min_size = dst_size < copy_size ? dst_size : copy_size;
+	memcpy(dest, src, min_size);
+	return min_size;
 }
 #endif
 
