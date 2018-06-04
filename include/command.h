@@ -111,7 +111,7 @@ extern int common_diskboot(cmd_tbl_t *cmdtp, const char *intf, int argc,
 
 extern int do_reset(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]);
 
-#if defined(CONFIG_SMP_PSCI_CMD)
+#if defined(CONFIG_SMP_CMD_SUPPORT)
 extern int do_runmulticore(cmd_tbl_t *cmdtp,
 			   int flag, int argc, char *const argv[]);
 #endif

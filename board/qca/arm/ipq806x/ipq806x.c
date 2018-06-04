@@ -30,6 +30,8 @@
 #include "ipq806x.h"
 #include "qca_common.h"
 #include <asm/arch-qca-common/scm.h>
+#include <asm/arch-qca-common/iomap.h>
+#include <asm/io.h>
 
 #define DLOAD_MAGIC_COOKIE_1 0xE47B337D
 #define DLOAD_MAGIC_COOKIE_2 0x0501CAB0
@@ -920,7 +922,8 @@ int ipq_get_tz_version(char *version_name, int buf_size)
 	return 0;
 }
 
-void forever(void) { while (1); }
+extern void ak_secondary_cpu_init(void);
+extern void send_event(void);
 /*
  * Set the cold/warm boot address for one of the CPU cores.
  */
@@ -932,7 +935,7 @@ int scm_set_boot_addr(void)
 		unsigned long addr;
 	} cmd;
 
-	cmd.addr = (unsigned long)forever;
+	cmd.addr = (unsigned long)ak_secondary_cpu_init;
 	cmd.flags = SCM_FLAG_COLDBOOT_CPU1;
 
 	ret = scm_call(SCM_SVC_BOOT, SCM_BOOT_ADDR,
@@ -960,6 +963,8 @@ void clear_l2cache_err(void)
 #endif
 }
 
+static int dcache_old_status;
+
 void enable_caches(void)
 {
 	icache_enable();
@@ -977,5 +982,65 @@ void disable_caches(void)
  */
 int set_uuid_bootargs(char *boot_args, char *part_name, int buflen, bool gpt_flag)
 {
+	return 0;
+}
+int is_secondary_core_off(unsigned int cpuid)
+{
+	if (dcache_old_status)
+		dcache_enable();
+	return 1;
+}
+
+static int secondary_core_already_reset;
+extern void wait_event(void (*)(void));
+
+void bring_secondary_core_down(unsigned int state)
+{
+	wait_event(ak_secondary_cpu_init);
+}
+
+static int krait_release_secondary(void)
+{
+	dcache_disable();
+	writel(0xa4, CPU1_APCS_SAW2_VCTL);
+	barrier();
+	udelay(512);
+
+	writel(0x109, CPU1_APCS_CPU_PWR_CTL);
+	writel(0x101, CPU1_APCS_CPU_PWR_CTL);
+	barrier();
+	udelay(1);
+
+	writel(0x121, CPU1_APCS_CPU_PWR_CTL);
+	barrier();
+	udelay(2);
+
+	writel(0x120, CPU1_APCS_CPU_PWR_CTL);
+	barrier();
+	udelay(2);
+
+	writel(0x100, CPU1_APCS_CPU_PWR_CTL);
+	barrier();
+	udelay(100);
+
+	writel(0x180, CPU1_APCS_CPU_PWR_CTL);
+	barrier();
+
+	return 0;
+}
+int bring_sec_core_up(unsigned int cpuid, unsigned int entry, unsigned int arg)
+{
+	int err = 0;
+	dcache_old_status = dcache_status();
+	if (!secondary_core_already_reset) {
+		secondary_core_already_reset = 1;
+		if (scm_set_boot_addr() == 0) {
+			/* Pull Core-1 out of reset, iff scm call succeeds */
+			krait_release_secondary();
+		}
+	} else {
+		dcache_disable();
+		send_event();
+	}
 	return 0;
 }
