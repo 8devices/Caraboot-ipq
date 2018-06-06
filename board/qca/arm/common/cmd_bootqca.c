@@ -444,10 +444,6 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 		if (debug) {
 			printf("Using nand device %d\n", CONFIG_SPI_FLASH_INFO_IDX);
 		}
-		snprintf(runcmd, sizeof(runcmd),
-			 "nand device %d", CONFIG_SPI_FLASH_INFO_IDX);
-		run_command(runcmd, 0);
-
 	} else if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
 		if (debug) {
 			printf("Using nand device 0\n");
@@ -527,9 +523,10 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 		 * Kernel is in a separate partition
 		 */
 		snprintf(runcmd, sizeof(runcmd),
-			 /* NOR is treated as psuedo NAND */
-			 "nand read 0x%x 0x%llx 0x%llx && ",
-			 request, sfi->hlos.offset, sfi->hlos.size);
+			 "sf probe &&"
+			 "sf read 0x%x 0x%x 0x%x && ",
+			 CONFIG_SYS_LOAD_ADDR,
+			 (uint)sfi->hlos.offset, (uint)sfi->hlos.size);
 
 		if (debug)
 			printf("%s", runcmd);
