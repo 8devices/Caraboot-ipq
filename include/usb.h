@@ -566,6 +566,7 @@ struct usb_hub_descriptor {
 struct usb_hub_device {
 	struct usb_device *pusb_dev;
 	struct usb_hub_descriptor desc;
+	int hub_depth;			/* USB 3.0 hub depth */
 };
 
 #ifdef CONFIG_DM_USB

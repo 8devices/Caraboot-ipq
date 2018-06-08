@@ -46,9 +46,6 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define USB_BUFSIZ	512
 
-/* TODO(sjg@chromium.org): Remove this when CONFIG_DM_USB is defined */
-static struct usb_hub_device hub_dev[USB_MAX_HUB];
-static int usb_hub_index;
 
 __weak void usb_hub_reset_devices(int port)
 {
@@ -67,6 +64,16 @@ bool usb_hub_is_root_hub(struct udevice *hub)
 		return true;
 
 	return false;
+}
+
+static int usb_set_hub_depth(struct usb_device *dev, int depth)
+{
+	if (depth < 0 || depth > 4)
+		return -EINVAL;
+
+	return usb_control_msg(dev, usb_sndctrlpipe(dev, 0),
+		USB_REQ_SET_HUB_DEPTH, USB_DIR_OUT | USB_RT_HUB,
+		depth, 0, NULL, 0, USB_CNTL_TIMEOUT);
 }
 #endif
 
@@ -105,9 +112,40 @@ static int usb_get_hub_status(struct usb_device *dev, void *data)
 
 int usb_get_port_status(struct usb_device *dev, int port, void *data)
 {
-	return usb_control_msg(dev, usb_rcvctrlpipe(dev, 0),
+	int ret;
+
+	ret = usb_control_msg(dev, usb_rcvctrlpipe(dev, 0),
 			USB_REQ_GET_STATUS, USB_DIR_IN | USB_RT_PORT, 0, port,
 			data, sizeof(struct usb_hub_status), USB_CNTL_TIMEOUT);
+
+#ifdef CONFIG_DM_USB
+	if (ret < 0)
+		return ret;
+
+	/*
+	 * Translate the USB 3.0 hub port status field into the old version
+	 * that U-Boot understands. Do this only when the hub is not root hub.
+	 * For root hub, the port status field has already been translated
+	 * in the host controller driver (see xhci_submit_root() in xhci.c).
+	 *
+	 * Note: this only supports driver model.
+	 */
+
+	if (!usb_hub_is_root_hub(dev->dev) && usb_hub_is_superspeed(dev)) {
+		struct usb_port_status *status = (struct usb_port_status *)data;
+		u16 tmp = (status->wPortStatus) & USB_SS_PORT_STAT_MASK;
+
+		if (status->wPortStatus & USB_SS_PORT_STAT_POWER)
+			tmp |= USB_PORT_STAT_POWER;
+		if ((status->wPortStatus & USB_SS_PORT_STAT_SPEED) ==
+		    USB_SS_PORT_STAT_SPEED_5GBPS)
+			tmp |= USB_PORT_STAT_SUPER_SPEED;
+
+		status->wPortStatus = tmp;
+	}
+#endif
+
+	return ret;
 }
 
 
@@ -140,6 +178,10 @@ static void usb_hub_power_on(struct usb_hub_device *hub)
 	mdelay(pgood_delay + 1000);
 }
 
+#ifndef CONFIG_DM_USB
+static struct usb_hub_device hub_dev[USB_MAX_HUB];
+static int usb_hub_index;
+
 void usb_hub_reset(void)
 {
 	usb_hub_index = 0;
@@ -153,6 +195,7 @@ static struct usb_hub_device *usb_hub_allocate(void)
 	printf("ERROR: USB_MAX_HUB (%d) reached\n", USB_MAX_HUB);
 	return NULL;
 }
+#endif
 
 #define MAX_TRIES 5
 
@@ -351,6 +394,20 @@ int usb_hub_port_connect_change(struct usb_device *dev, int port)
 }
 
 
+static struct usb_hub_device *usb_get_hub_device(struct usb_device *dev)
+{
+	struct usb_hub_device *hub;
+
+#ifndef CONFIG_DM_USB
+	/* "allocate" Hub device */
+	hub = usb_hub_allocate();
+#else
+	hub = dev_get_uclass_priv(dev->dev);
+#endif
+
+	return hub;
+}
+
 static int usb_hub_configure(struct usb_device *dev)
 {
 	int i, length;
@@ -362,11 +419,11 @@ static int usb_hub_configure(struct usb_device *dev)
 	__maybe_unused struct usb_hub_status *hubsts;
 	int ret;
 
-	/* "allocate" Hub device */
-	hub = usb_hub_allocate();
+	hub = usb_get_hub_device(dev);
 	if (hub == NULL)
 		return -ENOMEM;
 	hub->pusb_dev = dev;
+
 	/* Get the the hub descriptor */
 	ret = usb_get_hub_descriptor(dev, buffer, 4);
 	if (ret < 0) {
@@ -476,6 +533,48 @@ static int usb_hub_configure(struct usb_device *dev)
 	debug("%sover-current condition exists\n",
 	      (le16_to_cpu(hubsts->wHubStatus) & HUB_STATUS_OVERCURRENT) ? \
 	      "" : "no ");
+
+#ifdef CONFIG_DM_USB
+	/*
+	 * A maximum of seven tiers are allowed in a USB topology, and the
+	 * root hub occupies the first tier. The last tier ends with a normal
+	 * USB device. USB 3.0 hubs use a 20-bit field called 'route string'
+	 * to route packets to the designated downstream port. The hub uses a
+	 * hub depth value multiplied by four as an offset into the 'route
+	 * string' to locate the bits it uses to determine the downstream
+	 * port number.
+	 */
+	if (usb_hub_is_root_hub(dev->dev)) {
+		hub->hub_depth = -1;
+	} else {
+		struct udevice *hdev;
+		int depth = 0;
+
+		hdev = dev->dev->parent;
+		while (!usb_hub_is_root_hub(hdev)) {
+			depth++;
+			hdev = hdev->parent;
+		}
+
+		hub->hub_depth = depth;
+
+		if (usb_hub_is_superspeed(dev)) {
+			debug("set hub (%p) depth to %d\n", dev, depth);
+			/*
+			 * This request sets the value that the hub uses to
+			 * determine the index into the 'route string index'
+			 * for this hub.
+			 */
+			ret = usb_set_hub_depth(dev, depth);
+			if (ret < 0) {
+				debug("%s: failed to set hub depth (%lX)\n",
+				      __func__, dev->status);
+				return ret;
+			}
+		}
+	}
+#endif
+
 	usb_hub_power_on(hub);
 
 	/*
@@ -677,6 +776,7 @@ UCLASS_DRIVER(usb_hub) = {
 	.child_pre_probe	= usb_child_pre_probe,
 	.per_child_auto_alloc_size = sizeof(struct usb_device),
 	.per_child_platdata_auto_alloc_size = sizeof(struct usb_dev_platdata),
+	.per_device_auto_alloc_size = sizeof(struct usb_hub_device),
 };
 
 static const struct usb_device_id hub_id_table[] = {
