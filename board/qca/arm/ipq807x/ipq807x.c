@@ -311,6 +311,19 @@ int get_aquantia_gpio()
 	return aquantia_gpio;
 }
 
+int get_napa_gpio()
+{
+	int napa_gpio = -1, node;
+
+	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
+	if (node >= 0)
+		napa_gpio = fdtdec_get_uint(gd->fdt_blob, node, "napa_gpio", -1);
+	else
+		return node;
+
+	return napa_gpio;
+}
+
 void aquantia_phy_reset_init(void)
 {
 	int aquantia_gpio = -1, node;
@@ -327,6 +340,29 @@ void aquantia_phy_reset_init(void)
 			gpio_direction_output(aquantia_gpio, 0x0);
 		}
 		aq_phy_initialised = 1;
+	}
+}
+
+void napa_phy_reset_init(void)
+{
+	int napa_gpio = -1, node;
+	unsigned int *napa_gpio_base;
+
+	napa_gpio = get_napa_gpio();
+	if (napa_gpio >=0) {
+		napa_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(napa_gpio);
+		writel(0x203, napa_gpio_base);
+		gpio_direction_output(napa_gpio, 0x0);
+	}
+}
+
+void napa_phy_reset_init_done(void)
+{
+	int napa_gpio;
+
+	napa_gpio = get_napa_gpio();
+	if (napa_gpio >= 0) {
+		gpio_set_value(napa_gpio, 0x1);
 	}
 }
 
@@ -403,9 +439,11 @@ void eth_clock_enable(void)
 	writel(0x203, tlmm_base);
 	writel(0, tlmm_base + 0x4);
 	aquantia_phy_reset_init();
+	napa_phy_reset_init();
 	mdelay(500);
 	writel(2, tlmm_base + 0x4);
 	aquantia_phy_reset_init_done();
+	napa_phy_reset_init_done();
 	mdelay(500);
 }
 

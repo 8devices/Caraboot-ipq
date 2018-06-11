@@ -61,6 +61,7 @@ extern int ipq_qca8033_phy_init(struct phy_ops **ops, u32 phy_id);
 extern int ipq_qca_aquantia_phy_init(struct phy_ops **ops, u32 phy_id);
 static int tftp_acl_our_port;
 
+static int uniphy_phy_mode;
 /*
  * EDMA hardware instance
  */
@@ -914,7 +915,8 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 	char *dp[] = {"Half", "Full"};
 	int linkup=0;
 	int mac_speed = 0, speed_clock1 = 0, speed_clock2 = 0;
-	int phy_addr, port_8033 = -1, node, aquantia_port = -1;
+	int phy_addr, port_8033 = -1, node, aquantia_port = -1, port_8081 = -1;
+	int sgmii_mode = 0;
 
 	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
 	if (node >= 0)
@@ -922,6 +924,9 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 
 	if (node >= 0)
 		 aquantia_port = fdtdec_get_uint(gd->fdt_blob, node, "aquantia_port", -1);
+
+	if (node >= 0)
+		 port_8081 = fdtdec_get_uint(gd->fdt_blob, node, "8081_port", -1);
 	/*
 	 * Check PHY link, speed, Duplex on all phys.
 	 * we will proceed even if single link is up
@@ -943,6 +948,8 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 
 		if (i == port_8033)
 			phy_addr = QCA8033_PHY_ADDR;
+		if (i == port_8081)
+			phy_addr = QCA8081_PHY_ADDR;
 		else if (i == aquantia_port)
 			phy_addr = AQU_PHY_ADDR;
 		else
@@ -969,6 +976,8 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
 						priv->mac_unit, i, lstatus[status], speed,
 						dp[duplex]);
+				if (i == port_8081)
+					sgmii_mode = 1;
 				break;
 			case FAL_SPEED_100:
 				mac_speed = 0x1;
@@ -985,6 +994,8 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
 						priv->mac_unit, i, lstatus[status], speed,
 						dp[duplex]);
+				if (i == port_8081)
+					sgmii_mode = 1;
 				break;
 			case FAL_SPEED_1000:
 				mac_speed = 0x2;
@@ -998,6 +1009,8 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
 						priv->mac_unit, i, lstatus[status], speed,
 						dp[duplex]);
+				if (i == port_8081)
+					sgmii_mode = 1;
 				break;
 			case FAL_SPEED_10000:
 				mac_speed = 0x3;
@@ -1008,12 +1021,23 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 						dp[duplex]);
 				break;
 			case FAL_SPEED_2500:
-				mac_speed = 0x4;
-				speed_clock1 = 0x107;
+				if (i == port_8081)
+					mac_speed = 0x2;
+				else
+					mac_speed = 0x4;
+
+				if (port_8081 == 4)
+					speed_clock1 = 0x301;
+				else if (port_8081 == 5)
+					speed_clock1 = 0x101;
+				else
+					speed_clock1 = 0x107;
 				speed_clock2 = 0x0;
 				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
 						priv->mac_unit, i, lstatus[status], speed,
 						dp[duplex]);
+				if (i == port_8081)
+					sgmii_mode = 0;
 				break;
 			case FAL_SPEED_5000:
 				mac_speed = 0x5;
@@ -1026,6 +1050,20 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 			default:
 				printf("Unknown speed\n");
 				break;
+		}
+
+		if (i == port_8081) {
+			if (sgmii_mode != uniphy_phy_mode) {
+				uniphy_phy_mode = sgmii_mode;
+				if (sgmii_mode) {
+					ppe_port_bridge_txmac_set(i, 1);
+					ppe_uniphy_mode_set(0x2, PORT_WRAPPER_SGMII0_RGMII4);
+
+				} else {
+					ppe_port_bridge_txmac_set(i, 1);
+					ppe_uniphy_mode_set(0x2, PORT_WRAPPER_SGMII_PLUS);
+				}
+			}
 		}
 		ipq807x_speed_clock_set(i, speed_clock1, speed_clock2);
 		if (i == aquantia_port)
@@ -1649,7 +1687,7 @@ int ipq807x_edma_init(void *edma_board_cfg)
 	int ret = -1;
 	ipq807x_edma_board_cfg_t ledma_cfg, *edma_cfg;
 	static int sw_init_done = 0;
-	int port_8033 = -1, node, phy_addr, aquantia_port = -1;
+	int port_8033 = -1, port_8081 = -1, node, phy_addr, aquantia_port = -1;
 	int mode;
 
 	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
@@ -1658,6 +1696,9 @@ int ipq807x_edma_init(void *edma_board_cfg)
 
 	if (node >= 0)
 		aquantia_port = fdtdec_get_uint(gd->fdt_blob, node, "aquantia_port", -1);
+
+	if (node >= 0)
+		port_8081 = fdtdec_get_uint(gd->fdt_blob, node, "8081_port", -1);
 
 	mode = fdtdec_get_uint(gd->fdt_blob, node, "switch_mac_mode", -1);
 	if (mode < 0) {
@@ -1749,6 +1790,8 @@ int ipq807x_edma_init(void *edma_board_cfg)
 				phy_addr = QCA8033_PHY_ADDR;
 			else if (phy_id == aquantia_port)
 				phy_addr = AQU_PHY_ADDR;
+			else if (phy_id == port_8081)
+				phy_addr = QCA8081_PHY_ADDR;
 			else
 				phy_addr = phy_id;
 
@@ -1780,6 +1823,9 @@ int ipq807x_edma_init(void *edma_board_cfg)
 					break;
 				case QCA8033_PHY:
 					ipq_qca8033_phy_init(&ipq807x_edma_dev[i]->ops[phy_id], phy_addr);
+					break;
+				case QCA8081_PHY:
+					ipq_qca8081_phy_init(&ipq807x_edma_dev[i]->ops[phy_id], phy_addr);
 					break;
 				case AQUANTIA_PHY_107:
 				case AQUANTIA_PHY_109:
