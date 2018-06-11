@@ -472,6 +472,63 @@ int qca_scm_auth_kernel(void *cmd_buf,
 	return ret;
 }
 
+int is_scm_sec_auth_available(u32 svc_id, u32 cmd_id)
+{
+
+	int ret;
+	__le32 scm_ret;
+
+	if (is_scm_armv8())
+	{
+		struct qca_scm_desc desc = {0};
+
+		desc.args[0] = QCA_SCM_SIP_FNID(svc_id, cmd_id);
+		desc.arginfo = QCA_SCM_ARGS(1);
+
+		ret = scm_call_64(SCM_SVC_INFO, IS_CALL_AVAIL_CMD, &desc);
+		scm_ret = desc.ret[0];
+	}
+	else
+	{
+		__le32 svc_cmd = cpu_to_le32((svc_id << SCM_SVC_ID_SHIFT) | cmd_id);
+
+		ret = scm_call(SCM_SVC_INFO, IS_CALL_AVAIL_CMD, &svc_cmd,
+				sizeof(svc_cmd), &scm_ret, sizeof(scm_ret));
+	}
+
+	if (!ret)
+		return le32_to_cpu(scm_ret);
+
+	return ret;
+}
+
+int qca_scm_secure_authenticate(void *cmd_buf, size_t cmd_len)
+{
+	int ret = 0;
+
+	if (is_scm_armv8())
+	{
+		struct qca_scm_desc desc = {0};
+
+		desc.arginfo = QCA_SCM_ARGS(3, SCM_VAL, SCM_VAL, SCM_IO_WRITE);
+		/* args[0] has the image SW ID*/
+		desc.args[0] = * ((unsigned long *)cmd_buf);
+		/* args[1] has the image size */
+		desc.args[1] = * (((unsigned long *)cmd_buf) + 1);
+		/* args[2] has the load address*/
+		desc.args[2] = * (((unsigned long *)cmd_buf) + 2);
+
+		ret = scm_call_64(SCM_SVC_BOOT, SCM_CMD_SEC_AUTH, &desc);
+	}
+	else
+	{
+		ret = scm_call(SCM_SVC_BOOT, SCM_CMD_SEC_AUTH, cmd_buf, cmd_len,
+				NULL, 0);
+	}
+
+	return ret;
+}
+
 int qca_scm_call_write(u32 svc_id, u32 cmd_id, u32 *addr, u32 val)
 {
 	int ret = 0;
