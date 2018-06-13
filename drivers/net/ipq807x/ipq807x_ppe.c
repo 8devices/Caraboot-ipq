@@ -1075,7 +1075,7 @@ static void ppe_port_mux_set(int port_id, int port_type)
 	port_mux_ctrl.bf.port4_pcs_sel = PORT4_PCS_SEL_GMII_FROM_PCS0;
 	if (port_id == PORT5) {
 		if (port_type == PORT_GMAC_TYPE) {
-			port_mux_ctrl.bf.port5_pcs_sel = PORT5_PCS_SEL_GMII_FROM_PCS1;
+			port_mux_ctrl.bf.port5_pcs_sel = PORT5_PCS_SEL_GMII_FROM_PCS0;
 			port_mux_ctrl.bf.port5_gmac_sel = PORT5_GMAC_SEL_GMAC;
 		} else if (port_type == PORT_XGMAC_TYPE) {
 			port_mux_ctrl.bf.port5_pcs_sel = PORT5_PCS_SEL_GMII_FROM_PCS1;
@@ -1102,6 +1102,9 @@ static void ppe_port_mux_mac_type_set(int port_id, int mode)
 	switch(mode)
 	{
 		case PORT_WRAPPER_SGMII0_RGMII4:
+			port_type = PORT_GMAC_TYPE;
+			break;
+		case PORT_WRAPPER_SGMII_PLUS:
 			port_type = PORT_GMAC_TYPE;
 			break;
 		case PORT_WRAPPER_USXGMII:
