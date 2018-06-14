@@ -71,7 +71,7 @@ kernel_img_info_t kernel_img_info;
 
 char dtb_config_name[64];
 
-__weak int scm_set_boot_addr(void)
+__weak int scm_set_boot_addr(bool enable_sec_core)
 {
 	return -1;
 }
@@ -170,7 +170,7 @@ static int do_dumpqca_data(void)
 		dump_entries = dump_entries_s;
 	}
 
-	if (scm_set_boot_addr() == 0) {
+	if (scm_set_boot_addr(false) == 0) {
 		/* Pull Core-1 out of reset, iff scm call succeeds */
 		krait_release_secondary();
 	}

@@ -922,12 +922,13 @@ int ipq_get_tz_version(char *version_name, int buf_size)
 	return 0;
 }
 
+void forever(void) { while (1); }
 extern void ak_secondary_cpu_init(void);
 extern void send_event(void);
 /*
  * Set the cold/warm boot address for one of the CPU cores.
  */
-int scm_set_boot_addr(void)
+int scm_set_boot_addr(bool enable_sec_core)
 {
 	int ret;
 	struct {
@@ -935,7 +936,11 @@ int scm_set_boot_addr(void)
 		unsigned long addr;
 	} cmd;
 
-	cmd.addr = (unsigned long)ak_secondary_cpu_init;
+	if (enable_sec_core)
+		cmd.addr = (unsigned long)ak_secondary_cpu_init;
+	else
+		cmd.addr = (unsigned long)forever;
+
 	cmd.flags = SCM_FLAG_COLDBOOT_CPU1;
 
 	ret = scm_call(SCM_SVC_BOOT, SCM_BOOT_ADDR,
@@ -1034,7 +1039,7 @@ int bring_sec_core_up(unsigned int cpuid, unsigned int entry, unsigned int arg)
 	dcache_old_status = dcache_status();
 	if (!secondary_core_already_reset) {
 		secondary_core_already_reset = 1;
-		if (scm_set_boot_addr() == 0) {
+		if (scm_set_boot_addr(true) == 0) {
 			/* Pull Core-1 out of reset, iff scm call succeeds */
 			krait_release_secondary();
 		}
