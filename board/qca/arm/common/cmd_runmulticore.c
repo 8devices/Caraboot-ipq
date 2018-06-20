@@ -175,6 +175,14 @@ int do_runmulticore(cmd_tbl_t *cmdtp,
 		free(core[i - 1].stack_top_ptr);
 	}
 
+	printf("Status:\n");
+	for (i = 1; i < argc; i++) {
+		printf("Core %d: %s\n", i,
+				core[i - 1].cmd_complete ?
+				((core[i - 1].cmd_result == -1) ?
+				 "FAIL" : "PASS"): "INCOMPLETE");
+	}
+
 	invalidate_dcache_all();
 	dcache_enable();
 
