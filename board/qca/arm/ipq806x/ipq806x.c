@@ -43,7 +43,7 @@ qca_mmc mmc_host;
 
 const char *rsvd_node = "/reserved-memory";
 const char *del_node[] = {NULL};
-const add_node_t add_node[] = {{}};
+const add_node_t add_fdt_node[] = {{}};
 
 struct dumpinfo_t dumpinfo_n[] = {
 	/* Note1: when aligned access is set, the contents

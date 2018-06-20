@@ -51,7 +51,7 @@ const char *rsvd_node = "/reserved-memory";
 const char *del_node[] = {"uboot",
 			  "sbl",
 			  NULL};
-const add_node_t add_node[] = {{}};
+const add_node_t add_fdt_node[] = {{}};
 static int pci_initialised;
 static int aq_phy_initialised;
 struct dumpinfo_t dumpinfo_n[] = {

@@ -281,7 +281,7 @@ typedef enum {
 /* Reserved-memory node names*/
 extern const char *rsvd_node;
 extern const char *del_node[];
-extern const add_node_t add_node[];
+extern const add_node_t add_fdt_node[];
 
 void reset_crashdump(void);
 #ifdef CONFIG_PCI_IPQ

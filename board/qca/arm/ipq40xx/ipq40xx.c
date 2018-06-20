@@ -59,7 +59,7 @@ const char *del_node[] = {"rsvd1",
 			  "rsvd2",
 			  "wifi_dump",
 			  NULL};
-const add_node_t add_node[] = {
+const add_node_t add_fdt_node[] = {
 	{
 		.nodename = "rsvd1",
 		.val[0] = htonl(RESERVE_ADDRESS_START),

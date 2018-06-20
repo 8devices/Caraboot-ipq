@@ -210,20 +210,21 @@ void ipq_fdt_mem_rsvd_fixup(void *blob)
 					del_node[i]);
 		}
 
-		for (i = 0; add_node[i].nodename; i++) {
+		for (i = 0; add_fdt_node[i].nodename; i++) {
 			nodeoff = fdt_add_subnode(blob, parentoff,
-						  add_node[i].nodename);
+						  add_fdt_node[i].nodename);
 			if (nodeoff < 0) {
 				debug("fdt-fixup: unable to add subnode (%s)\n",
-					add_node[i].nodename);
+					add_fdt_node[i].nodename);
 				continue;
 			}
 			ret = fdt_setprop(blob, nodeoff, "no-map", NULL, 0);
 			if (ret != 0)
 				debug("fdt-fixup: unable to set property\n");
 
-			ret = fdt_setprop(blob, nodeoff, "reg",add_node[i].val,
-					  sizeof(add_node[i].val));
+			ret = fdt_setprop(blob, nodeoff, "reg",
+					  add_fdt_node[i].val,
+					  sizeof(add_fdt_node[i].val));
 			if (ret != 0)
 				debug("fdt-fixup: unable to set property\n");
 		}
