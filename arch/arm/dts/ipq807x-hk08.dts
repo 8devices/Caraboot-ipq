@@ -26,9 +26,10 @@
 		pci1 = "/pci@10000000";
 	};
 	ess-switch {
-		switch_mac_mode = <0x0>;
+		switch_mac_mode = <0x1>;
 		switch_mac_mode1 = <0xFF>;
 		switch_mac_mode2 = <0x2>;
+		8033_port = <0>;
 		aquantia_port = <5>;
 		aquantia_gpio = <63>;
 	};

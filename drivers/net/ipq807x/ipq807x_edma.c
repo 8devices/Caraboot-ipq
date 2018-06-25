@@ -904,7 +904,7 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 
 		if (i == port_8033)
 			phy_addr = QCA8033_PHY_ADDR;
-		if (i == port_8081)
+		else if (i == port_8081)
 			phy_addr = QCA8081_PHY_ADDR;
 		else if (i == aquantia_port)
 			phy_addr = AQU_PHY_ADDR;
