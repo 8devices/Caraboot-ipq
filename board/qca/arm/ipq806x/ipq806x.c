@@ -924,6 +924,7 @@ int ipq_get_tz_version(char *version_name, int buf_size)
 
 void forever(void) { while (1); }
 extern void ak_secondary_cpu_init(void);
+extern void ak_secondary_cpu_reinit(void);
 extern void send_event(void);
 /*
  * Set the cold/warm boot address for one of the CPU cores.
@@ -1001,7 +1002,7 @@ extern void wait_event(void (*)(void));
 
 void bring_secondary_core_down(unsigned int state)
 {
-	wait_event(ak_secondary_cpu_init);
+	wait_event(ak_secondary_cpu_reinit);
 }
 
 static int krait_release_secondary(void)

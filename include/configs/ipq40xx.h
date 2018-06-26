@@ -277,6 +277,12 @@ typedef struct {
 
 #define CONFIG_LIB_UUID
 
+#define CONFIG_SMP_CMD_SUPPORT
+
+#ifdef CONFIG_SMP_CMD_SUPPORT
+#define NR_CPUS				4
+#endif
+
 /*
  * CRASH DUMP ENABLE
  */

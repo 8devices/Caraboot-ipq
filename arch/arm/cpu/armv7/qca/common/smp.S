@@ -13,9 +13,61 @@
 #include <asm/system.h>
 #include <linux/linkage.h>
 
+ENTRY(ak_secondary_cpu_reinit)
+ENTRY(dk_secondary_cpu_reinit)
+        mrc     p15, 0, r0, c0, c0, 5   /* read MPIDR */
+	and     r1, r0, #0xf          /* return CPU ID in cluster */
+	sub	r0, r1, #1
+	/* Now r1 has the cpu number,
+	 *  this will serve as index to "struct cpu_entry_arg"
+         * struct cpu_entry_arg {
+	 * void *stack_ptr;       +0 1c   38 54
+	 * volatile void *gd_ptr; +4 20   3c
+	 * void *arg_ptr;         +8 24   40
+	 * int  cpu_up;           +0xc 28 44
+	 * int cmd_complete;      +0x10 2c 48
+	 * int cmd_result;        +0x14 30 4c
+	 * void *stack_top_ptr;   +0x18 34 50
+	 *                         +0x1c (next entry in core[])
+	 * };
+         */
+	ldr r4, =globl_core_array
+	mov r3, #0x1c
+	mul r2, r0, r3
+	ldr r0, [r4]
+	add r0, r0, r2
+	/* For us r0 has the arg structure pointer
+		struct cpu_entry_arg {
+		        void *stack_ptr;
+			void *gd_ptr;
+			void *arg_ptr;
+			int  cpu_up;
+			int cmd_complete;
+			int cmd_result;
+		};
+	*/
+	ldr sp, [r0] /* stack_ptr */
+	bic     sp, sp, #7 /* 8-byte alignment required for stack */
+	/* gd address is always in r9, but if u-boot changes Tomorrow,
+	 * we have to change here. Note :- --> ARM: use r9 for gd
+	*/
+	ldr r9, [r0, #0x4]
+	/* store success in cpu_up */
+	mov r3, #1
+	str r3, [r0, #0xc]
+	add r1, r0, #0x10
+	add r2, r0, #0x14
+	ldr r0, [r0, #0x8]
+	bl secondary_core_entry
+self_reloop:
+	b self_reloop
+ENDPROC(ak_secondary_cpu_reinit)
+ENDPROC(dk_secondary_cpu_reinit)
+
+ENTRY(dk_secondary_cpu_init)
 ENTRY(ak_secondary_cpu_init)
         mrc     p15, 0, r0, c0, c0, 5   /* read MPIDR */
-        and     r1, r0, #0xf           /* return CPU ID in cluster */
+        and     r1, r0, #0xf          /* return CPU ID in cluster */
 	sub	r0, r1, #1
 	/* Now r1 has the cpu number,
 	 *  this will serve as index to "struct cpu_entry_arg"
@@ -93,6 +145,7 @@ self_loop:
 	b self_loop
 ENDPROC(secondary_cpu_init)
 ENDPROC(ak_secondary_cpu_init)
+ENDPROC(dk_secondary_cpu_init)
 
 ENTRY(send_event)
 	dsb
@@ -106,6 +159,12 @@ ENTRY(wait_event)
 	dsb
 	bx r0
 ENDPROC(wait_event)
+
+ENTRY(get_cpu_id)
+	mrc	p15, 0, r0, c0, c0, 5	/* read MPIDR */
+	and	r0, r0, #0xf		/* return CPU ID in cluster */
+	bx	lr
+ENDPROC(get_cpu_id)
 
 .globl globl_core_array
 globl_core_array:
