@@ -532,20 +532,44 @@ void board_pci_deinit()
 void ipq_fdt_fixup_socinfo(void *blob)
 {
 	uint32_t cpu_type;
-	int ret;
+	uint32_t soc_version, soc_version_major, soc_version_minor;
+	int nodeoff, ret;
 
 	ret = ipq_smem_get_socinfo_cpu_type(&cpu_type);
 	if (ret) {
-		printf("ipq: fdt fixup cannot get socinfo\n");
 		return;
 	}
 
 	/* Add "cpu_type" to root node of the devicetree*/
-	ret = fdt_setprop(blob, 0, "cpu_type",
-			&cpu_type, sizeof(cpu_type));
-	if (ret)
-		printf("%s: cannot set cpu type %d\n", __func__, ret);
-	return;
+	ret = ipq_smem_get_socinfo_cpu_type(&cpu_type);
+	if (!ret) {
+		ret = fdt_setprop(blob, nodeoff, "cpu_type",
+				  &cpu_type, sizeof(cpu_type));
+		if (ret)
+			printf("%s: cannot set cpu type %d\n", __func__, ret);
+	} else {
+		printf("ipq: fdt fixup cannot get socinfo\n");
+	}
+
+	ret = ipq_smem_get_socinfo_version((uint32_t *)&soc_version);
+	if (!ret) {
+		soc_version_major = SOCINFO_VERSION_MAJOR(soc_version);
+		soc_version_minor = SOCINFO_VERSION_MINOR(soc_version);
+
+		ret = fdt_setprop(blob, nodeoff, "soc_version_major",
+				  &soc_version_major,
+				  sizeof(soc_version_major));
+		if (ret)
+			printf("%s: cannot set soc_version_major %d\n",
+			       __func__, soc_version_major);
+
+		ret = fdt_setprop(blob, nodeoff, "soc_version_minor",
+				  &soc_version_minor,
+				  sizeof(soc_version_minor));
+		if (ret)
+			printf("%s: cannot set soc_version_minor %d\n",
+			       __func__, soc_version_minor);
+	}
 }
 
 void ipq_fdt_fixup_usb_device_mode(void *blob)
