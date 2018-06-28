@@ -432,6 +432,8 @@ void ipq_fdt_fixup_socinfo(void *blob)
 		if (ret)
 			printf("%s: cannot set soc_version_minor %d\n",
 			       __func__, soc_version_minor);
+	} else {
+		printf("%s: cannot get soc version\n", __func__);
 	}
 }
 
