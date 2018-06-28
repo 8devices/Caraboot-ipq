@@ -945,6 +945,8 @@ void ipq_fdt_fixup_socinfo(void *blob)
 				  &cpu_type, sizeof(cpu_type));
 		if (ret)
 			printf("%s: cannot set cpu type %d\n", __func__, ret);
+	} else {
+		printf("%s: cannot get socinfo\n", __func__);
 	}
 
 	ret = ipq_smem_get_socinfo_version((uint32_t *)&soc_version);
@@ -965,6 +967,8 @@ void ipq_fdt_fixup_socinfo(void *blob)
 		if (ret)
 			printf("%s: cannot set soc_version_minor %d\n",
 			       __func__, soc_version_minor);
+	} else {
+		printf("%s: cannot get soc version\n", __func__);
 	}
 }
 
