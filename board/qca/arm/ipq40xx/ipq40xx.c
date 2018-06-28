@@ -228,6 +228,7 @@ int board_eth_init(bd_t *bis)
 	case MACH_TYPE_IPQ40XX_AP_DK07_1_C1:
 	case MACH_TYPE_IPQ40XX_AP_DK07_1_C2:
 	case MACH_TYPE_IPQ40XX_AP_DK07_1_C3:
+	case MACH_TYPE_IPQ40XX_AP_DK07_1_C4:
 		/* 8075 out of reset */
 		mdelay(1);
 		gpio_set_value(41, 1);
