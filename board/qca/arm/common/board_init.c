@@ -325,7 +325,11 @@ int board_late_init(void)
 		setenv_ulong("flash_type", (unsigned long)flash_type);
 
 #ifdef CONFIG_FLASH_PROTECT
-	board_flash_protect();
+	if ((sfi->flash_type == SMEM_BOOT_MMC_FLASH) ||
+		((sfi->flash_type == SMEM_BOOT_SPI_FLASH) &&
+		(sfi->rootfs.offset == 0xBAD0FF5E))) {
+			board_flash_protect();
+	}
 #endif
 	set_ethmac_addr();
 	return 0;
