@@ -274,8 +274,8 @@ int board_mmc_init(bd_t *bis)
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 
 	node = fdt_path_offset(gd->fdt_blob, "/sdhci");
-	if (node < 0) {
-		printf("Could not find mmc-flash in device tree\n");
+	if (!fdtdec_get_is_enabled(gd->fdt_blob, node)) {
+		printf("sdhci: disabled, skipping initialization\n");
 		return -1;
 	}
 

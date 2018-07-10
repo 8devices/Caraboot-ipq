@@ -40,7 +40,7 @@
 	};
 
 	sdhci@7824000 {
-		status = "ok";
+		status = "okay";
 	};
 	serial@78b0000 {
 		status = "ok";

@@ -19,7 +19,7 @@
 	config_name = "config@ap.dk04.1-c3";
 
 	sdhci@7824000 {
-		status = "ok";
+		status = "okay";
 	};
 
 };
