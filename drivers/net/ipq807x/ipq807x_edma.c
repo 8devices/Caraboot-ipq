@@ -978,7 +978,7 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 					speed_clock1 = 0x104;
 				else if (i == port_8033)
 					speed_clock1 = 0x301;
-				else if (phy_info[i]->phy_type == QCA8081_PHY_TYPE)
+				else if ((phy_info[i]->phy_type == QCA8081_PHY_TYPE) && (i == 4))
 					speed_clock1 = 0x301;
 				else
 					speed_clock1 = 0x101;
