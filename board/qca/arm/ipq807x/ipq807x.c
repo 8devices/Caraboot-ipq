@@ -311,17 +311,23 @@ int get_aquantia_gpio()
 	return aquantia_gpio;
 }
 
-int get_napa_gpio()
+int get_napa_gpio(int napa_gpio[2])
 {
-	int napa_gpio = -1, node;
+	int napa_gpio_cnt = -1, node;
+	int res = -1;
 
 	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
-	if (node >= 0)
-		napa_gpio = fdtdec_get_uint(gd->fdt_blob, node, "napa_gpio", -1);
-	else
-		return node;
+	if (node >= 0) {
+		napa_gpio_cnt = fdtdec_get_uint(gd->fdt_blob, node, "napa_gpio_cnt", -1);
+		if (napa_gpio_cnt >= 1) {
+			res = fdtdec_get_int_array(gd->fdt_blob, node, "napa_gpio",
+					napa_gpio, napa_gpio_cnt);
+			if (res >= 0)
+				return napa_gpio_cnt;
+		}
+	}
 
-	return napa_gpio;
+	return res;
 }
 
 void aquantia_phy_reset_init(void)
@@ -345,24 +351,29 @@ void aquantia_phy_reset_init(void)
 
 void napa_phy_reset_init(void)
 {
-	int napa_gpio = -1, node;
+	int napa_gpio[2] = {0}, node, napa_gpio_cnt, i;
 	unsigned int *napa_gpio_base;
 
-	napa_gpio = get_napa_gpio();
-	if (napa_gpio >=0) {
-		napa_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(napa_gpio);
-		writel(0x203, napa_gpio_base);
-		gpio_direction_output(napa_gpio, 0x0);
+	napa_gpio_cnt = get_napa_gpio(napa_gpio);
+	if (napa_gpio_cnt >= 1) {
+		for (i = 0; i < napa_gpio_cnt; i++) {
+			if (napa_gpio[i] >=0) {
+				napa_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(napa_gpio[i]);
+				writel(0x203, napa_gpio_base);
+				gpio_direction_output(napa_gpio[i], 0x0);
+			}
+		}
 	}
 }
 
 void napa_phy_reset_init_done(void)
 {
-	int napa_gpio;
+	int napa_gpio[2] = {0}, node, napa_gpio_cnt, i;
 
-	napa_gpio = get_napa_gpio();
-	if (napa_gpio >= 0) {
-		gpio_set_value(napa_gpio, 0x1);
+	napa_gpio_cnt = get_napa_gpio(napa_gpio);
+	if (napa_gpio_cnt >= 1) {
+		for (i = 0; i < napa_gpio_cnt; i++)
+			gpio_set_value(napa_gpio[i], 0x1);
 	}
 }
 

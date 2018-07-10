@@ -1067,7 +1067,7 @@ static void ipq807x_ppe_e_sp_cfg_tbl_drr_id_set(int id)
 	ipq807x_ppe_reg_write(IPQ807X_PPE_L1_E_SP_CFG_TBL + (id * 0x80), id * 2 + 1);
 }
 
-static void ppe_port_mux_set(int port_id, int port_type)
+static void ppe_port_mux_set(int port_id, int port_type, int mode)
 {
 	union port_mux_ctrl_u port_mux_ctrl;
 
@@ -1075,7 +1075,10 @@ static void ppe_port_mux_set(int port_id, int port_type)
 	port_mux_ctrl.bf.port4_pcs_sel = PORT4_PCS_SEL_GMII_FROM_PCS0;
 	if (port_id == PORT5) {
 		if (port_type == PORT_GMAC_TYPE) {
-			port_mux_ctrl.bf.port5_pcs_sel = PORT5_PCS_SEL_GMII_FROM_PCS0;
+			if (mode == PORT_WRAPPER_SGMII_PLUS)
+				port_mux_ctrl.bf.port5_pcs_sel = PORT5_PCS_SEL_GMII_FROM_PCS1;
+			else
+				port_mux_ctrl.bf.port5_pcs_sel = PORT5_PCS_SEL_GMII_FROM_PCS0;
 			port_mux_ctrl.bf.port5_gmac_sel = PORT5_GMAC_SEL_GMAC;
 		} else if (port_type == PORT_XGMAC_TYPE) {
 			port_mux_ctrl.bf.port5_pcs_sel = PORT5_PCS_SEL_GMII_FROM_PCS1;
@@ -1113,7 +1116,7 @@ static void ppe_port_mux_mac_type_set(int port_id, int mode)
 		default:
 			return;
 	}
-	ppe_port_mux_set(port_id, port_type);
+	ppe_port_mux_set(port_id, port_type, mode);
 }
 
 
