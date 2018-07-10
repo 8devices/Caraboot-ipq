@@ -15,6 +15,15 @@
 #include <command.h>
 #include <asm/arch-qca-common/scm.h>
 
+__weak void run_tzt(void *address)
+{
+	char runcmd[128];
+
+	dcache_disable();
+	snprintf(runcmd, sizeof(runcmd), "go 0x%08lX", (ulong)address);
+	run_command(runcmd, 0);
+}
+
 int do_exectzt(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
 	uint32_t address;
@@ -27,7 +36,7 @@ int do_exectzt(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 
 	address = simple_strtoul(argv[1], NULL, 16);
 
-	execute_tzt(address);
+	run_tzt((void *)address);
 
 	return 0;
 }
