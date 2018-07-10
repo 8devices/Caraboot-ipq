@@ -1170,3 +1170,8 @@ int bring_sec_core_up(unsigned int cpuid, unsigned int entry, unsigned int arg)
 	printf("Enabled CPU%d via psci successfully!\n", cpuid);
 	return 0;
 }
+
+void run_tzt(void *address)
+{
+	execute_tzt(address);
+}
