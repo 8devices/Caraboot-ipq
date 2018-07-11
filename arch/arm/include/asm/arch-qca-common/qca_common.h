@@ -29,6 +29,9 @@
 #include <asm/arch-ipq806x/clock.h>
 #endif
 
+#define XMK_STR(x)#x
+#define MK_STR(x)XMK_STR(x)
+
 struct ipq_i2c_platdata {
 	int type;
 };

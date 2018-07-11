@@ -29,11 +29,10 @@
 #include <spi_flash.h>
 #include <spi.h>
 #include <asm/arch-qca-common/iomap.h>
+#include <asm/arch-qca-common/qca_common.h>
 #include <asm/io.h>
 
 #define DLOAD_MAGIC_COOKIE 0x10
-#define XMK_STR(x)#x
-#define MK_STR(x)XMK_STR(x)
 #define MAX_TFTP_SIZE 0x40000000
 
 static int debug = 0;

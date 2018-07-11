@@ -13,6 +13,7 @@
 
 #include <common.h>
 #include <environment.h>
+#include <asm/arch-qca-common/qca_common.h>
 #include <asm/arch-qca-common/smem.h>
 #include <asm/arch-qca-common/uart.h>
 #include <asm/arch-qca-common/gpio.h>
@@ -332,6 +333,12 @@ int board_late_init(void)
 	}
 #endif
 	set_ethmac_addr();
+
+	/*
+	 * set fdt_high parameter so that u-boot will not
+	 * load dtb above CONFIG_IPQ_FDT_HIGH region.
+	 */
+	run_command("setenv fdt_high " MK_STR(CONFIG_IPQ_FDT_HIGH) "\n", 0);
 	return 0;
 }
 
