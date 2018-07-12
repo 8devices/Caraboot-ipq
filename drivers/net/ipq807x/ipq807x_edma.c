@@ -951,8 +951,10 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
 						priv->mac_unit, i, lstatus[status], speed,
 						dp[duplex]);
-				if (phy_info[i]->phy_type == QCA8081_PHY_TYPE)
-					set_sgmii_mode(i, 1);
+				if (phy_node >= 0) {
+					if (phy_info[i]->phy_type == QCA8081_PHY_TYPE)
+						set_sgmii_mode(i, 1);
+				}
 				break;
 			case FAL_SPEED_100:
 				mac_speed = 0x1;
@@ -969,8 +971,10 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
 						priv->mac_unit, i, lstatus[status], speed,
 						dp[duplex]);
-				if (phy_info[i]->phy_type == QCA8081_PHY_TYPE)
-					set_sgmii_mode(i, 1);
+				if (phy_node >= 0) {
+					if (phy_info[i]->phy_type == QCA8081_PHY_TYPE)
+						set_sgmii_mode(i, 1);
+				}
 				break;
 			case FAL_SPEED_1000:
 				mac_speed = 0x2;
@@ -978,16 +982,18 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 					speed_clock1 = 0x104;
 				else if (i == port_8033)
 					speed_clock1 = 0x301;
-				else if ((phy_info[i]->phy_type == QCA8081_PHY_TYPE) && (i == 4))
-					speed_clock1 = 0x301;
 				else
 					speed_clock1 = 0x101;
 				speed_clock2 = 0x0;
 				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
 						priv->mac_unit, i, lstatus[status], speed,
 						dp[duplex]);
-				if (phy_info[i]->phy_type == QCA8081_PHY_TYPE)
-					set_sgmii_mode(i, 1);
+				if (phy_node >= 0) {
+					if (phy_info[i]->phy_type == QCA8081_PHY_TYPE)
+						set_sgmii_mode(i, 1);
+					if ((phy_info[i]->phy_type == QCA8081_PHY_TYPE) && (i == 4))
+						speed_clock1 = 0x301;
+				}
 				break;
 			case FAL_SPEED_10000:
 				mac_speed = 0x3;
@@ -998,12 +1004,15 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 						dp[duplex]);
 				break;
 			case FAL_SPEED_2500:
-				if (phy_info[i]->phy_type == QCA8081_PHY_TYPE) {
-					mac_speed = 0x2;
-					if (i == 4)
-						speed_clock1 = 0x301;
-					else if (i == 5)
-						speed_clock1 = 0x101;
+				if (phy_node >= 0) {
+					if (phy_info[i]->phy_type == QCA8081_PHY_TYPE) {
+						mac_speed = 0x2;
+						if (i == 4)
+							speed_clock1 = 0x301;
+						else if (i == 5)
+							speed_clock1 = 0x101;
+						set_sgmii_mode(i, 0);
+					}
 				} else {
 					speed_clock1 = 0x107;
 					mac_speed = 0x4;
@@ -1012,8 +1021,6 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
 						priv->mac_unit, i, lstatus[status], speed,
 						dp[duplex]);
-				if (phy_info[i]->phy_type == QCA8081_PHY_TYPE)
-					set_sgmii_mode(i, 0);
 				break;
 			case FAL_SPEED_5000:
 				mac_speed = 0x5;
@@ -1028,7 +1035,8 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 				break;
 		}
 
-		if (phy_info[i]->phy_type == QCA8081_PHY_TYPE) {
+		if (phy_node >= 0) {
+			if (phy_info[i]->phy_type == QCA8081_PHY_TYPE) {
 				if (get_sgmii_mode(i)) {
 					ppe_port_bridge_txmac_set(i + 1, 1);
 					if (i == 4)
@@ -1043,8 +1051,8 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 					else if (i == 5)
 						ppe_uniphy_mode_set(0x2, PORT_WRAPPER_SGMII_PLUS);
 				}
+			}
 		}
-
 		ipq807x_speed_clock_set(i, speed_clock1, speed_clock2);
 		if (i == aquantia_port)
 			ipq807x_uxsgmii_speed_set(i, mac_speed, duplex, status);
