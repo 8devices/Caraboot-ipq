@@ -86,7 +86,7 @@ ENTRY(_main)
 	bl	board_init_f_mem
 	mov	sp, r0
 
-#if defined(CONFIG_ARCH_IPQ807x) || defined(CONFIG_ARCH_IPQ40xx)
+#if defined(CONFIG_ARCH_IPQ807x) || defined(CONFIG_ARCH_IPQ40xx) || defined(CONFIG_ARCH_IPQ6018)
 	ldr	r0, =__bss_start	/* this is auto-relocated! */
 
 #ifdef CONFIG_USE_ARCH_MEMSET
@@ -156,7 +156,7 @@ here:
 	cmp	r0, #0
 	movne	sp, r0
 # endif
-#if !defined(CONFIG_ARCH_IPQ807x) && !defined(CONFIG_ARCH_IPQ40xx)
+#if !defined(CONFIG_ARCH_IPQ807x) && !defined(CONFIG_ARCH_IPQ40xx) && !defined(CONFIG_ARCH_IPQ6018)
 	ldr	r0, =__bss_start	/* this is auto-relocated! */
 
 #ifdef CONFIG_USE_ARCH_MEMSET

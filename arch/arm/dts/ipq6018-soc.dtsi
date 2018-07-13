@@ -1,0 +1,56 @@
+/*
+ * Copyright (c) 2016-2018, The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+#include "skeleton.dtsi"
+#include <dt-bindings/qcom/gpio-ipq6018.h>
+
+/ {
+
+	serial@78B3000 {
+		compatible = "qca,ipq-uartdm";
+		reg = <0x78B3000 0x200>;
+		id = <4>;
+		bit_rate = <0xee>;
+		serial_gpio {
+			gpio1 {
+				gpio = <23>;
+				func = <2>;
+				pull = <GPIO_NO_PULL>;
+				oe = <GPIO_OE_ENABLE>;
+			};
+
+			gpio2 {
+				gpio = <24>;
+				func = <2>;
+				pull = <GPIO_NO_PULL>;
+				oe = <GPIO_OE_ENABLE>;
+			};
+		};
+	};
+	serial@78b0000 {
+		compatible = "qca,ipq-uartdm";
+		reg = <0x78b0000 0x200>;
+		id = <2>;
+		bit_rate = <0xff>;
+	};
+
+	timer {
+		gcnt_base = <0x4a1000>;
+		gcnt_cntcv_lo = <0x4a2000>;
+		gcnt_cntcv_hi = <0x4a2004>;
+		gpt_freq_hz = <48000000>;
+		timer_load_val = <0x00FFFFFF 0xFFFFFFFF>;
+	};
+
+};
+
