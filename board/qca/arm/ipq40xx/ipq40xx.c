@@ -438,6 +438,28 @@ void ipq_fdt_fixup_socinfo(void *blob)
 	}
 }
 
+void fdt_fixup_sd_ldo_gpios_toggle(void *blob)
+{
+	int noff;
+	int ret;
+
+	noff = fdt_path_offset(blob, "/soc/sdhci");
+	if (noff < 0) {
+		printf("ipq: fdt fixup unable to find node /soc/sdhci\n");
+		return;
+	}
+
+	/**
+	 * In eMMC card, power-on write protection also gets cleared
+	 * during sd-ldo toggle in kernel.
+	 */
+	ret = fdt_delprop(blob, noff, "sd-ldo-gpios");
+	if (ret < 0) {
+		printf("sdhci: cann't delete sd-ldo-gpios\n");
+		return;
+	}
+}
+
 void ipq_fdt_fixup_usb_device_mode(void *blob)
 {
 	int nodeoff, ret, i;
