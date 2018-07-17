@@ -483,6 +483,8 @@ void pcie_linkup(struct ipq_pcie *pcie)
 
 	writel(LTSSM_EN, pcie->parf.start + PCIE_0_PCIE20_PARF_LTSSM);
 
+	if (pcie->version == PCIE_V2)
+		gpio_set_value(pcie->rst_gpio, GPIO_OUT_HIGH);
 	mdelay(200);
 
 	for (j = 0; j < 400; j++) {
@@ -822,6 +824,7 @@ static int pci_ipq_ofdata_to_platdata(int id, struct ipq_pcie *pcie)
 			pcie_linkup(pcie);
 			break;
 		case PCIE_V2:
+			gpio_set_value(pcie->rst_gpio, GPIO_OUT_LOW);
 			pcie_phy_init(pcie);
 			pcie_linkup(pcie);
 			break;
