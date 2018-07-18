@@ -858,7 +858,7 @@ static void ipq807x_edma_disable_intr(struct ipq807x_edma_hw *ehw)
 				IPQ807X_EDMA_MASK_INT_DISABLE);
 }
 
-int set_sgmii_mode(int port_id, int sg_mode)
+static void set_sgmii_mode(int port_id, int sg_mode)
 {
 	if (port_id == 4)
 		sgmii_mode[0] = sg_mode;
@@ -866,7 +866,7 @@ int set_sgmii_mode(int port_id, int sg_mode)
 		sgmii_mode[1] = sg_mode;
 }
 
-int get_sgmii_mode(int port_id)
+static int get_sgmii_mode(int port_id)
 {
 	if (port_id == 4)
 		return sgmii_mode[0];
