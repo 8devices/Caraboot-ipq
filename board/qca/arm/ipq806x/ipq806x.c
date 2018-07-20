@@ -535,6 +535,13 @@ void ipq_fdt_fixup_socinfo(void *blob)
 	uint32_t soc_version, soc_version_major, soc_version_minor;
 	int nodeoff, ret;
 
+	nodeoff = fdt_path_offset(blob, "/");
+
+	if (nodeoff < 0) {
+		printf("ipq: fdt fixup cannot find root node\n");
+		return;
+	}
+
 	ret = ipq_smem_get_socinfo_cpu_type(&cpu_type);
 	if (ret) {
 		return;
