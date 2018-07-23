@@ -93,6 +93,7 @@
 
 #define CONFIG_SYS_DEVICE_NULLDEV
 #define CONFIG_FLASH_PROTECT
+#define CONFIG_CMD_FLASHWRITE
 
 /* Environment */
 #define CONFIG_MSM_PCOMM

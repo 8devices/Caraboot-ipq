@@ -140,6 +140,7 @@ extern loff_t board_env_size;
 
 #define CONFIG_ENV_IS_IN_NAND		1
 #define CONFIG_FLASH_PROTECT
+#define CONFIG_CMD_FLASHWRITE
 
 /* Allow to overwrite serial and ethaddr */
 #define CONFIG_ENV_OVERWRITE
