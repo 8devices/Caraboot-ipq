@@ -27,8 +27,36 @@
 	};
 	ess-switch {
 		switch_mac_mode = <0x0>;
-		switch_mac_mode1 = <0xFF>;
-		switch_mac_mode2 = <0xFF>;
+		switch_mac_mode1 = <0x6>;
+		switch_mac_mode2 = <0x6>;
+		napa_gpio = <25 44>;
+		napa_gpio_cnt = <2>;
+		port_phyinfo {
+			port@0 {
+				phy_address = <0>;
+				phy_type = <1>;
+			};
+			port@1 {
+				phy_address = <1>;
+				phy_type = <1>;
+			};
+			port@2 {
+				phy_address = <2>;
+				phy_type = <1>;
+			};
+			port@3 {
+				phy_address = <3>;
+				phy_type = <1>;
+			};
+			port@4 {
+				phy_address = <24>;
+				phy_type = <2>;
+			};
+			port@5 {
+				phy_address = <28>;
+				phy_type = <2>;
+			};
+		};
 	};
 };
 
