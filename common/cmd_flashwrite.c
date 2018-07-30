@@ -92,6 +92,9 @@ char * const argv[])
 	char* layout_linux[] = {"rootfs", "0:BOOTCONFIG", "0:BOOTCONFIG1"};
 	int len, i;
 #endif
+	offset = 0;
+	part_size = 0;
+	layout = "default";
 	retn = CMD_RET_FAILURE;
 
 	block_dev_desc_t *blk_dev;
@@ -111,6 +114,7 @@ char * const argv[])
 		else
 			return CMD_RET_USAGE;
 	}
+	file_size_cpy = file_size;
 
 	if (strncmp(argv[2], "default", 7) == 0)
 		load_addr = CONFIG_SYS_LOAD_ADDR;
@@ -128,7 +132,6 @@ char * const argv[])
 
 		offset = sfi->flash_block_size * start_block;
 		part_size = sfi->flash_block_size * size_block;
-		layout = "default";
 #ifdef CONFIG_IPQ806X
 		len = sizeof(layout_linux)/sizeof(layout_linux[0]);
 
@@ -157,7 +160,6 @@ char * const argv[])
 
 			offset = (ulong)disk_info.start;
 			part_size = (ulong)disk_info.size;
-			file_size_cpy = file_size;
 		}
 
 	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
@@ -200,9 +202,7 @@ char * const argv[])
 
 				offset = (ulong)disk_info.start;
 				part_size = (ulong)disk_info.size;
-				file_size_cpy = file_size;
 			}
-
 		} else {
 
 			ret = smem_getpart(part_name, &start_block,
@@ -224,10 +224,12 @@ char * const argv[])
 
 	if (flash_type == SMEM_BOOT_MMC_FLASH) {
 
-		file_size = file_size / disk_info.blksz;
-		adj_size = file_size_cpy % disk_info.blksz;
-		if (adj_size)
-			file_size = file_size + 1;
+		if (disk_info.blksz) {
+			file_size = file_size / disk_info.blksz;
+			adj_size = file_size_cpy % disk_info.blksz;
+			if (adj_size)
+				file_size = file_size + 1;
+		}
 	}
 
 	ret = write_to_flash(flash_type, load_addr, offset, part_size,
