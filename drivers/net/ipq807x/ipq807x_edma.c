@@ -872,6 +872,8 @@ static int get_sgmii_mode(int port_id)
 		return sgmii_mode[0];
 	else if (port_id == 5)
 		return sgmii_mode[1];
+	else
+		return -1;
 }
 
 static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
@@ -891,6 +893,7 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 	int mac_speed = 0, speed_clock1 = 0, speed_clock2 = 0;
 	int phy_addr, port_8033 = -1, node, aquantia_port = -1;
 	int phy_node = -1;
+	int ret_sgmii_mode;
 
 	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
 	if (node >= 0)
@@ -1037,14 +1040,15 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 
 		if (phy_node >= 0) {
 			if (phy_info[i]->phy_type == QCA8081_PHY_TYPE) {
-				if (get_sgmii_mode(i)) {
+				ret_sgmii_mode = get_sgmii_mode(i);
+				if (ret_sgmii_mode == 1) {
 					ppe_port_bridge_txmac_set(i + 1, 1);
 					if (i == 4)
 						ppe_uniphy_mode_set(0x1, PORT_WRAPPER_SGMII0_RGMII4);
 					else if (i == 5)
 						ppe_uniphy_mode_set(0x2, PORT_WRAPPER_SGMII0_RGMII4);
 
-				} else {
+				} else if (ret_sgmii_mode == 0) {
 					ppe_port_bridge_txmac_set(i + 1, 1);
 					if (i == 4)
 						ppe_uniphy_mode_set(0x1, PORT_WRAPPER_SGMII_PLUS);
