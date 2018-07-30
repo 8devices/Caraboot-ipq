@@ -220,7 +220,7 @@ HOST_EXTRACFLAGS += -include $(srctree)/include/libfdt_env.h \
 		-DCONFIG_SYS_TEXT_BASE=$(CONFIG_SYS_TEXT_BASE) \
 		-DUSE_HOSTCC \
 		-D__KERNEL_STRICT_NAMES \
-		-D_GNU_SOURCE
+		-D_GNU_SOURCE -fpie
 
 __build:	$(LOGO-y)
 
