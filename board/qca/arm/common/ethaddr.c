@@ -17,7 +17,7 @@
 #include <part.h>
 #include <mmc.h>
 #include <asm/arch-qca-common/smem.h>
-#include "qca_common.h"
+#include <asm/arch-qca-common/qca_common.h>
 #include <sdhci.h>
 
 #ifdef CONFIG_QCA_MMC

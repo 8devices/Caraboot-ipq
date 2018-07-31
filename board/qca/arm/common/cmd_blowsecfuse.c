@@ -20,7 +20,7 @@
 #include <asm/arch-qca-common/scm.h>
 #include <linux/mtd/ubi.h>
 #include <part.h>
-#include "qca_common.h"
+#include <asm/arch-qca-common/qca_common.h>
 
 #define FUSEPROV_SUCCESS		0x0
 #define FUSEPROV_INVALID_HASH		0x09

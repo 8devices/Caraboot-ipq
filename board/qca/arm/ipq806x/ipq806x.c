@@ -28,7 +28,7 @@
 #include <linux/usb/ipq_usb30.h>
 #include <linux/usb/dwc3.h>
 #include "ipq806x.h"
-#include "qca_common.h"
+#include <asm/arch-qca-common/qca_common.h>
 #include <asm/arch-qca-common/scm.h>
 #include <asm/arch-qca-common/iomap.h>
 #include <asm/io.h>

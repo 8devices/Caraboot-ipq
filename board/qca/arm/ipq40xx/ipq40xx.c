@@ -31,7 +31,7 @@
 #include <asm/arch-ipq40xx/ess/ipq40xx_edma.h>
 #include <phy.h>
 #include "ipq40xx_edma_eth.h"
-#include "qca_common.h"
+#include <asm/arch-qca-common/qca_common.h>
 #include "ipq_phy.h"
 #include <sdhci.h>
 

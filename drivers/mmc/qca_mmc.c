@@ -19,7 +19,7 @@
 #include <malloc.h>
 #include <asm/io.h>
 #include <asm-generic/errno.h>
-#include "../../board/qca/arm/common/qca_common.h"
+#include <asm/arch-qca-common/qca_common.h>
 #include "qca_mmc.h"
 
 static inline void qca_reg_wr_delay(qca_mmc  *host)

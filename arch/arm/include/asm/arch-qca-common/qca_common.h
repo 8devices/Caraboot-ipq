@@ -58,6 +58,9 @@ int do_dumpqca_flash_data(const char *);
 int apps_iscrashed(void);
 int set_uuid_bootargs(char *boot_args, char *part_name, int buflen, bool gpt_flag);
 
+int get_eth_mac_address(uchar *enetaddr, uint no_of_macs);
+void set_ethmac_addr(void);
+
 struct dumpinfo_t{
 	char name[16]; /* use only file name in 8.3 format */
 	uint32_t start;

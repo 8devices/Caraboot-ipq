@@ -23,7 +23,7 @@
 #include "ipq40xx_edma_eth.h"
 #include "ipq40xx.h"
 #include "ipq_phy.h"
-#include "qca_common.h"
+#include <asm/arch-qca-common/qca_common.h>
 #ifdef DEBUG
 #define debugf(fmt, args...) printf(fmt, ##args);
 #else
