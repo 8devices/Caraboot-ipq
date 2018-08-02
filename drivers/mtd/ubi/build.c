@@ -1438,7 +1438,8 @@ int kstrtoint(const char *s, unsigned int base, int *res)
 	if (tmp != (unsigned long long)(int)tmp)
 		return -ERANGE;
 
-	return (int)tmp;
+	*res = (int)tmp;
+	return 0;
 }
 
 /**
