@@ -34,6 +34,8 @@
 
 #define DLOAD_MAGIC_COOKIE 0x10
 #define MAX_TFTP_SIZE 0x40000000
+#define SEC_AUTH_SW_ID 		0x17
+#define ROOTFS_IMAGE_TYPE       0x13
 
 static int debug = 0;
 static char mtdids[256];
@@ -421,6 +423,99 @@ __weak int switch_ce_channel_buf(unsigned int channel_id)
 	return 0;
 }
 
+#ifdef CONFIG_IPQ_ROOTFS_AUTH
+static int authenticate_rootfs(unsigned int kernel_addr)
+{
+	unsigned int kernel_imgsize;
+	unsigned int request;
+	int ret;
+	mbn_header_t *mbn_ptr;
+	char runcmd[256];
+	struct {
+		unsigned long type;
+		unsigned long size;
+		unsigned long addr;
+	} rootfs_img_info;
+#ifdef CONFIG_QCA_MMC
+	block_dev_desc_t *blk_dev;
+	disk_partition_t disk_info;
+	unsigned int active_part = 0;
+#endif
+
+	request = CONFIG_ROOTFS_LOAD_ADDR;
+	rootfs_img_info.addr = CONFIG_ROOTFS_LOAD_ADDR;
+	rootfs_img_info.type = SEC_AUTH_SW_ID;
+	request += sizeof(mbn_header_t);/* space for mbn header */
+
+	/* get , kernel size = header + kernel + certificate */
+	mbn_ptr = (mbn_header_t *) kernel_addr;
+	kernel_imgsize = mbn_ptr->image_size + sizeof(mbn_header_t);
+
+	/* get rootfs MBN header and validate it */
+	mbn_ptr = (mbn_header_t *)((uint32_t)mbn_ptr + kernel_imgsize);
+	if (mbn_ptr->image_type != ROOTFS_IMAGE_TYPE &&
+			(mbn_ptr->code_size + mbn_ptr->signature_size +
+			 mbn_ptr->cert_chain_size != mbn_ptr->image_size))
+		return CMD_RET_FAILURE;
+
+	/* pack, MBN header + rootfs + certificate */
+	/* copy rootfs from the boot device */
+	if (ipq_fs_on_nand) {
+		snprintf(runcmd, sizeof(runcmd),
+			"ubi read 0x%x ubi_rootfs &&", request);
+#ifdef CONFIG_QCA_MMC
+	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH ||
+			((sfi->flash_type == SMEM_BOOT_SPI_FLASH) &&
+			(sfi->rootfs.offset == 0xBAD0FF5E))) {
+		blk_dev = mmc_get_dev(host->dev_num);
+		if (smem_bootconfig_info() == 0) {
+			active_part = get_rootfs_active_partition();
+			if (active_part) {
+				ret = get_partition_info_efi_by_name(blk_dev,
+						"rootfs_1", &disk_info);
+			} else {
+				ret = get_partition_info_efi_by_name(blk_dev,
+						"rootfs", &disk_info);
+			}
+		}else {
+			ret = get_partition_info_efi_by_name(blk_dev,
+					"rootfs", &disk_info);
+		}
+		if(ret == 0)
+			snprintf(runcmd, sizeof(runcmd), "mmc read 0x%x 0x%X 0x%X &&",
+					request, (uint)disk_info.start,
+					(uint)(mbn_ptr->code_size / disk_info.blksz) + 1);
+		else
+			return CMD_RET_FAILURE;
+#endif
+	} else {
+		snprintf(runcmd, sizeof(runcmd),
+			"sf read 0x%x 0x%x 0x%x && ",
+			request, (uint)sfi->rootfs.offset, (uint)sfi->rootfs.size);
+	}
+	if (debug)
+		printf("runcmd: %s\n", runcmd);
+	if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
+		return CMD_RET_FAILURE;
+
+	/* copy rootfs MBN header */
+	memcpy((void *)CONFIG_ROOTFS_LOAD_ADDR, (void *)kernel_addr + kernel_imgsize,
+			sizeof(mbn_header_t));
+	/* copy rootfs certificate */
+	memcpy((void *)request + mbn_ptr->code_size,
+		(void *)kernel_addr + kernel_imgsize + sizeof(mbn_header_t),
+		mbn_ptr->signature_size + mbn_ptr->cert_chain_size);
+
+	/* copy rootfs size */
+	rootfs_img_info.size = sizeof(mbn_header_t) + mbn_ptr->image_size;
+
+	ret = qca_scm_secure_authenticate(&rootfs_img_info, sizeof(rootfs_img_info));
+	if (ret)
+		return CMD_RET_FAILURE;
+
+	return CMD_RET_SUCCESS;
+}
+#endif
 static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
 	char runcmd[256];
@@ -553,7 +648,14 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 		printf("Kernel image authentication failed \n");
 		BUG();
 	}
-
+#ifdef CONFIG_IPQ_ROOTFS_AUTH
+	/* Rootfs's header and certificate at end of kernel image, copy from
+	 * there and pack with rootfs image and authenticate rootfs */
+	if (authenticate_rootfs(CONFIG_SYS_LOAD_ADDR) != CMD_RET_SUCCESS) {
+		printf("Rootfs image authentication failed\n");
+		BUG();
+	}
+#endif
 	/*
 	* This sys call will switch the CE1 channel to ADM usage
 	* so that HLOS can use it.
