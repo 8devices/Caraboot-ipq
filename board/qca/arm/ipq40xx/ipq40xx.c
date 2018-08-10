@@ -443,6 +443,17 @@ void fdt_fixup_sd_ldo_gpios_toggle(void *blob)
 	int noff;
 	int ret;
 
+	if (mmc_host.mmc != NULL) {
+		if (mmc_host.mmc->has_init == 0)
+			return;
+		else {
+			if(IS_SD(mmc_host.mmc))
+				return;
+		}
+	}
+	else
+		return;
+
 	noff = fdt_path_offset(blob, "/soc/sdhci");
 	if (noff < 0) {
 		printf("ipq: fdt fixup unable to find node /soc/sdhci\n");

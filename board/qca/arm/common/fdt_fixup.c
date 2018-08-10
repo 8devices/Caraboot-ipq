@@ -579,10 +579,7 @@ int ft_board_setup(void *blob, bd_t *bd)
 	fdt_fixup_ethernet(blob);
 	ipq_fdt_fixup_usb_device_mode(blob);
 	fdt_fixup_auto_restart(blob);
-
-	if ((flash_type == SMEM_BOOT_MMC_FLASH) ||
-		(flash_type == SMEM_BOOT_NORPLUSEMMC))
-			fdt_fixup_sd_ldo_gpios_toggle(blob);
+	fdt_fixup_sd_ldo_gpios_toggle(blob);
 
 #ifdef CONFIG_QCA_MMC
 	board_mmc_deinit();
