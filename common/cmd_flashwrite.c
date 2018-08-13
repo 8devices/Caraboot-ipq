@@ -98,7 +98,7 @@ char * const argv[])
 	retn = CMD_RET_FAILURE;
 
 	block_dev_desc_t *blk_dev;
-	disk_partition_t disk_info;
+	disk_partition_t disk_info = {0};
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 	nand_info_t *nand = &nand_info[CONFIG_NAND_FLASH_INFO_IDX];
 
