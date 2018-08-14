@@ -191,7 +191,7 @@ int get_sections(void)
 {
 	DIR *dir = opendir(TMP_FILE_DIR);
 	struct dirent *file;
-	int i;
+	int i,data_size;
 	struct image_section *sec;
 
 	if (dir == NULL) {
@@ -199,8 +199,12 @@ int get_sections(void)
 		return 0;
 	}
 
+	data_size = find_mtd_part_size();
 	while ((file = readdir(dir)) != NULL) {
 		for (i = 0, sec = &sections[0]; i < NO_OF_SECTIONS; i++, sec++) {
+			/* Skip loading of ubi section if board is not from nand boot */
+			if (data_size == -1 && !strncmp(sec->type, "ubi", strlen("ubi")))
+				continue;
 			if (!strncmp(file->d_name, sec->type, strlen(sec->type))) {
 				if (sec->pre_op) {
 					strlcat(sec->tmp_file, file->d_name,
@@ -234,7 +238,7 @@ int get_sections(void)
 int load_sections(void)
 {
 	DIR *dir;
-	int i;
+	int i,data_size;
 	struct dirent *file;
 	struct image_section *sec;
 
@@ -244,8 +248,12 @@ int load_sections(void)
 		return 0;
 	}
 
+	data_size = find_mtd_part_size();
 	while ((file = readdir(dir)) != NULL) {
 		for (i = 0, sec = &sections[0]; i < NO_OF_SECTIONS; i++, sec++) {
+			/* Skip loading of ubi section if board is not from nand boot */
+			if (data_size == -1 && !strncmp(sec->type, "ubi", strlen("ubi")))
+				continue;
 			if (!strncmp(file->d_name, sec->type, strlen(sec->type))) {
 				if (sec->pre_op) {
 					strlcat(sec->tmp_file, file->d_name,
