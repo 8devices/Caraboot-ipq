@@ -246,6 +246,7 @@ static int sdhci_send_command(struct mmc *mmc, struct mmc_cmd *cmd,
 	unsigned int time = 0, start_addr = 0;
 	int mmc_dev = mmc->block_dev.dev;
 	unsigned start = get_timer(0);
+	struct adma_desc *adma_addr = NULL;
 
 	/* Timeout unit - ms */
 	static unsigned int cmd_timeout = CONFIG_SDHCI_CMD_DEFAULT_TIMEOUT;
@@ -333,7 +334,7 @@ static int sdhci_send_command(struct mmc *mmc, struct mmc_cmd *cmd,
 
 #ifdef CONFIG_MMC_ADMA
 		mode |= SDHCI_TRNS_DMA;
-		sdhci_adma_transfer(host, data);
+		adma_addr = sdhci_adma_transfer(host, data);
 #endif
 		sdhci_writew(host, SDHCI_MAKE_BLKSZ(SDHCI_DEFAULT_BOUNDARY_ARG,
 				data->blocksize),
@@ -365,18 +366,20 @@ static int sdhci_send_command(struct mmc *mmc, struct mmc_cmd *cmd,
 				__func__, mmc_dev, cmd_timeout);
 			} else {
 				printf("timeout.\n");
-				return TIMEOUT;
+				ret = TIMEOUT;
+				goto end;
 			}
 		}
 	} while ((stat & mask) != mask);
 
 	if (get_timer(start) >= CONFIG_SDHCI_CMD_MAX_TIMEOUT) {
 		if (host->quirks & SDHCI_QUIRK_BROKEN_R1B)
-			return 0;
+			ret = 0;
 		else {
 			printf("%s: Timeout for status update!\n", __func__);
-			return TIMEOUT;
+			ret = TIMEOUT;
 		}
+		goto end;
 	}
 
 	if ((stat & (SDHCI_INT_ERROR | mask)) == mask) {
@@ -397,15 +400,20 @@ static int sdhci_send_command(struct mmc *mmc, struct mmc_cmd *cmd,
 		if ((host->quirks & SDHCI_QUIRK_32BIT_DMA_ADDR) &&
 				!is_aligned && (data->flags == MMC_DATA_READ))
 			memcpy(data->dest, aligned_buffer, trans_bytes);
-		return 0;
+		ret = 0;
+		goto end;
 	}
 
 	sdhci_reset(host, SDHCI_RESET_CMD);
 	sdhci_reset(host, SDHCI_RESET_DATA);
 	if (stat & SDHCI_INT_TIMEOUT)
-		return TIMEOUT;
+		ret = TIMEOUT;
 	else
-		return COMM_ERR;
+		ret = COMM_ERR;
+end:
+	if (adma_addr)
+		free(adma_addr);
+	return ret;
 }
 
 static int sdhci_set_clock(struct mmc *mmc, unsigned int clock)
