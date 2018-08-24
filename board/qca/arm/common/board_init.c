@@ -71,6 +71,11 @@ void disable_audio_clks(void)
 {
 	return 0;
 }
+__weak
+void ipq_uboot_fdt_fixup(void)
+{
+	return 0;
+}
 
 int board_init(void)
 {
@@ -188,6 +193,7 @@ int board_init(void)
 
 	aquantia_phy_reset_init();
 	disable_audio_clks();
+	ipq_uboot_fdt_fixup();
 
 	return 0;
 }
