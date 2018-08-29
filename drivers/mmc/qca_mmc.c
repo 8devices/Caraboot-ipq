@@ -152,6 +152,9 @@ qca_pio_write(qca_mmc *host, const char *buffer,
 	do {
 		status = readl(host->base + MMCISTATUS);
 
+		if (status & error)
+			break;
+
 		bcnt = remain - count;
 
 		if (!bcnt)
@@ -175,6 +178,7 @@ qca_pio_write(qca_mmc *host, const char *buffer,
 		status = readl(host->base + MMCISTATUS);
 
 		if (status & error) {
+			printf("Error: %s, status=0x%x\n", __func__, status);
 			count = status;
 			break;
 		}
@@ -210,7 +214,8 @@ qca_mmc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
 		if (data->flags & MMC_DATA_READ) {
 			qca_pio_read(host, data->dest, xfer_size);
 		} else {
-			qca_pio_write(host, data->src, xfer_size);
+			if (qca_pio_write(host, data->src, xfer_size) != xfer_size)
+				status = -1;
 		}
 		writel(0, host->base + MMCIDATACTRL);
 		qca_reg_wr_delay(host);
