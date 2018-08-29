@@ -700,6 +700,109 @@ class Pack(object):
             if machid:
                 script.end_if()
 
+    def __gen_flash_script_image(self, filename, soc_version, machid, partition, flinfo, script):
+
+            img_size = self.__get_img_size(filename)
+            part_info = self.__get_part_info(partition)
+
+            section_label = partition.split(":")
+            if len(section_label) != 1:
+                section_conf = section_label[1]
+            else:
+                section_conf = section_label[0]
+
+            section_conf = section_conf.lower()
+            spi_nand = False
+
+            if self.flinfo.type == 'nand':
+                size = roundup(img_size, flinfo.pagesize)
+                tr = ' | tr \"\\000\" \"\\377\"'
+
+            if self.flinfo.type == 'emmc':
+                size = roundup(img_size, flinfo.blocksize)
+                tr = ''
+
+            if ((self.flinfo.type == 'nand' or self.flinfo.type == 'emmc') and (size != img_size)):
+                pad_size = size - img_size
+                filename_abs = os.path.join(self.images_dname, filename)
+                filename_abs_pad = filename_abs + ".padded"
+                cmd = 'cat %s > %s' % (filename_abs, filename_abs_pad)
+                ret = subprocess.call(cmd, shell=True)
+                if ret != 0:
+                    error("failed to copy image")
+                cmd = 'dd if=/dev/zero count=1 bs=%s %s >> %s' % (pad_size, tr, filename_abs_pad)
+                cmd = '(' + cmd + ') 1>/dev/null 2>/dev/null'
+                ret = subprocess.call(cmd, shell=True)
+                if ret != 0:
+                    error("failed to create padded image from script")
+
+            if self.flinfo.type != "emmc":
+                if part_info == None:
+                    if self.flinfo.type == 'norplusnand':
+                        if count > 2:
+                            error("More than 2 NAND images for NOR+NAND is not allowed")
+                elif img_size > part_info.length:
+                    error("img size is larger than part. len in '%s'" % section_conf)
+            else:
+                if part_info != None:
+                    if (img_size > 0):
+                        if img_size > (part_info.length * self.flinfo.blocksize):
+                            error("img size is larger than part. len in '%s'" % section_conf)
+
+	    if part_info == None and self.flinfo.type != 'norplusnand':
+                print "Flash type is norplusemmc"
+                return
+
+	    if machid:
+		script.start_if("machid", machid)
+
+            if section_conf == "qsee":
+                section_conf = "tz"
+            elif section_conf == "appsbl":
+                section_conf = "u-boot"
+            elif section_conf == "rootfs" and (self.flash_type == "nand" or self.flash_type == "norplusnand"):
+                section_conf = "ubi"
+            elif section_conf == "wififw" and (self.flash_type == "nand" or self.flash_type == "norplusnand"):
+                section_conf = "wififw_ubi"
+
+	    if soc_version:
+		script.start_if("soc_version_major", soc_version)
+
+            script.start_activity("Flashing %s:" % section_conf)
+
+            if ARCH_NAME == "ipq806x":
+                script.switch_layout(layout)
+            if img_size > 0:
+                filename_pad = filename + ".padded"
+                if ((self.flinfo.type == 'nand' or self.flinfo.type == 'emmc') and (size != img_size)):
+                    script.imxtract(section_conf + "-" + sha1(filename_pad))
+                else:
+                    script.imxtract(section_conf + "-" + sha1(filename))
+
+            part_size = Pack.norplusnand_rootfs_img_size
+            if part_info == None:
+                if self.flinfo.type == 'norplusnand':
+                    offset = count * Pack.norplusnand_rootfs_img_size
+                    img_size = Pack.norplusnand_rootfs_img_size
+                    script.nand_write(offset, part_size, img_size, spi_nand)
+                    count = count + 1
+            else:
+                if part_info.which_flash == 0:
+                    offset = part_info.offset
+                    script.erase(offset, part_info.length)
+                    script.write(offset, img_size)
+                else:
+                    offset = part_info.offset
+                    script.nand_write(offset, part_info.length, img_size, spi_nand)
+
+            script.finish_activity()
+
+	    if soc_version:
+		script.end_if()
+
+	    if machid:
+		script.end_if()
+
     def __gen_flash_script(self, script, flinfo, root):
         """Generate the script to flash the images.
 
@@ -712,6 +815,8 @@ class Pack(object):
 
 	diff_files = ""
         count = 0
+	soc_version = 0
+	diff_soc_ver_files = 0
 
         if self.flash_type == "norplusemmc" and flinfo.type == "emmc":
             srcDir_part = SRC_DIR + "/" + ARCH_NAME + "/flash_partition/" + flinfo.type + "-partition.xml"
@@ -789,13 +894,16 @@ class Pack(object):
 		    try:
 			diff_files = section.attrib['diff_files']
 		    except KeyError, e:
-                            try:
+			try:
+			    diff_soc_ver_files = section.attrib['diff_soc_ver_files']
+			except KeyError, e:
+			    try:
 				if image_type == "all" or section.attrib['image_type'] == image_type:
                                 	filename = section.attrib['filename']
                                 	partition = section.attrib['label']
 				if filename == "":
 					continue
-	                    except KeyError, e:
+			    except KeyError, e:
                                 print "Skipping partition '%s'" % section.attrib['label']
 				pass
 
@@ -832,100 +940,41 @@ class Pack(object):
                 if layout not in ("sbl", "linux", None):
                     error("invalid layout in '%s'" % section)
 
-            img_size = self.__get_img_size(filename)
-            part_info = self.__get_part_info(partition)
+            if flinfo.type != "emmc":
 
-            section_label = partition.split(":")
-            if len(section_label) != 1:
-                section_conf = section_label[1]
-            else:
-                section_conf = section_label[0]
+		img = section.find('img_name')
+		if img != None and 'soc_version' in img.attrib:
 
-            section_conf = section_conf.lower()
-            spi_nand = False
+		    imgs = section.findall('img_name')
+		    try:
+			for img in imgs:
+				filename = img.text
+				soc_version = img.get('soc_version')
+				self.__gen_flash_script_image(filename, soc_version, machid, partition, flinfo, script)
 
-            if self.flinfo.type == 'nand':
-                size = roundup(img_size, flinfo.pagesize)
-                tr = ' | tr \"\\000\" \"\\377\"'
+			soc_version = 0 # Clear soc_version for next iteration
+			continue
+		    except KeyError, e:
+			continue
 
-            if self.flinfo.type == 'emmc':
-                size = roundup(img_size, flinfo.blocksize)
-                tr = ''
+	    else:
+		if diff_soc_ver_files:
+                   try:
+                        for version in range(1, int(diff_soc_ver_files)+1):
+                           if image_type == "all" or section.attrib['image_type'] == image_type:
+                                filename = section.attrib['filename_v' + str(version)]
+                                partition = section.attrib['label']
+                           if filename == "":
+                                continue
+                           self.__gen_flash_script_image(filename, version, machid, partition, flinfo, script)
 
-            if ((self.flinfo.type == 'nand' or self.flinfo.type == 'emmc') and (size != img_size)):
-                pad_size = size - img_size
-                filename_abs = os.path.join(self.images_dname, filename)
-                filename_abs_pad = filename_abs + ".padded"
-                cmd = 'cat %s > %s' % (filename_abs, filename_abs_pad)
-                ret = subprocess.call(cmd, shell=True)
-                if ret != 0:
-                    error("failed to copy image")
-                cmd = 'dd if=/dev/zero count=1 bs=%s %s >> %s' % (pad_size, tr, filename_abs_pad)
-                cmd = '(' + cmd + ') 1>/dev/null 2>/dev/null'
-                ret = subprocess.call(cmd, shell=True)
-                if ret != 0:
-                    error("failed to create padded image from script")
+                        diff_soc_ver_files = 0 # Clear diff_soc_ver_files for next iteration
+                        continue
+                   except KeyError, e:
+                        print "Skipping partition '%s'" % section.attrib['label']
+                        pass
 
-            if self.flinfo.type != "emmc":
-                if part_info == None:
-                    if self.flinfo.type == 'norplusnand':
-                        if count > 2:
-                            error("More than 2 NAND images for NOR+NAND is not allowed")
-                elif img_size > part_info.length:
-                    error("img size is larger than part. len in '%s'" % section_conf)
-            else:
-                if part_info != None:
-                    if (img_size > 0):
-                        if img_size > (part_info.length * self.flinfo.blocksize):
-                            error("img size is larger than part. len in '%s'" % section_conf)
-
-            if part_info == None and self.flinfo.type != 'norplusnand':
-                print "Flash type is norplusemmc"
-                continue
-
-            if machid:
-                script.start_if("machid", machid)
-
-            if section_conf == "qsee":
-                section_conf = "tz"
-            elif section_conf == "appsbl":
-                section_conf = "u-boot"
-            elif section_conf == "rootfs" and (self.flash_type == "nand" or self.flash_type == "norplusnand"):
-                section_conf = "ubi"
-            elif section_conf == "wififw" and (self.flash_type == "nand" or self.flash_type == "norplusnand"):
-                section_conf = "wififw_ubi"
-
-            script.start_activity("Flashing %s:" % section_conf)
-
-            if ARCH_NAME == "ipq806x":
-                script.switch_layout(layout)
-            if img_size > 0:
-                filename_pad = filename + ".padded"
-                if ((self.flinfo.type == 'nand' or self.flinfo.type == 'emmc') and (size != img_size)):
-                    script.imxtract(section_conf + "-" + sha1(filename_pad))
-                else:
-                    script.imxtract(section_conf + "-" + sha1(filename))
-
-            part_size = Pack.norplusnand_rootfs_img_size
-            if part_info == None:
-                if self.flinfo.type == 'norplusnand':
-                    offset = count * Pack.norplusnand_rootfs_img_size
-                    img_size = Pack.norplusnand_rootfs_img_size
-                    script.nand_write(offset, part_size, img_size, spi_nand)
-                    count = count + 1
-            else:
-                if part_info.which_flash == 0:
-                    offset = part_info.offset
-                    script.erase(offset, part_info.length)
-                    script.write(offset, img_size)
-                else:
-                    offset = part_info.offset
-                    script.nand_write(offset, part_info.length, img_size, spi_nand)
-
-            script.finish_activity()
-
-            if machid:
-                script.end_if()
+	    self.__gen_flash_script_image(filename, soc_version, machid, partition, flinfo, script)
 
     def __gen_script_cdt(self, images, flinfo, root, section_conf, partition):
         global ARCH_NAME
@@ -966,7 +1015,38 @@ class Pack(object):
                                    filename, "firmware")
             if filename.lower() != "none":
                 if image_info not in images:
-                   images.append(image_info)
+		    images.append(image_info)
+
+    def __gen_script_append_images(self, filename, images, flinfo, root, section_conf, partition):
+
+	part_info = self.__get_part_info(partition)
+	if part_info == None and self.flinfo.type != 'norplusnand':
+	    return
+
+	if self.flinfo.type == 'nand':
+	    img_size = self.__get_img_size(filename)
+	    size = roundup(img_size, flinfo.pagesize)
+	    if ( size != img_size ):
+		filename = filename + ".padded"
+	if self.flinfo.type == 'emmc':
+	    img_size = self.__get_img_size(filename)
+	    size = roundup(img_size, flinfo.blocksize)
+	    if ( size != img_size ):
+		filename = filename + ".padded"
+	if section_conf == "qsee":
+	    section_conf = "tz"
+	elif section_conf == "appsbl":
+	    section_conf = "u-boot"
+	elif section_conf == "rootfs" and (self.flash_type == "nand" or self.flash_type == "norplusnand"):
+	    section_conf = "ubi"
+	elif section_conf == "wififw" and (self.flash_type == "nand" or self.flash_type == "norplusnand"):
+	    section_conf = "wififw_ubi"
+
+	image_info = ImageInfo(section_conf + "-" + sha1(filename),
+				filename, "firmware")
+	if filename.lower() != "none":
+	    if image_info not in images:
+		images.append(image_info)
 
     def __gen_script(self, script_fp, script, images, flinfo, root):
         """Generate the script to flash the multi-image blob.
@@ -979,6 +1059,7 @@ class Pack(object):
 	global MODE
 	global SRC_DIR
 
+	diff_soc_ver_files = 0
 	diff_files = ""
         self.__gen_flash_script(script, flinfo, root)
         if (self.flash_type == "norplusemmc" and flinfo.type == "emmc") or (self.flash_type != "norplusemmc"):
@@ -1060,15 +1141,19 @@ class Pack(object):
 		    try:
 			diff_files = section.attrib['diff_files']
 		    except KeyError, e:
-                            try:
-				if image_type == "all" or section.attrib['image_type'] == image_type:
-                                	filename = section.attrib['filename']
-	                                partition = section.attrib['label']
-				if filename == "":
-                                        continue
-	                    except KeyError, e:
-                                print "Skipping partition '%s'" % section.attrib['label']
-				pass
+                        try:
+			    diff_soc_ver_files = section.attrib['diff_soc_ver_files']
+			    partition = section.attrib['label']
+			except KeyError, e:
+			    try:
+			       if image_type == "all" or section.attrib['image_type'] == image_type:
+				   filename = section.attrib['filename']
+				   partition = section.attrib['label']
+			       if filename == "":
+				   continue
+			    except KeyError, e:
+			       print "Skipping partition '%s'" % section.attrib['label']
+			       pass
 
 		    if diff_files == "true":
 			try:
@@ -1082,6 +1167,7 @@ class Pack(object):
                               print "Skipping partition '%s'" % section.attrib['label']
 			      pass
 			diff_files = "" # Clear for next iteration
+
 
             part_info = self.__get_part_info(partition)
 
@@ -1101,33 +1187,37 @@ class Pack(object):
                 except KeyError, e:
                     continue
 
+            if flinfo.type != "emmc":
 
-            if part_info == None and self.flinfo.type != 'norplusnand':
-                continue
+		img = section.find('img_name')
+		if img != None and 'soc_version' in img.attrib:
 
-            if self.flinfo.type == 'nand':
-                img_size = self.__get_img_size(filename)
-                size = roundup(img_size, flinfo.pagesize)
-                if ( size != img_size ):
-                    filename = filename + ".padded"
-            if self.flinfo.type == 'emmc':
-                img_size = self.__get_img_size(filename)
-                size = roundup(img_size, flinfo.blocksize)
-                if ( size != img_size ):
-                    filename = filename + ".padded"
-            if section_conf == "qsee":
-                section_conf = "tz"
-            elif section_conf == "appsbl":
-                section_conf = "u-boot"
-            elif section_conf == "rootfs" and (self.flash_type == "nand" or self.flash_type == "norplusnand"):
-                section_conf = "ubi"
-            elif section_conf == "wififw" and (self.flash_type == "nand" or self.flash_type == "norplusnand"):
-                section_conf = "wififw_ubi"
-            image_info = ImageInfo(section_conf + "-" + sha1(filename),
-                                    filename, "firmware")
-            if filename.lower() != "none":
-                if image_info not in images:
-                    images.append(image_info)
+		    imgs = section.findall('img_name')
+		    try:
+		        for img in imgs:
+				filename = img.text
+				self.__gen_script_append_images(filename, images, flinfo, root, section_conf, partition)
+			continue
+		    except KeyError, e:
+			continue
+
+            else:
+		if diff_soc_ver_files:
+		    try:
+			for version in range(1, int(diff_soc_ver_files)+1):
+			   if image_type == "all" or section.attrib['image_type'] == image_type:
+				filename = section.attrib['filename_v' + str(version)]
+				partition = section.attrib['label']
+			   if filename == "":
+				continue
+			   self.__gen_script_append_images(filename, images, flinfo, root, section_conf, partition)
+			diff_soc_ver_files = 0 # Clear diff_soc_ver_files for next iteration
+			continue
+		    except KeyError, e:
+			print "Skipping partition '%s'" % section.attrib['label']
+			pass
+
+	    self.__gen_script_append_images(filename, images, flinfo, root, section_conf, partition)
 
     def __mkimage(self, images):
         """Create the multi-image blob.
