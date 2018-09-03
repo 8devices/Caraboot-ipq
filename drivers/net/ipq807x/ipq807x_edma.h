@@ -319,5 +319,7 @@ extern void ipq807x_speed_clock_set(int port, int speed_clock1, int speed_clock2
 extern void ipq807x_pqsgmii_speed_set(int port, int speed, int status);
 extern void ipq807x_uxsgmii_speed_set(int port, int speed, int duplex, int status);
 extern void ppe_port_bridge_txmac_sett(int port, int status);
+extern void ipq807x_10g_r_speed_set(int port, int status);
+extern int phy_status_get_from_ppe(int port_id);
 
 #endif /* ___IPQ807X_EDMA__ */

@@ -194,6 +194,21 @@ static int ppe_uniphy_10g_r_linkup(uint32_t uniphy_index)
 	return 0;
 }
 
+static void ppe_uniphy_10g_r_mode_set(uint32_t uniphy_index)
+{
+	uint32_t reg_value = 0;
+
+	ppe_gcc_uniphy_xpcs_reset(uniphy_index, true);
+	writel(0x1021, PPE_UNIPHY_BASE + (uniphy_index * PPE_UNIPHY_REG_INC)
+			 + PPE_UNIPHY_MODE_CONTROL);
+	writel(0x1C0, PPE_UNIPHY_BASE + (uniphy_index * PPE_UNIPHY_REG_INC)
+			 + UNIPHY_INSTANCE_LINK_DETECT);
+	ppe_gcc_uniphy_soft_reset(uniphy_index);
+	ppe_uniphy_calibration(uniphy_index);
+	ppe_gcc_uniphy_xpcs_reset(uniphy_index, false);
+}
+
+
 static void ppe_uniphy_usxgmii_mode_set(uint32_t uniphy_index)
 {
 	uint32_t reg_value = 0;
@@ -252,6 +267,9 @@ void ppe_uniphy_mode_set(uint32_t uniphy_index, uint32_t mode)
 			break;
 		case PORT_WRAPPER_USXGMII:
 			ppe_uniphy_usxgmii_mode_set(uniphy_index);
+			break;
+		case PORT_WRAPPER_10GBASE_R:
+			ppe_uniphy_10g_r_mode_set(uniphy_index);
 			break;
 		default:
 			break;
