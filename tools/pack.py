@@ -766,6 +766,7 @@ class Pack(object):
                 section_conf = "wififw_ubi"
 
 	    if soc_version:
+		section_conf = section_conf + "_v" + str(soc_version)
 		script.start_if("soc_version_major", soc_version)
 
             script.start_activity("Flashing %s:" % section_conf)
@@ -1017,7 +1018,7 @@ class Pack(object):
                 if image_info not in images:
 		    images.append(image_info)
 
-    def __gen_script_append_images(self, filename, images, flinfo, root, section_conf, partition):
+    def __gen_script_append_images(self, filename, soc_version, images, flinfo, root, section_conf, partition):
 
 	part_info = self.__get_part_info(partition)
 	if part_info == None and self.flinfo.type != 'norplusnand':
@@ -1042,6 +1043,9 @@ class Pack(object):
 	elif section_conf == "wififw" and (self.flash_type == "nand" or self.flash_type == "norplusnand"):
 	    section_conf = "wififw_ubi"
 
+	if soc_version:
+	    section_conf = section_conf + "_v" + str(soc_version)
+
 	image_info = ImageInfo(section_conf + "-" + sha1(filename),
 				filename, "firmware")
 	if filename.lower() != "none":
@@ -1059,6 +1063,7 @@ class Pack(object):
 	global MODE
 	global SRC_DIR
 
+	soc_version = 0
 	diff_soc_ver_files = 0
 	diff_files = ""
         self.__gen_flash_script(script, flinfo, root)
@@ -1195,8 +1200,10 @@ class Pack(object):
 		    imgs = section.findall('img_name')
 		    try:
 		        for img in imgs:
+				soc_version = img.get('soc_version')
 				filename = img.text
-				self.__gen_script_append_images(filename, images, flinfo, root, section_conf, partition)
+				self.__gen_script_append_images(filename, soc_version, images, flinfo, root, section_conf, partition)
+			soc_version = 0 # Clear soc_version for next iteration
 			continue
 		    except KeyError, e:
 			continue
@@ -1210,14 +1217,14 @@ class Pack(object):
 				partition = section.attrib['label']
 			   if filename == "":
 				continue
-			   self.__gen_script_append_images(filename, images, flinfo, root, section_conf, partition)
+			   self.__gen_script_append_images(filename, version, images, flinfo, root, section_conf, partition)
 			diff_soc_ver_files = 0 # Clear diff_soc_ver_files for next iteration
 			continue
 		    except KeyError, e:
 			print "Skipping partition '%s'" % section.attrib['label']
 			pass
 
-	    self.__gen_script_append_images(filename, images, flinfo, root, section_conf, partition)
+	    self.__gen_script_append_images(filename, soc_version, images, flinfo, root, section_conf, partition)
 
     def __mkimage(self, images):
         """Create the multi-image blob.
