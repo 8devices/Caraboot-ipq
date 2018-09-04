@@ -84,7 +84,7 @@ char * const argv[])
 {
 	uint32_t load_addr, offset, part_size, file_size, adj_size;
 	uint32_t size_block, start_block, file_size_cpy;
-	char *part_name = NULL, *filesize;
+	char *part_name = NULL, *filesize, *loadaddr;
 	int flash_type, ret, retn;
 	unsigned int active_part = 0;
 	char *layout = NULL;
@@ -102,24 +102,28 @@ char * const argv[])
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 	nand_info_t *nand = &nand_info[CONFIG_NAND_FLASH_INFO_IDX];
 
-	if ((argc < 3) || (argc > 4))
+	if ((argc < 2) || (argc > 4))
 		return CMD_RET_USAGE;
 
-	if (argc == 4)
-		file_size = simple_strtoul(argv[3], NULL, 16);
-	else {
+	if (argc == 2) {
+		loadaddr = getenv("fileaddr");
+		if (loadaddr != NULL)
+			load_addr = simple_strtoul(loadaddr, NULL, 16);
+		else
+			return CMD_RET_USAGE;
+
 		filesize = getenv("filesize");
 		if (filesize != NULL)
 			file_size = simple_strtoul(filesize, NULL, 16);
 		else
 			return CMD_RET_USAGE;
-	}
-	file_size_cpy = file_size;
 
-	if (strncmp(argv[2], "default", 7) == 0)
-		load_addr = CONFIG_SYS_LOAD_ADDR;
-	else
+	} else if (argc == 4) {
 		load_addr = simple_strtoul(argv[2], NULL, 16);
+		file_size = simple_strtoul(argv[3], NULL, 16);
+
+	} else
+		return CMD_RET_USAGE;
 
 	flash_type = sfi->flash_type;
 	part_name = argv[1];
@@ -240,8 +244,8 @@ return ret;
 
 U_BOOT_CMD(
 	flash,       4,      0,      do_flash,
-	"flash part_name load_addr [file_size] \n"
-	"\tflash part_name 'default' \n",
+	"flash part_name \n"
+	"\tflash part_name load_addr file_size \n",
 	"flash the image at load_addr, given file_size in hex\n"
 );
 
