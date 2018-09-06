@@ -125,6 +125,7 @@ char * const argv[])
 	} else
 		return CMD_RET_USAGE;
 
+	file_size_cpy = file_size;
 	flash_type = sfi->flash_type;
 	part_name = argv[1];
 
