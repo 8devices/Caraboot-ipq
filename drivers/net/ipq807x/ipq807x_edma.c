@@ -946,10 +946,7 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 					continue;
 				}
 				mac_speed = 0x0;
-				if (i == port_8033)
-					speed_clock1 = 0x309;
-				else
-					speed_clock1 = 0x109;
+				speed_clock1 = 0x109;
 				speed_clock2 = 0x9;
 				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
 						priv->mac_unit, i, lstatus[status], speed,
@@ -967,7 +964,7 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 					else
 						speed_clock1 = 0x109;
 				} else if (i == port_8033)
-					speed_clock1 = 0x309;
+					speed_clock1 = 0x109;
 				else
 					speed_clock1 = 0x101;
 				if (i == port_8033)
@@ -989,9 +986,7 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 						speed_clock1 = 0x304;
 					else
 						speed_clock1 = 0x104;
-				} else if (i == port_8033)
-					speed_clock1 = 0x301;
-				else
+				} else
 					speed_clock1 = 0x101;
 				speed_clock2 = 0x0;
 				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
