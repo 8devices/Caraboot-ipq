@@ -767,7 +767,10 @@ class Pack(object):
 
 	    if soc_version:
 		section_conf = section_conf + "_v" + str(soc_version)
-		script.start_if("soc_version_major", soc_version)
+		if str(soc_version) == "1":
+		    script.append('if test "$soc_version_major" = "1" || test "$soc_version_major" = ""; then\n', fatal=False)
+		else:
+		    script.start_if("soc_version_major", soc_version)
 
             script.start_activity("Flashing %s:" % section_conf)
 
