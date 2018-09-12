@@ -138,10 +138,16 @@ static void ppe_uniphy_sgmii_mode_set(uint32_t uniphy_index, uint32_t channel)
 	reg_value &= ~(UNIPHY_CH0_ATHR_CSCO_MODE_25M | UNIPHY_CH0_PSGMII_QSGMII);
 	if (uniphy_index == PPE_UNIPHY_INSTANCE0) {
 		reg_value &= ~UNIPHY_SG_MODE;
-		if (channel == 1)
+		if (channel == 0) {
+			reg_value &= ~UNIPHY_CH1_CH0_SGMII;
+			reg_value &= ~UNIPHY_CH4_CH1_0_SGMII;
+		} else if (channel == 1) {
 			reg_value |= UNIPHY_CH1_CH0_SGMII;
-		else if (channel == 4)
+			reg_value &= ~UNIPHY_CH4_CH1_0_SGMII;
+		} else if (channel == 4) {
+			reg_value &= ~UNIPHY_CH1_CH0_SGMII;
 			reg_value |= UNIPHY_CH4_CH1_0_SGMII;
+		}
 	} else {
 			reg_value &= ~UNIPHY_SG_PLUS_MODE;
 			reg_value |= UNIPHY_SG_MODE;

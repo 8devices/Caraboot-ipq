@@ -204,7 +204,7 @@ int ipq_qca_aquantia_phy_init(struct phy_ops **ops, u32 phy_id)
 
 static int do_load_fw(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
-	unsigned int phy_addr=0x7;
+	unsigned int phy_addr = AQU_PHY_ADDR;
 	int node, aquantia_port;
 
 	if (argc > 2)
@@ -212,11 +212,6 @@ static int do_load_fw(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
 	if (argc == 2)
 		phy_addr = simple_strtoul(argv[1], NULL, 16);
-
-	if (phy_addr != AQU_PHY_ADDR) {
-		printf("Phy address is not correct: use 0x7\n");
-		return 0;
-	}
 
 	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
 	if (node < 0) {

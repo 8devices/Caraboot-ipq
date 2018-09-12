@@ -97,6 +97,7 @@ enum port_wrapper_cfg {
 enum phy_mode {
 	MALIBU_PHY_TYPE = 1,
 	QCA8081_PHY_TYPE = 2,
+	AQ_PHY_TYPE = 3,
 };
 
 typedef struct {

@@ -297,7 +297,7 @@ void ipq807x_uxsgmii_speed_set(int port, int speed, int duplex,
 	/* Setting the speed only for PORT5 and PORT6 */
 	if (port == (PORT5 - PPE_UNIPHY_INSTANCE1))
 		uniphy_index = PPE_UNIPHY_INSTANCE1;
-	if (port == (PORT6 - PPE_UNIPHY_INSTANCE1))
+	else if (port == (PORT6 - PPE_UNIPHY_INSTANCE1))
 		uniphy_index = PPE_UNIPHY_INSTANCE2;
 	else
 		return;
