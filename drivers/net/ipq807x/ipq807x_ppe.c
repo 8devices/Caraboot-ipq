@@ -269,16 +269,16 @@ void ppe_port_rxmac_status_set(uint32_t uniphy_index)
 	uint32_t reg_value = 0;
 
 	ipq807x_ppe_reg_read(PPE_SWITCH_NSS_SWITCH_XGMAC0 +
-			NSS_SWITCH_XGMAC_MAC_RX_CONFIGURATION +
-			(uniphy_index * MAC_RX_CONFIGURATION_ADDRESS), &reg_value);
+			MAC_RX_CONFIGURATION_ADDRESS +
+			(uniphy_index * NSS_SWITCH_XGMAC_MAC_RX_CONFIGURATION), &reg_value);
 
 	reg_value |= 0x5ee00c0;
 	reg_value |=RE;
 	reg_value |=ACS;
 	reg_value |=CST;
 	ipq807x_ppe_reg_write(PPE_SWITCH_NSS_SWITCH_XGMAC0 +
-			NSS_SWITCH_XGMAC_MAC_RX_CONFIGURATION +
-			(uniphy_index * MAC_RX_CONFIGURATION_ADDRESS), reg_value);
+			MAC_RX_CONFIGURATION_ADDRESS +
+			(uniphy_index * NSS_SWITCH_XGMAC_MAC_RX_CONFIGURATION), reg_value);
 
 }
 
