@@ -199,6 +199,7 @@ int config_select(unsigned int addr, char *rcmd, int rcmd_size)
 			 sizeof(dtb_config_name), "%s", config);
 
 		ipq_smem_get_socinfo_version((uint32_t *)&soc_version);
+#ifdef CONFIG_ARCH_IPQ806x
 		if(SOCINFO_VERSION_MAJOR(soc_version) >= 2) {
 			snprintf(dtb_config_name + strlen("config@"),
 				 sizeof(dtb_config_name) - strlen("config@"),
@@ -206,6 +207,7 @@ int config_select(unsigned int addr, char *rcmd, int rcmd_size)
 				 SOCINFO_VERSION_MAJOR(soc_version),
 				 config + strlen("config@"));
 		}
+#endif
 	}
 
 	if (fit_conf_get_node((void *)addr, dtb_config_name) >= 0) {
