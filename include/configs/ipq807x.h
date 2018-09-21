@@ -284,14 +284,6 @@ extern loff_t board_env_size;
 #define CONFIG_USB_MAX_CONTROLLER_COUNT         2
 #endif
 
-#define CONFIG_PCI_IPQ
-#define PCI_MAX_DEVICES	2
-#ifdef CONFIG_PCI_IPQ
-#define CONFIG_PCI
-#define CONFIG_CMD_PCI
-#define CONFIG_PCI_SCAN_SHOW
-#endif
-
 #define CONFIG_IPQ807X_EDMA		1
 #define CONFIG_IPQ807X_BRIDGED_MODE	1
 #define CONFIG_NET_RETRY_COUNT		5
