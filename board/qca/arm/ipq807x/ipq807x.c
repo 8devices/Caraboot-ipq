@@ -1138,6 +1138,15 @@ void fdt_fixup_cpr(void *blob)
 			return;
 	}
 
+	/* Delete opp06 subnode */
+	subnode = fdt_next_subnode(blob, subnode);
+	if (subnode < 0)
+		return;
+
+	ret = fdt_del_node(blob, subnode);
+	if (ret)
+		return;
+
 	node = fdt_path_offset(blob,
 				"/soc/qcom,spmi@200f000/pmic@1/regulators/s4");
 	if (node < 0)
@@ -1147,12 +1156,18 @@ void fdt_fixup_cpr(void *blob)
 	if (phandle <= 0)
 		return;
 
+	/* Delete npu-supply and mx-supply */
 	node = fdt_path_offset(blob, "/soc/nss@40000000");
 	if (node < 0)
 		return;
 
-	/* Set npu-supply */
-	ret = fdt_setprop_cell(blob, node, "npu-supply", phandle);
+	ret = fdt_delprop(blob, node, "npu-supply");
+	if (node < 0)
+		return;
+
+	ret = fdt_delprop(blob, node, "mx-supply");
+	if (node < 0)
+		return;
 
 	/* Disable cpr, apu */
 	for (i = 0; i < ARRAY_SIZE(compatible); i++) {
