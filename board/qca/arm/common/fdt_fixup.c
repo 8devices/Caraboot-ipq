@@ -491,6 +491,10 @@ __weak void fdt_fixup_cpr(void *blob)
 {
 	return;
 }
+__weak void ipq_fdt_fixup_pci_status(void *blob)
+{
+	return;
+}
 
 /*
  * For newer kernel that boot with device tree (3.14+), all of memory is
@@ -512,6 +516,7 @@ int ft_board_setup(void *blob, bd_t *bd)
 	int len = sizeof(parts_str), ret;
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 	int activepart = 0;
+	uint32_t soc_version, soc_ver_major = 1 ;
 	struct flash_node_info nodes[] = {
 		{ "qcom,msm-nand", MTD_DEV_TYPE_NAND, 0 },
 		{ "qcom,qcom_nand", MTD_DEV_TYPE_NAND, 0 },
@@ -522,6 +527,11 @@ int ft_board_setup(void *blob, bd_t *bd)
 		{ "s25fl256s1", MTD_DEV_TYPE_NAND, 1 },
 		{ NULL, 0, -1 },	/* Terminator */
 	};
+
+	ret = ipq_smem_get_socinfo_version((uint32_t *)&soc_version);
+	if (!ret) {
+		soc_ver_major = SOCINFO_VERSION_MAJOR(soc_version);
+	}
 
 	fdt_fixup_memory_banks(blob, &memory_start, &memory_size, 1);
 	ipq_fdt_fixup_version(blob);
@@ -587,6 +597,9 @@ int ft_board_setup(void *blob, bd_t *bd)
 	fdt_fixup_auto_restart(blob);
 	fdt_fixup_sd_ldo_gpios_toggle(blob);
 	fdt_fixup_cpr(blob);
+	if (soc_ver_major == 2) {
+		ipq_fdt_fixup_pci_status(blob);
+	}
 
 #ifdef CONFIG_QCA_MMC
 	board_mmc_deinit();
