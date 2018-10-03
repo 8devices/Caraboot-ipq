@@ -14,12 +14,18 @@
 /dts-v1/;
 #include "ipq6018-soc.dtsi"
 / {
-	model ="QCA, IPQ6018-CP01";
-	compatible = "qca,ipq6018", "qca,ipq6018-cp01";
-	machid = <0x08010001>;
+	model ="QCA, IPQ6018-EMULATION";
+	compatible = "qca,ipq6018", "qca,ipq6018-emulation";
+	machid = <0x08010000>;
 
 	aliases {
-		console = "/serial@78B3000";
+		console = "/serial@78af000";
+	};
+	serial@78af000 {
+		compatible = "qca,ipq-uartdm";
+		reg = <0x78af000 0x200>;
+		id = <2>;
+		bit_rate = <0xff>;
+		status = "ok";
 	};
 };
-
