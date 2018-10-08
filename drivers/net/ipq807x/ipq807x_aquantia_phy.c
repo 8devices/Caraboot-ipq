@@ -238,6 +238,20 @@ static int do_load_fw(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	return 0;
 }
 
+static int do_aq_phy_restart(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	unsigned int phy_addr = AQU_PHY_ADDR;
+	int node, aquantia_port;
+	if (argc > 2)
+		return CMD_RET_USAGE;
+
+	if (argc == 2)
+		phy_addr = simple_strtoul(argv[1], NULL, 16);
+
+	aquantia_phy_restart_autoneg(phy_addr);
+	return 0;
+}
+
 int ipq_board_fw_download(unsigned int phy_addr)
 {
 	char runcmd[256];
@@ -537,5 +551,11 @@ static int program_ethphy_fw(unsigned int phy_addr, uint32_t load_addr, uint32_t
 U_BOOT_CMD(
 	aq_load_fw,	5,	1,	do_load_fw,
 	"LOAD aq-fw-binary",
+	""
+);
+
+U_BOOT_CMD(
+	aq_phy_restart,	5,	1,	do_aq_phy_restart,
+	"Restart Aquantia phy",
 	""
 );
