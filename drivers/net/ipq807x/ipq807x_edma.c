@@ -1864,6 +1864,7 @@ int ipq807x_edma_init(void *edma_board_cfg)
 				case AQUANTIA_PHY_111:
 				case AQUANTIA_PHY_112:
 				case AQUANTIA_PHY_111B0:
+				case AQUANTIA_PHY_112C:
 					ipq_board_fw_download(phy_addr);
 					ipq_qca_aquantia_phy_init(&ipq807x_edma_dev[i]->ops[phy_id], phy_addr);
 					break;
