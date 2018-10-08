@@ -38,6 +38,7 @@
 #define QCA8033_PHY				0x004DD074
 #define QCA8033_PHY_ADDR			0x6
 #define QCA8081_PHY				0x004DD100
+#define QCA8081_1_1_PHY				0x004DD101
 #define AQUANTIA_PHY_107			0x03a1b4e2
 #define AQUANTIA_PHY_109			0x03a1b502
 #define AQUANTIA_PHY_111			0x03a1b610
@@ -100,6 +101,7 @@ enum phy_mode {
 	MALIBU_PHY_TYPE = 1,
 	QCA8081_PHY_TYPE = 2,
 	AQ_PHY_TYPE = 3,
+	QCA8033_PHY_TYPE = 4,
 };
 
 typedef struct {
