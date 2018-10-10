@@ -28,4 +28,11 @@
 		bit_rate = <0xff>;
 		status = "ok";
 	};
+	spi {
+		compatible = "qcom,spi-qup-v2.7.0";
+		wr_pipe_0 = <12>;
+		rd_pipe_0 = <13>;
+		status = "ok";
+		spi_gpio {};
+	};
 };
