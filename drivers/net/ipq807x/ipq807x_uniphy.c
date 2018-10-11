@@ -110,6 +110,8 @@ static void ppe_uniphy_psgmii_mode_set(uint32_t uniphy_index)
 	writel(0x220, PPE_UNIPHY_BASE + (uniphy_index * PPE_UNIPHY_REG_INC)
 			+ PPE_UNIPHY_MODE_CONTROL);
 	ppe_gcc_uniphy_soft_reset(uniphy_index);
+	ppe_uniphy_calibration(uniphy_index);
+	qca8075_phy_serdes_reset(0);
 }
 
 static void ppe_uniphy_qsgmii_mode_set(uint32_t uniphy_index)
