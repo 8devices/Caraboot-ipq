@@ -33,7 +33,6 @@
 #define CONFIG_ENV_SIZE_MAX		(256 << 10) /* 256 KB */
 #define CONFIG_SYS_MALLOC_LEN		(CONFIG_ENV_SIZE_MAX + (256 << 10))
 
-#define CONFIG_ENV_IS_NOWHERE		1
 /*
  * Size of malloc() pool
  */
