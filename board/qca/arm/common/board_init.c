@@ -77,6 +77,11 @@ void ipq_uboot_fdt_fixup(void)
 	return 0;
 }
 
+__weak void uart_wait_tx_empty(void)
+{
+	return;
+}
+
 int board_init(void)
 {
 	int ret;
@@ -194,7 +199,11 @@ int board_init(void)
 	aquantia_phy_reset_init();
 	disable_audio_clks();
 	ipq_uboot_fdt_fixup();
-
+	/*
+	 * Needed by ipq806x to avoid TX FIFO curruption during
+	 * serial init after relocation
+	 */
+	uart_wait_tx_empty();
 	return 0;
 }
 

@@ -32,6 +32,7 @@
 #include <asm/arch-qca-common/scm.h>
 #include <asm/arch-qca-common/iomap.h>
 #include <asm/io.h>
+#include <dm/device.h>
 
 #define DLOAD_MAGIC_COOKIE_1 0xE47B337D
 #define DLOAD_MAGIC_COOKIE_2 0x0501CAB0
@@ -1115,4 +1116,9 @@ unsigned int get_dts_machid(unsigned int machid)
 		default:
 			return machid;
 	}
+}
+
+void uart_wait_tx_empty(void)
+{
+	ipq_serial_wait_tx_empty();
 }

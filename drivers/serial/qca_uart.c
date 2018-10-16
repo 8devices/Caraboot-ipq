@@ -355,6 +355,19 @@ static void ipq_serial_init(struct ipq_serial_platdata *plat,
 }
 
 /**
+ * ipq_serial_wait_tx_empty - Wait until TX FIFO is empty
+ */
+void ipq_serial_wait_tx_empty(void)
+{
+	struct udevice *dev = gd->cur_serial_dev;
+	struct ipq_serial_platdata *plat = dev->platdata;
+	unsigned long base = plat->reg_base;
+
+        while (!(readl(MSM_BOOT_UART_DM_SR(base)) & MSM_BOOT_UART_DM_SR_TXEMT))
+		__udelay(1);
+}
+
+/**
  * serial_tstc - checks if data available for reading
  *
  * Returns 1 if data available, 0 otherwise
