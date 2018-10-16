@@ -217,24 +217,57 @@ static int do_dumpqca_data(void)
 void dump_func(void)
 {
 	uint64_t etime;
+	uint64_t ptime;
+	int ping_status = 0;
+	char *serverip = NULL, *forced_dump = NULL;
+	char runcmd[50] = {0};
 
 #ifdef CONFIG_IPQ_ETH_INIT_DEFER
 	puts("\nNet:   ");
 	eth_initialize();
 #endif
 
-	etime = get_timer_masked() + (10 * CONFIG_SYS_HZ);
-	printf("\nHit any key within 10s to stop dump activity...");
-	while (!tstc()) {       /* while no incoming data */
-		if (get_timer_masked() >= etime) {
-			if (do_dumpqca_data() == CMD_RET_FAILURE)
-				printf("Crashdump saving failed!\n");
-			break;
+	forced_dump = getenv("force_collect_dump");
+	if (forced_dump) {
+		serverip = getenv("serverip");
+		if (serverip != NULL) {
+			printf("Using serverip from env %s\n", serverip);
+		} else {
+			printf("\nServer ip not found, run dhcp or configure\n");
+			goto reset;
+		}
+		printf("Trying to ping server.....\n");
+		snprintf(runcmd, sizeof(runcmd), "ping %s", serverip);
+		ptime = get_timer_masked() + (10 * CONFIG_SYS_HZ);
+		while (get_timer_masked() <= ptime) {
+			if (run_command(runcmd, 0) == CMD_RET_SUCCESS) {
+				ping_status = 1;
+				break;
+			}
+			mdelay(500);
+		}
+		if (ping_status != 1) {
+			printf("Ping failed\n");
+			goto reset;
+		}
+		if (do_dumpqca_data() == CMD_RET_FAILURE)
+			printf("Crashdump saving failed!\n");
+		goto reset;
+	} else {
+		etime = get_timer_masked() + (10 * CONFIG_SYS_HZ);
+		printf("\nHit any key within 10s to stop dump activity...");
+		while (!tstc()) {       /* while no incoming data */
+			if (get_timer_masked() >= etime) {
+				if (do_dumpqca_data() == CMD_RET_FAILURE)
+					printf("Crashdump saving failed!\n");
+				break;
+			}
 		}
 	}
 	/* reset the system, some images might not be loaded
 	 * when crashmagic is found
 	 */
+reset:
 	run_command("reset", 0);
 }
 
