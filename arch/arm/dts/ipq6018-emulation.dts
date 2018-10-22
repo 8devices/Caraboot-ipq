@@ -35,4 +35,10 @@
 		status = "ok";
 		spi_gpio {};
 	};
+	nand: nand-controller@79B0000 {
+		compatible = "qcom,qpic-nand.1.5.20";
+		reg = <0x79B0000 0x10000>;
+		status = "ok";
+		nand_gpio {};
+	};
 };
