@@ -1264,8 +1264,10 @@ void ipq807x_ppe_provision_init(void)
 
 	ipq807x_ppe_interface_mode_init();
 	/* Port 0-5 enable */
-	for (i = 0; i < 6; i++)
+	for (i = 0; i < 6; i++) {
 		ipq807x_gmac_port_enable(i);
+		ppe_port_bridge_txmac_set(i + 1, 1);
+	}
 
 	/* Allowing DHCP packets */
 	ipq807x_ppe_acl_set(0, ADPT_ACL_HPPE_IPV4_DIP_RULE, UDP_PKT, 67, 0xffff, 0, 0);
