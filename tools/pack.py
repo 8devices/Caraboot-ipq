@@ -700,9 +700,11 @@ class Pack(object):
             if machid:
                 script.end_if()
 
-    def __gen_flash_script_image(self, filename, soc_version, machid, partition, flinfo, script):
+    def __gen_flash_script_image(self, filename, soc_version, file_exists, machid, partition, flinfo, script):
 
-            img_size = self.__get_img_size(filename)
+	    img_size = 0
+	    if file_exists == 1:
+                img_size = self.__get_img_size(filename)
             part_info = self.__get_part_info(partition)
 
             section_label = partition.split(":")
@@ -774,6 +776,12 @@ class Pack(object):
 
             script.start_activity("Flashing %s:" % section_conf)
 
+	    if file_exists == 0:
+		script.append('setenv stdout serial && echo "error: binary image not found" && exit 1', fatal=False)
+		if soc_version:
+		    script.end_if()
+		return
+
             if ARCH_NAME == "ipq806x":
                 script.switch_layout(layout)
             if img_size > 0:
@@ -821,6 +829,7 @@ class Pack(object):
         count = 0
 	soc_version = 0
 	diff_soc_ver_files = 0
+	file_exists = 1
 
         if self.flash_type == "norplusemmc" and flinfo.type == "emmc":
             srcDir_part = SRC_DIR + "/" + ARCH_NAME + "/flash_partition/" + flinfo.type + "-partition.xml"
@@ -954,7 +963,11 @@ class Pack(object):
 			for img in imgs:
 				filename = img.text
 				soc_version = img.get('soc_version')
-				self.__gen_flash_script_image(filename, soc_version, machid, partition, flinfo, script)
+				if 'optional' in img.attrib:
+				     if not os.path.exists(os.path.join(self.images_dname, filename)):
+					file_exists = 0
+				self.__gen_flash_script_image(filename, soc_version, file_exists, machid, partition, flinfo, script)
+				file_exists = 1 # generating flash script is mandatory by default
 
 			soc_version = 0 # Clear soc_version for next iteration
 			continue
@@ -970,15 +983,18 @@ class Pack(object):
                                 partition = section.attrib['label']
                            if filename == "":
                                 continue
-                           self.__gen_flash_script_image(filename, version, machid, partition, flinfo, script)
-
+			   if section.attrib['optional']:
+				if not os.path.exists(os.path.join(self.images_dname, filename)):
+				     file_exists = 0
+                           self.__gen_flash_script_image(filename, version, file_exists, machid, partition, flinfo, script)
+			   file_exists = 1
                         diff_soc_ver_files = 0 # Clear diff_soc_ver_files for next iteration
                         continue
                    except KeyError, e:
                         print "Skipping partition '%s'" % section.attrib['label']
                         pass
 
-	    self.__gen_flash_script_image(filename, soc_version, machid, partition, flinfo, script)
+	    self.__gen_flash_script_image(filename, soc_version, file_exists, machid, partition, flinfo, script)
 
     def __gen_script_cdt(self, images, flinfo, root, section_conf, partition):
         global ARCH_NAME
@@ -1069,6 +1085,8 @@ class Pack(object):
 	soc_version = 0
 	diff_soc_ver_files = 0
 	diff_files = ""
+	file_exists = 1
+
         self.__gen_flash_script(script, flinfo, root)
         if (self.flash_type == "norplusemmc" and flinfo.type == "emmc") or (self.flash_type != "norplusemmc"):
             if flinfo.type == "emmc":
@@ -1205,7 +1223,13 @@ class Pack(object):
 		        for img in imgs:
 				soc_version = img.get('soc_version')
 				filename = img.text
-				self.__gen_script_append_images(filename, soc_version, images, flinfo, root, section_conf, partition)
+				if 'optional' in img.attrib:
+				    if not os.path.exists(os.path.join(self.images_dname, filename)):
+					file_exists = 0
+
+				if file_exists == 1:
+				    self.__gen_script_append_images(filename, soc_version, images, flinfo, root, section_conf, partition)
+				file_exists = 1
 			soc_version = 0 # Clear soc_version for next iteration
 			continue
 		    except KeyError, e:
@@ -1220,7 +1244,14 @@ class Pack(object):
 				partition = section.attrib['label']
 			   if filename == "":
 				continue
-			   self.__gen_script_append_images(filename, version, images, flinfo, root, section_conf, partition)
+			   if section.attrib['optional']:
+				if not os.path.exists(os.path.join(self.images_dname, filename)):
+					file_exists = 0
+
+			   if file_exists == 1:
+			        self.__gen_script_append_images(filename, version, images, flinfo, root, section_conf, partition)
+			   file_exists = 1
+
 			diff_soc_ver_files = 0 # Clear diff_soc_ver_files for next iteration
 			continue
 		    except KeyError, e:
