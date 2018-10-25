@@ -168,6 +168,7 @@ const struct nand_flash_dev nand_flash_ids[] = {
  */
 const struct nand_devices spansion_devices[] = {
 	{0x01, 0xF1},
+	{0x01, 0xD3},
 	{0x01, 0xDA},
 	{0x01, 0xDC},
 	{0x01, 0xC1},
