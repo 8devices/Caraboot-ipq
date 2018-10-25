@@ -17,14 +17,15 @@ make menuconfig
 ```
 Select options:
 * Target options -> Target Architecture -> ARM (little endian)
-* Target options -> Target Architecture Variant -> cortex-A9
+* Target options -> Target Architecture Variant -> cortex-A7
+* Target options -> Target ABI -> EABI
 * Toolchain -> GCC compiler Version -> gcc 5.x
 
 Save and exit.
 
 Build:
 ```
-make
+make toolchain
 ```
 ----
 2) Build Caraboot (u-boot)
