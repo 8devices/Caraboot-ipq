@@ -39,6 +39,8 @@
 /u-boot.ais
 /u-boot.dtb
 /u-boot.sb
+/u-boot-jalapeno.elf
+/u-boot-habanero.elf
 
 #
 # Generated files

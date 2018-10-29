@@ -99,7 +99,7 @@
 #define CONFIG_SYS_I2C_SPEED	0
 #endif
 
-#define CONFIG_IPQ40XX_PCI
+/* #define CONFIG_IPQ40XX_PCI */
 #ifdef CONFIG_IPQ40XX_PCI
 #define CONFIG_PCI
 #define CONFIG_CMD_PCI
@@ -201,7 +201,7 @@ typedef struct {
  * CONFIG_IPQ_NAND: QPIC NAND in FIFO/block mode.
  * BAM is enabled by default.
  */
-#define CONFIG_QPIC_NAND
+/* #define CONFIG_QPIC_NAND */
 #define CONFIG_CMD_NAND
 #define CONFIG_CMD_NAND_YAFFS
 #define CONFIG_CMD_MEMORY
@@ -292,7 +292,7 @@ typedef struct {
 #define CONFIG_SYS_MAX_NAND_DEVICE	(CONFIG_IPQ_MAX_NAND_DEVICE + \
 					 CONFIG_IPQ_MAX_SPI_DEVICE)
 
-#define CONFIG_QCA_MMC
+/* #define CONFIG_QCA_MMC */
 
 #ifdef CONFIG_QCA_MMC
 #define CONFIG_CMD_MMC
@@ -307,8 +307,6 @@ typedef struct {
 #define CONFIG_MTD_DEVICE
 #define CONFIG_MTD_PARTITIONS
 #define CONFIG_CMD_MTDPARTS
-#define MTDPARTS_DEFAULT	"mtdparts=nand1:0x8000000@0x0(ubi)"
-#define MTDIDS_DEFAULT		"nand1=nand1"
 
 #define CONFIG_RBTREE		/* for ubi */
 #define CONFIG_CMD_UBI
@@ -318,6 +316,7 @@ typedef struct {
 #define CONFIG_CMD_BOOTD
 
 #define CONFIG_CMD_MISC
+#define CONFIG_CMD_FAT
 
 #define CONFIG_QCOM_WATCHDOG
 
@@ -325,26 +324,8 @@ typedef struct {
 
 // Factory
 #define CONFIG_FACTORY_MODE
-#define CONFIG_FACTORY_IMG_FILENAME    "jalapeno.bin"
 #define CONFIG_FACTORY_IMG_LOAD_ADDR   "0x84000000"
 
-#define CONFIG_EXTRA_ENV_SETTINGS								\
-	"bootcmd=run setup && run bootlinux\0"							\
-	"setup=partname=1 && setenv bootargs ubi.mtd=ubi ${args_common}\0"	\
-	"args_common=rootfstype=squashfs\0" 				\
-	"bootlinux=run boot1 boot2 boot3 boot4 boot5|| reset\0"					\
-	"boot1=echo Booting from partition: ${partname}\0"					\
-	"boot2=nand device default\0"					\
-	"boot3=set mtdparts mtdparts=nand1:0x8000000@0x0(ubi)\0"	\
-	"boot4=ubi part ubi && ubi read 84000000 kernel\0"				\
-	"boot5=cfgsel 84000000 && run bootfdtcmd\0"						\
-	"do_recovery=run rec1 rec2 rec3 rec4; reset\0"			\
-	"rec1=echo Doing firmware recovery!\0"							\
-	"rec2=sleep 2 && tftpboot ${tftp_loadaddr} ${recovery_file}\0"				\
-	"rec3=nand device default && nand erase.chip\0"						\
-	"rec4=nand write ${fileaddr} 0x0 ${filesize}\0"						\
-	"tftp_loadaddr=0x84000000\0"								\
-	"recovery_file=fwupdate.bin\0"								\
 
 #define CONFIG_CARABOOT_RELEASE "v4.3-dev"
 
