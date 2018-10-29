@@ -589,3 +589,43 @@ int qca_scm_dload(unsigned int magic_cookie)
 
 	return ret;
 }
+
+#define SCM_CLASS_REGISTER      (0x2 << 8)
+#define SCM_MASK_IRQS           BIT(5)
+#define SCM_ATOMIC(svc, cmd, n) (((((svc) << 10) | ((cmd) & 0x3ff)) << 12) | \
+				 SCM_CLASS_REGISTER |			\
+				 SCM_MASK_IRQS |			\
+				 (n & 0xf))
+
+static s32  qca_scm_call_atomic_ver2_32(u32 svc, u32 cmd, u32 arg1, u32 arg2)
+{
+	int context_id;
+	register u32 r0 asm("r0") = SCM_ATOMIC(svc, cmd, 2);
+	register u32 r1 asm("r1") = virt_to_phys((void *)&context_id);
+	register u32 r2 asm("r2") = arg1;
+	register u32 r3 asm("r3") = arg2;
+
+	asm volatile(
+		     __asmeq("%0", "r0")
+		     __asmeq("%1", "r0")
+		     __asmeq("%2", "r1")
+		     __asmeq("%3", "r2")
+		     __asmeq("%4", "r3")
+
+		     "smc #0 @switch to secure world\n"
+		     : "=r" (r0)
+		     : "r" (r0), "r" (r1), "r" (r2), "r" (r3)
+		     );
+	return r0;
+}
+
+
+int qca_scm_usb_mode_write(u32 arg1, u32 arg2)
+{
+	s32 ret;
+
+	ret = qca_scm_call_atomic_ver2_32(SCM_SVC_IO, SCM_IO_WRITE, arg1, arg2);
+
+	return ret;
+}
+

@@ -918,7 +918,7 @@ static void usb30_common_pre_init(int id, unsigned int ipq_base)
 			IPQ_USB30_RESET_PHY_ASYNC_RESET), reg);
 		reg = IPQ_TCSR_USB_CONTROLLER_TYPE_SEL;
 		if (reg) {
-			writel(0x3, reg);
+			qca_scm_usb_mode_write(reg, 0X3);
 		}
 	}
 	writel((IPQ_SSUSB_REG_QSCRATCH_CGCTL_RAM1112_EN |
