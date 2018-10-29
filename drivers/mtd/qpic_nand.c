@@ -501,7 +501,7 @@ qpic_nand_onfi_save_params(struct mtd_info *mtd,
 	mtd->erasesize = dev->block_size;
 	dev->num_blocks = param_page->blks_per_LUN;
 	dev->widebus = param_page->feature_supported & 0x1;
-	dev->density = param_page->blks_per_LUN * (dev->block_size);
+	dev->density = param_page->blks_per_LUN * (dev->block_size) * param_page->num_LUN;
 	mtd->size = dev->density;
 	dev->spare_size = param_page->spare_per_pg;
 	mtd->oobsize = dev->spare_size;
