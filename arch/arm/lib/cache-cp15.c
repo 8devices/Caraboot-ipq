@@ -62,7 +62,7 @@ void mmu_set_region_dcache_behaviour(phys_addr_t start, size_t size,
 	mmu_page_table_flush((u32)&page_table[start], (u32)&page_table[end]);
 }
 
-#if defined(CONFIG_ARCH_IPQ40xx) || defined(CONFIG_ARCH_IPQ807x) || defined(CONFIG_ARCH_IPQ6018)
+#if defined(CONFIG_IPQ_NO_RELOC)
 #define UBOOT_CACHE_SETUP	0x100e
 #define GEN_CACHE_SETUP		0x101e
 
@@ -90,9 +90,10 @@ void mmu_setup(void)
 	u32 reg;
 
 	arm_init_before_mmu();
+	memset(gd->arch.tlb_addr, 0, gd->arch.tlb_size);
 	/* Set up an identity-mapping for all 4GB, rw for everyone */
 	for (i = 0; i < 4096; i++)
-		set_section_dcache(i, DCACHE_WRITEALLOC);
+		set_section_dcache(i, SHARED_DEVICE);
 
 	for (i = 0; i < CONFIG_NR_DRAM_BANKS; i++) {
 		dram_bank_mmu_setup(i);

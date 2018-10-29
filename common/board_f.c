@@ -1062,7 +1062,7 @@ void board_init_f(ulong boot_flags)
 	gd->flags = boot_flags;
 	gd->have_console = 0;
 
-#if defined(CONFIG_ARCH_IPQ807x) || defined(CONFIG_ARCH_IPQ40xx) || defined(CONFIG_ARCH_IPQ6018)
+#if defined(CONFIG_IPQ_NO_RELOC)
 	gd->flags |= GD_FLG_SKIP_RELOC;
 #endif
 

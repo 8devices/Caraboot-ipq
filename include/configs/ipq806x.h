@@ -34,6 +34,7 @@
 #endif /* !DO_DEPS_ONLY */
 
 #define CONFIG_IPQ806X
+#define CONFIG_IPQ_NO_RELOC
 #define CONFIG_SMP_CMD_SUPPORT
 #ifdef CONFIG_SMP_CMD_SUPPORT
 #define NR_CPUS				2
@@ -43,7 +44,7 @@
 #define CONFIG_SYS_CACHELINE_SIZE   64
 #define CONFIG_IPQ806X_ENV
 #define CONFIG_SYS_BOOTM_LEN		(64 << 20)
-#define CONFIG_IPQ_FDT_HIGH		0x48000000
+#define CONFIG_IPQ_FDT_HIGH		0xffffffff
 #define CONFIG_BOOTARGS			"console=ttyMSM0,115200n8"
 #define CONFIG_SYS_HUSH_PARSER
 #define CONFIG_SYS_VSNPRINTF
@@ -132,7 +133,7 @@
 		sizeof(CONFIG_SYS_PROMPT) + 16)
 
 #define CONFIG_SYS_SDRAM_BASE		0x40000000
-#define CONFIG_SYS_TEXT_BASE		0x41200000
+#define CONFIG_SYS_TEXT_BASE		0x42000000
 #define CONFIG_SYS_SDRAM_SIZE		0x10000000
 #define CONFIG_MAX_RAM_BANK_SIZE	CONFIG_SYS_SDRAM_SIZE
 #define CONFIG_SYS_LOAD_ADDR		(CONFIG_SYS_SDRAM_BASE + (64 << 20))
@@ -244,7 +245,9 @@ typedef struct {
 #define IPQ_TEMP_DUMP_ADDR              (IPQ_MEM_RESERVE_BASE(nsstcmdump))
 
 #define IPQ_TFTP_MIN_ADDR		(CONFIG_SYS_SDRAM_BASE + (32 << 20))
-#define IPQ_TFTP_MAX_ADDR		(gd->start_addr_sp - (4 << 20))
+#define IPQ_TFTP_MAX_ADDR		(gd->bd->bi_dram[0].start +	\
+					 gd->bd->bi_dram[0].size)
+
 
 #define CONFIG_QCA_SMEM_BASE	CONFIG_SYS_SDRAM_BASE + 0x1000000
 #endif /* __ASSEMBLY__ */
