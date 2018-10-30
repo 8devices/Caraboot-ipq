@@ -1180,29 +1180,6 @@ void fdt_fixup_cpr(void *blob)
 	return;
 }
 
-void ipq_fdt_fixup_pci_status(void *blob)
-{
-	int nodeoff, ret, node;
-	const char *pci_node[] = {"/soc/pci@20000000" , "/soc/pci@10000000",
-				"/soc/phy@84000", "/soc/phy@8e000"};
-	const char *stat = "disabled";
-
-	for (node = 0; node < ARRAY_SIZE(pci_node); node++) {
-		nodeoff = fdt_path_offset(blob, pci_node[node]);
-		if (nodeoff < 0) {
-			printf("fixup_pci: unable to find node '%s'\n",
-			       pci_node[node]);
-			return;
-		}
-		ret = fdt_setprop(blob, nodeoff, "status",
-				  stat,
-				  (strlen(stat) + 1));
-		if (ret)
-			printf("fixup_pci: 'status' cannot be set");
-
-	}
-}
-
 void set_flash_secondary_type(qca_smem_flash_info_t *smem)
 {
 	return;
