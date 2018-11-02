@@ -226,6 +226,10 @@ void board_nand_init(void)
 	}
 #endif
 }
+void set_flash_secondary_type(qca_smem_flash_info_t *smem)
+{
+	return;
+};
 void enable_caches(void)
 {
 	icache_enable();

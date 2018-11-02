@@ -20,8 +20,10 @@
 
 #define CONFIG_IPQ6018
 
+#define CONFIG_BOARD_EARLY_INIT_F
+#define CONFIG_BOARD_LATE_INIT
 #define CONFIG_SYS_NO_FLASH
-#define CONFIG_SYS_CACHELINE_SIZE	64
+#define CONFIG_SYS_VSNPRINTF
 
 #define CONFIG_IPQ6018_UART
 #define CONFIG_NR_DRAM_BANKS		1
@@ -78,6 +80,7 @@
 #define CONFIG_SYS_SDRAM_SIZE		0x10000000
 #define CONFIG_MAX_RAM_BANK_SIZE	CONFIG_SYS_SDRAM_SIZE
 #define CONFIG_SYS_LOAD_ADDR		(CONFIG_SYS_SDRAM_BASE + (64 << 20))
+#define CONFIG_ROOTFS_LOAD_ADDR		(CONFIG_SYS_SDRAM_BASE + (32 << 20))
 
 #define QCA_KERNEL_START_ADDR		CONFIG_SYS_SDRAM_BASE
 #define QCA_DRAM_KERNEL_SIZE		CONFIG_SYS_SDRAM_SIZE
@@ -87,7 +90,7 @@
 
 #define CONFIG_QCA_SMEM_BASE		0x4AB00000
 
-#define CONFIG_IPQ_FDT_HIGH		0x4A400000
+#define CONFIG_IPQ_FDT_HIGH		0x48700000
 #define CONFIG_IPQ_NO_MACS		6
 #define CONFIG_ENV_IS_IN_SPI_FLASH	1
 #define CONFIG_ENV_SECT_SIZE		(64 * 1024)
@@ -116,6 +119,9 @@ extern loff_t board_env_size;
 #define CONFIG_SYS_MALLOC_LEN		(CONFIG_ENV_SIZE_MAX + (1024 << 10))
 
 #define CONFIG_ENV_IS_IN_NAND		1
+
+/* Allow to overwrite serial and ethaddr */
+#define CONFIG_ENV_OVERWRITE
 
 /*
 * SPI Flash Configs
@@ -193,6 +199,7 @@ extern loff_t board_env_size;
  * U-Boot Env Configs
  */
 #define CONFIG_OF_LIBFDT		1
+#define CONFIG_SYS_HUSH_PARSER
 
 /* NSS firmware loaded using bootm */
 #define CONFIG_BOOTCOMMAND		"bootm"
@@ -211,6 +218,7 @@ extern loff_t board_env_size;
 
 #define CONFIG_CMD_BOOTZ
 
+#define CONFIG_FDT_FIXUP_PARTITIONS
 /*
  * Below Configs need to be updated after enabling reset_crashdump
  * Included now to avoid build failure
