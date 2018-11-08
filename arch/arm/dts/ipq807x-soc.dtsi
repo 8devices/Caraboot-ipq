@@ -279,12 +279,14 @@
 		reg = <0x20000000 0xf1d
 			0x80000 0x2000
 			0x20000f20 0xa8
+			0x20001000 0x1000
 			0x20300000 0xd00000
 			0x20100000 0x100000
 			0x01875004 0x40
-			0x86000 0x1000>;
-		reg-names = "pci_dbi", "parf", "elbi", "axi_bars",
-				"axi_conf", "pci_rst", "pci_phy";
+			0x86000 0x1000
+			0x84000 0x1000>;
+		reg-names = "pci_dbi", "parf", "elbi","dm_iatu", "axi_bars",
+				"axi_conf", "pci_rst", "pci_phy_gen2", "pci_phy_gen3";
 		perst_gpio = <58>;
 
 		pci_gpio {
