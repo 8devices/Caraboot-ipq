@@ -1180,6 +1180,39 @@ void fdt_fixup_cpr(void *blob)
 	return;
 }
 
+void fdt_low_memory_fixup(void *blob)
+{
+	int node;
+	int len;
+	u64 *reg;
+	char *wcnss_node = "/reserved-memory/wcnss@4b000000";
+	char *wifi_dump_node = "/reserved-memory/wifi_dump@50500000";
+	unsigned int wcnss_size = 0x03700000;
+	unsigned int wifi_dump_size = 0x200000;
+	char *mem_mode = getenv("low_mem_mode");
+
+	if (!mem_mode)
+		return;
+
+	node = fdt_path_offset(blob, wcnss_node);
+	if (node >= 0) {
+		reg = (u64 *)fdt_getprop(blob, node, "reg", &len);
+		if (reg != NULL)
+			reg[1] = cpu_to_fdt64(wcnss_size);
+	} else {
+		printf("Node \"%s\" not found\n", wcnss_node);
+	}
+
+	node = fdt_path_offset(blob, wifi_dump_node);
+	if (node >= 0) {
+		reg = (u64 *)fdt_getprop(blob, node, "reg", &len);
+		if (reg != NULL)
+			reg[1] = cpu_to_fdt64(wifi_dump_size);
+	} else {
+		printf("Node \"%s\" not found\n", wifi_dump_node);
+	}
+}
+
 void set_flash_secondary_type(qca_smem_flash_info_t *smem)
 {
 	return;

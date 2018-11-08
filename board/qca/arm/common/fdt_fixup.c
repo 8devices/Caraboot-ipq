@@ -486,6 +486,10 @@ __weak void fdt_fixup_sd_ldo_gpios_toggle(void *blob)
 	return;
 }
 
+__weak void fdt_low_memory_fixup(void *blob)
+{
+	return;
+}
 
 __weak void fdt_fixup_cpr(void *blob)
 {
@@ -587,6 +591,7 @@ int ft_board_setup(void *blob, bd_t *bd)
 	fdt_fixup_auto_restart(blob);
 	fdt_fixup_sd_ldo_gpios_toggle(blob);
 	fdt_fixup_cpr(blob);
+	fdt_low_memory_fixup(blob);
 
 #ifdef CONFIG_QCA_MMC
 	board_mmc_deinit();
