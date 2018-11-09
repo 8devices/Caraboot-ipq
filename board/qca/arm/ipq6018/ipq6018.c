@@ -21,8 +21,11 @@
 #include <asm/arch-qca-common/gpio.h>
 #include <asm/arch-qca-common/uart.h>
 #include <ipq6018.h>
+#include <mmc.h>
+#include <sdhci.h>
 
 DECLARE_GLOBAL_DATA_PTR;
+struct sdhci_host mmc_host;
 
 void uart2_configure_mux(void)
 {
@@ -128,6 +131,85 @@ void reset_crashdump(void)
 	return;
 }
 
+void emmc_clock_config()
+{
+	/* Enable root clock generator */
+	writel(readl(GCC_SDCC1_APPS_CBCR)|0x1, GCC_SDCC1_APPS_CBCR);
+	/* Add 10us delay for CLK_OFF to get cleared */
+	udelay(10);
+	/* PLL0 - 192Mhz */
+	writel(0x20B, GCC_SDCC1_APPS_CFG_RCGR);
+	/* Delay for clock operation complete */
+	udelay(10);
+	writel(0x1, GCC_SDCC1_APPS_M);
+	writel(0xFC, GCC_SDCC1_APPS_N);
+	writel(0xFD, GCC_SDCC1_APPS_D);
+	/* Delay for clock operation complete */
+	udelay(10);
+	/* Update APPS_CMD_RCGR to reflect source selection */
+	writel(readl(GCC_SDCC1_APPS_CMD_RCGR)|0x1, GCC_SDCC1_APPS_CMD_RCGR);
+	/* Add 10us delay for clock update to complete */
+	udelay(10);
+}
+
+void emmc_clock_disable(void)
+{
+	/* Clear divider */
+	writel(0x0, GCC_SDCC1_MISC);
+}
+
+void board_mmc_deinit(void)
+{
+	emmc_clock_disable();
+}
+
+void emmc_clock_reset(void)
+{
+	writel(0x1, GCC_SDCC1_BCR);
+	udelay(10);
+	writel(0x0, GCC_SDCC1_BCR);
+}
+
+void emmc_sdhci_init(void)
+{
+	writel(readl(MSM_SDC1_BASE) | (1 << 7), MSM_SDC1_BASE); //SW_RST
+	udelay(10);
+}
+int board_mmc_init(bd_t *bis)
+{
+	int node;
+	int ret = 0;
+	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
+
+	node = fdt_path_offset(gd->fdt_blob, "mmc");
+	if (node < 0) {
+		printf("sdhci: Node Not found, skipping initialization\n");
+		return -1;
+	}
+
+	mmc_host.ioaddr = (void *)MSM_SDC1_SDHCI_BASE;
+	mmc_host.voltages = MMC_VDD_165_195;
+	mmc_host.version = SDHCI_SPEC_300;
+	mmc_host.cfg.part_type = PART_TYPE_EFI;
+	mmc_host.quirks = SDHCI_QUIRK_BROKEN_VOLTAGE;
+
+	emmc_clock_disable();
+	emmc_clock_reset();
+	udelay(10);
+	emmc_clock_config();
+	emmc_sdhci_init();
+
+	if (add_sdhci(&mmc_host, 200000000, 400000)) {
+		printf("add_sdhci fail!\n");
+		return -1;
+	}
+
+	if (!ret && sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
+		ret = board_mmc_env_init(mmc_host);
+	}
+
+	return ret;
+}
 void board_nand_init(void)
 {
 #ifdef CONFIG_QCA_SPI

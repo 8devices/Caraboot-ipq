@@ -18,8 +18,18 @@
 #include <asm/u-boot.h>
 #include <asm/arch-qca-common/qca_common.h>
 
-#define GCC_BLSP1_UART1_APPS_CBCR	0x0180203c
-#define GCC_SDCC1_BCR			0x01842000
+/*
+ * GCC-SDCC Registers
+ */
+#define GCC_SDCC1_MISC		0x1842020
+#define GCC_SDCC1_APPS_CBCR	0x1842018
+#define GCC_SDCC1_APPS_CFG_RCGR	0x1842008
+#define GCC_SDCC1_APPS_CMD_RCGR	0x1842004
+#define GCC_SDCC1_APPS_M	0x184200C
+#define GCC_SDCC1_APPS_N	0x1842010
+#define GCC_SDCC1_APPS_D	0x1842014
+#define GCC_BLSP1_UART1_APPS_CBCR       0x0180203c
+#define GCC_SDCC1_BCR		0x01842000
 
 #define GCC_BLSP1_UART2_APPS_CFG_RCGR	0x01803038
 #define GCC_BLSP1_UART2_APPS_M		0x0180303C
@@ -105,5 +115,8 @@ typedef enum {
 	SMEM_LAST_VALID_TYPE = SMEM_SPI_FLASH_ADDR_LEN,
 	SMEM_MAX_SIZE = SMEM_SPI_FLASH_ADDR_LEN + 1,
 } smem_mem_type_t;
+
+#define MSM_SDC1_BASE           0x7800000
+#define MSM_SDC1_SDHCI_BASE     0x7804000
 
 #endif /* _IPQ6018_CDP_H_ */

@@ -138,6 +138,23 @@ extern loff_t board_env_size;
 
 #define CONFIG_EFI_PARTITION
 #define CONFIG_QCA_BAM			1
+/*
+ * MMC configs
+ */
+#define CONFIG_QCA_MMC
+
+#ifdef CONFIG_QCA_MMC
+#define CONFIG_MMC
+#define CONFIG_CMD_MMC
+#define CONFIG_GENERIC_MMC
+#define CONFIG_SDHCI
+#define CONFIG_SDHCI_QCA
+#define CONFIG_ENV_IS_IN_MMC
+#define CONFIG_SYS_MMC_ENV_DEV	0
+#define CONFIG_SDHCI_SUPPORT
+#define CONFIG_MMC_ADMA
+#endif
+
 
 /*
  * NAND Flash Configs
