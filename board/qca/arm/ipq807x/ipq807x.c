@@ -562,12 +562,74 @@ static void pcie_clock_init(int id)
 	}
 }
 
-static void pcie_clock_deinit(int id)
+static void pcie_v2_clock_init(int id)
+{
+
+	/* Enable PCIE CLKS */
+	if (id == 0) {
+		writel(0x2, GCC_PCIE0_V2_AUX_CMD_RCGR);
+		writel(0x107, GCC_PCIE0_AXI_CFG_RCGR);
+		writel(0x1, GCC_PCIE0_V2_AXI_CMD_RCGR);
+		mdelay(100);
+		writel(0x2, GCC_PCIE0_V2_AXI_CMD_RCGR);
+		writel(0x20000001, GCC_PCIE0_AHB_CBCR);
+		writel(0x4FF1, GCC_PCIE0_AXI_M_CBCR);
+		writel(0x20004FF1, GCC_PCIE0_AXI_S_CBCR);
+		writel(0x1, GCC_PCIE0_AUX_CBCR);
+		writel(0x80004FF1, GCC_PCIE0_PIPE_CBCR);
+		writel(0x1, GCC_PCIE0_AXI_S_BRIDGE_CBCR);
+		writel(0x10F, GCC_PCIE0_RCHNG_CFG_RCGR);
+		writel(0x3, GCC_PCIE0_RCHNG_CMD_RCGR);
+
+		writel(0x2, GCC_PCIE1_V2_AUX_CMD_RCGR);
+		writel(0x107, GCC_PCIE1_AXI_CFG_RCGR);
+		writel(0x1, GCC_PCIE1_V2_AXI_CMD_RCGR);
+		mdelay(100);
+		writel(0x2, GCC_PCIE1_V2_AXI_CMD_RCGR);
+		writel(0x20000001, GCC_PCIE1_AHB_CBCR);
+		writel(0x4FF1, GCC_PCIE1_AXI_M_CBCR);
+		writel(0x20004FF1, GCC_PCIE1_AXI_S_CBCR);
+		writel(0x1, GCC_PCIE1_AUX_CBCR);
+		writel(0x80004FF1, GCC_PCIE1_PIPE_CBCR);
+	}
+}
+
+static void pcie_v2_clock_deinit(int id)
 {
 
 	if (id == 0) {
 		writel(0x0, GCC_PCIE0_AUX_CMD_RCGR);
 		writel(0x0, GCC_PCIE0_AXI_CFG_RCGR);
+		writel(0x0, GCC_PCIE0_AXI_CMD_RCGR);
+		mdelay(100);
+		writel(0x0, GCC_SYS_NOC_PCIE0_AXI_CLK);
+		writel(0x0, GCC_PCIE0_AHB_CBCR);
+		writel(0x0, GCC_PCIE0_AXI_M_CBCR);
+		writel(0x0, GCC_PCIE0_AXI_S_CBCR);
+		writel(0x0, GCC_PCIE0_AUX_CBCR);
+		writel(0x0, GCC_PCIE0_PIPE_CBCR);
+		writel(0x0, GCC_PCIE0_AXI_S_BRIDGE_CBCR);
+		writel(0x0, GCC_PCIE0_RCHNG_CFG_RCGR);
+		writel(0x0, GCC_PCIE0_RCHNG_CMD_RCGR);
+		writel(0x0, GCC_PCIE1_V2_AUX_CMD_RCGR);
+		writel(0x0, GCC_PCIE1_AXI_CFG_RCGR);
+		writel(0x0, GCC_PCIE1_V2_AXI_CMD_RCGR);
+		mdelay(100);
+		writel(0x0, GCC_SYS_NOC_PCIE1_AXI_CLK);
+		writel(0x0, GCC_PCIE1_AHB_CBCR);
+		writel(0x0, GCC_PCIE1_AXI_M_CBCR);
+		writel(0x0, GCC_PCIE1_AXI_S_CBCR);
+		writel(0x0, GCC_PCIE1_AUX_CBCR);
+		writel(0x0, GCC_PCIE1_PIPE_CBCR);
+	}
+}
+
+static void pcie_clock_deinit(int id)
+{
+
+	if (id == 0) {
+		writel(0x0, GCC_PCIE0_V2_AUX_CMD_RCGR);
+		writel(0x0, GCC_PCIE0_V2_AXI_CMD_RCGR);
 		writel(0x0, GCC_PCIE0_AXI_CMD_RCGR);
 		mdelay(100);
 		writel(0x0, GCC_SYS_NOC_PCIE0_AXI_CLK);
@@ -594,6 +656,8 @@ void board_pci_init(int id)
 {
 	int node, gpio_node;
 	char name[16];
+	uint32_t soc_ver_major, soc_ver_minor;
+	int ret;
 
 	snprintf(name, sizeof(name), "pci%d", id);
 	node = fdt_path_offset(gd->fdt_blob, name);
@@ -602,11 +666,14 @@ void board_pci_init(int id)
 		return;
 	}
 	gpio_node = fdt_subnode_offset(gd->fdt_blob, node, "pci_gpio");
+	ret = get_soc_version(&soc_ver_major, &soc_ver_minor);
 	if (gpio_node >= 0)
 		qca_gpio_init(gpio_node);
-
-	pcie_clock_init(id);
-	return ;
+	if(soc_ver_major == 2)
+		pcie_v2_clock_init(id);
+	else
+		pcie_clock_init(id);
+	return;
 }
 
 void board_pci_deinit()
@@ -615,7 +682,10 @@ void board_pci_deinit()
 	char name[16];
 	struct fdt_resource parf;
 	struct fdt_resource pci_phy;
+	uint32_t soc_ver_major, soc_ver_minor;
+	int ret;
 
+	ret = get_soc_version(&soc_ver_major, &soc_ver_minor);
 	for (i = 0; i < PCI_MAX_DEVICES; i++) {
 		snprintf(name, sizeof(name), "pci%d", i);
 		node = fdt_path_offset(gd->fdt_blob, name);
@@ -629,6 +699,22 @@ void board_pci_deinit()
 		writel(0x1, parf.start + 0x40);
 		err = fdt_get_named_resource(gd->fdt_blob, node, "reg", "reg-names", "pci_phy",
 				     &pci_phy);
+		if (err < 0) {
+
+			if(soc_ver_major == 1) {
+				err = fdt_get_named_resource(gd->fdt_blob, node, "reg", "reg-names", "pci_phy_gen2",
+					     &pci_phy);
+				if (err < 0)
+					return;
+			} else if(soc_ver_major == 2) {
+				err = fdt_get_named_resource(gd->fdt_blob, node, "reg", "reg-names", "pci_phy_gen3",
+					     &pci_phy);
+				if (err < 0)
+					return;
+			} else {
+				return;
+			}
+		}
 		writel(0x1, pci_phy.start + 800);
 		writel(0x0, pci_phy.start + 804);
 		gpio_node = fdt_subnode_offset(gd->fdt_blob, node, "pci_gpio");
@@ -636,7 +722,11 @@ void board_pci_deinit()
 			qca_gpio_deinit(gpio_node);
 
 	}
-	pcie_clock_deinit(0);
+
+	if (soc_ver_major == 2)
+		pcie_v2_clock_deinit(0);
+	else
+		pcie_clock_deinit(0);
 
 	return ;
 }
