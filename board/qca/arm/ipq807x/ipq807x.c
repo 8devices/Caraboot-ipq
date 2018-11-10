@@ -1440,3 +1440,19 @@ void run_tzt(void *address)
 {
 	execute_tzt(address);
 }
+
+void set_platform_specific_default_env(void)
+{
+	uint32_t soc_ver_major, soc_ver_minor, soc_version;
+	int ret;
+
+	ret = ipq_smem_get_socinfo_version((uint32_t *)&soc_version);
+	if (!ret) {
+		soc_ver_major = SOCINFO_VERSION_MAJOR(soc_version);
+		soc_ver_minor = SOCINFO_VERSION_MINOR(soc_version);
+		setenv_ulong("soc_version_major", (unsigned long)soc_ver_major);
+		setenv_ulong("soc_version_minor", (unsigned long)soc_ver_minor);
+	}
+
+	return;
+}
