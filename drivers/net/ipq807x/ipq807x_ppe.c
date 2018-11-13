@@ -191,6 +191,19 @@ void ipq807x_speed_clock_set(int port, int speed_clock1, int speed_clock2)
 	}
 }
 
+int phy_status_get_from_ppe(int port_id)
+{
+	uint32_t reg_field = 0;
+
+	ipq807x_ppe_reg_read(PORT_PHY_STATUS_ADDRESS, &reg_field);
+	if (port_id == (PORT5 - PPE_UNIPHY_INSTANCE1))
+		reg_field >>= PORT_PHY_STATUS_PORT5_1_OFFSET;
+	else
+		reg_field >>= PORT_PHY_STATUS_PORT6_OFFSET;
+
+	return ((reg_field >> 7) & 0x1) ? 0 : 1;
+}
+
 void ppe_port_bridge_txmac_set(int port_id, int status)
 {
 	uint32_t reg_value = 0;
@@ -249,7 +262,18 @@ void ppe_xgmac_speed_set(uint32_t uniphy_index, int speed)
 
 }
 
+void ppe_xgmac_10g_r_speed_set(uint32_t uniphy_index)
+{
+	uint32_t reg_value = 0;
 
+	ipq807x_ppe_reg_read(PPE_SWITCH_NSS_SWITCH_XGMAC0 +
+		 (uniphy_index * NSS_SWITCH_XGMAC_MAC_TX_CONFIGURATION), &reg_value);
+
+	reg_value |=JD;
+	ipq807x_ppe_reg_write(PPE_SWITCH_NSS_SWITCH_XGMAC0 +
+		 (uniphy_index * NSS_SWITCH_XGMAC_MAC_TX_CONFIGURATION), reg_value);
+
+}
 
 void ppe_port_txmac_status_set(uint32_t uniphy_index)
 {
@@ -287,6 +311,25 @@ void ppe_mac_packet_filter_set(uint32_t uniphy_index)
 	ipq807x_ppe_reg_write(PPE_SWITCH_NSS_SWITCH_XGMAC0 +
 			MAC_PACKET_FILTER_ADDRESS +
 			(uniphy_index * MAC_PACKET_FILTER_INC), 0x81);
+}
+
+void ipq807x_10g_r_speed_set(int port, int status)
+{
+	uint32_t uniphy_index;
+
+	/* Setting the speed only for PORT5 and PORT6 */
+	if (port == (PORT5 - PPE_UNIPHY_INSTANCE1))
+		uniphy_index = PPE_UNIPHY_INSTANCE1;
+	else if (port == (PORT6 - PPE_UNIPHY_INSTANCE1))
+		uniphy_index = PPE_UNIPHY_INSTANCE2;
+	else
+		return;
+
+	ppe_xgmac_10g_r_speed_set(uniphy_index - 1);
+	ppe_port_bridge_txmac_set(port + 1, status);
+	ppe_port_txmac_status_set(uniphy_index - 1);
+	ppe_port_rxmac_status_set(uniphy_index - 1);
+	ppe_mac_packet_filter_set(uniphy_index - 1);
 }
 
 void ipq807x_uxsgmii_speed_set(int port, int speed, int duplex,
@@ -1111,6 +1154,9 @@ static void ppe_port_mux_mac_type_set(int port_id, int mode)
 			port_type = PORT_GMAC_TYPE;
 			break;
 		case PORT_WRAPPER_USXGMII:
+			port_type = PORT_XGMAC_TYPE;
+			break;
+		case PORT_WRAPPER_10GBASE_R:
 			port_type = PORT_XGMAC_TYPE;
 			break;
 		default:

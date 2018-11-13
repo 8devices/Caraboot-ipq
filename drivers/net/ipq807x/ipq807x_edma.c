@@ -892,6 +892,7 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 	int linkup=0;
 	int mac_speed = 0, speed_clock1 = 0, speed_clock2 = 0;
 	int phy_addr, port_8033 = -1, node, aquantia_port = -1;
+	int sfp_port = -1;
 	int phy_node = -1;
 	int ret_sgmii_mode;
 
@@ -902,6 +903,9 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 	if (node >= 0)
 		 aquantia_port = fdtdec_get_uint(gd->fdt_blob, node, "aquantia_port", -1);
 
+	if (node >= 0)
+		 sfp_port = fdtdec_get_uint(gd->fdt_blob, node, "sfp_port", -1);
+
 	phy_node = fdt_path_offset(gd->fdt_blob, "/ess-switch/port_phyinfo");
 	/*
 	 * Check PHY link, speed, Duplex on all phys.
@@ -909,35 +913,44 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 	 * else we will return with -1;
 	 */
 	for (i =  0; i < PHY_MAX; i++) {
-		if (!priv->ops[i]) {
-			printf ("Phy ops not mapped\n");
-			continue;
-		}
-		phy_get_ops = priv->ops[i];
 
-		if (!phy_get_ops->phy_get_link_status ||
-				!phy_get_ops->phy_get_speed ||
-				!phy_get_ops->phy_get_duplex) {
-			printf ("Link status/Get speed/Get duplex not mapped\n");
-			return -1;
-		}
-
-		if (phy_node >= 0) {
-			phy_addr = phy_info[i]->phy_address;
+		if (i == sfp_port) {
+			status = phy_status_get_from_ppe(i);
+			speed = FAL_SPEED_10000;
+			duplex = FAL_FULL_DUPLEX;
 		} else {
+			if (!priv->ops[i]) {
+				printf ("Phy ops not mapped\n");
+				continue;
+			}
+			phy_get_ops = priv->ops[i];
 
-			if (i == port_8033)
-				phy_addr = QCA8033_PHY_ADDR;
-			else if (i == aquantia_port)
-				phy_addr = AQU_PHY_ADDR;
-			else
-				phy_addr = i;
+			if (!phy_get_ops->phy_get_link_status ||
+					!phy_get_ops->phy_get_speed ||
+					!phy_get_ops->phy_get_duplex) {
+				printf ("Link status/Get speed/Get duplex not mapped\n");
+				return -1;
+			}
+
+			if (phy_node >= 0) {
+				phy_addr = phy_info[i]->phy_address;
+			} else {
+
+				if (i == port_8033)
+					phy_addr = QCA8033_PHY_ADDR;
+				else if (i == aquantia_port)
+					phy_addr = AQU_PHY_ADDR;
+				else
+					phy_addr = i;
+			}
+			status = phy_get_ops->phy_get_link_status(priv->mac_unit, phy_addr);
+			phy_get_ops->phy_get_speed(priv->mac_unit, phy_addr, &speed);
+			phy_get_ops->phy_get_duplex(priv->mac_unit, phy_addr, &duplex);
 		}
-		status = phy_get_ops->phy_get_link_status(priv->mac_unit, phy_addr);
+
 		if (status == 0)
 			linkup++;
-		phy_get_ops->phy_get_speed(priv->mac_unit, phy_addr, &speed);
-		phy_get_ops->phy_get_duplex(priv->mac_unit, phy_addr, &duplex);
+
 		switch (speed) {
 			case FAL_SPEED_10:
 				if (i == aquantia_port) {
@@ -1001,7 +1014,10 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 				break;
 			case FAL_SPEED_10000:
 				mac_speed = 0x3;
-				speed_clock1 = 0x101;
+				if (i == 4)
+					speed_clock1 = 0x301;
+				else
+					speed_clock1 = 0x101;
 				speed_clock2 = 0x0;
 				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
 						priv->mac_unit, i, lstatus[status], speed,
@@ -1077,6 +1093,8 @@ static int ipq807x_eth_init(struct eth_device *eth_dev, bd_t *this)
 		ipq807x_speed_clock_set(i, speed_clock1, speed_clock2);
 		if (i == aquantia_port)
 			ipq807x_uxsgmii_speed_set(i, mac_speed, duplex, status);
+		else if (i == sfp_port)
+			ipq807x_10g_r_speed_set(i, status);
 		else
 			ipq807x_pqsgmii_speed_set(i, mac_speed, status);
 	}
