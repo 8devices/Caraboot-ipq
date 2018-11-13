@@ -340,12 +340,6 @@ extern loff_t board_env_size;
 /*#define CONFIG_IPQ_REPORT_L2ERR*/
 
 /*
- * FAT FS commands
- */
-#define	CONFIG_FS_FAT
-#define	CONFIG_CMD_FAT
-
-/*
  * Other commands
  */
 
