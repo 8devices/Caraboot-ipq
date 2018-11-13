@@ -184,6 +184,7 @@ static ulong mmc_write_blocks(struct mmc *mmc, lbaint_t start,
 	struct mmc_cmd cmd;
 	struct mmc_data data;
 	int timeout = 1000;
+	int ret = blkcnt;
 
 	if ((start + blkcnt) > mmc->block_dev.lba) {
 		printf("MMC: block number 0x" LBAF " exceeds max(0x" LBAF ")\n",
@@ -212,7 +213,7 @@ static ulong mmc_write_blocks(struct mmc *mmc, lbaint_t start,
 
 	if (mmc_send_cmd(mmc, &cmd, &data)) {
 		printf("mmc write failed\n");
-		return 0;
+		ret = 0;
 	}
 
 	/* SPI multiblock writes terminate using a special
@@ -232,7 +233,7 @@ static ulong mmc_write_blocks(struct mmc *mmc, lbaint_t start,
 	if (mmc_send_status(mmc, timeout))
 		return 0;
 
-	return blkcnt;
+	return ret;
 }
 
 ulong mmc_bwrite(int dev_num, lbaint_t start, lbaint_t blkcnt, const void *src)
