@@ -14,6 +14,14 @@
 #include <linux/compiler.h>
 #include <part.h>
 
+#define MMC_GET_MID(CID0) (CID0 >> 24)
+#define MMC_GET_PNM(CID0, CID1, CID2) (((long long int)(CID0 & 0xff) << 40) |	\
+		((long long int)CID1 << 8) |					\
+		(CID2 >> 24))
+
+#define MMC_MID_MICRON 0xFE
+#define MMC_PNM_MICRON 0x4D4D43333247  // MMC32G
+
 /* SD/MMC version bits; 8 flags, 8 major, 8 minor, 8 change */
 #define SD_VERSION_SD	(1U << 31)
 #define MMC_VERSION_MMC	(1U << 30)

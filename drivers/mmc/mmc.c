@@ -1920,6 +1920,9 @@ int mmc_write_protect(struct mmc *mmc, unsigned int start_blk,
 	}
 
 	wp_group_size = (mmc->wp_grp_size + 1) * mmc->erase_grp_size;
+	if ((MMC_GET_MID(mmc->cid[0]) == MMC_MID_MICRON) &&
+		(MMC_GET_PNM(mmc->cid[0], mmc->cid[1], mmc->cid[2]) == MMC_PNM_MICRON))
+		wp_group_size *= 2;
 
 	if (!cnt_blk || start_blk % wp_group_size || cnt_blk % wp_group_size) {
 		printf("Error: Unaligned offset/count. offset/count should be aligned to 0x%x blocks\n", wp_group_size);
