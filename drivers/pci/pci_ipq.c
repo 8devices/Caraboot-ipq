@@ -863,10 +863,10 @@ static int ipq_pcie_parse_dt(const void *fdt, int id,
 		return err;
 	}
 
+	pcie->is_gen3 = 0;
 	if(pcie->version == PCIE_V2) {
 		err = fdt_get_named_resource(fdt, node, "reg", "reg-names", "pci_phy",
 					     &pcie->pci_phy);
-		pcie->is_gen3 = 0;
 		if (err < 0) {
 			uint32_t soc_ver_major, soc_ver_minor;
 			int ret;
