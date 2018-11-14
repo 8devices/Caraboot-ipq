@@ -203,7 +203,7 @@ extern loff_t board_env_size;
 #define CONFIG_SYS_HUSH_PARSER
 
 /* NSS firmware loaded using bootm */
-#define CONFIG_BOOTCOMMAND		"bootm"
+#define CONFIG_BOOTCOMMAND		"bootipq"
 #define CONFIG_BOOTARGS			"console=ttyMSM0,115200n8"
 #define QCA_ROOT_FS_PART_NAME		"rootfs"
 
@@ -220,6 +220,10 @@ extern loff_t board_env_size;
 #define CONFIG_CMD_BOOTZ
 
 #define CONFIG_FDT_FIXUP_PARTITIONS
+#define CONFIG_OF_BOARD_SETUP
+
+#ifdef CONFIG_OF_BOARD_SETUP
+#define DLOAD_DISABLE		0x1
 /*
  * Below Configs need to be updated after enabling reset_crashdump
  * Included now to avoid build failure
@@ -229,6 +233,10 @@ extern loff_t board_env_size;
 #define SCM_CMD_TZ_CONFIG_HW_FOR_RAM_DUMP_ID	0x9
 #define SCM_CMD_TZ_FORCE_DLOAD_ID		0x10
 #define SCM_CMD_TZ_PSHOLD			0x15
+#define BOOT_VERSION				0
+#define TZ_VERSION				1
+#define RPM_VERSION				3
+#endif
 /* L1 cache line size is 64 bytes, L2 cache line size is 128 bytes
  * Cache flush and invalidation based on L1 cache, so the cache line
  * size is configured to 64 */
