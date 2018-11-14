@@ -111,11 +111,13 @@ void config_i2c_mode(void)
  */
 void config_i2c_gpio(void)
 {
-	int gpio_node;
+	int i2c_node, gpio_node;
 
-	gpio_node = fdt_path_offset(gd->fdt_blob, "/i2c0/i2c_gpio");
-	if (gpio_node >= 0) {
-		qca_gpio_init(gpio_node);
+	i2c_node = fdt_path_offset(gd->fdt_blob, "i2c0");
+	if (i2c_node >= 0) {
+		gpio_node = fdt_subnode_offset(gd->fdt_blob, i2c_node, "i2c_gpio");
+		if (gpio_node >= 0)
+			qca_gpio_init(gpio_node);
 	}
 }
 
