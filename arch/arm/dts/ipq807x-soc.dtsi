@@ -259,6 +259,7 @@
 				gpio = <42>;
 				func = <2>;
 				pull = <GPIO_NO_PULL>;
+				drvstr = <GPIO_8MA>;
 				oe = <GPIO_OE_ENABLE>;
 			};
 
@@ -266,6 +267,7 @@
 				gpio = <43>;
 				func = <2>;
 				pull = <GPIO_NO_PULL>;
+				drvstr = <GPIO_8MA>;
 				oe = <GPIO_OE_ENABLE>;
 			};
 
