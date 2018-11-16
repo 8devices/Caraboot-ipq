@@ -1277,12 +1277,16 @@ void fdt_low_memory_fixup(void *blob)
 	u64 *reg;
 	char *wcnss_node = "/reserved-memory/wcnss@4b000000";
 	char *wifi_dump_node = "/reserved-memory/wifi_dump@50500000";
+	char *tzapp_node = "/reserved-memory/tzapp@4a400000";
 	unsigned int wcnss_size = 0x03700000;
 	unsigned int wifi_dump_size = 0x200000;
 	char *mem_mode = getenv("low_mem_mode");
+	int ret;
 
 	if (!mem_mode)
 		return;
+
+	printf("Configuring kernel for low memory mode...\n");
 
 	node = fdt_path_offset(blob, wcnss_node);
 	if (node >= 0) {
@@ -1300,6 +1304,16 @@ void fdt_low_memory_fixup(void *blob)
 			reg[1] = cpu_to_fdt64(wifi_dump_size);
 	} else {
 		printf("Node \"%s\" not found\n", wifi_dump_node);
+	}
+
+	node = fdt_path_offset(blob, tzapp_node);
+	if (node >= 0) {
+		ret = fdt_del_node(blob, node);
+		if (ret)
+			printf("Cannot delete \"%s\" node\n", tzapp_node);
+
+	} else {
+		printf("Node \"%s\" not found\n", tzapp_node);
 	}
 }
 
