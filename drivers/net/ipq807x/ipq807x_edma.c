@@ -1875,6 +1875,7 @@ int ipq807x_edma_init(void *edma_board_cfg)
 					ipq_qca8033_phy_init(&ipq807x_edma_dev[i]->ops[phy_id], phy_addr);
 					break;
 				case QCA8081_PHY:
+				case QCA8081_1_1_PHY:
 					ipq_qca8081_phy_init(&ipq807x_edma_dev[i]->ops[phy_id], phy_addr);
 					break;
 				case AQUANTIA_PHY_107:
