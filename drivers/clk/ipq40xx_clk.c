@@ -63,6 +63,8 @@ void emmc_clock_config(int mode)
 }
 void emmc_clock_disable(void)
 {
+	/* Clear divider */
+	writel(0x0, GCC_SDCC1_MISC);
 	writel(0x0, GCC_SDCC1_APPS_CBCR);
 	udelay(10);
 
