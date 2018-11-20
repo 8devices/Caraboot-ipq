@@ -161,6 +161,7 @@ extern loff_t board_env_size;
 #define CONFIG_MMC_ADMA
 #endif
 
+#define CONFIG_CMD_UBI
 
 /*
  * NAND Flash Configs
