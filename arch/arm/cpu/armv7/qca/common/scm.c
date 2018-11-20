@@ -400,6 +400,7 @@ void __attribute__ ((noreturn)) execute_tzt(void *entry_addr)
 #endif
 static uint8_t tz_buf[CONFIG_SYS_CACHELINE_SIZE]  __aligned(CONFIG_SYS_CACHELINE_SIZE);
 
+#ifndef CONFIG_QCA_DISABLE_SCM
 int qca_scm_call(u32 svc_id, u32 cmd_id, void *buf, size_t len)
 {
 	int ret = 0;
@@ -528,6 +529,29 @@ int qca_scm_secure_authenticate(void *cmd_buf, size_t cmd_len)
 
 	return ret;
 }
+#else
+int qca_scm_call(u32 svc_id, u32 cmd_id, void *buf, size_t len)
+{
+	return 0;
+}
+int qca_scm_fuseipq(u32 svc_id, u32 cmd_id, void *buf, size_t len)
+{
+	return 0;
+}
+int qca_scm_auth_kernel(void *cmd_buf,
+			size_t cmd_len)
+{
+	return 0;
+}
+int is_scm_sec_auth_available(u32 svc_id, u32 cmd_id)
+{
+	return 0;
+}
+int qca_scm_secure_authenticate(void *cmd_buf, size_t cmd_len)
+{
+	return 0;
+}
+#endif
 
 int qca_scm_call_write(u32 svc_id, u32 cmd_id, u32 *addr, u32 val)
 {
