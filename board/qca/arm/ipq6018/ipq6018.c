@@ -27,6 +27,12 @@
 DECLARE_GLOBAL_DATA_PTR;
 struct sdhci_host mmc_host;
 
+const char *rsvd_node = "/reserved-memory";
+const char *del_node[] = {"uboot",
+			  "sbl",
+			  NULL};
+const add_node_t add_fdt_node[] = {{}};
+
 void uart2_configure_mux(void)
 {
 	unsigned long cfg_rcgr;
@@ -240,6 +246,10 @@ void disable_caches(void)
 	icache_disable();
 }
 
+__weak int ipq_get_tz_version(char *version_name, int buf_size)
+{
+	return 1;
+}
 /**
  * Set the uuid in bootargs variable for mounting rootfilesystem
  */
@@ -256,5 +266,20 @@ unsigned long timer_read_counter(void)
 void reset_cpu(unsigned long a)
 {
 	while(1);
+}
+
+void ipq_fdt_fixup_socinfo(void *blob)
+{
+	return;
+}
+
+void ipq_fdt_fixup_usb_device_mode(void *blob)
+{
+	return;
+}
+
+void fdt_fixup_auto_restart(void *blob)
+{
+	return;
 }
 

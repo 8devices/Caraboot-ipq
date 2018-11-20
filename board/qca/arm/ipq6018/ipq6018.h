@@ -116,6 +116,10 @@ typedef enum {
 	SMEM_MAX_SIZE = SMEM_SPI_FLASH_ADDR_LEN + 1,
 } smem_mem_type_t;
 
+extern const char *rsvd_node;
+extern const char *del_node[];
+extern const add_node_t add_fdt_node[];
+
 #define MSM_SDC1_BASE           0x7800000
 #define MSM_SDC1_SDHCI_BASE     0x7804000
 
