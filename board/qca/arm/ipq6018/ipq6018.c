@@ -23,6 +23,7 @@
 #include <ipq6018.h>
 #include <mmc.h>
 #include <sdhci.h>
+#include <usb.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 struct sdhci_host mmc_host;
@@ -232,10 +233,337 @@ void board_nand_init(void)
 	}
 #endif
 }
+
 void set_flash_secondary_type(qca_smem_flash_info_t *smem)
 {
 	return;
 };
+
+#ifdef CONFIG_USB_XHCI_IPQ
+void board_usb_deinit(int id)
+{
+	void __iomem *boot_clk_ctl, *usb_bcr, *qusb2_phy_bcr;
+	void __iomem *usb_phy_bcr, *usb_gen_cfg, *usb_guctl, *phy_base;
+
+	if (id == 0) {
+		boot_clk_ctl = GCC_USB_0_BOOT_CLOCK_CTL;
+		usb_bcr = GCC_USB0_BCR;
+		qusb2_phy_bcr = GCC_QUSB2_0_PHY_BCR;
+		usb_phy_bcr = GCC_USB0_PHY_BCR;
+		usb_gen_cfg = USB30_1_GENERAL_CFG;
+		usb_guctl = USB30_1_GUCTL;
+		phy_base = USB30_PHY_1_QUSB2PHY_BASE;
+	}
+	else if (id == 1) {
+		boot_clk_ctl = GCC_USB_1_BOOT_CLOCK_CTL;
+		usb_bcr = GCC_USB1_BCR;
+		qusb2_phy_bcr = GCC_QUSB2_1_PHY_BCR;
+		phy_base = USB30_PHY_2_QUSB2PHY_BASE;
+	}
+	else {
+		return;
+	}
+	//Enable USB2 PHY Power down
+	setbits_le32(phy_base+0xB4, 0x1);
+
+	if (id == 0) {
+		writel(0x8000, GCC_USB0_PHY_CFG_AHB_CBCR);
+		writel(0xcff0, GCC_USB0_MASTER_CBCR);
+		writel(0, GCC_SYS_NOC_USB0_AXI_CBCR);
+		writel(0, GCC_SNOC_BUS_TIMEOUT1_AHB_CBCR);
+		writel(0, GCC_USB0_SLEEP_CBCR);
+		writel(0, GCC_USB0_MOCK_UTMI_CBCR);
+		writel(0, GCC_USB0_AUX_CBCR);
+	}
+	else if (id == 1) {
+		writel(0x8000, GCC_USB1_PHY_CFG_AHB_CBCR);
+		writel(0xcff0, GCC_USB1_MASTER_CBCR);
+		writel(0, GCC_SNOC_BUS_TIMEOUT2_AHB_CBCR);
+		writel(0, GCC_USB1_SLEEP_CBCR);
+		writel(0, GCC_USB1_MOCK_UTMI_CBCR);
+	}
+
+	//GCC_QUSB2_0_PHY_BCR
+	setbits_le32(qusb2_phy_bcr, 0x1);
+	mdelay(10);
+	clrbits_le32(qusb2_phy_bcr, 0x1);
+
+	//GCC_USB0_PHY_BCR
+	setbits_le32(usb_phy_bcr, 0x1);
+	mdelay(10);
+	clrbits_le32(usb_phy_bcr, 0x1);
+
+	//GCC Reset USB0 BCR
+	setbits_le32(usb_bcr, 0x1);
+	mdelay(10);
+	clrbits_le32(usb_bcr, 0x1);
+}
+
+static void usb_clock_init(int id)
+{
+	if (id == 0) {
+		writel(0x222000, GCC_USB0_GDSCR);
+		writel(0, GCC_SYS_NOC_USB0_AXI_CBCR);
+		writel(0, GCC_SNOC_BUS_TIMEOUT1_AHB_CBCR);
+		writel(0x10b, GCC_USB0_MASTER_CFG_RCGR);
+		writel(0x1, GCC_USB0_MASTER_CMD_RCGR);
+		writel(1, GCC_SYS_NOC_USB0_AXI_CBCR);
+		writel(0xcff1, GCC_USB0_MASTER_CBCR);
+		writel(1, GCC_SNOC_BUS_TIMEOUT1_AHB_CBCR);
+		writel(1, GCC_USB0_SLEEP_CBCR);
+		writel(0x210b, GCC_USB0_MOCK_UTMI_CFG_RCGR);
+		writel(0x1, GCC_USB0_MOCK_UTMI_M);
+		writel(0xf7, GCC_USB0_MOCK_UTMI_N);
+		writel(0xf6, GCC_USB0_MOCK_UTMI_D);
+		writel(0x3, GCC_USB0_MOCK_UTMI_CMD_RCGR);
+		writel(1, GCC_USB0_MOCK_UTMI_CBCR);
+		writel(0x8001, GCC_USB0_PHY_CFG_AHB_CBCR);
+		writel(1, GCC_USB0_AUX_CBCR);
+		writel(1, GCC_USB0_PIPE_CBCR);
+	}
+	else if (id == 1) {
+		writel(0x222000, GCC_USB1_GDSCR);
+		writel(0, GCC_SNOC_BUS_TIMEOUT2_AHB_CBCR);
+		writel(0xcff1, GCC_USB1_MASTER_CBCR);
+		writel(1, GCC_SNOC_BUS_TIMEOUT2_AHB_CBCR);
+		writel(1, GCC_USB1_SLEEP_CBCR);
+		writel(0x210b, GCC_USB1_MOCK_UTMI_CFG_RCGR);
+		writel(0x1, GCC_USB1_MOCK_UTMI_M);
+		writel(0xf7, GCC_USB1_MOCK_UTMI_N);
+		writel(0xf6, GCC_USB1_MOCK_UTMI_D);
+		writel(0x3, GCC_USB1_MOCK_UTMI_CMD_RCGR);
+		writel(1, GCC_USB1_MOCK_UTMI_CBCR);
+		writel(0x8001, GCC_USB1_PHY_CFG_AHB_CBCR);
+	}
+}
+
+static void usb_init_ssphy(int index)
+{
+	void __iomem *phybase;
+
+	if (index == 0) {
+		phybase = USB30_PHY_1_USB3PHY_AHB2PHY_BASE;
+	}
+	else if (index == 1) {
+		phybase = USB30_PHY_2_USB2PHY_AHB2PHY_BASE;
+	} else
+		return;
+
+	out_8(phybase + USB3_PHY_POWER_DOWN_CONTROL,0x1);
+	out_8(phybase + QSERDES_COM_SYSCLK_EN_SEL,0x1a);
+	out_8(phybase + QSERDES_COM_BIAS_EN_CLKBUFLR_EN,0x08);
+	out_8(phybase + QSERDES_COM_CLK_SELECT,0x30);
+	out_8(phybase + QSERDES_COM_BG_TRIM,0x0f);
+	out_8(phybase + QSERDES_RX_UCDR_FASTLOCK_FO_GAIN,0x0b);
+	out_8(phybase + QSERDES_COM_SVS_MODE_CLK_SEL,0x01);
+	out_8(phybase + QSERDES_COM_HSCLK_SEL,0x00);
+	out_8(phybase + QSERDES_COM_CMN_CONFIG,0x06);
+	out_8(phybase + QSERDES_COM_PLL_IVCO,0x0f);
+	out_8(phybase + QSERDES_COM_SYS_CLK_CTRL,0x06);
+	out_8(phybase + QSERDES_COM_DEC_START_MODE0,0x82);
+	out_8(phybase + QSERDES_COM_DIV_FRAC_START1_MODE0,0x55);
+	out_8(phybase + QSERDES_COM_DIV_FRAC_START2_MODE0,0x55);
+	out_8(phybase + QSERDES_COM_DIV_FRAC_START3_MODE0,0x03);
+	out_8(phybase + QSERDES_COM_CP_CTRL_MODE0,0x0b);
+	out_8(phybase + QSERDES_COM_PLL_RCTRL_MODE0,0x16);
+	out_8(phybase + QSERDES_COM_PLL_CCTRL_MODE0,0x28);
+	out_8(phybase + QSERDES_COM_INTEGLOOP_GAIN0_MODE0,0x80);
+	out_8(phybase + QSERDES_COM_LOCK_CMP1_MODE0,0x15);
+	out_8(phybase + QSERDES_COM_LOCK_CMP2_MODE0,0x34);
+	out_8(phybase + QSERDES_COM_LOCK_CMP3_MODE0,0x00);
+	out_8(phybase + QSERDES_COM_CORE_CLK_EN,0x00);
+	out_8(phybase + QSERDES_COM_LOCK_CMP_CFG,0x00);
+	out_8(phybase + QSERDES_COM_VCO_TUNE_MAP,0x00);
+	out_8(phybase + QSERDES_COM_BG_TIMER,0x0a);
+	out_8(phybase + QSERDES_COM_SSC_EN_CENTER,0x01);
+	out_8(phybase + QSERDES_COM_SSC_PER1,0x31);
+	out_8(phybase + QSERDES_COM_SSC_PER2,0x01);
+	out_8(phybase + QSERDES_COM_SSC_ADJ_PER1,0x00);
+	out_8(phybase + QSERDES_COM_SSC_ADJ_PER2,0x00);
+	out_8(phybase + QSERDES_COM_SSC_STEP_SIZE1,0xde);
+	out_8(phybase + QSERDES_COM_SSC_STEP_SIZE2,0x07);
+	out_8(phybase + QSERDES_RX_UCDR_SO_GAIN,0x06);
+	out_8(phybase + QSERDES_RX_RX_EQU_ADAPTOR_CNTRL2,0x02);
+	out_8(phybase + QSERDES_RX_RX_EQU_ADAPTOR_CNTRL3,0x6c);
+	out_8(phybase + QSERDES_RX_RX_EQU_ADAPTOR_CNTRL3,0x4c);
+	out_8(phybase + QSERDES_RX_RX_EQU_ADAPTOR_CNTRL4,0xb8);
+	out_8(phybase + QSERDES_RX_RX_EQ_OFFSET_ADAPTOR_CNTRL,0x77);
+	out_8(phybase + QSERDES_RX_RX_OFFSET_ADAPTOR_CNTRL2,0x80);
+	out_8(phybase + QSERDES_RX_SIGDET_CNTRL,0x03);
+	out_8(phybase + QSERDES_RX_SIGDET_DEGLITCH_CNTRL,0x16);
+	out_8(phybase + QSERDES_RX_SIGDET_ENABLES,0x0c);
+	out_8(phybase + QSERDES_TX_HIGHZ_TRANSCEIVEREN_BIAS_D,0x45);
+	out_8(phybase + QSERDES_TX_RCV_DETECT_LVL_2,0x12);
+	out_8(phybase + QSERDES_TX_LANE_MODE,0x06);
+	out_8(phybase + PCS_TXDEEMPH_M6DB_V0,0x15);
+	out_8(phybase + PCS_TXDEEMPH_M3P5DB_V0,0x0e);
+	out_8(phybase + PCS_FLL_CNTRL2,0x83);
+	out_8(phybase + PCS_FLL_CNTRL1,0x02);
+	out_8(phybase + PCS_FLL_CNT_VAL_L,0x09);
+	out_8(phybase + PCS_FLL_CNT_VAL_H_TOL,0xa2);
+	out_8(phybase + PCS_FLL_MAN_CODE,0x85);
+	out_8(phybase + PCS_LOCK_DETECT_CONFIG1,0xd1);
+	out_8(phybase + PCS_LOCK_DETECT_CONFIG2,0x1f);
+	out_8(phybase + PCS_LOCK_DETECT_CONFIG3,0x47);
+	out_8(phybase + PCS_POWER_STATE_CONFIG2,0x1b);
+	out_8(phybase + PCS_RXEQTRAINING_WAIT_TIME,0x75);
+	out_8(phybase + PCS_RXEQTRAINING_RUN_TIME,0x13);
+	out_8(phybase + PCS_LFPS_TX_ECSTART_EQTLOCK,0x86);
+	out_8(phybase + PCS_PWRUP_RESET_DLY_TIME_AUXCLK,0x04);
+	out_8(phybase + PCS_TSYNC_RSYNC_TIME,0x44);
+	out_8(phybase + PCS_RCVR_DTCT_DLY_P1U2_L,0xe7);
+	out_8(phybase + PCS_RCVR_DTCT_DLY_P1U2_H,0x03);
+	out_8(phybase + PCS_RCVR_DTCT_DLY_U3_L,0x40);
+	out_8(phybase + PCS_RCVR_DTCT_DLY_U3_H,0x00);
+	out_8(phybase + PCS_RX_SIGDET_LVL,0x88);
+	out_8(phybase + USB3_PCS_TXDEEMPH_M6DB_V0,0x17);
+	out_8(phybase + USB3_PCS_TXDEEMPH_M3P5DB_V0,0x0f);
+	out_8(phybase + QSERDES_RX_SIGDET_ENABLES,0x0);
+	out_8(phybase + USB3_PHY_START_CONTROL,0x03);
+	out_8(phybase + USB3_PHY_SW_RESET,0x00);
+}
+
+static void usb_init_phy(int index)
+{
+	void __iomem *boot_clk_ctl, *usb_bcr, *qusb2_phy_bcr;
+	void __iomem *usb_phy_bcr, *usb3_phy_bcr, *usb_gen_cfg, *usb_guctl, *phy_base;
+
+	if (index == 0) {
+		boot_clk_ctl = GCC_USB_0_BOOT_CLOCK_CTL;
+		usb_bcr = GCC_USB0_BCR;
+		qusb2_phy_bcr = GCC_QUSB2_0_PHY_BCR;
+		usb_phy_bcr = GCC_USB0_PHY_BCR;
+		usb3_phy_bcr = GCC_USB3PHY_0_PHY_BCR;
+		usb_gen_cfg = USB30_1_GENERAL_CFG;
+		usb_guctl = USB30_1_GUCTL;
+		phy_base = USB30_PHY_1_QUSB2PHY_BASE;
+	}
+	else if (index == 1) {
+		boot_clk_ctl = GCC_USB_1_BOOT_CLOCK_CTL;
+		usb_bcr = GCC_USB1_BCR;
+		qusb2_phy_bcr = GCC_QUSB2_1_PHY_BCR;
+		phy_base = USB30_PHY_2_QUSB2PHY_BASE;
+	}
+	else {
+		return;
+	}
+	//2. Enable SS Ref Clock
+	setbits_le32(GCC_USB_SS_REF_CLK_EN, 0x1);
+
+	//3. Disable USB Boot Clock
+	clrbits_le32(boot_clk_ctl, 0x0);
+
+	//4. GCC Reset USB0 BCR
+	setbits_le32(usb_bcr, 0x1);
+
+	//5. Delay 100us
+	mdelay(10);
+
+	//6. GCC Reset USB0 BCR
+	clrbits_le32(usb_bcr, 0x1);
+	//7. GCC_QUSB2_0_PHY_BCR
+	setbits_le32(qusb2_phy_bcr, 0x1);
+
+	//8. GCC_USB0_PHY_BCR
+	setbits_le32(usb_phy_bcr, 0x1);
+	setbits_le32(usb3_phy_bcr, 0x1);
+
+	//9. Delay 100us
+	mdelay(10);
+
+	//10. GCC_USB0_PHY_BCR
+	clrbits_le32(usb3_phy_bcr, 0x1);
+	clrbits_le32(usb_phy_bcr, 0x1);
+
+	//11. GCC_QUSB2_0_PHY_BCR
+	clrbits_le32(qusb2_phy_bcr, 0x1);
+
+	//12. Delay 100us
+	mdelay(10);
+
+	//20. Config user control register
+	writel(0x0c80c010, usb_guctl);
+
+	//21. Enable USB2 PHY Power down
+	setbits_le32(phy_base+0xB4, 0x1);
+
+	//22. PHY Config Sequence
+	out_8(phy_base+0x80, 0xF8);
+	out_8(phy_base+0x84, 0x83);
+	out_8(phy_base+0x88, 0x83);
+	out_8(phy_base+0x8C, 0xC0);
+	out_8(phy_base+0x9C, 0x14);
+	out_8(phy_base+0x08, 0x30);
+	out_8(phy_base+0x0C, 0x79);
+	out_8(phy_base+0x10, 0x21);
+	out_8(phy_base+0x90, 0x00);
+	out_8(phy_base+0x18, 0x00);
+	out_8(phy_base+0x1C, 0x9F);
+	out_8(phy_base+0x04, 0x80);
+
+	//23. Disable USB2 PHY Power down
+	clrbits_le32(phy_base+0xB4, 0x1);
+
+	usb_init_ssphy(index);
+}
+
+int ipq_board_usb_init(void)
+{
+	int i, nodeoff;
+	char node, usb_node[4] = "usb\0";
+
+	for (i=0; i<CONFIG_USB_MAX_CONTROLLER_COUNT; i++) {
+		node = i + '0';
+		usb_node[3] = node;
+		nodeoff = fdt_path_offset(gd->fdt_blob, usb_node);
+		if (!fdtdec_get_int(gd->fdt_blob, nodeoff, "qcom,emulation", 0)) {
+			usb_clock_init(i);
+			usb_init_phy(i);
+		}
+	}
+	return 0;
+}
+#endif
+
+void ipq_fdt_fixup_usb_device_mode(void *blob)
+{
+	int nodeoff, ret, node;
+	const char *usb_dr_mode = "peripheral"; /* Supported mode */
+	const char *usb_max_speed = "high-speed";/* Supported speed */
+	const char *usb_node[] = {"/soc/usb3@8A00000/dwc3@8A00000"};
+	const char *usb_cfg;
+
+	usb_cfg = getenv("usb_mode");
+	if (!usb_cfg)
+		return;
+
+	if (strcmp(usb_cfg, usb_dr_mode)) {
+		printf("fixup_usb: usb_mode can be either 'peripheral' or not set\n");
+		return;
+	}
+
+	for (node = 0; node < ARRAY_SIZE(usb_node); node++) {
+		nodeoff = fdt_path_offset(blob, usb_node[node]);
+		if (nodeoff < 0) {
+			printf("fixup_usb: unable to find node '%s'\n",
+			       usb_node[node]);
+			return;
+		}
+		ret = fdt_setprop(blob, nodeoff, "dr_mode",
+				  usb_dr_mode,
+				  (strlen(usb_dr_mode) + 1));
+		if (ret)
+			printf("fixup_usb: 'dr_mode' cannot be set");
+
+		/* if mode is peripheral restricting to high-speed */
+		ret = fdt_setprop(blob, nodeoff, "maximum-speed",
+				  usb_max_speed,
+				  (strlen(usb_max_speed) + 1));
+		if (ret)
+			printf("fixup_usb: 'maximum-speed' cannot be set");
+	}
+}
+
 void enable_caches(void)
 {
 	icache_enable();
@@ -273,13 +601,7 @@ void ipq_fdt_fixup_socinfo(void *blob)
 	return;
 }
 
-void ipq_fdt_fixup_usb_device_mode(void *blob)
-{
-	return;
-}
-
 void fdt_fixup_auto_restart(void *blob)
 {
 	return;
 }
-

@@ -69,7 +69,7 @@ CONFIG_CMD_FLASH=y
 # CONFIG_CMD_SF is not set
 # CONFIG_CMD_SPI is not set
 # CONFIG_CMD_I2C is not set
-# CONFIG_CMD_USB is not set
+CONFIG_CMD_USB=y
 CONFIG_CMD_FPGA=y
 
 #
@@ -256,7 +256,12 @@ CONFIG_REQUIRE_SERIAL_CONSOLE=y
 #
 # TPM support
 #
-# CONFIG_USB is not set
+
+#
+# USB support
+#
+CONFIG_USB=y
+CONFIG_DM_USB=y
 
 #
 # Graphics support
