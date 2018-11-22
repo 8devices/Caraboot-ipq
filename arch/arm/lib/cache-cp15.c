@@ -62,7 +62,7 @@ void mmu_set_region_dcache_behaviour(phys_addr_t start, size_t size,
 	mmu_page_table_flush((u32)&page_table[start], (u32)&page_table[end]);
 }
 
-#if defined(CONFIG_ARCH_IPQ40xx) || defined(CONFIG_ARCH_IPQ807x)
+#if defined(CONFIG_ARCH_IPQ40xx) || defined(CONFIG_ARCH_IPQ807x) || defined(CONFIG_ARCH_IPQ6018)
 #define UBOOT_CACHE_SETUP	0x100e
 #define GEN_CACHE_SETUP		0x101e
 

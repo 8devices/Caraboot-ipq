@@ -48,7 +48,7 @@ save_boot_params_ret:
 	msr	cpsr,r0
 
 /* Setup CP15 barrier */
-#if defined (CONFIG_ARCH_IPQ807x) || defined (CONFIG_ARCH_IPQ806x)
+#if defined (CONFIG_ARCH_IPQ807x) || defined (CONFIG_ARCH_IPQ806x) || defined (CONFIG_ARCH_IPQ6018)
 	mrc p15, 0, r0, c1, c0, 0 @Read SCTLR to r0
 	orr r0, r0, #0x20 @set the cp15 barrier enable bit
 	mcr p15, 0, r0, c1, c0, 0 @write back to SCTLR
