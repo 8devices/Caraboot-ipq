@@ -238,12 +238,22 @@ void set_flash_secondary_type(qca_smem_flash_info_t *smem)
 };
 void enable_caches(void)
 {
+	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
+	smem_get_boot_flash(&sfi->flash_type,
+			    &sfi->flash_index,
+			    &sfi->flash_chip_select,
+			    &sfi->flash_block_size,
+			    &sfi->flash_density);
 	icache_enable();
+	/*Skips dcache_enable during JTAG recovery */
+	if (sfi->flash_type)
+		dcache_enable();
 }
 
 void disable_caches(void)
 {
 	icache_disable();
+	dcache_disable();
 }
 
 __weak int ipq_get_tz_version(char *version_name, int buf_size)
