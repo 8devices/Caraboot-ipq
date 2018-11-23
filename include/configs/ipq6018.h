@@ -131,6 +131,25 @@ extern loff_t board_env_size;
 #define CONFIG_ENV_OVERWRITE
 
 /*
+ * Block Device & Disk  Partition Config
+ */
+#define HAVE_BLOCK_DEVICE
+#define CONFIG_DOS_PARTITION
+
+/*
+ * USB Support
+ */
+#define CONFIG_USB_XHCI_IPQ
+#ifdef CONFIG_USB_XHCI_IPQ
+#define CONFIG_USB_XHCI
+#define CONFIG_USB_XHCI_DWC3
+#define CONFIG_CMD_USB
+#define CONFIG_USB_STORAGE
+#define CONFIG_SYS_USB_XHCI_MAX_ROOT_PORTS      2
+#define CONFIG_USB_MAX_CONTROLLER_COUNT         2
+#endif
+
+/*
 * SPI Flash Configs
 */
 #define CONFIG_QCA_SPI

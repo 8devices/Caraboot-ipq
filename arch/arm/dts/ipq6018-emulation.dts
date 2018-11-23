@@ -23,6 +23,8 @@
 		console = "/serial@78af000";
 		mmc = "/sdhci@7804000";
 		i2c0 = "/i2c@78b6000";
+		usb0 = "/xhci@8a00000";
+		usb1 = "/xhci@7000000";
 	};
 	serial@78af000 {
 		compatible = "qca,ipq-uartdm";
@@ -49,7 +51,6 @@
 		compatible = "qcom,sdhci-msm";
         };
 
-
 	i2c0: i2c@78b6000 {
 		compatible = "qcom,qup-i2c";
 		#address-cells = <1>;
@@ -75,4 +76,13 @@
 			};
               };
 	};
+
+	xhci@8a00000 {
+		qcom,emulation = <1>;
+	};
+
+	xhci@7000000 {
+		qcom,emulation = <1>;
+	};
+
 };
