@@ -22,6 +22,7 @@
 
 	aliases {
 		console = "/serial@78af000";
+		uart2 = "/serial@78b0000";
 		mmc = "/sdhci@7804000";
 		i2c0 = "/i2c@78b6000";
 		usb0 = "/xhci@8a00000";
@@ -33,6 +34,31 @@
 		id = <2>;
 		bit_rate = <0xff>;
 		status = "ok";
+	};
+	serial@78b0000 {
+		reg = <0x78B0000 0x200>;
+		id = <1>;
+		bit_rate = <0xff>;
+		clk_rate = <3686400>;
+		m_value = <72>;
+		n_value = <15625>;
+		d_value = <15625>;
+		status = "ok";
+		serial_gpio {
+			gpio1 {
+				gpio = <71>;
+				func = <1>;
+				pull = <GPIO_PULL_DOWN>;
+				oe = <GPIO_OE_DISABLE>;
+			};
+
+			gpio2 {
+				gpio = <72>;
+				func = <1>;
+				pull = <GPIO_PULL_DOWN>;
+				oe = <GPIO_OE_DISABLE>;
+			};
+		};
 	};
 	spi {
 		compatible = "qcom,spi-qup-v2.7.0";
