@@ -593,6 +593,48 @@ __weak int ipq_get_tz_version(char *version_name, int buf_size)
  */
 int set_uuid_bootargs(char *boot_args, char *part_name, int buflen, bool gpt_flag)
 {
+	int ret, len;
+	block_dev_desc_t *blk_dev;
+	disk_partition_t disk_info;
+
+	blk_dev = mmc_get_dev(mmc_host.dev_num);
+	if (!blk_dev) {
+		printf("Invalid block device name\n");
+		return -EINVAL;
+	}
+
+	if (buflen <= 0 || buflen > MAX_BOOT_ARGS_SIZE)
+		return -EINVAL;
+
+#ifdef CONFIG_PARTITION_UUIDS
+	ret = get_partition_info_efi_by_name(blk_dev,
+			part_name, &disk_info);
+	if (ret) {
+		printf("bootipq: unsupported partition name %s\n",part_name);
+		return -EINVAL;
+	}
+	if ((len = strlcpy(boot_args, "root=PARTUUID=", buflen)) >= buflen)
+		return -EINVAL;
+#else
+	if ((len = strlcpy(boot_args, "rootfsname=", buflen)) >= buflen)
+		return -EINVAL;
+#endif
+	boot_args += len;
+	buflen -= len;
+
+#ifdef CONFIG_PARTITION_UUIDS
+	if ((len = strlcpy(boot_args, disk_info.uuid, buflen)) >= buflen)
+		return -EINVAL;
+#else
+	if ((len = strlcpy(boot_args, part_name, buflen)) >= buflen)
+		return -EINVAL;
+#endif
+	boot_args += len;
+	buflen -= len;
+
+	if (gpt_flag && strlcpy(boot_args, " gpt", buflen) >= buflen)
+		return -EINVAL;
+
 	return 0;
 }
 
