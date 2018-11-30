@@ -16,7 +16,6 @@
 #include <asm/io.h>
 #include <asm/errno.h>
 #include <environment.h>
-
 #include <asm/arch-qca-common/qpic_nand.h>
 #include <asm/arch-qca-common/gpio.h>
 #include <asm/arch-qca-common/uart.h>
@@ -231,6 +230,10 @@ void board_nand_init(void)
 		qca_gpio_init(gpio_node);
 		ipq_spi_init(CONFIG_IPQ_SPI_NOR_INFO_IDX);
 	}
+#ifdef CONFIG_SPI_NAND
+	if (fdtdec_get_uint(gd->fdt_blob, 0, "spi_nand_available", 0))
+		spi_nand_init();
+#endif
 #endif
 }
 
