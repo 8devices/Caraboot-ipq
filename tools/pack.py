@@ -1387,7 +1387,10 @@ class Pack(object):
 	global ARCH_NAME
 
         try:
-            part_info = root.find(".//data[@type='" + ftype.upper() + "_PARAMETER']")
+            if ftype == "tiny-nor":
+                part_info = root.find(".//data[@type='" + "NOR_PARAMETER']")
+            else:
+                part_info = root.find(".//data[@type='" + ftype.upper() + "_PARAMETER']")
             part_file = SRC_DIR + "/" + ARCH_NAME + "/flash_partition/" + ftype + "-partition.xml"
             part_xml = ET.parse(part_file)
             partition = part_xml.find(".//partitions/partition[2]")
@@ -1397,7 +1400,7 @@ class Pack(object):
             pages_per_block = int(part_info.find(".//pages_per_block").text)
             blocks_per_chip = int(part_info.find(".//total_block").text)
 
-            if ftype == "norplusnand" or ftype == "norplusemmc":
+            if ftype == "norplusnand" or ftype == "norplusemmc" or ftype == "tiny-nor":
                 ftype = "nor"
 
         except ValueError, e:
@@ -1413,7 +1416,7 @@ class Pack(object):
     def __process_board(self, images, root):
 
         try:
-            if self.flash_type in [ "nand", "nor", "norplusnand" ]:
+            if self.flash_type in [ "nand", "nor", "tiny-nor", "norplusnand" ]:
                 self.__process_board_flash(self.flash_type, images, root)
             elif self.flash_type == "emmc":
                 self.__process_board_flash_emmc(self.flash_type, images, root)
@@ -1426,7 +1429,7 @@ class Pack(object):
     def main_bconf(self, flash_type, images_dname, out_fname, root):
         """Start the packing process, using board config.
 
-        flash_type -- string, indicates flash type, 'nand' or 'nor' or 'emmc' or 'norplusnand'
+        flash_type -- string, indicates flash type, 'nand' or 'nor' or 'tiny-nor' or 'emmc' or 'norplusnand'
         images_dname -- string, name of images directory
         out_fname -- string, output file path
         """
@@ -1452,7 +1455,7 @@ class UsageError(Exception):
 class ArgParser(object):
     """Class to parse command-line arguments."""
 
-    DEFAULT_TYPE = "nor,nand,norplusnand,emmc,norplusemmc"
+    DEFAULT_TYPE = "nor,tiny-nor,nand,norplusnand,emmc,norplusemmc"
 
     def __init__(self):
         self.flash_type = None
@@ -1514,7 +1517,7 @@ class ArgParser(object):
 	    if self.flash_type == None:
                 self.flash_type = ArgParser.DEFAULT_TYPE
 	    for flash_type in self.flash_type.split(","):
-                if flash_type not in [ "nand", "nor", "emmc", "norplusnand", "norplusemmc" ]:
+                if flash_type not in [ "nand", "nor", "tiny-nor", "emmc", "norplusnand", "norplusemmc" ]:
                     raise UsageError("invalid flash type '%s'" % flash_type)
 
 # Verify src Path
@@ -1542,7 +1545,7 @@ class ArgParser(object):
         print "options:"
         print "  --arch \tARCH_TYPE [ipq40xx/ipq806x/ipq807x/ipq807x_64]"
 	print
-	print "  --fltype \tFlash Type [nor/nand/emmc/norplusnand/norplusemmc]"
+	print "  --fltype \tFlash Type [nor/tiny-nor/nand/emmc/norplusnand/norplusemmc]"
         print " \t\tMultiple flashtypes can be passed by a comma separated string"
         print " \t\tDefault is all. i.e If \"--fltype\" is not passed image for all the flash-type will be created.\n"
         print "  --srcPath \tPath to the directory containg the meta scripts and configs"
