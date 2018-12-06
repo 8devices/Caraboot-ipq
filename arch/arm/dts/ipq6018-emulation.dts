@@ -18,6 +18,7 @@
 	compatible = "qca,ipq6018", "qca,ipq6018-emulation-c1";
 	machid = <0x08010000>;
 	config_name = "config@1";
+	spi_nand_available = <1>;
 
 	aliases {
 		console = "/serial@78af000";
@@ -37,8 +38,14 @@
 		compatible = "qcom,spi-qup-v2.7.0";
 		wr_pipe_0 = <12>;
 		rd_pipe_0 = <13>;
+		wr_pipe_1 = <14>;
+		rd_pipe_1 = <15>;
 		status = "ok";
 		spi_gpio {};
+		spi_nand {
+			bus-num = <1>;
+			cs = <0>;
+		};
 	};
 	nand: nand-controller@79B0000 {
 		compatible = "qcom,qpic-nand.1.5.20";
