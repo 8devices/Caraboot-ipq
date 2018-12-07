@@ -1040,9 +1040,20 @@ int spi_flash_scan(struct spi_flash *flash)
 	u8 idcode[5];
 	u8 cmd;
 	int ret;
+#ifdef CONFIG_SPI_NAND_MULTI_BYTE_READ_ID
+	u8 command[2];
+	int dummy_byte = 0;
 
+	command[0] = CMD_READ_ID;
+	command[1] = 0;			/*dummy byte*/
+
+try_with_dummy_byte:
 	/* Read the ID codes */
+	ret = spi_flash_cmd_read(spi, command, dummy_byte+1, idcode,
+						sizeof(idcode));
+#else
 	ret = spi_flash_cmd(spi, CMD_READ_ID, idcode, sizeof(idcode));
+#endif
 	if (ret) {
 		printf("SF: Failed to get idcodes\n");
 		return -EINVAL;
@@ -1084,10 +1095,22 @@ int spi_flash_scan(struct spi_flash *flash)
 		if (!ret)
 			goto do_generic_probe;
 #endif
+#ifdef CONFIG_SPI_NAND_MULTI_BYTE_READ_ID
+	if (dummy_byte == 0) {
+		dummy_byte = 1;
+		goto try_with_dummy_byte;
+		} else {
+			printf("SF: Unsupported flash IDs: ");
+			printf("manuf %02x, jedec %04x, ext_jedec %04x\n",
+				idcode[0], jedec, ext_jedec);
+			return -EPROTONOSUPPORT;
+		}
+#else
 		printf("SF: Unsupported flash IDs: ");
 		printf("manuf %02x, jedec %04x, ext_jedec %04x\n",
 		       idcode[0], jedec, ext_jedec);
 		return -EPROTONOSUPPORT;
+#endif
 	}
 
 	/* Flash powers up read-only, so clear BP# bits */

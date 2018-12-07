@@ -212,6 +212,7 @@ extern loff_t board_env_size;
 #define CONFIG_SF_SPI_NAND_CS		1
 #define CONFIG_IPQ_SPI_NAND_INFO_IDX	1
 #define CONFIG_SF_NAND_BUS		1
+#define CONFIG_SPI_NAND_MULTI_BYTE_READ_ID
 #endif
 
 /*
