@@ -203,6 +203,17 @@ extern loff_t board_env_size;
 #define CONFIG_SYS_NAND_SELF_INIT
 #define CONFIG_SYS_NAND_ONFI_DETECTION
 
+ /*
+ * SPI NAND SUPPORT
+ */
+#define CONFIG_IPQ6018_SPI_NAND
+#ifdef CONFIG_IPQ6018_SPI_NAND
+#define CONFIG_SPI_NAND
+#define CONFIG_SF_SPI_NAND_CS		1
+#define CONFIG_IPQ_SPI_NAND_INFO_IDX	1
+#define CONFIG_SF_NAND_BUS		1
+#endif
+
 /*
  * Expose SPI driver as a pseudo NAND driver to make use
  * of U-Boot's MTD framework.

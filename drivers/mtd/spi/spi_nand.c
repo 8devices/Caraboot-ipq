@@ -12,6 +12,7 @@
 */
 
 #include <common.h>
+#include <asm/global_data.h>
 #include <nand.h>
 #include <linux/mtd/nand.h>
 #include <spi_flash.h>
@@ -37,6 +38,8 @@
 #define GIGADEVICE_NORM_READ_MASK 0x0F
 
 #define spi_print(...)  printf("spi_nand: " __VA_ARGS__)
+
+DECLARE_GLOBAL_DATA_PTR;
 
 struct nand_chip nand_chip[CONFIG_SYS_MAX_NAND_DEVICE];
 int verify_3bit_ecc(int status);
@@ -1033,6 +1036,9 @@ int spi_nand_init(void)
 	struct nand_chip *chip;
 	struct ipq40xx_spinand_info *info;
 	int ret;
+	int node;
+	u8 bus = CONFIG_SF_DEFAULT_BUS;
+	u8 cs = CONFIG_SF_SPI_NAND_CS;
 
 	info = (struct ipq40xx_spinand_info *)malloc(
 			sizeof(struct ipq40xx_spinand_info));
@@ -1042,10 +1048,15 @@ int spi_nand_init(void)
 	}
 	memset(info, '0', sizeof(struct ipq40xx_spinand_info));
 
-	flash = spi_flash_probe(CONFIG_SF_DEFAULT_BUS,
-				CONFIG_SF_SPI_NAND_CS,
-				CONFIG_SF_DEFAULT_SPEED,
-				CONFIG_SF_DEFAULT_MODE);
+	node = fdt_path_offset(gd->fdt_blob, "/spi/spi_nand");
+	if (node >= 0) {
+		bus = fdtdec_get_uint(gd->fdt_blob,
+			node, "bus-num", CONFIG_SF_DEFAULT_BUS);
+		cs = fdtdec_get_uint(gd->fdt_blob,
+			node, "cs", CONFIG_SF_SPI_NAND_CS);
+	}
+	flash = spi_flash_probe(bus, cs, CONFIG_SF_DEFAULT_SPEED,
+					CONFIG_SF_DEFAULT_MODE);
 	if (!flash) {
 	    	free(info);
 		spi_print("Id could not be mapped\n");
