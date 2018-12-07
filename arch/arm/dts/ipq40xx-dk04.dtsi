@@ -213,7 +213,7 @@
 		phy_name = "IPQ MDIO0";
 	};
 
-	i2c0 {
+	i2c@78b7000 {
 		i2c_gpio {
 			gpio1 {
 				gpio = <20>;
