@@ -240,6 +240,8 @@ enum dcache_option {
 	DCACHE_WRITETHROUGH = DCACHE_OFF | TTB_SECT_C_MASK,
 	DCACHE_WRITEBACK = DCACHE_WRITETHROUGH | TTB_SECT_B_MASK,
 	DCACHE_WRITEALLOC = DCACHE_WRITEBACK | TTB_SECT_TEX(1),
+	SHARED_DEVICE = TTB_SECT_B_MASK | TTB_SECT_S_MASK | TTB_SECT_DOMAIN(0) |
+				TTB_SECT_XN_MASK | TTB_SECT,
 };
 #else
 /* options available for data cache on each page */
@@ -248,6 +250,10 @@ enum dcache_option {
 	DCACHE_WRITETHROUGH = 0x1a,
 	DCACHE_WRITEBACK = 0x1e,
 	DCACHE_WRITEALLOC = 0x16,
+	/* Regions other than DDR has to be marked as "shared device"
+	 * They have B bit set, C bit unset, S(hared) bit set, XN bit set
+	 */
+	SHARED_DEVICE = 0x10016,
 };
 #endif
 
