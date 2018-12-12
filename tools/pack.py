@@ -1287,7 +1287,7 @@ class Pack(object):
         its_fp.close()
 	
         try:
-            cmd = ["mkimage", "-f", self.its_fname, self.img_fname]
+            cmd = [SRC_DIR + "/mkimage", "-f", self.its_fname, self.img_fname]
             ret = subprocess.call(cmd)
             if ret != 0:
                 print ret
