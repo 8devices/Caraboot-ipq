@@ -1317,7 +1317,14 @@ class Pack(object):
         script_fp = open(self.scr_fname, "a")
 
         if flinfo.type != "emmc":
-            flash_param = root.find(".//data[@type='NAND_PARAMETER']")
+            if root.find(".//data[@type='NAND_PARAMETER']/entry") != None:
+                if flinfo.type == "nand":
+                    flash_param = root.find(".//data[@type='NAND_PARAMETER']/entry[@type='2k']")
+                else:
+                    flash_param = root.find(".//data[@type='NAND_PARAMETER']/entry[@type='4k']")
+            else:
+                flash_param = root.find(".//data[@type='NAND_PARAMETER']")
+
             pagesize = int(flash_param.find(".//page_size").text)
             pages_per_block = int(flash_param.find(".//pages_per_block").text)
             blocksize = pages_per_block * pagesize
@@ -1389,8 +1396,17 @@ class Pack(object):
         try:
             if ftype == "tiny-nor":
                 part_info = root.find(".//data[@type='" + "NOR_PARAMETER']")
+            elif ftype == "nand" or ftype == "nand-4k":
+                if root.find(".//data[@type='NAND_PARAMETER']/entry") != None:
+                    if ftype == "nand":
+                        part_info = root.find(".//data[@type='NAND_PARAMETER']/entry[@type='2k']")
+                    else:
+                        part_info = root.find(".//data[@type='NAND_PARAMETER']/entry[@type='4k']")
+                else:
+                    part_info = root.find(".//data[@type='" + "NAND_PARAMETER']")
             else:
                 part_info = root.find(".//data[@type='" + ftype.upper() + "_PARAMETER']")
+
             part_file = SRC_DIR + "/" + ARCH_NAME + "/flash_partition/" + ftype + "-partition.xml"
             part_xml = ET.parse(part_file)
             partition = part_xml.find(".//partitions/partition[2]")
@@ -1402,6 +1418,8 @@ class Pack(object):
 
             if ftype == "norplusnand" or ftype == "norplusemmc" or ftype == "tiny-nor":
                 ftype = "nor"
+            if ftype == "nand-4k":
+                ftype = "nand"
 
         except ValueError, e:
             error("invalid flash info in section '%s'" % board_section.find('machid').text, e)
@@ -1416,7 +1434,7 @@ class Pack(object):
     def __process_board(self, images, root):
 
         try:
-            if self.flash_type in [ "nand", "nor", "tiny-nor", "norplusnand" ]:
+            if self.flash_type in [ "nand", "nand-4k", "nor", "tiny-nor", "norplusnand" ]:
                 self.__process_board_flash(self.flash_type, images, root)
             elif self.flash_type == "emmc":
                 self.__process_board_flash_emmc(self.flash_type, images, root)
@@ -1575,6 +1593,11 @@ def main():
 
     config = SRC_DIR + "/" + ARCH_NAME + "/config.xml"
     root = ET.parse(config)
+
+# Add nand-4k flash type, if nand flash type is specified
+    if "nand" in parser.flash_type:
+        if root.find(".//data[@type='NAND_PARAMETER']/entry") != None:
+            parser.flash_type = parser.flash_type + ",nand-4k"
 
 # Format the output image name from Arch, flash type and mode
     for flash_type in parser.flash_type.split(","):
