@@ -244,7 +244,7 @@ typedef struct {
 #define IPQ_NSSTCM_DUMP_ADDR            (IPQ_MEM_RESERVE_BASE(nsstcmdump))
 #define IPQ_TEMP_DUMP_ADDR              (IPQ_MEM_RESERVE_BASE(nsstcmdump))
 
-#define IPQ_TFTP_MIN_ADDR		(CONFIG_SYS_SDRAM_BASE + (32 << 20))
+#define IPQ_TFTP_MIN_ADDR		(CONFIG_SYS_SDRAM_BASE + (64 << 20))
 #define IPQ_TFTP_MAX_ADDR		(gd->bd->bi_dram[0].start +	\
 					 gd->bd->bi_dram[0].size)
 
