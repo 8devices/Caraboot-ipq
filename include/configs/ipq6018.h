@@ -149,6 +149,14 @@ extern loff_t board_env_size;
 #define CONFIG_USB_MAX_CONTROLLER_COUNT         2
 #endif
 
+#define CONFIG_PCI_IPQ
+#define PCI_MAX_DEVICES	1
+#ifdef CONFIG_PCI_IPQ
+#define CONFIG_PCI
+#define CONFIG_CMD_PCI
+#define CONFIG_PCI_SCAN_SHOW
+#endif
+
 /*
 * SPI Flash Configs
 */

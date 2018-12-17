@@ -237,6 +237,98 @@ void board_nand_init(void)
 #endif
 }
 
+#ifdef CONFIG_PCI_IPQ
+static void pcie_v2_clock_init()
+{
+	/* Enable PCIE CLKS */
+	writel(0x2, GCC_PCIE0_AUX_CMD_RCGR);
+	writel(0x107, GCC_PCIE0_AXI_CFG_RCGR);
+	writel(0x1, GCC_PCIE0_AXI_CMD_RCGR);
+	mdelay(100);
+	writel(0x2, GCC_PCIE0_AXI_CMD_RCGR);
+	writel(0x20000001, GCC_PCIE0_AHB_CBCR);
+	writel(0x4FF1, GCC_PCIE0_AXI_M_CBCR);
+	writel(0x20004FF1, GCC_PCIE0_AXI_S_CBCR);
+	writel(0x1, GCC_PCIE0_AUX_CBCR);
+	writel(0x80004FF1, GCC_PCIE0_PIPE_CBCR);
+	writel(0x1, GCC_PCIE0_AXI_S_BRIDGE_CBCR);
+	writel(0x10F, GCC_PCIE0_RCHNG_CFG_RCGR);
+	writel(0x3, GCC_PCIE0_RCHNG_CMD_RCGR);
+}
+
+static void pcie_v2_clock_deinit()
+{
+	writel(0x0, GCC_PCIE0_AUX_CMD_RCGR);
+	writel(0x0, GCC_PCIE0_AXI_CFG_RCGR);
+	writel(0x0, GCC_PCIE0_AXI_CMD_RCGR);
+	mdelay(100);
+	writel(0x0, GCC_SYS_NOC_PCIE0_AXI_CLK);
+	writel(0x0, GCC_PCIE0_AHB_CBCR);
+	writel(0x0, GCC_PCIE0_AXI_M_CBCR);
+	writel(0x0, GCC_PCIE0_AXI_S_CBCR);
+	writel(0x0, GCC_PCIE0_AUX_CBCR);
+	writel(0x0, GCC_PCIE0_PIPE_CBCR);
+	writel(0x0, GCC_PCIE0_AXI_S_BRIDGE_CBCR);
+	writel(0x0, GCC_PCIE0_RCHNG_CFG_RCGR);
+	writel(0x0, GCC_PCIE0_RCHNG_CMD_RCGR);
+}
+
+void board_pci_init(int id)
+{
+	int node, gpio_node;
+	char name[16];
+
+	snprintf(name, sizeof(name), "pci%d", id);
+	node = fdt_path_offset(gd->fdt_blob, name);
+	if (node < 0) {
+		printf("Could not find PCI in device tree\n");
+		return;
+	}
+	gpio_node = fdt_subnode_offset(gd->fdt_blob, node, "pci_gpio");
+	if (gpio_node >= 0)
+		qca_gpio_init(gpio_node);
+
+	pcie_v2_clock_init();
+
+	return;
+}
+
+void board_pci_deinit()
+{
+	int node, gpio_node, i, err;
+	char name[16];
+	struct fdt_resource parf;
+	struct fdt_resource pci_phy;
+
+	for (i = 0; i < PCI_MAX_DEVICES; i++) {
+		snprintf(name, sizeof(name), "pci%d", i);
+		node = fdt_path_offset(gd->fdt_blob, name);
+		if (node < 0) {
+			printf("Could not find PCI in device tree\n");
+			return;
+		}
+		err = fdt_get_named_resource(gd->fdt_blob, node, "reg", "reg-names", "parf",
+				&parf);
+		writel(0x0, parf.start + 0x358);
+		writel(0x1, parf.start + 0x40);
+		err = fdt_get_named_resource(gd->fdt_blob, node, "reg", "reg-names", "pci_phy",
+				     &pci_phy);
+		if (err < 0)
+			return;
+
+		writel(0x1, pci_phy.start + 800);
+		writel(0x0, pci_phy.start + 804);
+		gpio_node = fdt_subnode_offset(gd->fdt_blob, node, "pci_gpio");
+		if (gpio_node >= 0)
+			qca_gpio_deinit(gpio_node);
+
+	}
+
+	pcie_v2_clock_deinit();
+
+	return ;
+}
+#endif
 void set_flash_secondary_type(qca_smem_flash_info_t *smem)
 {
 	return;
