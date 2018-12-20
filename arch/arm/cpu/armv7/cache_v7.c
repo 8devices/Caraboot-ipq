@@ -8,7 +8,6 @@
 #include <linux/types.h>
 #include <common.h>
 #include <asm/armv7.h>
-#include <asm/utils.h>
 
 #define ARMV7_DCACHE_INVAL_ALL		1
 #define ARMV7_DCACHE_CLEAN_INVAL_ALL	2
@@ -16,6 +15,39 @@
 #define ARMV7_DCACHE_CLEAN_INVAL_RANGE	4
 
 #ifndef CONFIG_SYS_DCACHE_OFF
+
+struct {
+	int dstatus;
+	int operation;
+	int way, set;
+	u32 setway;
+	u32 num_sets, num_ways, log2_line_len, log2_num_ways;
+	u32 way_shift;
+	u32 level, cache_type, level_start_bit;
+	u32 clidr;
+	u32 ccsidr;
+	u32 type;
+	u32 csselr;
+	u32 line_len;
+	s32 log2n;
+	u32 temp;
+} c1 __attribute__((section(".nocache")));
+
+static inline s32 log_2_n_round_up(void)
+{
+	c1.log2n = -1;
+	c1.temp = c1.num_ways;
+
+	while (c1.temp) {
+		c1.log2n++;
+		c1.temp >>= 1;
+	}
+
+	if (c1.num_ways & (c1.num_ways - 1))
+		return c1.log2n + 1; /* not power of 2 - round up */
+	else
+		return c1.log2n; /* power of 2 */
+}
 
 void set_l2_indirect_reg(u32 reg_addr, u32 val)
 {
@@ -47,132 +79,114 @@ u32 get_l2_indirect_reg(u32 reg_addr)
  * Write the level and type you want to Cache Size Selection Register(CSSELR)
  * to get size details from Current Cache Size ID Register(CCSIDR)
  */
-static void set_csselr(u32 level, u32 type)
+static void set_csselr(void)
 {
-	u32 csselr = level << 1 | type;
+	c1.csselr = c1.level << 1 | c1.type;
 
 	/* Write to Cache Size Selection Register(CSSELR) */
-	asm volatile ("mcr p15, 2, %0, c0, c0, 0" : : "r" (csselr));
+	asm volatile ("mcr p15, 2, %0, c0, c0, 0" : : "r" (c1.csselr));
 }
 
 static u32 get_ccsidr(void)
 {
-	u32 ccsidr;
-
 	/* Read current CP15 Cache Size ID Register */
-	asm volatile ("mrc p15, 1, %0, c0, c0, 0" : "=r" (ccsidr));
-	return ccsidr;
+	asm volatile ("mrc p15, 1, %0, c0, c0, 0" : "=r" (c1.ccsidr));
 }
 
 static u32 get_clidr(void)
 {
-	u32 clidr;
-
 	/* Read current CP15 Cache Level ID Register */
-	asm volatile ("mrc p15,1,%0,c0,c0,1" : "=r" (clidr));
-	return clidr;
+	asm volatile ("mrc p15,1,%0,c0,c0,1" : "=r" (c1.clidr));
 }
 
-static void v7_inval_dcache_level_setway(u32 level, u32 num_sets,
-					 u32 num_ways, u32 way_shift,
-					 u32 log2_line_len)
+static void v7_inval_dcache_level_setway(void)
 {
-	int way, set;
-	u32 setway;
-
 	/*
 	 * For optimal assembly code:
 	 *	a. count down
 	 *	b. have bigger loop inside
 	 */
-	for (way = num_ways - 1; way >= 0 ; way--) {
-		for (set = num_sets - 1; set >= 0; set--) {
-			setway = (level << 1) | (set << log2_line_len) |
-				 (way << way_shift);
+	for (c1.way = c1.num_ways - 1; c1.way >= 0 ; c1.way--) {
+		for (c1.set = c1.num_sets - 1; c1.set >= 0; c1.set--) {
+			c1.setway = (c1.level << 1) |
+					(c1.set << c1.log2_line_len) |
+					(c1.way << c1.way_shift);
 			/* Invalidate data/unified cache line by set/way */
 			asm volatile ("	mcr p15, 0, %0, c7, c6, 2"
-					: : "r" (setway));
+					: : "r" (c1.setway));
 		}
 	}
 	/* DSB to make sure the operation is complete */
 	DSB;
 }
 
-static void v7_clean_inval_dcache_level_setway(u32 level, u32 num_sets,
-					       u32 num_ways, u32 way_shift,
-					       u32 log2_line_len)
+static void v7_clean_inval_dcache_level_setway(void)
 {
-	int way, set;
-	u32 setway;
-
 	/*
 	 * For optimal assembly code:
 	 *	a. count down
 	 *	b. have bigger loop inside
 	 */
-	for (way = num_ways - 1; way >= 0 ; way--) {
-		for (set = num_sets - 1; set >= 0; set--) {
-			setway = (level << 1) | (set << log2_line_len) |
-				 (way << way_shift);
+	for (c1.way = c1.num_ways - 1; c1.way >= 0 ; c1.way--) {
+		for (c1.set = c1.num_sets - 1; c1.set >= 0; c1.set--) {
+			c1.setway = (c1.level << 1) |
+					(c1.set << c1.log2_line_len) |
+					(c1.way << c1.way_shift);
 			/*
 			 * Clean & Invalidate data/unified
 			 * cache line by set/way
 			 */
 			asm volatile ("	mcr p15, 0, %0, c7, c14, 2"
-					: : "r" (setway));
+					: : "r" (c1.setway));
 		}
 	}
 	/* DSB to make sure the operation is complete */
 	DSB;
 }
 
-static void v7_maint_dcache_level_setway(u32 level, u32 operation)
+static void v7_maint_dcache_level_setway(void)
 {
-	u32 ccsidr;
-	u32 num_sets, num_ways, log2_line_len, log2_num_ways;
-	u32 way_shift;
 
-	set_csselr(level, ARMV7_CSSELR_IND_DATA_UNIFIED);
+	c1.type = ARMV7_CSSELR_IND_DATA_UNIFIED;
+	set_csselr();
 
-	ccsidr = get_ccsidr();
+	get_ccsidr();
 
-	log2_line_len = ((ccsidr & CCSIDR_LINE_SIZE_MASK) >>
+	c1.log2_line_len = ((c1.ccsidr & CCSIDR_LINE_SIZE_MASK) >>
 				CCSIDR_LINE_SIZE_OFFSET) + 2;
 	/* Converting from words to bytes */
-	log2_line_len += 2;
+	c1.log2_line_len += 2;
 
-	num_ways  = ((ccsidr & CCSIDR_ASSOCIATIVITY_MASK) >>
+	c1.num_ways  = ((c1.ccsidr & CCSIDR_ASSOCIATIVITY_MASK) >>
 			CCSIDR_ASSOCIATIVITY_OFFSET) + 1;
-	num_sets  = ((ccsidr & CCSIDR_NUM_SETS_MASK) >>
+	c1.num_sets  = ((c1.ccsidr & CCSIDR_NUM_SETS_MASK) >>
 			CCSIDR_NUM_SETS_OFFSET) + 1;
 	/*
 	 * According to ARMv7 ARM number of sets and number of ways need
 	 * not be a power of 2
 	 */
-	log2_num_ways = log_2_n_round_up(num_ways);
+	c1.log2_num_ways = log_2_n_round_up();
 
-	way_shift = (32 - log2_num_ways);
-	if (operation == ARMV7_DCACHE_INVAL_ALL) {
-		v7_inval_dcache_level_setway(level, num_sets, num_ways,
-				      way_shift, log2_line_len);
-	} else if (operation == ARMV7_DCACHE_CLEAN_INVAL_ALL) {
-		v7_clean_inval_dcache_level_setway(level, num_sets, num_ways,
-						   way_shift, log2_line_len);
+	c1.way_shift = (32 - c1.log2_num_ways);
+	if (c1.operation == ARMV7_DCACHE_INVAL_ALL) {
+		v7_inval_dcache_level_setway();
+	} else if (c1.operation == ARMV7_DCACHE_CLEAN_INVAL_ALL) {
+		v7_clean_inval_dcache_level_setway();
 	}
 }
 
-static void v7_maint_dcache_all(u32 operation)
+static void v7_maint_dcache_all(void)
 {
-	u32 level, cache_type, level_start_bit = 0;
-	u32 clidr = get_clidr();
+	c1.level_start_bit = 0;
+	get_clidr();
 
-	for (level = 0; level < 7; level++) {
-		cache_type = (clidr >> level_start_bit) & 0x7;
-		if ((cache_type == ARMV7_CLIDR_CTYPE_DATA_ONLY) ||
-		    (cache_type == ARMV7_CLIDR_CTYPE_INSTRUCTION_DATA) ||
-		    (cache_type == ARMV7_CLIDR_CTYPE_UNIFIED))
-			v7_maint_dcache_level_setway(level, operation);
-		level_start_bit += 3;
+	for (c1.level = 0; c1.level < 7; c1.level++) {
+		c1.cache_type = (c1.clidr >> c1.level_start_bit) & 0x7;
+		if ((c1.cache_type == ARMV7_CLIDR_CTYPE_DATA_ONLY) ||
+		    (c1.cache_type == ARMV7_CLIDR_CTYPE_INSTRUCTION_DATA) ||
+		    (c1.cache_type == ARMV7_CLIDR_CTYPE_UNIFIED))
+			v7_maint_dcache_level_setway();
+		c1.level_start_bit += 3;
 	}
 }
 
@@ -222,23 +236,24 @@ static void v7_dcache_inval_range(u32 start, u32 stop, u32 line_len)
 
 static void v7_dcache_maint_range(u32 start, u32 stop, u32 range_op)
 {
-	u32 line_len, ccsidr;
+	c1.level = 0;
+	c1.type = ARMV7_CSSELR_IND_DATA_UNIFIED;
 
-	set_csselr(0, ARMV7_CSSELR_IND_DATA_UNIFIED);
-	ccsidr = get_ccsidr();
-	line_len = ((ccsidr & CCSIDR_LINE_SIZE_MASK) >>
+	set_csselr();
+	get_ccsidr();
+	c1.line_len = ((c1.ccsidr & CCSIDR_LINE_SIZE_MASK) >>
 			CCSIDR_LINE_SIZE_OFFSET) + 2;
 	/* Converting from words to bytes */
-	line_len += 2;
+	c1.line_len += 2;
 	/* converting from log2(linelen) to linelen */
-	line_len = 1 << line_len;
+	c1.line_len = 1 << c1.line_len;
 
 	switch (range_op) {
 	case ARMV7_DCACHE_CLEAN_INVAL_RANGE:
-		v7_dcache_clean_inval_range(start, stop, line_len);
+		v7_dcache_clean_inval_range(start, stop, c1.line_len);
 		break;
 	case ARMV7_DCACHE_INVAL_RANGE:
-		v7_dcache_inval_range(start, stop, line_len);
+		v7_dcache_inval_range(start, stop, c1.line_len);
 		break;
 	}
 
@@ -263,7 +278,9 @@ static void v7_inval_tlb(void)
 
 void invalidate_dcache_all(void)
 {
-	v7_maint_dcache_all(ARMV7_DCACHE_INVAL_ALL);
+	c1.operation = ARMV7_DCACHE_INVAL_ALL;
+
+	v7_maint_dcache_all();
 
 	v7_outer_cache_inval_all();
 }
@@ -274,11 +291,12 @@ void invalidate_dcache_all(void)
  */
 void flush_dcache_all(void)
 {
-	int dstatus = dcache_status();
+	c1.dstatus = dcache_status();
 
-	if (dstatus)
+	if (c1.dstatus)
 	{
-		v7_maint_dcache_all(ARMV7_DCACHE_CLEAN_INVAL_ALL);
+		c1.operation = ARMV7_DCACHE_CLEAN_INVAL_ALL;
+		v7_maint_dcache_all();
 		v7_outer_cache_flush_all();
 	}
 }

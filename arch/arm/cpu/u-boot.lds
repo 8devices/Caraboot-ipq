@@ -78,6 +78,11 @@ SECTIONS
 		*(.data*)
 	}
 
+	. = ALIGN(64);
+	.nocache : {
+		KEEP(*(.nocache*));
+	}
+
 #ifdef CONFIG_OF_COMBINE
 	. = ALIGN(4);
 	.dtb : {
