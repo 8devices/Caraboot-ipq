@@ -66,5 +66,38 @@
 		reg = <0x7000000 0xcd00>;
 	};
 
+	pci@20000000 {
+		compatible = "qcom,ipq6018-pcie";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0x20000000 0xf1d
+			0x80000 0x2000
+			0x20000f20 0xa8
+			0x20001000 0x1000
+			0x20300000 0xd00000
+			0x20100000 0x100000
+			0x01875004 0x40
+			0x84000 0x1000>;
+		reg-names = "pci_dbi", "parf", "elbi","dm_iatu", "axi_bars",
+				"axi_conf", "pci_rst", "pci_phy";
+		perst_gpio = <60>;
+		gen3 = <1>;
+
+		pci_gpio {
+			gpio1 {
+				gpio = <60>;
+				func = <0>;
+				out = <GPIO_OUT_HIGH>;
+				pull = <GPIO_PULL_DOWN>;
+				drvstr = <GPIO_2MA>;
+				oe = <GPIO_OE_ENABLE>;
+				vm = <GPIO_VM_ENABLE>;
+				od_en = <GPIO_OD_DISABLE>;
+				pu_res = <GPIO_PULL_RES2>;
+			};
+
+		};
+	};
+
 };
 

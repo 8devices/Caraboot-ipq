@@ -177,6 +177,21 @@
 #define USB3_PHY_START_CONTROL			0x808
 #define USB3_PHY_SW_RESET			0x800
 
+#define GCC_SYS_NOC_PCIE0_AXI_CLK	0x01826048
+#define GCC_PCIE0_PHY_BCR		0x01875038
+#define GCC_PCIE0PHY_PHY_BCR		0x0187503C
+#define GCC_PCIE0_AXI_M_CBCR		0x01875008
+#define GCC_PCIE0_AXI_S_CBCR		0x0187500C
+#define GCC_PCIE0_AHB_CBCR		0x01875010
+#define GCC_PCIE0_AUX_CBCR		0x01875014
+#define GCC_PCIE0_PIPE_CBCR		0x01875018
+#define GCC_PCIE0_AUX_CMD_RCGR		0x01875024
+#define GCC_PCIE0_AXI_CMD_RCGR		0x01875054
+#define GCC_PCIE0_AXI_CFG_RCGR		0x01875058
+#define GCC_PCIE0_AXI_S_BRIDGE_CBCR	0x01875048
+#define GCC_PCIE0_RCHNG_CMD_RCGR	0x01875070
+#define GCC_PCIE0_RCHNG_CFG_RCGR	0x01875074
+
 struct smem_ram_ptn {
 	char name[16];
 	unsigned long long start;
@@ -243,5 +258,10 @@ int ipq_board_usb_init(void);
 
 #define MSM_SDC1_BASE           0x7800000
 #define MSM_SDC1_SDHCI_BASE     0x7804000
+#ifdef CONFIG_PCI_IPQ
+
+void board_pci_init(int id);
+__weak void board_pcie_clock_init(int id) {}
+#endif
 
 #endif /* _IPQ6018_CDP_H_ */

@@ -358,6 +358,7 @@ static const struct udevice_id pcie_ver_ids[] = {
 	{ .compatible = "qcom,ipq806x-pcie", .data = PCIE_V0 },
 	{ .compatible = "qcom,ipq40xx-pcie", .data = PCIE_V1 },
 	{ .compatible = "qcom,ipq807x-pcie", .data = PCIE_V2 },
+	{ .compatible = "qcom,ipq6018-pcie", .data = PCIE_V2 },
 	{ },
 };
 
@@ -865,6 +866,7 @@ static int ipq_pcie_parse_dt(const void *fdt, int id,
 
 	pcie->is_gen3 = 0;
 	if(pcie->version == PCIE_V2) {
+		pcie->is_gen3 = fdtdec_get_int(fdt, node, "gen3", 0);
 		err = fdt_get_named_resource(fdt, node, "reg", "reg-names", "pci_phy",
 					     &pcie->pci_phy);
 		if (err < 0) {
