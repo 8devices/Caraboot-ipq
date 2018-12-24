@@ -19,6 +19,8 @@
 #include <asm/arch-qca-common/qpic_nand.h>
 #include <asm/arch-qca-common/gpio.h>
 #include <asm/arch-qca-common/uart.h>
+#include <asm/arch-qca-common/scm.h>
+#include <asm/arch-qca-common/iomap.h>
 #include <ipq6018.h>
 #include <mmc.h>
 #include <sdhci.h>
@@ -738,8 +740,28 @@ unsigned long timer_read_counter(void)
 	return 0;
 }
 
+void psci_sys_reset(void)
+{
+	__invoke_psci_fn_smc(0x84000009, 0, 0, 0);
+}
+
+void qti_scm_pshold(void)
+{
+	int ret;
+
+	ret = scm_call(SCM_SVC_BOOT, SCM_CMD_TZ_PSHOLD, NULL, 0, NULL, 0);
+	if (ret != 0)
+		writel(0, GCNT_PSHOLD);
+}
+
 void reset_cpu(unsigned long a)
 {
+	reset_crashdump();
+	if (is_scm_armv8()) {
+		psci_sys_reset();
+	} else {
+		qti_scm_pshold();
+	}
 	while(1);
 }
 
