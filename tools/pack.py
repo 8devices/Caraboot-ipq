@@ -1318,10 +1318,10 @@ class Pack(object):
 
         if flinfo.type != "emmc":
             if root.find(".//data[@type='NAND_PARAMETER']/entry") != None:
-                if flinfo.type == "nand":
-                    flash_param = root.find(".//data[@type='NAND_PARAMETER']/entry[@type='2k']")
-                else:
+                if flinfo.type == "nand-4k":
                     flash_param = root.find(".//data[@type='NAND_PARAMETER']/entry[@type='4k']")
+                else:
+                    flash_param = root.find(".//data[@type='NAND_PARAMETER']/entry[@type='2k']")
             else:
                 flash_param = root.find(".//data[@type='NAND_PARAMETER']")
 
@@ -1595,7 +1595,7 @@ def main():
     root = ET.parse(config)
 
 # Add nand-4k flash type, if nand flash type is specified
-    if "nand" in parser.flash_type:
+    if "nand" in parser.flash_type.split(","):
         if root.find(".//data[@type='NAND_PARAMETER']/entry") != None:
             parser.flash_type = parser.flash_type + ",nand-4k"
 
