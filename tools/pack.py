@@ -83,6 +83,8 @@ ARCH_NAME = ""
 SRC_DIR = ""
 MODE = ""
 image_type = "all"
+lk = "false"
+
 #
 # Python 2.6 and earlier did not have OrderedDict use the backport
 # from ordereddict package. If that is not available report error.
@@ -761,7 +763,10 @@ class Pack(object):
             if section_conf == "qsee":
                 section_conf = "tz"
             elif section_conf == "appsbl":
-                section_conf = "u-boot"
+                if lk == "true":
+                    section_conf = "lkboot"
+                else:
+                    section_conf = "u-boot"
             elif section_conf == "rootfs" and (self.flash_type == "nand" or self.flash_type == "norplusnand"):
                 section_conf = "ubi"
             elif section_conf == "wififw" and (self.flash_type == "nand" or self.flash_type == "norplusnand"):
@@ -913,6 +918,8 @@ class Pack(object):
 			    try:
 				if image_type == "all" or section.attrib['image_type'] == image_type:
                                 	filename = section.attrib['filename']
+                                        if lk == "true" and "u-boot" in filename:
+                                            filename = filename.replace("u-boot", "lkboot")
                                 	partition = section.attrib['label']
 				if filename == "":
 					continue
@@ -939,7 +946,7 @@ class Pack(object):
 		try:
 			if image_type == "all" or section.attrib['image_type'] == image_type:
 		                self.__gen_flash_script_cdt(entries, partition, flinfo, script)
-        		        continue
+                                continue
 		except KeyError, e:
 			continue
 
@@ -1056,7 +1063,11 @@ class Pack(object):
 	if section_conf == "qsee":
 	    section_conf = "tz"
 	elif section_conf == "appsbl":
-	    section_conf = "u-boot"
+            if lk == "true":
+                section_conf = "lkboot"
+            else:
+                print " Using u-boot..."
+	        section_conf = "u-boot"
 	elif section_conf == "rootfs" and (self.flash_type == "nand" or self.flash_type == "norplusnand"):
 	    section_conf = "ubi"
 	elif section_conf == "wififw" and (self.flash_type == "nand" or self.flash_type == "norplusnand"):
@@ -1174,6 +1185,8 @@ class Pack(object):
 			    try:
 			       if image_type == "all" or section.attrib['image_type'] == image_type:
 				   filename = section.attrib['filename']
+                                   if lk == "true" and "u-boot" in filename:
+                                       filename = filename.replace("u-boot", "lkboot")
 				   partition = section.attrib['label']
 			       if filename == "":
 				   continue
@@ -1487,6 +1500,7 @@ class ArgParser(object):
 	global SRC_DIR
 	global ARCH_NAME
 	global image_type
+        global lk
 
         """Start the parsing process, and populate members with parsed value.
 
@@ -1496,7 +1510,7 @@ class ArgParser(object):
 	cdir = os.path.abspath(os.path.dirname(""))
         if len(sys.argv) > 1:
             try:
-                opts, args = getopt(sys.argv[1:], "", ["arch=", "fltype=", "srcPath=", "inImage=", "outImage=", "image_type="])
+                opts, args = getopt(sys.argv[1:], "", ["arch=", "fltype=", "srcPath=", "inImage=", "outImage=", "image_type=", "lk"])
             except GetoptError, e:
 		raise UsageError(e.msg)
 
@@ -1518,6 +1532,10 @@ class ArgParser(object):
 
 		elif option == "--image_type":
 		    image_type = value
+
+                elif option =="--lk":
+                    lk = "true"
+
 
 #Verify Arguments passed by user
 
@@ -1572,6 +1590,8 @@ class ArgParser(object):
 	print
         print "  --outImage \tPath to the directory where single image will be generated"
         print
+        print "  --lk \t\tReplace u-boot with lkboot for appsbl"
+        print " \t\tThis Argument does not take any value"
         print "Pack Version: %s" % version
 
 def main():
@@ -1601,10 +1621,15 @@ def main():
 
 # Format the output image name from Arch, flash type and mode
     for flash_type in parser.flash_type.split(","):
-        if MODE == "64":
-            parser.out_fname = flash_type + "-" + ARCH_NAME + "_" + MODE + "-single.img"
+        if flash_type == "emmc" and lk == "true":
+            suffix = "-single-lkboot.img"
         else:
-	    parser.out_fname = flash_type + "-" + ARCH_NAME + "-single.img"
+            suffix = "-single.img"
+
+        if MODE == "64":
+            parser.out_fname = flash_type + "-" + ARCH_NAME + "_" + MODE + suffix
+        else:
+	    parser.out_fname = flash_type + "-" + ARCH_NAME + suffix
 
         parser.out_fname = os.path.join(parser.out_dname, parser.out_fname)
 
