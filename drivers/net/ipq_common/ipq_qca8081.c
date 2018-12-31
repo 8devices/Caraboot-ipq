@@ -19,17 +19,8 @@
 #include "ipq_qca8081.h"
 #include "ipq_phy.h"
 
-extern int ipq_mdio_write(int mii_id,
-		int regnum, u16 value);
 extern int ipq_mdio_read(int mii_id,
 		int regnum, ushort *data);
-
-static u16 qca8081_phy_reg_write(u32 dev_id, u32 phy_id,
-		u32 reg_id, u16 reg_val)
-{
-	ipq_mdio_write(phy_id, reg_id, reg_val);
-	return 0;
-}
 
 u16 qca8081_phy_reg_read(u32 dev_id, u32 phy_id, u32 reg_id)
 {

@@ -28,6 +28,7 @@ extern int ipq_mdio_write(int mii_id,
 		int regnum, u16 value);
 extern int ipq_mdio_read(int mii_id,
 		int regnum, ushort *data);
+extern void qca8075_phy_serdes_reset(u32 phy_id);
 
 void csr1_write(int phy_id, int addr, int  value)
 {
@@ -161,8 +162,6 @@ static void ppe_uniphy_sgmii_mode_set(uint32_t uniphy_index, uint32_t channel)
 
 static void ppe_uniphy_sgmii_plus_mode_set(uint32_t uniphy_index)
 {
-	uint32_t reg_value;
-
 	writel(UNIPHY_MISC2_REG_SGMII_PLUS_MODE, PPE_UNIPHY_BASE +
 		(uniphy_index * PPE_UNIPHY_REG_INC) + UNIPHY_MISC2_REG_OFFSET);
 	writel(UNIPHY_PLL_RESET_REG_VALUE, PPE_UNIPHY_BASE +
@@ -196,8 +195,6 @@ static int ppe_uniphy_10g_r_linkup(uint32_t uniphy_index)
 
 static void ppe_uniphy_10g_r_mode_set(uint32_t uniphy_index)
 {
-	uint32_t reg_value = 0;
-
 	ppe_gcc_uniphy_xpcs_reset(uniphy_index, true);
 	writel(0x1021, PPE_UNIPHY_BASE + (uniphy_index * PPE_UNIPHY_REG_INC)
 			 + PPE_UNIPHY_MODE_CONTROL);

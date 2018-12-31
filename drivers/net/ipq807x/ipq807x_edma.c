@@ -60,10 +60,11 @@ extern int ipq_qca8075_phy_init(struct phy_ops **ops);
 extern void qca8075_phy_interface_set_mode(uint32_t phy_id,
 		uint32_t mode);
 extern int ipq_qca8033_phy_init(struct phy_ops **ops, u32 phy_id);
+extern int ipq_qca8081_phy_init(struct phy_ops **ops, u32 phy_id);
 extern int ipq_qca_aquantia_phy_init(struct phy_ops **ops, u32 phy_id);
+extern int ipq_board_fw_download(unsigned int phy_addr);
 static int tftp_acl_our_port;
 
-static int uniphy_phy_mode;
 /*
  * EDMA hardware instance
  */
@@ -1734,8 +1735,6 @@ int ipq807x_edma_init(void *edma_board_cfg)
 	static int sw_init_done = 0;
 	int port_8033 = -1, node, phy_addr, aquantia_port = -1;
 	int mode, phy_node = -1;
-	int napa_port_len = 0 , len;
-	unsigned int phy_array[6] = {0};
 
 	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
 	if (node >= 0)
@@ -1751,7 +1750,7 @@ int ipq807x_edma_init(void *edma_board_cfg)
 	mode = fdtdec_get_uint(gd->fdt_blob, node, "switch_mac_mode", -1);
 	if (mode < 0) {
 		printf("Error: switch_mac_mode not specified in dts");
-		return;
+		return mode;
 	}
 
 	memset(c_info, 0, (sizeof(c_info) * IPQ807X_EDMA_DEV));

@@ -202,46 +202,9 @@ int ipq_qca_aquantia_phy_init(struct phy_ops **ops, u32 phy_id)
 	return 0;
 }
 
-static int do_load_fw(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
-{
-	unsigned int phy_addr = AQU_PHY_ADDR;
-	int node, aquantia_port;
-
-	if (argc > 2)
-		return CMD_RET_USAGE;
-
-	if (argc == 2)
-		phy_addr = simple_strtoul(argv[1], NULL, 16);
-
-	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
-	if (node < 0) {
-		printf("Error: ess-switch not specified in dts");
-		return 0;
-	}
-
-	aquantia_port = fdtdec_get_uint(gd->fdt_blob, node, "aquantia_port", -1);
-	if (aquantia_port < 0) {
-		printf("Error: aquantia_port not specified in dts");
-		return 0;
-	}
-
-	aquantia_port = fdtdec_get_uint(gd->fdt_blob, node, "aquantia_gpio", -1);
-	if (aquantia_port < 0) {
-		printf("Error: aquantia_gpio not specified in dts");
-		return 0;
-	}
-
-	miiphy_init();
-	eth_clock_enable();
-	ipq_sw_mdio_init("IPQ MDIO0");
-	ipq_board_fw_download(phy_addr);
-	return 0;
-}
-
 static int do_aq_phy_restart(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	unsigned int phy_addr = AQU_PHY_ADDR;
-	int node, aquantia_port;
 	if (argc > 2)
 		return CMD_RET_USAGE;
 
@@ -332,7 +295,7 @@ int ipq_board_fw_download(unsigned int phy_addr)
 #endif
 	}
 
-	fwimg_header = CONFIG_SYS_LOAD_ADDR;
+	fwimg_header = (mbn_header_t *)CONFIG_SYS_LOAD_ADDR;
 
 	if( fwimg_header->image_type == 0x13 && fwimg_header->header_vsn_num == 0x3) {
 		program_ethphy_fw(phy_addr, (uint32_t )(CONFIG_SYS_LOAD_ADDR + sizeof(mbn_header_t)),
@@ -364,8 +327,8 @@ static int program_ethphy_fw(unsigned int phy_addr, uint32_t load_addr, uint32_t
 	uint32_t byte_sz;
 	uint32_t dword_sz;
 	uint32_t byte_ptr;
-	uint16_t msw;
-	uint16_t lsw;
+	uint16_t msw = 0;
+	uint16_t lsw = 0;
 	uint8_t msb1;
 	uint8_t msb2;
 	uint8_t lsb1;
@@ -438,8 +401,7 @@ static int program_ethphy_fw(unsigned int phy_addr, uint32_t load_addr, uint32_t
 		aq_phy_reg_write(0x0, phy_addr, AQUANTIA_REG_ADDRESS(0x1e, 0x200), 0xc000);
 		msb1 = msw >> 8;
 		msb2 = msw & 0xFF;
-		lsb1 = lsw >> 8;
-		lsb2 = lsw & 0xFF;
+		lsb1 = lsw & 0xFF;
 		computed_crc = cyg_crc16_computed(&msb1, 0x1, computed_crc);
 		computed_crc = cyg_crc16_computed(&msb2, 0x1, computed_crc);
 		computed_crc = cyg_crc16_computed(&lsb1, 0x1, computed_crc);
@@ -448,12 +410,6 @@ static int program_ethphy_fw(unsigned int phy_addr, uint32_t load_addr, uint32_t
 
 	switch (byte_sz & 0x3) {
 	case 0x1:
-		lsw = buf[byte_ptr++];
-		msw = 0x0000;
-		break;
-	case 0x2:
-		lsw = (buf[byte_ptr + 1] << 8) | buf[byte_ptr];
-		byte_ptr += 2;
 		msw = 0x0000;
 		break;
 	case 0x3:
@@ -548,6 +504,43 @@ static int program_ethphy_fw(unsigned int phy_addr, uint32_t load_addr, uint32_t
 	aquantia_phy_restart_autoneg(phy_addr);
 	return 0;
 }
+
+static int do_load_fw(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	unsigned int phy_addr = AQU_PHY_ADDR;
+	int node, aquantia_port;
+
+	if (argc > 2)
+		return CMD_RET_USAGE;
+
+	if (argc == 2)
+		phy_addr = simple_strtoul(argv[1], NULL, 16);
+
+	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
+	if (node < 0) {
+		printf("Error: ess-switch not specified in dts");
+		return 0;
+	}
+
+	aquantia_port = fdtdec_get_uint(gd->fdt_blob, node, "aquantia_port", -1);
+	if (aquantia_port < 0) {
+		printf("Error: aquantia_port not specified in dts");
+		return 0;
+	}
+
+	aquantia_port = fdtdec_get_uint(gd->fdt_blob, node, "aquantia_gpio", -1);
+	if (aquantia_port < 0) {
+		printf("Error: aquantia_gpio not specified in dts");
+		return 0;
+	}
+
+	miiphy_init();
+	eth_clock_enable();
+	ipq_sw_mdio_init("IPQ MDIO0");
+	ipq_board_fw_download(phy_addr);
+	return 0;
+}
+
 U_BOOT_CMD(
 	aq_load_fw,	5,	1,	do_load_fw,
 	"LOAD aq-fw-binary",
