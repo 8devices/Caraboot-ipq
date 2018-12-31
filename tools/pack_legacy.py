@@ -83,6 +83,7 @@ import re
 import hashlib
 
 version = "1.1"
+lk = False
 
 TABLE_VERSION_AK = 3
 TABLE_VERSION_DK = 4
@@ -718,6 +719,11 @@ class Pack(object):
         for section in info.sections():
             try:
                 filename = info.get(section, "filename")
+                if lk == True and "u-boot" in filename and self.flinfo.type == 'emmc':
+                    if "ipq40xx" in filename:
+                        filename = "openwrt-ipq40xx-lkboot-stripped.elf"
+                    elif "ipq806x" in filename:
+                        filename = "openwrt-ipq806x-lkboot.mbn"
                 partition = info.get(section, "partition")
                 include = info.get(section, "include")
             except ConfigParserError, e:
@@ -841,6 +847,11 @@ class Pack(object):
                 if ( size != img_size ):
                     filename = filename + ".padded"
             if self.flinfo.type == 'emmc':
+                if lk == True and "u-boot" in filename:
+                    if "ipq40xx" in filename:
+                        filename = "openwrt-ipq40xx-lkboot-stripped.elf"
+                    elif "ipq806x" in filename:
+                        filename = "openwrt-ipq806x-lkboot.mbn"
                 img_size = self.__get_img_size(filename)
                 size = roundup(img_size, flinfo.blocksize)
                 if ( size != img_size ):
@@ -1404,9 +1415,10 @@ class ArgParser(object):
         bconf = False
         bconf_fname = None
         genitb_fname = None
+        global lk
 
         try:
-            opts, args = getopt(argv[1:], "Bib:hp:t:o:c:m:f:F:M:")
+            opts, args = getopt(argv[1:], "Bib:hp:t:o:c:m:f:F:M:", ["lk"])
         except GetoptError, e:
             raise UsageError(e.msg)
 
@@ -1433,6 +1445,8 @@ class ArgParser(object):
                 bconf_fname = value
             elif option == "-M":
                 genitb_fname= value
+            elif option == "--lk":
+                lk = True
 
         if len(args) != 1:
             raise UsageError("insufficient arguments")
