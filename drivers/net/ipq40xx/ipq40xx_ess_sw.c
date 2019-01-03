@@ -33,10 +33,10 @@ static inline void ipq40xx_ess_sw_wr(u32 addr, u32 data)
 void ipq40xx_ess_disable_lookup(void)
 {
 	ipq40xx_ess_sw_wr(S17_P0LOOKUP_CTRL_REG, 0x140000);
-	ipq40xx_ess_sw_wr(S17_P1LOOKUP_CTRL_REG, 0x14001c);
-	ipq40xx_ess_sw_wr(S17_P2LOOKUP_CTRL_REG, 0x14001a);
-	ipq40xx_ess_sw_wr(S17_P3LOOKUP_CTRL_REG, 0x140016);
-	ipq40xx_ess_sw_wr(S17_P4LOOKUP_CTRL_REG, 0x14001e);
+	ipq40xx_ess_sw_wr(S17_P1LOOKUP_CTRL_REG, 0x140000);
+	ipq40xx_ess_sw_wr(S17_P2LOOKUP_CTRL_REG, 0x140000);
+	ipq40xx_ess_sw_wr(S17_P3LOOKUP_CTRL_REG, 0x140000);
+	ipq40xx_ess_sw_wr(S17_P4LOOKUP_CTRL_REG, 0x140000);
 	ipq40xx_ess_sw_wr(S17_P5LOOKUP_CTRL_REG, 0x140000);
 	ipq40xx_ess_sw_wr(S17_GLOFW_CTRL1_REG, 0x3e3e3e);
 }
@@ -44,10 +44,10 @@ void ipq40xx_ess_disable_lookup(void)
 void ipq40xx_ess_enable_lookup(void)
 {
 	ipq40xx_ess_sw_wr(S17_P0LOOKUP_CTRL_REG, 0x14003e);
-	ipq40xx_ess_sw_wr(S17_P1LOOKUP_CTRL_REG, 0x14001d);
-	ipq40xx_ess_sw_wr(S17_P2LOOKUP_CTRL_REG, 0x14001b);
-	ipq40xx_ess_sw_wr(S17_P3LOOKUP_CTRL_REG, 0x140017);
-	ipq40xx_ess_sw_wr(S17_P4LOOKUP_CTRL_REG, 0x14000f);
+	ipq40xx_ess_sw_wr(S17_P1LOOKUP_CTRL_REG, 0x140001);
+	ipq40xx_ess_sw_wr(S17_P2LOOKUP_CTRL_REG, 0x140001);
+	ipq40xx_ess_sw_wr(S17_P3LOOKUP_CTRL_REG, 0x140001);
+	ipq40xx_ess_sw_wr(S17_P4LOOKUP_CTRL_REG, 0x140001);
 	ipq40xx_ess_sw_wr(S17_P5LOOKUP_CTRL_REG, 0x140001);
 	ipq40xx_ess_sw_wr(S17_GLOFW_CTRL1_REG, 0x3f3f3f);
 }
