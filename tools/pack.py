@@ -848,7 +848,7 @@ class Pack(object):
             parts = root_part.findall(".//physical_partition[@ref='norplusemmc']/partition")
         else:
             parts = root_part.findall(".//physical_partition[@ref='emmc']/partition")
-        if flinfo.type == "emmc":
+        if flinfo.type == "emmc" and image_type == "all":
             parts_length = len(parts) + 2
         else:
             parts_length = len(parts)
@@ -858,11 +858,13 @@ class Pack(object):
         section = None
         part_index = 0
 
-        if flinfo.type == "emmc":
+        if flinfo.type == "emmc" and image_type == "all":
             first = True
 
         for index in range(parts_length):
 
+            filename = ""
+            partition = ""
             if first:
                 if self.flash_type == "norplusemmc":
                     part_info = root.find(".//data[@type='NORPLUSEMMC_PARAMETER']")
@@ -873,7 +875,7 @@ class Pack(object):
                 partition = "0:GPT"
                 first = False
 
-            elif index == (parts_length - 1) and flinfo.type == "emmc":
+            elif index == (parts_length - 1) and flinfo.type == "emmc" and image_type == "all":
                 if self.flash_type == "norplusemmc":
                     part_info = root.find(".//data[@type='NORPLUSEMMC_PARAMETER']")
                 else:
@@ -1001,7 +1003,8 @@ class Pack(object):
                         print "Skipping partition '%s'" % section.attrib['label']
                         pass
 
-	    self.__gen_flash_script_image(filename, soc_version, file_exists, machid, partition, flinfo, script)
+            if filename != "":
+                self.__gen_flash_script_image(filename, soc_version, file_exists, machid, partition, flinfo, script)
 
     def __gen_script_cdt(self, images, flinfo, root, section_conf, partition):
         global ARCH_NAME
@@ -1118,7 +1121,7 @@ class Pack(object):
             parts = root_part.findall(".//physical_partition[@ref='norplusemmc']/partition")
         else:
             parts = root_part.findall(".//physical_partition[@ref='emmc']/partition")
-        if flinfo.type == "emmc":
+        if flinfo.type == "emmc" and image_type == "all":
             parts_length = len(parts) + 2
         else:
             parts_length = len(parts)
@@ -1127,11 +1130,13 @@ class Pack(object):
         section = None
         part_index = 0
 
-        if flinfo.type == "emmc":
+        if flinfo.type == "emmc" and image_type == "all":
             first = True
 
         for index in range(parts_length):
 
+            filename = ""
+            partition = ""
             if first:
                 if self.flash_type == "norplusemmc":
                     part_info = root.find(".//data[@type='NORPLUSEMMC_PARAMETER']")
@@ -1142,7 +1147,7 @@ class Pack(object):
                 partition = "0:GPT"
                 first = False
 
-            elif index == (parts_length - 1) and flinfo.type == "emmc":
+            elif index == (parts_length - 1) and flinfo.type == "emmc" and image_type == "all":
                 if self.flash_type == "norplusemmc":
                     part_info = root.find(".//data[@type='NORPLUSEMMC_PARAMETER']")
                 else:
@@ -1271,7 +1276,8 @@ class Pack(object):
 			print "Skipping partition '%s'" % section.attrib['label']
 			pass
 
-	    self.__gen_script_append_images(filename, soc_version, images, flinfo, root, section_conf, partition)
+            if filename != "":
+                self.__gen_script_append_images(filename, soc_version, images, flinfo, root, section_conf, partition)
 
     def __mkimage(self, images):
         """Create the multi-image blob.
@@ -1621,15 +1627,21 @@ def main():
 
 # Format the output image name from Arch, flash type and mode
     for flash_type in parser.flash_type.split(","):
-        if flash_type == "emmc" and lk == "true":
-            suffix = "-single-lkboot.img"
+        if image_type == "hlos":
+            if MODE == "64":
+                parser.out_fname = flash_type + "-" + ARCH_NAME + "_" + MODE + "-apps.img"
+            else:
+                parser.out_fname = flash_type + "-" + ARCH_NAME + "-apps.img"
         else:
-            suffix = "-single.img"
+            if flash_type == "emmc" and lk == "true":
+                suffix = "-single-lkboot.img"
+            else:
+                suffix = "-single.img"
 
-        if MODE == "64":
-            parser.out_fname = flash_type + "-" + ARCH_NAME + "_" + MODE + suffix
-        else:
-	    parser.out_fname = flash_type + "-" + ARCH_NAME + suffix
+            if MODE == "64":
+                parser.out_fname = flash_type + "-" + ARCH_NAME + "_" + MODE + suffix
+            else:
+                parser.out_fname = flash_type + "-" + ARCH_NAME + suffix
 
         parser.out_fname = os.path.join(parser.out_dname, parser.out_fname)
 
