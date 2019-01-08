@@ -11,6 +11,15 @@
 
 #include <configs/ipq40xx_cdp.h>
 
+/* SPI NAND support */
+#define CONFIG_SPI_NAND_GIGA 1
+#define CONFIG_SPI_NAND_ATO
+#define CONFIG_SPI_NAND_MACRONIX
+#define CONFIG_SPI_NAND_WINBOND
+
+#define CONFIG_RBTREE		/* for ubi */
+#define CONFIG_CMD_UBI
+
 #define MTDPARTS_DEFAULT	"mtdparts=nand1:0x8000000@0x0(ubi)"
 #define MTDIDS_DEFAULT		"nand1=nand1"
 

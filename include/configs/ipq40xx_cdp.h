@@ -248,10 +248,6 @@ typedef struct {
 
 #define CONFIG_QUP_SPI_USE_DMA 1
 
-#define CONFIG_SPI_NAND_GIGA 1
-#define CONFIG_SPI_NAND_ATO
-#define CONFIG_SPI_NAND_MACRONIX
-#define CONFIG_SPI_NAND_WINBOND
 /*
  * ESS Configs
  */
@@ -308,8 +304,6 @@ typedef struct {
 #define CONFIG_MTD_PARTITIONS
 #define CONFIG_CMD_MTDPARTS
 
-#define CONFIG_RBTREE		/* for ubi */
-#define CONFIG_CMD_UBI
 #define CONFIG_BOOTCOMMAND	"bootipq"
 #define CONFIG_BOOTDELAY	1
 #define CONFIG_IPQ_FDT_HIGH	0x87000000

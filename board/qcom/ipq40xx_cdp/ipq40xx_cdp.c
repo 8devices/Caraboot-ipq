@@ -461,6 +461,7 @@ void board_nand_init(void)
 	}
 #endif /* CONFIG_QPIC_NAND */
 #endif
+#ifdef CONFIG_SPI_NAND_GIGA
 	if ((gboard_param->machid == MACH_TYPE_IPQ40XX_AP_DK01_1_C2) ||
 		(gboard_param->machid == MACH_TYPE_IPQ40XX_AP_DK05_1_C1) ||
 		(gboard_param->machid == MACH_TYPE_IPQ40XX_AP_DK04_1_C5) ||
@@ -468,6 +469,7 @@ void board_nand_init(void)
 		(gboard_param->machid == MACH_TYPE_IPQ40XX_8DEV_JALAPENO_V2)) {
 		spi_nand_init();
 	}
+#endif
 
 #ifdef CONFIG_IPQ40XX_SPI
 	ipq_spi_init(CONFIG_IPQ_SPI_NOR_INFO_IDX);
