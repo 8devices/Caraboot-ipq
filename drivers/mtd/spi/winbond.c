@@ -10,11 +10,10 @@
 
 #include "spi_flash_internal.h"
 
-/* M25Pxx-specific commands */
-#define CMD_W25_SE		0x20	/* Sector (4K) Erase */
-#define CMD_W25_BE		0xd8	/* Block (64K) Erase */
-#define CMD_W25_CE		0xc7	/* Chip Erase */
-#define CMD_W25_EN4B            0xb7    /* Enter 4-byte mode */
+#define CMD_BLOCK_ERASE		0xd8	/* Block Erase */
+#define CMD_BLOCK_4B_ERASE	0xdc	/* 4 byte Block Erase */
+#define CMD_SECTOR_4B_ERASE	0x21	/* 4 byte Sector Erase */
+#define CMD_SECTOR_ERASE	0x20	/* Sector Erase */
 
 struct winbond_spi_flash_params {
 	uint16_t	id;
@@ -128,10 +127,24 @@ static const struct winbond_spi_flash_params winbond_spi_flash_table[] = {
 
 static int winbond_erase(struct spi_flash *flash, u32 offset, size_t len)
 {
-	if ((offset % flash->block_size) == 0 && (len % flash->block_size) == 0)
-		return spi_flash_cmd_erase_block(flash, CMD_W25_BE, offset, len);
-	else
-		return spi_flash_cmd_erase(flash, CMD_W25_SE, offset, len);
+	u8 erase_opcode;
+	
+	if ((offset % flash->block_size) == 0 && (len % flash->block_size) == 0) {
+		if ((flash->addr_width == 4))
+			erase_opcode = CMD_BLOCK_4B_ERASE;
+		else
+			erase_opcode = CMD_BLOCK_ERASE;
+
+		return spi_flash_cmd_erase_block(flash, erase_opcode, offset, len);
+	}
+	else {
+		if ((flash->addr_width == 4))
+			erase_opcode = CMD_SECTOR_4B_ERASE;
+		else
+			erase_opcode = CMD_SECTOR_ERASE;
+
+		return spi_flash_cmd_erase(flash, erase_opcode, offset, len);
+	}
 }
 
 struct spi_flash *spi_flash_probe_winbond(struct spi_slave *spi, u8 *idcode)
@@ -180,12 +193,8 @@ struct spi_flash *spi_flash_probe_winbond(struct spi_slave *spi, u8 *idcode)
 	flash->write_opcode = CMD_PAGE_PROGRAM;
 
 	if (flash->size > 0x1000000) {
-		/* Switch to 4 byte addressing mode */
-		ret = spi_flash_cmd(spi, CMD_W25_EN4B, NULL, 0);
-		if (ret) {
-			debug("SF: Setting 4 byte mode failed, moving to 3 byte mode\n");
-			flash->size = 0x1000000;
-		}
+		flash->read_opcode  = CMD_4READ_ARRAY_FAST;
+		flash->write_opcode = CMD_4PAGE_PROGRAM;
 	}
 
 	return flash;
