@@ -933,6 +933,11 @@ class Pack(object):
 			try:
 			      if image_type == "all" or section.attrib['image_type'] == image_type:
                                   filename = section.attrib['filename_' + MODE]
+                                  if lk == "true" and "uImage" in filename:
+                                      if MODE == "32":
+                                          filename = 'openwrt-' + ARCH_NAME + '-kernelboot.img'
+                                      if MODE == "64":
+                                          filename = 'openwrt-' + ARCH_NAME + '_' + MODE + '-kernelboot.img'
                                   partition = section.attrib['label']
 			      if filename == "":
 					continue
@@ -1203,6 +1208,11 @@ class Pack(object):
 			try:
 			      if image_type == "all" or section.attrib['image_type'] == image_type:
                                   filename = section.attrib['filename_' + MODE]
+                                  if lk == "true" and "uImage" in filename:
+                                      if MODE == "32":
+                                          filename = 'openwrt-' + ARCH_NAME + '-kernelboot.img'
+                                      if MODE == "64":
+                                          filename = 'openwrt-' + ARCH_NAME + '_' + MODE + '-kernelboot.img'
                                   partition = section.attrib['label']
 			      if filename == "":
                                         continue

@@ -724,6 +724,11 @@ class Pack(object):
                         filename = "openwrt-ipq40xx-lkboot-stripped.elf"
                     elif "ipq806x" in filename:
                         filename = "openwrt-ipq806x-lkboot.mbn"
+                if lk == True and "uImage" in filename and self.flinfo.type == 'emmc':
+                    if "ipq40xx" in filename:
+                        filename = "openwrt-ipq40xx-kernelboot.img"
+                    elif "ipq806x" in filename:
+                        filename = "openwrt-ipq806x-kernelboot.img"
                 partition = info.get(section, "partition")
                 include = info.get(section, "include")
             except ConfigParserError, e:
@@ -852,6 +857,11 @@ class Pack(object):
                         filename = "openwrt-ipq40xx-lkboot-stripped.elf"
                     elif "ipq806x" in filename:
                         filename = "openwrt-ipq806x-lkboot.mbn"
+                if lk == True and "uImage" in filename:
+                    if "ipq40xx" in filename:
+                        filename = "openwrt-ipq40xx-kernelboot.img"
+                    elif "ipq806x" in filename:
+                        filename = "openwrt-ipq806x-kernelboot.img"
                 img_size = self.__get_img_size(filename)
                 size = roundup(img_size, flinfo.blocksize)
                 if ( size != img_size ):
