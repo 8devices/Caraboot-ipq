@@ -99,23 +99,23 @@ DECLARE_GLOBAL_DATA_PTR;
 #define QSERDES_COM_VCO_TUNE_TIMER1			0x144
 #define QSERDES_COM_VCO_TUNE_TIMER2			0x144
 #define QSERDES_COM_CMN_CONFIG				0x194
-#define QSERDES_COM_PLL_IVCO				0x48
+#define PCIE_QSERDES_COM_PLL_IVCO			0x48
 #define QSERDES_COM_HSCLK_SEL				0x178
-#define QSERDES_COM_SVS_MODE_CLK_SEL			0x19C
-#define QSERDES_COM_CORE_CLK_EN				0x18C
+#define PCIE_QSERDES_COM_SVS_MODE_CLK_SEL		0x19C
+#define PCIE_QSERDES_COM_CORE_CLK_EN			0x18C
 #define QSERDES_COM_CORECLK_DIV				0x184
 #define QSERDES_COM_RESETSM_CNTRL			0xB4
-#define QSERDES_COM_BG_TIMER				0xC
-#define QSERDES_COM_SYSCLK_EN_SEL			0xAC
-#define QSERDES_COM_DEC_START_MODE0			0xD0
-#define QSERDES_COM_DIV_FRAC_START3_MODE0		0xE4
-#define QSERDES_COM_DIV_FRAC_START2_MODE0		0xE0
-#define QSERDES_COM_DIV_FRAC_START1_MODE0		0xDC
+#define PCIE_QSERDES_COM_BG_TIMER			0xC
+#define PCIE_QSERDES_COM_SYSCLK_EN_SEL			0xAC
+#define PCIE_QSERDES_COM_DEC_START_MODE0		0xD0
+#define PCIE_QSERDES_COM_DIV_FRAC_START3_MODE0		0xE4
+#define PCIE_QSERDES_COM_DIV_FRAC_START2_MODE0		0xE0
+#define PCIE_QSERDES_COM_DIV_FRAC_START1_MODE0		0xDC
 #define QSERDES_COM_LOCK_CMP3_MODE0			0x54
 #define QSERDES_COM_LOCK_CMP2_MODE0			0x50
-#define QSERDES_COM_LOCK_CMP1_MODE0			0x4C
+#define PCIE_QSERDES_COM_LOCK_CMP1_MODE0		0x4C
 #define QSERDES_COM_CLK_SELECT				0x174
-#define QSERDES_COM_SYS_CLK_CTRL			0x3C
+#define PCIE_QSERDES_COM_SYS_CLK_CTRL			0x3C
 #define QSERDES_COM_SYSCLK_BUF_ENABLE			0x40
 #define QSERDES_COM_CP_CTRL_MODE0			0x78
 #define QSERDES_COM_PLL_RCTRL_MODE0			0x84
@@ -125,7 +125,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define QSERDES_COM_BIAS_EN_CTRL_BY_PSM			0xA8
 #define QSERDES_COM_VCO_TUNE_CTRL			0xC
 #define QSERDES_COM_SSC_EN_CENTER			0x10
-#define QSERDES_COM_SSC_PER1				0x1C
+#define PCIE_QSERDES_COM_SSC_PER1			0x1C
 #define QSERDES_COM_SSC_PER2				0x20
 #define QSERDES_COM_SSC_ADJ_PER1			0x14
 #define QSERDES_COM_SSC_ADJ_PER2			0x18
@@ -134,14 +134,14 @@ DECLARE_GLOBAL_DATA_PTR;
 #define QSERDES_TX_HIGHZ_TRANSCEIVEREN_BIAS_DRVR_EN     0x268
 #define QSERDES_TX_LANE_MODE                            0x294
 #define QSERDES_TX_RES_CODE_LANE_OFFSET                 0x254
-#define QSERDES_TX_RCV_DETECT_LVL_2                     0x2AC
+#define PCIE_QSERDES_TX_RCV_DETECT_LVL_2                0x2AC
 #define QSERDES_RX_SIGDET_ENABLES                       0x510
-#define QSERDES_RX_SIGDET_DEGLITCH_CNTRL                0x51C
-#define QSERDES_RX_RX_EQU_ADAPTOR_CNTRL2                0x4D8
-#define QSERDES_RX_RX_EQU_ADAPTOR_CNTRL3                0x4DC
-#define QSERDES_RX_RX_EQU_ADAPTOR_CNTRL4                0x4E0
+#define PCIE_QSERDES_RX_SIGDET_DEGLITCH_CNTRL           0x51C
+#define PCIE_QSERDES_RX_RX_EQU_ADAPTOR_CNTRL2           0x4D8
+#define PCIE_QSERDES_RX_RX_EQU_ADAPTOR_CNTRL3           0x4DC
+#define PCIE_QSERDES_RX_RX_EQU_ADAPTOR_CNTRL4           0x4E0
 #define QSERDES_RX_UCDR_SO_SATURATION_AND_ENABLE        0x448
-#define QSERDES_RX_UCDR_SO_GAIN                         0x41C
+#define PCIE_QSERDES_RX_UCDR_SO_GAIN                    0x41C
 #define QSERDES_RX_UCDR_SO_GAIN_HALF                    0x410
 #define QSERDES_COM_CLK_EP_DIV                          0x74
 #define PCIE_USB3_PCS_ENDPOINT_REFCLK_DRIVE             0x854
@@ -347,6 +347,7 @@ DECLARE_GLOBAL_DATA_PTR;
 static unsigned int local_buses[] = { 0, 0 };
 struct pci_controller pci_hose[PCI_MAX_DEVICES];
 static int phy_initialised;
+extern int get_soc_version(uint32_t *soc_ver_major, uint32_t *soc_ver_minor);
 
 enum pcie_verion{
 	PCIE_V0,
@@ -874,18 +875,20 @@ static int ipq_pcie_parse_dt(const void *fdt, int id,
 			int ret;
 
 			ret = get_soc_version(&soc_ver_major, &soc_ver_minor);
-			if(soc_ver_major == 1) {
-				err = fdt_get_named_resource(fdt, node, "reg", "reg-names", "pci_phy_gen2",
-					     &pcie->pci_phy);
-				if (err < 0)
-					goto err;
-				pcie->is_gen3 = 0;
-			} else if(soc_ver_major == 2) {
-				err = fdt_get_named_resource(fdt, node, "reg", "reg-names", "pci_phy_gen3",
-					     &pcie->pci_phy);
-				if (err < 0)
-					goto err;
-				pcie->is_gen3 = 1;
+			if (!ret) {
+				if(soc_ver_major == 1) {
+					err = fdt_get_named_resource(fdt, node, "reg", "reg-names", "pci_phy_gen2",
+							&pcie->pci_phy);
+					if (err < 0)
+						goto err;
+					pcie->is_gen3 = 0;
+				} else if(soc_ver_major == 2) {
+					err = fdt_get_named_resource(fdt, node, "reg", "reg-names", "pci_phy_gen3",
+							&pcie->pci_phy);
+					if (err < 0)
+						goto err;
+					pcie->is_gen3 = 1;
+				} 
 			} else {
 				goto err;
 			}
@@ -1002,23 +1005,23 @@ static const struct phy_regs pcie_phy_regs[] = {
 	{ QSERDES_COM_VCO_TUNE_TIMER1,				0x000000ff },
 	{ QSERDES_COM_VCO_TUNE_TIMER2,				0x0000001f },
 	{ QSERDES_COM_CMN_CONFIG,				0x00000006 },
-	{ QSERDES_COM_PLL_IVCO,					0x0000000f },
+	{ PCIE_QSERDES_COM_PLL_IVCO,				0x0000000f },
 	{ QSERDES_COM_HSCLK_SEL,				0x00000000 },
-	{ QSERDES_COM_SVS_MODE_CLK_SEL,				0x00000001 },
-	{ QSERDES_COM_CORE_CLK_EN,				0x00000020 },
+	{ PCIE_QSERDES_COM_SVS_MODE_CLK_SEL,			0x00000001 },
+	{ PCIE_QSERDES_COM_CORE_CLK_EN,				0x00000020 },
 	{ QSERDES_COM_CORECLK_DIV,				0x0000000a },
 	{ QSERDES_COM_RESETSM_CNTRL,				0x00000020 },
-	{ QSERDES_COM_BG_TIMER,					0x00000009 },
-	{ QSERDES_COM_SYSCLK_EN_SEL,				0x0000000a },
-	{ QSERDES_COM_DEC_START_MODE0,				0x00000082 },
-	{ QSERDES_COM_DIV_FRAC_START3_MODE0,			0x00000003 },
-	{ QSERDES_COM_DIV_FRAC_START2_MODE0,			0x00000055 },
-	{ QSERDES_COM_DIV_FRAC_START1_MODE0,			0x00000055 },
+	{ PCIE_QSERDES_COM_BG_TIMER,				0x00000009 },
+	{ PCIE_QSERDES_COM_SYSCLK_EN_SEL,			0x0000000a },
+	{ PCIE_QSERDES_COM_DEC_START_MODE0,			0x00000082 },
+	{ PCIE_QSERDES_COM_DIV_FRAC_START3_MODE0,		0x00000003 },
+	{ PCIE_QSERDES_COM_DIV_FRAC_START2_MODE0,		0x00000055 },
+	{ PCIE_QSERDES_COM_DIV_FRAC_START1_MODE0,		0x00000055 },
 	{ QSERDES_COM_LOCK_CMP3_MODE0,				0x00000000 },
 	{ QSERDES_COM_LOCK_CMP2_MODE0,				0x0000000D },
-	{ QSERDES_COM_LOCK_CMP1_MODE0,				0x00000D04 },
+	{ PCIE_QSERDES_COM_LOCK_CMP1_MODE0,			0x00000D04 },
 	{ QSERDES_COM_CLK_SELECT,				0x00000033 },
-	{ QSERDES_COM_SYS_CLK_CTRL,				0x00000002 },
+	{ PCIE_QSERDES_COM_SYS_CLK_CTRL,			0x00000002 },
 	{ QSERDES_COM_SYSCLK_BUF_ENABLE,			0x0000001f },
 	{ QSERDES_COM_CP_CTRL_MODE0,				0x0000000b },
 	{ QSERDES_COM_PLL_RCTRL_MODE0,				0x00000016 },
@@ -1028,7 +1031,7 @@ static const struct phy_regs pcie_phy_regs[] = {
 	{ QSERDES_COM_BIAS_EN_CTRL_BY_PSM,			0x00000001 },
 	{ QSERDES_COM_VCO_TUNE_CTRL,				0x0000000a },
 	{ QSERDES_COM_SSC_EN_CENTER,				0x00000001 },
-	{ QSERDES_COM_SSC_PER1,					0x00000031 },
+	{ PCIE_QSERDES_COM_SSC_PER1,				0x00000031 },
 	{ QSERDES_COM_SSC_PER2,					0x00000001 },
 	{ QSERDES_COM_SSC_ADJ_PER1,				0x00000002 },
 	{ QSERDES_COM_SSC_ADJ_PER2,				0x00000000 },
@@ -1037,14 +1040,14 @@ static const struct phy_regs pcie_phy_regs[] = {
 	{ QSERDES_TX_HIGHZ_TRANSCEIVEREN_BIAS_DRVR_EN,		0x00000045 },
 	{ QSERDES_TX_LANE_MODE,					0x00000006 },
 	{ QSERDES_TX_RES_CODE_LANE_OFFSET,			0x00000002 },
-	{ QSERDES_TX_RCV_DETECT_LVL_2,				0x00000012 },
+	{ PCIE_QSERDES_TX_RCV_DETECT_LVL_2,			0x00000012 },
 	{ QSERDES_RX_SIGDET_ENABLES,				0x0000001c },
-	{ QSERDES_RX_SIGDET_DEGLITCH_CNTRL,			0x00000014 },
-	{ QSERDES_RX_RX_EQU_ADAPTOR_CNTRL2,			0x00000001 },
-	{ QSERDES_RX_RX_EQU_ADAPTOR_CNTRL3,			0x00000000 },
-	{ QSERDES_RX_RX_EQU_ADAPTOR_CNTRL4,			0x000000db },
+	{ PCIE_QSERDES_RX_SIGDET_DEGLITCH_CNTRL,		0x00000014 },
+	{ PCIE_QSERDES_RX_RX_EQU_ADAPTOR_CNTRL2,		0x00000001 },
+	{ PCIE_QSERDES_RX_RX_EQU_ADAPTOR_CNTRL3,		0x00000000 },
+	{ PCIE_QSERDES_RX_RX_EQU_ADAPTOR_CNTRL4,		0x000000db },
 	{ QSERDES_RX_UCDR_SO_SATURATION_AND_ENABLE,		0x0000004b },
-	{ QSERDES_RX_UCDR_SO_GAIN,				0x00000004 },
+	{ PCIE_QSERDES_RX_UCDR_SO_GAIN,				0x00000004 },
 	{ QSERDES_RX_UCDR_SO_GAIN_HALF,				0x00000004 },
 	{ QSERDES_COM_CLK_EP_DIV,				0x00000019 },
 	{ PCIE_USB3_PCS_ENDPOINT_REFCLK_DRIVE,			0x00000004 },
@@ -1210,7 +1213,7 @@ void pcie_phy_v2_init(struct ipq_pcie *pcie)
 	qca_pcie_write_reg(pcie->pci_phy.start, PCIE_0_PCS_COM_SW_RESET, 0x0);
 	qca_pcie_write_reg(pcie->pci_phy.start, PCIE_0_PCS_COM_START_CONTROL, 0x3);
 	mdelay(5);
-	return 0;
+	return;
 }
 static int pci_ipq_ofdata_to_platdata(int id, struct ipq_pcie *pcie)
 {
@@ -1242,7 +1245,7 @@ static int pci_ipq_ofdata_to_platdata(int id, struct ipq_pcie *pcie)
 	return 0;
 }
 
-__weak void ipq_wifi_pci_power_enable()
+__weak void ipq_wifi_pci_power_enable(void)
 {
 	return;
 }
