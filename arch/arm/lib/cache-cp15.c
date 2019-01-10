@@ -90,7 +90,7 @@ void mmu_setup(void)
 	u32 reg;
 
 	arm_init_before_mmu();
-	memset(gd->arch.tlb_addr, 0, gd->arch.tlb_size);
+	memset((void *)gd->arch.tlb_addr, 0, gd->arch.tlb_size);
 	/* Set up an identity-mapping for all 4GB, rw for everyone */
 	for (i = 0; i < 4096; i++)
 		set_section_dcache(i, SHARED_DEVICE);

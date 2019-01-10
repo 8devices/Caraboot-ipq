@@ -38,14 +38,20 @@ qca_mmc mmc_host;
 #else
 struct sdhci_host mmc_host;
 #endif
-
-
 extern loff_t board_env_offset;
 extern loff_t board_env_range;
 extern loff_t board_env_size;
 
 extern int ipq_spi_init(u16);
 extern int ipq807x_edma_init(void *cfg);
+
+#ifdef CONFIG_QCA_MMC
+#ifdef CONFIG_SDHCI_SUPPORT
+extern int board_mmc_env_init(struct sdhci_host mmc_host);
+#else
+extern int board_mmc_env_init(qca_mmc mmc_host);
+#endif
+#endif
 
 const char *rsvd_node = "/reserved-memory";
 const char *del_node[] = {"uboot",
@@ -298,7 +304,7 @@ void emmc_sdhci_init(void)
 	writel(readl(MSM_SDC1_MCI_HC_MODE) | (0x1), MSM_SDC1_MCI_HC_MODE);
 }
 
-int get_aquantia_gpio()
+int get_aquantia_gpio(void)
 {
 	int aquantia_gpio = -1, node;
 
@@ -321,7 +327,7 @@ int get_napa_gpio(int napa_gpio[2])
 		napa_gpio_cnt = fdtdec_get_uint(gd->fdt_blob, node, "napa_gpio_cnt", -1);
 		if (napa_gpio_cnt >= 1) {
 			res = fdtdec_get_int_array(gd->fdt_blob, node, "napa_gpio",
-					napa_gpio, napa_gpio_cnt);
+						   (u32 *)napa_gpio, napa_gpio_cnt);
 			if (res >= 0)
 				return napa_gpio_cnt;
 		}
@@ -351,7 +357,7 @@ void aquantia_phy_reset_init(void)
 
 void napa_phy_reset_init(void)
 {
-	int napa_gpio[2] = {0}, node, napa_gpio_cnt, i;
+	int napa_gpio[2] = {0}, napa_gpio_cnt, i;
 	unsigned int *napa_gpio_base;
 
 	napa_gpio_cnt = get_napa_gpio(napa_gpio);
@@ -368,7 +374,7 @@ void napa_phy_reset_init(void)
 
 void napa_phy_reset_init_done(void)
 {
-	int napa_gpio[2] = {0}, node, napa_gpio_cnt, i;
+	int napa_gpio[2] = {0}, napa_gpio_cnt, i;
 
 	napa_gpio_cnt = get_napa_gpio(napa_gpio);
 	if (napa_gpio_cnt >= 1) {
@@ -657,7 +663,6 @@ void board_pci_init(int id)
 	int node, gpio_node;
 	char name[16];
 	uint32_t soc_ver_major, soc_ver_minor;
-	int ret;
 
 	snprintf(name, sizeof(name), "pci%d", id);
 	node = fdt_path_offset(gd->fdt_blob, name);
@@ -666,7 +671,7 @@ void board_pci_init(int id)
 		return;
 	}
 	gpio_node = fdt_subnode_offset(gd->fdt_blob, node, "pci_gpio");
-	ret = get_soc_version(&soc_ver_major, &soc_ver_minor);
+	get_soc_version(&soc_ver_major, &soc_ver_minor);
 	if (gpio_node >= 0)
 		qca_gpio_init(gpio_node);
 	if(soc_ver_major == 2)
@@ -683,9 +688,8 @@ void board_pci_deinit()
 	struct fdt_resource parf;
 	struct fdt_resource pci_phy;
 	uint32_t soc_ver_major, soc_ver_minor;
-	int ret;
 
-	ret = get_soc_version(&soc_ver_major, &soc_ver_minor);
+	get_soc_version(&soc_ver_major, &soc_ver_minor);
 	for (i = 0; i < PCI_MAX_DEVICES; i++) {
 		snprintf(name, sizeof(name), "pci%d", i);
 		node = fdt_path_offset(gd->fdt_blob, name);
@@ -739,22 +743,22 @@ void board_usb_deinit(int id)
 	void __iomem *usb_phy_bcr, *usb_gen_cfg, *usb_guctl, *phy_base;
 
 	if (id == 0) {
-		boot_clk_ctl = GCC_USB_0_BOOT_CLOCK_CTL;
-		usb_bcr = GCC_USB0_BCR;
-		qusb2_phy_bcr = GCC_QUSB2_0_PHY_BCR;
-		usb_phy_bcr = GCC_USB0_PHY_BCR;
-		usb_gen_cfg = USB30_1_GENERAL_CFG;
-		usb_guctl = USB30_1_GUCTL;
-		phy_base = USB30_PHY_1_QUSB2PHY_BASE;
+		boot_clk_ctl = (u32 *)GCC_USB_0_BOOT_CLOCK_CTL;
+		usb_bcr = (u32 *)GCC_USB0_BCR;
+		qusb2_phy_bcr = (u32 *)GCC_QUSB2_0_PHY_BCR;
+		usb_phy_bcr = (u32 *)GCC_USB0_PHY_BCR;
+		usb_gen_cfg = (u32 *)USB30_1_GENERAL_CFG;
+		usb_guctl = (u32 *)USB30_1_GUCTL;
+		phy_base = (u32 *)USB30_PHY_1_QUSB2PHY_BASE;
 	}
 	else if (id == 1) {
-		boot_clk_ctl = GCC_USB_1_BOOT_CLOCK_CTL;
-		usb_bcr = GCC_USB1_BCR;
-		qusb2_phy_bcr = GCC_QUSB2_1_PHY_BCR;
-		usb_phy_bcr = GCC_USB1_PHY_BCR;
-		usb_gen_cfg = USB30_2_GENERAL_CFG;
-		usb_guctl = USB30_2_GUCTL;
-		phy_base = USB30_PHY_2_QUSB2PHY_BASE;
+		boot_clk_ctl = (u32 *)GCC_USB_1_BOOT_CLOCK_CTL;
+		usb_bcr = (u32 *)GCC_USB1_BCR;
+		qusb2_phy_bcr = (u32 *)GCC_QUSB2_1_PHY_BCR;
+		usb_phy_bcr = (u32 *)GCC_USB1_PHY_BCR;
+		usb_gen_cfg = (u32 *)USB30_2_GENERAL_CFG;
+		usb_guctl = (u32 *)USB30_2_GUCTL;
+		phy_base = (u32 *)USB30_PHY_2_QUSB2PHY_BASE;
 	}
 	else {
 		return;
@@ -846,10 +850,10 @@ static void usb_init_ssphy(int index)
 	void __iomem *phybase;
 
 	if (index == 0) {
-		phybase = USB0_SSPHY_BASE;
+		phybase = (u32 *)USB0_SSPHY_BASE;
 	}
 	else if (index == 1) {
-		phybase = USB1_SSPHY_BASE;
+		phybase = (u32 *)USB1_SSPHY_BASE;
 	} else
 		return;
 
@@ -933,24 +937,24 @@ static void usb_init_phy(int index)
 	void __iomem *usb_phy_bcr, *usb3_phy_bcr, *usb_gen_cfg, *usb_guctl, *phy_base;
 
 	if (index == 0) {
-		boot_clk_ctl = GCC_USB_0_BOOT_CLOCK_CTL;
-		usb_bcr = GCC_USB0_BCR;
-		qusb2_phy_bcr = GCC_QUSB2_0_PHY_BCR;
-		usb_phy_bcr = GCC_USB0_PHY_BCR;
-		usb3_phy_bcr = GCC_USB3PHY_0_PHY_BCR;
-		usb_gen_cfg = USB30_1_GENERAL_CFG;
-		usb_guctl = USB30_1_GUCTL;
-		phy_base = USB30_PHY_1_QUSB2PHY_BASE;
+		boot_clk_ctl = (u32 *)GCC_USB_0_BOOT_CLOCK_CTL;
+		usb_bcr = (u32 *)GCC_USB0_BCR;
+		qusb2_phy_bcr = (u32 *)GCC_QUSB2_0_PHY_BCR;
+		usb_phy_bcr = (u32 *)GCC_USB0_PHY_BCR;
+		usb3_phy_bcr = (u32 *)GCC_USB3PHY_0_PHY_BCR;
+		usb_gen_cfg = (u32 *)USB30_1_GENERAL_CFG;
+		usb_guctl = (u32 *)USB30_1_GUCTL;
+		phy_base = (u32 *)USB30_PHY_1_QUSB2PHY_BASE;
 	}
 	else if (index == 1) {
-		boot_clk_ctl = GCC_USB_1_BOOT_CLOCK_CTL;
-		usb_bcr = GCC_USB1_BCR;
-		qusb2_phy_bcr = GCC_QUSB2_1_PHY_BCR;
-		usb_phy_bcr = GCC_USB1_PHY_BCR;
-		usb3_phy_bcr = GCC_USB3PHY_1_PHY_BCR;
-		usb_gen_cfg = USB30_2_GENERAL_CFG;
-		usb_guctl = USB30_2_GUCTL;
-		phy_base = USB30_PHY_2_QUSB2PHY_BASE;
+		boot_clk_ctl = (u32 *)GCC_USB_1_BOOT_CLOCK_CTL;
+		usb_bcr = (u32 *)GCC_USB1_BCR;
+		qusb2_phy_bcr = (u32 *)GCC_QUSB2_1_PHY_BCR;
+		usb_phy_bcr = (u32 *)GCC_USB1_PHY_BCR;
+		usb3_phy_bcr = (u32 *)GCC_USB3PHY_1_PHY_BCR;
+		usb_gen_cfg = (u32 *)USB30_2_GENERAL_CFG;
+		usb_guctl = (u32 *)USB30_2_GUCTL;
+		phy_base = (u32 *)USB30_PHY_2_QUSB2PHY_BASE;
 	}
 	else {
 		return;
@@ -1144,7 +1148,6 @@ void fdt_fixup_auto_restart(void *blob)
 
 void fdt_fixup_cpr(void *blob)
 {
-	uint32_t soc_version, soc_version_major;
 	int node, subnode, phandle;
 	int i, ret;
 	uint64_t opp_hz[] = {1017600000, 1382400000, 1651200000,
@@ -1467,6 +1470,5 @@ void set_platform_specific_default_env(void)
 		setenv_ulong("soc_version_major", (unsigned long)soc_ver_major);
 		setenv_ulong("soc_version_minor", (unsigned long)soc_ver_minor);
 	}
-
-	return;
 }
+

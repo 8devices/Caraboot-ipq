@@ -59,22 +59,22 @@ int ipq_board_usb_init(void)
 __weak
 void board_usb_deinit(int id)
 {
-	return 0;
+	return;
 }
 __weak
 void board_pci_deinit(void)
 {
-	return 0;
+	return;
 }
 __weak
 void disable_audio_clks(void)
 {
-	return 0;
+	return;
 }
 __weak
 void ipq_uboot_fdt_fixup(void)
 {
-	return 0;
+	return;
 }
 
 __weak void uart_wait_tx_empty(void)

@@ -45,6 +45,7 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+extern void qca_serial_init(struct ipq_serial_platdata *pdata);
 struct ipq_serial_platdata uart2;
 #define FIFO_DATA_SIZE	4
 
@@ -491,7 +492,7 @@ static int do_uartwr(char *str)
 	return 0;
 }
 
-static int uart_serial_tstc()
+static int uart_serial_tstc(void)
 {
 	unsigned long base = uart2.reg_base;
 	/* Return if data is already read */
@@ -532,7 +533,7 @@ static int do_uartrd(void)
 static void  do_uart_start(void)
 {
 	int node;
-	u32 *uart_base;
+	const u32 *uart_base;
 	int len;
 
 	node = fdt_path_offset(gd->fdt_blob, "uart2");
@@ -561,7 +562,7 @@ static void  do_uart_start(void)
 	ipq_serial_init(&uart2,  uart2.reg_base);
 }
 
-static const baud_table[] = {
+static const unsigned int baud_table[] = {
 	150, 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 38400, 57600, 115200
 };
 

@@ -415,8 +415,9 @@ int qca_scm_call(u32 svc_id, u32 cmd_id, void *buf, size_t len)
 		desc.args[1] = len;
 		ret = scm_call_64(svc_id, cmd_id, &desc);
 		/* qca_scm_call is called with len 1, hence tz_buf is enough */
-		invalidate_dcache_range(tz_buf,
-			tz_buf + CONFIG_SYS_CACHELINE_SIZE);
+		invalidate_dcache_range((unsigned long)tz_buf,
+					(unsigned long)tz_buf +
+					CONFIG_SYS_CACHELINE_SIZE);
 		memcpy(buf, tz_buf, len);
 	}
 	else
@@ -603,7 +604,7 @@ int qca_scm_dload(unsigned int magic_cookie)
         if (is_scm_armv8())
 	{
 		ret = qca_scm_call_write(SCM_SVC_IO, SCM_IO_WRITE,
-			0x193D100, magic_cookie);
+					 (u32 *)0x193D100, magic_cookie);
 	}
 	else
 	{
@@ -621,7 +622,7 @@ int qca_scm_dload(unsigned int magic_cookie)
 				 SCM_MASK_IRQS |			\
 				 (n & 0xf))
 
-static s32  qca_scm_call_atomic_ver2_32(u32 svc, u32 cmd, u32 arg1, u32 arg2)
+s32  qca_scm_call_atomic_ver2_32(u32 svc, u32 cmd, u32 arg1, u32 arg2)
 {
 	int context_id;
 	register u32 r0 asm("r0") = SCM_ATOMIC(svc, cmd, 2);

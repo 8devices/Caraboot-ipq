@@ -19,7 +19,7 @@
 #include <linux/string.h>
 #include <linux/ctype.h>
 #include <malloc.h>
-
+#include <common.h>
 
 /**
  * strncasecmp - Case insensitive, length-limited string comparison

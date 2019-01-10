@@ -1102,7 +1102,7 @@ static int qpic_nand_block_isbad(struct mtd_info *mtd, loff_t offs)
 	params.addr_loc_0 = NAND_RD_LOC_OFFSET(0);
 	params.addr_loc_0 |= NAND_RD_LOC_LAST_BIT(1);
 	params.addr_loc_0 |= NAND_RD_LOC_SIZE(4); /* Read 4 bytes */
- 	params.ecc_cfg = 0x1; /* Disable ECC */
+	params.ecc_cfg = 0x1; /* Disable ECC */
 	params.exec = 1;
 
 	if (qpic_nand_block_isbad_exec(mtd, &params, bad_block)) {
@@ -1217,7 +1217,8 @@ qpic_nand_add_wr_page_cws_cmd_desc(struct mtd_info *mtd, struct cfg_params *cfg,
 
 #if !defined(CONFIG_SYS_DCACHE_OFF)
 		flush_dcache_range((unsigned long)status,
-				   (unsigned long)status + sizeof(status));
+				   (unsigned long)status +
+				   sizeof(status_write));/*caluclating the size*/
 #endif
 
 		status[i] = qpic_nand_check_status(mtd, status[i]);

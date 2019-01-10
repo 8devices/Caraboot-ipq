@@ -221,7 +221,7 @@ out:
 #else
 int sf_saveenv(void)
 {
-	u32	saved_size, saved_offset, sector = 1;
+	u32	saved_size = 0, saved_offset = 0, sector = 1;
 	char	*saved_buffer = NULL;
 	int	ret = 1;
 	env_t	env_new;

@@ -162,6 +162,7 @@ typedef enum {
 	SMEM_MAX_SIZE = SMEM_BOOT_DUALPARTINFO + 1,
 } smem_mem_type_t;
 
+unsigned smem_read_alloc_entry(smem_mem_type_t type, void *buf, int len);
 /* Reserved-memory node names*/
 extern const char *rsvd_node;
 extern const char *del_node[];

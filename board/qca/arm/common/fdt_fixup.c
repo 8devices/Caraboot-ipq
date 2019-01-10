@@ -266,8 +266,8 @@ static void ipq40xx_set_setprop(void *blob, int nodeoff, unsigned long gmac_no,
 
 	ret = fdt_setprop(blob, nodeoff, str, &val, sizeof(val));
 	if (ret)
-		debug("unable to set property %s for %d with error %d\n",
-							str, gmac_no, ret);
+		debug("unable to set property %s for %lu with error %d\n",
+		      str, gmac_no, ret);
 }
 
 static void ipq40xx_populate_eth_params(void *blob, struct eth_param *port)

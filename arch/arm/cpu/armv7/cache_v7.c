@@ -87,13 +87,13 @@ static void set_csselr(void)
 	asm volatile ("mcr p15, 2, %0, c0, c0, 0" : : "r" (c1.csselr));
 }
 
-static u32 get_ccsidr(void)
+static void get_ccsidr(void)
 {
 	/* Read current CP15 Cache Size ID Register */
 	asm volatile ("mrc p15, 1, %0, c0, c0, 0" : "=r" (c1.ccsidr));
 }
 
-static u32 get_clidr(void)
+static void get_clidr(void)
 {
 	/* Read current CP15 Cache Level ID Register */
 	asm volatile ("mrc p15,1,%0,c0,c0,1" : "=r" (c1.clidr));

@@ -36,6 +36,7 @@
 #include <asm/arch-qca-common/bam.h>
 #include "qca_qup_spi_bam.h"
 #include <asm/arch-qca-common/gpio.h>
+#include <fdtdec.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -168,7 +169,7 @@ void spi_init()
 	/* do nothing */
 }
 
-static void qup_pipe_init()
+static void qup_pipe_init(void)
 {
 	char rd_pipe_name[10], wr_pipe_name[10];
 	int node,i;

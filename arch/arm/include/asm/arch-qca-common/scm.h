@@ -109,7 +109,10 @@ int qca_scm_sdi(void);
 int qca_scm_dload(u32);
 int qca_scm_fuseipq(u32, u32, void *, size_t);
 bool is_scm_armv8(void);
-static s32 qca_scm_call_atomic_ver2_32(u32 svc, u32 cmd, u32 arg1, u32 arg2);
+int qca_scm_secure_authenticate(void *cmd_buf, size_t cmd_len);
+s32 qca_scm_call_atomic_ver2_32(u32 svc, u32 cmd, u32 arg1, u32 arg2);
+int qca_scm_auth_kernel(void *cmd_buf, size_t cmd_len);
+int is_scm_sec_auth_available(u32 svc_id, u32 cmd_id);
 #define MAX_QCA_SCM_RETS		3
 #define MAX_QCA_SCM_ARGS		10
 #define SCM_READ_OP			1

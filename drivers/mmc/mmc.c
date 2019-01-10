@@ -1870,14 +1870,14 @@ int mmc_send_wp_set_clr(struct mmc *mmc, unsigned int start,
 		cmd.cmdarg = start + (i * wp_group_size);
 		err = mmc_send_cmd(mmc, &cmd, NULL);
 		if (err) {
-			printf("%s: Error at block 0x%lx - %d\n", __func__,
-				cmd.cmdarg, err);
+			printf("%s: Error at block 0x%x - %d\n", __func__,
+			       cmd.cmdarg, err);
 			return err;
 		}
 
 		if(MMC_ADDR_OUT_OF_RANGE(cmd.response[0])) {
-			printf("%s: mmc block(0x%lx) out of range", __func__,
-				cmd.cmdarg);
+			printf("%s: mmc block(0x%x) out of range", __func__,
+			       cmd.cmdarg);
 			return -EINVAL;
 		}
 

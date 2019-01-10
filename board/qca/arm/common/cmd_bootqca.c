@@ -26,6 +26,7 @@
 #include "fdt_info.h"
 #include <asm/errno.h>
 #include <asm/arch-qca-common/qca_common.h>
+#include <usb.h>
 
 #define SEC_AUTH_SW_ID 		0x17
 #define ROOTFS_IMAGE_TYPE       0x13
@@ -91,7 +92,8 @@ static int set_fs_bootargs(int *fs_on_nand)
 				sfi->rootfs.size = IPQ_NAND_ROOTFS_SIZE;
 			}
 
-			fdt_setprop(gd->fdt_blob, 0, "nor_nand_available", fs_on_nand, sizeof(int));
+			fdt_setprop((void *)gd->fdt_blob, 0, "nor_nand_available",
+				    fs_on_nand, sizeof(int));
 			snprintf(mtdids, sizeof(mtdids),
 				 "nand%d=nand%d,nand%d=" QCA_SPI_NOR_DEVICE,
 				 is_spi_nand_available(),
@@ -541,8 +543,9 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 			 sfi->rootfs.size, sfi->rootfs.offset,
 			 CONFIG_SYS_LOAD_ADDR);
 
-	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH &&
-		   (sfi->rootfs.offset != 0xBAD0FF5E) || ipq_fs_on_nand) {
+	} else if (((sfi->flash_type == SMEM_BOOT_SPI_FLASH) &&
+		    (sfi->rootfs.offset != 0xBAD0FF5E)) ||
+		   ipq_fs_on_nand) {
 		if (get_which_flash_param("rootfs") || ipq_fs_on_nand) {
 			snprintf(runcmd, sizeof(runcmd),
 				 "nand device %d && "

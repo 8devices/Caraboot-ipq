@@ -120,7 +120,7 @@ void spi_flash_free(struct spi_flash *flash)
 		free(flash);
 	}
 
-	memset(spi_flash_ptr, NULL, sizeof(spi_flash_ptr));
+	memset(spi_flash_ptr, 0, sizeof(spi_flash_ptr));
 }
 
 #else /* defined CONFIG_DM_SPI_FLASH */

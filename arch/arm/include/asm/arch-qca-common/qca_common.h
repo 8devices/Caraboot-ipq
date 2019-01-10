@@ -16,17 +16,17 @@
 #include <asm/u-boot.h>
 #include <asm/arch-qca-common/smem.h>
 
-#ifdef CONFIG_IPQ807x
+#ifdef CONFIG_ARCH_IPQ807x
 #include <asm/arch-ipq807x/clk.h>
 #endif
 
-#ifdef CONFIG_IPQ40xx
+#ifdef CONFIG_ARCH_IPQ40xx
 #include <asm/arch-ipq40xx/clk.h>
 #endif
 
 
-#ifdef CONFIG_IPQ806x
-#include <asm/arch-ipq806x/clock.h>
+#ifdef CONFIG_ARCH_IPQ806x
+#include <asm/arch-ipq806x/clk.h>
 #endif
 
 #define XMK_STR(x)#x
@@ -51,7 +51,7 @@ typedef struct {
 
 int qca_mmc_init(bd_t *, qca_mmc *);
 void board_mmc_deinit(void);
-
+void board_pci_deinit(void);
 void set_flash_secondary_type(qca_smem_flash_info_t *);
 void dump_func(void);
 int do_dumpqca_flash_data(const char *);
@@ -60,6 +60,10 @@ int set_uuid_bootargs(char *boot_args, char *part_name, int buflen, bool gpt_fla
 
 int get_eth_mac_address(uchar *enetaddr, uint no_of_macs);
 void set_ethmac_addr(void);
+void aquantia_phy_reset_init_done(void);
+void aquantia_phy_reset_init(void);
+int bring_sec_core_up(unsigned int cpuid, unsigned int entry, unsigned int arg);
+int is_secondary_core_off(unsigned int cpuid);
 
 struct dumpinfo_t{
 	char name[16]; /* use only file name in 8.3 format */

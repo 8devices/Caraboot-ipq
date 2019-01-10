@@ -22,6 +22,7 @@
 #include <mapmem.h>
 #include <dm.h>
 #include <asm/arch-qca-common/qca_common.h>
+#include <asm/arch-qca-common/gpio.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 static int src_clk_freq;

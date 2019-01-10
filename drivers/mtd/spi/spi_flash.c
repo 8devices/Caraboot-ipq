@@ -1242,7 +1242,9 @@ try_with_dummy_byte:
 *  the generic initialization functionality. All the manufacturer
 *  specific initialization should  be done before this point.
 */
+#ifdef CONFIG_SPI_NOR_GENERIC
 do_generic_probe:
+#endif
 	/* Read dummy_byte: dummy byte is determined based on the
 	 * dummy cycles of a particular command.
 	 * Fast commands - dummy_byte = dummy_cycles/8
@@ -1301,7 +1303,9 @@ do_generic_probe:
 	}
 #endif
 
+#ifdef CONFIG_SPI_NAND
 print_sf_info:
+#endif
 #ifndef CONFIG_SPL_BUILD
 	printf("SF: Detected %s with page size ", flash->name);
 	print_size(flash->page_size, ", erase size ");
