@@ -192,6 +192,49 @@
 #define GCC_PCIE0_RCHNG_CMD_RCGR	0x01875070
 #define GCC_PCIE0_RCHNG_CFG_RCGR	0x01875074
 
+#ifdef CONFIG_SMEM_VERSION_C
+#define RAM_PART_NAME_LENGTH 16
+
+/**
+ * Number of RAM partition entries which are usable by APPS.
+ */
+#define RAM_NUM_PART_ENTRIES 32
+struct ram_partition_entry
+{
+	char name[RAM_PART_NAME_LENGTH];  /**< Partition name, unused for now */
+	u64 start_address;             /**< Partition start address in RAM */
+	u64 length;                    /**< Partition length in RAM in Bytes */
+	u32 partition_attribute;       /**< Partition attribute */
+	u32 partition_category;        /**< Partition category */
+	u32 partition_domain;          /**< Partition domain */
+	u32 partition_type;            /**< Partition type */
+	u32 num_partitions;            /**< Number of partitions on device */
+	u32 hw_info;                   /**< hw information such as type and frequency */
+	u8 highest_bank_bit;           /**< Highest bit corresponding to a bank */
+	u8 reserve0;                   /**< Reserved for future use */
+	u8 reserve1;                   /**< Reserved for future use */
+	u8 reserve2;                   /**< Reserved for future use */
+	u32 reserved5;                 /**< Reserved for future use */
+	u64 available_length;          /**< Available Partition length in RAM in Bytes */
+};
+
+struct usable_ram_partition_table
+{
+	u32 magic1;          /**< Magic number to identify valid RAM partition table */
+	u32 magic2;          /**< Magic number to identify valid RAM partition table */
+	u32 version;         /**< Version number to track structure definition changes
+	                             and maintain backward compatibilities */
+	u32 reserved1;       /**< Reserved for future use */
+
+	u32 num_partitions;  /**< Number of RAM partition table entries */
+
+	u32 reserved2;       /** < Added for 8 bytes alignment of header */
+
+	/** RAM partition table entries */
+	struct ram_partition_entry ram_part_entry[RAM_NUM_PART_ENTRIES];
+};
+#endif
+
 struct smem_ram_ptn {
 	char name[16];
 	unsigned long long start;
