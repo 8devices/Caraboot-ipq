@@ -1,5 +1,5 @@
 ######################################################################
-# Copyright (c) 2017, The Linux Foundation. All rights reserved.
+# Copyright (c) 2017, 2019, The Linux Foundation. All rights reserved.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 and
@@ -1558,7 +1558,7 @@ class ArgParser(object):
 #Verify Arguments passed by user
 
 # Verify arch type
-	    if ARCH_NAME not in ["ipq40xx", "ipq806x", "ipq807x", "ipq807x_64"]:
+	    if ARCH_NAME not in ["ipq40xx", "ipq806x", "ipq807x", "ipq807x_64", "ipq6018", "ipq6018_64"]:
 		raise UsageError("Invalid arch type '%s'" % arch)
 
 	    if ARCH_NAME == "ipq807x":
@@ -1566,6 +1566,12 @@ class ArgParser(object):
 	    elif ARCH_NAME == "ipq807x_64":
 		MODE = "64"
 		ARCH_NAME = "ipq807x"
+
+	    if ARCH_NAME == "ipq6018":
+		MODE = "32"
+	    elif ARCH_NAME == "ipq6018_64":
+		MODE = "64"
+		ARCH_NAME = "ipq6018"
 
 # Set flash type to default type (nand) if not given by user
 	    if self.flash_type == None:
@@ -1597,7 +1603,7 @@ class ArgParser(object):
 	print "python pack_hk.py [options] [Value] ..."
 	print
         print "options:"
-        print "  --arch \tARCH_TYPE [ipq40xx/ipq806x/ipq807x/ipq807x_64]"
+        print "  --arch \tARCH_TYPE [ipq40xx/ipq806x/ipq807x/ipq807x_64/ipq6018/ipq6018_64]"
 	print
 	print "  --fltype \tFlash Type [nor/tiny-nor/nand/emmc/norplusnand/norplusemmc]"
         print " \t\tMultiple flashtypes can be passed by a comma separated string"
