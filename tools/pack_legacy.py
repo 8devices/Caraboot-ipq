@@ -73,6 +73,7 @@ from string import Template
 from unittest import TestCase
 from tempfile import mkdtemp
 from shutil import rmtree
+from shutil import copy
 
 import os
 import sys
@@ -84,6 +85,7 @@ import hashlib
 
 version = "1.1"
 lk = False
+
 
 TABLE_VERSION_AK = 3
 TABLE_VERSION_DK = 4
@@ -708,6 +710,61 @@ class Pack(object):
         except KeyError, e:
             return None
 
+    def __gen_kernelboot_img(self, filename):
+        """Generate kernelboot.img needed by LK bootloader"""
+
+        KERNEL_IMG_NAME = filename
+        SKALES_DIR = self.images_dname
+
+        try:
+            if "ipq40xx" in KERNEL_IMG_NAME:
+                DTB = "qcom-ipq4019-ap.dk04.1-c1.dtb"
+                BASE_ADDR = "0x80200000"
+                BOOT_ARGS = "\'console=ttyMSM0,115200 root=/dev/mmcblk0p12 rootwait\'"
+            elif "ipq806x" in KERNEL_IMG_NAME:
+                DTB = "qcom-ipq8064-ap145.dtb"
+                BASE_ADDR = "0x42200000"
+                BOOT_ARGS = "\'rootfsname=rootfs rootwait\'"
+            if not os.path.exists(os.path.join(self.images_dname, "Image")):
+                error("'Image' file not found")
+            if not os.path.exists(os.path.join(self.images_dname, DTB)):
+                error("%s file not found" % DTB)
+
+            self.tmp_dir = self.images_dname + "tmp_dir"
+            if os.path.exists(self.tmp_dir):
+                rmtree(self.tmp_dir)
+            os.makedirs(self.tmp_dir)
+
+            copy(self.images_dname + DTB, self.tmp_dir)
+            copy(self.images_dname + "Image", self.tmp_dir)
+
+            cmd = [SKALES_DIR + "dtbTool -o " + self.tmp_dir + "/" + DTB + ".img " + self.tmp_dir]
+            ret = subprocess.call(cmd, shell=True)
+            if ret != 0:
+                print ret
+                error("Error executing dtbTools")
+
+            cmd = ["gzip -9 " + self.tmp_dir + "/Image"]
+            ret = subprocess.call(cmd, shell=True)
+            if ret != 0:
+                print ret
+                error("Error executing gzip")
+
+            cmd = [SKALES_DIR + "mkbootimg",
+                    "--kernel=" + self.tmp_dir + "/Image.gz",
+                    "--dt=" + self.tmp_dir + "/" + DTB + ".img",
+                    "--cmdline=" + BOOT_ARGS,
+                    "--output=" + self.tmp_dir + "/" + KERNEL_IMG_NAME,
+                    "--base=" + BASE_ADDR]
+            ret = subprocess.call(cmd)
+            if ret != 0:
+                print ret
+                error("Error executing mkbootimg")
+
+            copy(self.tmp_dir + "/" + KERNEL_IMG_NAME, self.images_dname)
+        except OSError, e:
+            error("error generating kernelboot.img", e)
+
     def __gen_flash_script(self, info, script, flinfo):
         """Generate the script to flash the images.
 
@@ -729,6 +786,8 @@ class Pack(object):
                         filename = "openwrt-ipq40xx-kernelboot.img"
                     elif "ipq806x" in filename:
                         filename = "openwrt-ipq806x-kernelboot.img"
+                    if not os.path.exists(self.images_dname + "tmp_dir/" + filename):
+                        self.__gen_kernelboot_img(filename)
                 partition = info.get(section, "partition")
                 include = info.get(section, "include")
             except ConfigParserError, e:
@@ -1174,6 +1233,7 @@ class Pack(object):
 
         images.insert(0, ImageInfo("script", "flash.scr", "script"))
         self.__mkimage(images)
+        rmtree(self.tmp_dir)
 
     def main(self, flinfo, images_dname, out_fname, part_fname, fconf_fname, ipq_nand):
         """Start the packing process.
