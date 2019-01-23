@@ -824,7 +824,8 @@ class Pack(object):
                 ret = subprocess.call(cmd, shell=True)
                 if ret != 0:
                     error("failed to create padded image from script")
-
+            if section == "u-boot" and lk == True and self.flinfo.type == 'emmc':
+                section = "lkboot"
             if self.flinfo.type != "emmc":
                if part_info == None:
                    if self.flinfo.type == 'norplusnand':
@@ -916,6 +917,7 @@ class Pack(object):
                         filename = "openwrt-ipq40xx-lkboot-stripped.elf"
                     elif "ipq806x" in filename:
                         filename = "openwrt-ipq806x-lkboot.mbn"
+                    section = "lkboot"
                 if lk == True and "uImage" in filename:
                     if "ipq40xx" in filename:
                         filename = "openwrt-ipq40xx-kernelboot.img"
