@@ -10,3 +10,12 @@ config SYS_VENDOR
 config SYS_CONFIG_NAME
        default "ipq807x"
 
+config IPQ807x_I2C
+	bool "Enable i2c support for ipq807x"
+
+config USB_XHCI_IPQ
+	bool "ipq807x usb support for ipq807x"
+
+config PCI_IPQ
+	bool "ipq807x pci support for ipq807x"
+

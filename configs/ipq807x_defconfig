@@ -177,6 +177,7 @@ CONFIG_SIMPLE_BUS=y
 #
 # CONFIG_DM_I2C_COMPAT is not set
 # CONFIG_CROS_EC_KEYB is not set
+CONFIG_IPQ807x_I2C=y
 
 #
 # LED Support
@@ -219,6 +220,7 @@ CONFIG_SIMPLE_BUS=y
 # PCI
 #
 # CONFIG_DM_PCI is not set
+CONFIG_PCI_IPQ=y
 
 #
 # Pin controllers
@@ -260,6 +262,7 @@ CONFIG_REQUIRE_SERIAL_CONSOLE=y
 #
 CONFIG_USB=y
 CONFIG_DM_USB=y
+CONFIG_USB_XHCI_IPQ=y
 
 #
 # Graphics support
