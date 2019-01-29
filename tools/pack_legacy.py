@@ -1235,7 +1235,10 @@ class Pack(object):
 
         images.insert(0, ImageInfo("script", "flash.scr", "script"))
         self.__mkimage(images)
-        rmtree(self.tmp_dir)
+
+        """Remove tmp_dir,if created earlier for lk-kernelboot image generation"""
+        if os.path.exists(self.images_dname + "tmp_dir"):
+            rmtree(self.images_dname + "tmp_dir")
 
     def main(self, flinfo, images_dname, out_fname, part_fname, fconf_fname, ipq_nand):
         """Start the packing process.
