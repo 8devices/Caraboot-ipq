@@ -28,6 +28,7 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 struct sdhci_host mmc_host;
+extern int ipq6018_edma_init(void *cfg);
 
 const char *rsvd_node = "/reserved-memory";
 const char *del_node[] = {"uboot",
@@ -727,6 +728,135 @@ int set_uuid_bootargs(char *boot_args, char *part_name, int buflen, bool gpt_fla
 		return -EINVAL;
 
 	return 0;
+}
+
+int get_napa_gpio(int napa_gpio[2])
+{
+	int napa_gpio_cnt = -1, node;
+	int res = -1;
+
+	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
+	if (node >= 0) {
+		napa_gpio_cnt = fdtdec_get_uint(gd->fdt_blob, node, "napa_gpio_cnt", -1);
+		if (napa_gpio_cnt >= 1) {
+			res = fdtdec_get_int_array(gd->fdt_blob, node, "napa_gpio",
+						   (u32 *)napa_gpio, napa_gpio_cnt);
+			if (res >= 0)
+				return napa_gpio_cnt;
+		}
+	}
+
+	return res;
+}
+
+void napa_phy_reset_init(void)
+{
+	int napa_gpio[2] = {0}, napa_gpio_cnt, i;
+	unsigned int *napa_gpio_base;
+
+	napa_gpio_cnt = get_napa_gpio(napa_gpio);
+	if (napa_gpio_cnt >= 1) {
+		for (i = 0; i < napa_gpio_cnt; i++) {
+			if (napa_gpio[i] >=0) {
+				napa_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(napa_gpio[i]);
+				writel(0x203, napa_gpio_base);
+				gpio_direction_output(napa_gpio[i], 0x0);
+			}
+		}
+	}
+}
+
+void napa_phy_reset_init_done(void)
+{
+	int napa_gpio[2] = {0}, napa_gpio_cnt, i;
+
+	napa_gpio_cnt = get_napa_gpio(napa_gpio);
+	if (napa_gpio_cnt >= 1) {
+		for (i = 0; i < napa_gpio_cnt; i++)
+			gpio_set_value(napa_gpio[i], 0x1);
+	}
+}
+
+void eth_clock_enable(void)
+{
+	int tlmm_base = 0x1025000;
+
+	/*
+	 * ethernet clk rcgr block init -- start
+	 * these clk init will be moved to sbl later
+	 */
+
+	writel(0x100 ,0x01868024);
+	writel(0x1 ,0x01868020);
+	writel(0x2 ,0x01868020);
+	writel(0x100 ,0x0186802C);
+	writel(0x1 ,0x01868028);
+	writel(0x2 ,0x01868028);
+	writel(0x100 ,0x01868034);
+	writel(0x1 ,0x01868030);
+	writel(0x2 ,0x01868030);
+	writel(0x100 ,0x0186803C);
+	writel(0x1 ,0x01868038);
+	writel(0x2 ,0x01868038);
+	writel(0x100 ,0x01868044);
+	writel(0x1 ,0x01868040);
+	writel(0x2 ,0x01868040);
+	writel(0x100 ,0x0186804C);
+	writel(0x1 ,0x01868048);
+	writel(0x2 ,0x01868048);
+	writel(0x100 ,0x01868054);
+	writel(0x1 ,0x01868050);
+	writel(0x2 ,0x01868050);
+	writel(0x100 ,0x0186805C);
+	writel(0x1 ,0x01868058);
+	writel(0x2 ,0x01868058);
+	writel(0x100 ,0x01868064);
+	writel(0x1 ,0x01868060);
+	writel(0x2 ,0x01868060);
+	writel(0x100 ,0x0186806C);
+	writel(0x1 ,0x01868068);
+	writel(0x2 ,0x01868068);
+	writel(0x100 ,0x01868074);
+	writel(0x1 ,0x01868070);
+	writel(0x2 ,0x01868070);
+	writel(0x100 ,0x0186807C);
+	writel(0x1 ,0x01868078);
+	writel(0x2 ,0x01868078);
+	writel(0x101 ,0x01868084);
+	writel(0x1 ,0x01868080);
+	writel(0x2 ,0x01868080);
+	writel(0x100 ,0x0186808C);
+	writel(0x1 ,0x01868088);
+	writel(0x2 ,0x01868088);
+
+	/*
+	 * ethernet clk rcgr block init -- end
+	 * these clk init will be moved to sbl later
+	 */
+
+	/* bring phy out of reset */
+	writel(7, tlmm_base + 0x1f000);
+	writel(7, tlmm_base + 0x20000);
+	writel(0x203, tlmm_base);
+	writel(0, tlmm_base + 0x4);
+	napa_phy_reset_init();
+	mdelay(500);
+	writel(2, tlmm_base + 0x4);
+	napa_phy_reset_init_done();
+	mdelay(500);
+}
+
+int board_eth_init(bd_t *bis)
+{
+	int ret=0;
+
+	eth_clock_enable();
+	ret = ipq6018_edma_init(NULL);
+
+	if (ret != 0)
+		printf("%s: ipq6018_edma_init failed : %d\n", __func__, ret);
+
+	return ret;
 }
 
 unsigned long timer_read_counter(void)

@@ -27,6 +27,8 @@
 #define CONFIG_SYS_VSNPRINTF
 #define CONFIG_IPQ_NO_RELOC
 
+#define CONFIG_SYS_NONCACHED_MEMORY     (1 << 20)
+
 #define CONFIG_IPQ6018_UART
 #define CONFIG_NR_DRAM_BANKS		1
 #define CONFIG_SKIP_LOWLEVEL_INIT
@@ -287,6 +289,25 @@ extern loff_t board_env_size;
 #define TZ_VERSION				1
 #define RPM_VERSION				3
 #endif
+
+#define CONFIG_IPQ6018_EDMA		1
+#define CONFIG_IPQ6018_BRIDGED_MODE	1
+#define CONFIG_NET_RETRY_COUNT		5
+#define CONFIG_SYS_RX_ETH_BUFFER	16
+#define CONFIG_CMD_PING
+#define CONFIG_CMD_DHCP
+#define CONFIG_MII
+#define CONFIG_CMD_MII
+#define CONFIG_IPADDR		192.168.10.10
+#define CONFIG_NETMASK		255.255.255.0
+#define CONFIG_SERVERIP		192.168.10.1
+#define CONFIG_CMD_TFTPPUT
+#define CONFIG_IPQ_MDIO			1
+#define CONFIG_QCA8075_PHY		1
+#define CONFIG_QCA8033_PHY		1
+#define CONFIG_QCA8081_PHY		1
+#define CONFIG_IPQ_ETH_INIT_DEFER
+
 /* L1 cache line size is 64 bytes, L2 cache line size is 128 bytes
  * Cache flush and invalidation based on L1 cache, so the cache line
  * size is configured to 64 */
