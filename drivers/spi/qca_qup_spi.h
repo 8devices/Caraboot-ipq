@@ -190,6 +190,7 @@ static const struct blsp_spi spi_reg[] = {
 		BLSP1_QUP_MX_OUTPUT_COUNT_REG,
 		BLSP1_QUP_SW_RESET_REG,
 		BLSP1_QUP_OPERATIONAL_MASK,
+		BLSP1_SPI_DEASSERT_WAIT_REG,
 	},
 };
 
