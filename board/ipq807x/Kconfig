@@ -19,3 +19,14 @@ config USB_XHCI_IPQ
 config PCI_IPQ
 	bool "ipq807x pci support for ipq807x"
 
+config QCA_AQUANTIA_PHY
+	bool "Enable Aquantia PHY support for ipq807x"
+
+config QCA8033_PHY
+	bool "Enable QCA8033 PHY support for ipq807x"
+
+config QCA8081_PHY
+	bool "Enable QCA8081 PHY support for ipq807x"
+
+config QCA8075_PHY
+	bool "Enable QCA8075 PHY support for ipq807x"
