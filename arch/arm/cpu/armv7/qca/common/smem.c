@@ -140,6 +140,236 @@ static struct smem *smem = (void *)(CONFIG_QCA_SMEM_BASE);
 qca_smem_flash_info_t qca_smem_flash_info;
 qca_smem_bootconfig_info_t qca_smem_bootconfig_info;
 
+#ifdef CONFIG_SMEM_VERSION_C
+
+#define SMEM_COMMON_HOST	0xFFFE
+#ifndef CONFIG_QCA_SMEM_SIZE
+	#define CONFIG_QCA_SMEM_SIZE	0x100000
+#endif
+
+enum {
+	smem_enu_sucess,
+	smem_enu_failed,
+	smem_enu_no_init
+};
+
+u8 smem_enumeration_status = smem_enu_no_init;
+
+/**
+ * struct smem_ptable_entry - one entry in the @smem_ptable list
+ * @offset:	offset, within the main shared memory region, of the partition
+ * @size:	size of the partition
+ * @flags:	flags for the partition (currently unused)
+ * @host0:	first processor/host with access to this partition
+ * @host1:	second processor/host with access to this partition
+ * @reserved:	reserved entries for later use
+ */
+struct smem_ptable_entry {
+	__le32 offset;
+	__le32 size;
+	__le32 flags;
+	__le16 host0;
+	__le16 host1;
+	__le32 reserved[8];
+};
+
+/**
+ * struct smem_private_ptable - partition table for the private partitions
+ * @magic:      magic number, must be SMEM_PTABLE_MAGIC
+ * @version:    version of the partition table
+ * @num_entries: number of partitions in the table
+ * @reserved:   for now reserved entries
+ * @entry:      list of @smem_ptable_entry for the @num_entries partitions
+ */
+struct smem_private_ptable {
+	u8 magic[4];
+	__le32 version;
+	__le32 num_entries;
+	__le32 reserved[5];
+	struct smem_ptable_entry entry[];
+};
+
+/**
+ * struct smem_private_entry - header of each item in the private partition
+ * @canary:     magic number, must be SMEM_PRIVATE_CANARY
+ * @item:       identifying number of the smem item
+ * @size:       size of the data, including padding bytes
+ * @padding_data: number of bytes of padding of data
+ * @padding_hdr: number of bytes of padding between the header and the data
+ * @reserved:   for now reserved entry
+ */
+struct smem_private_entry {
+	u16 canary; /* bytes are the same so no swapping needed */
+	__le16 item;
+	__le32 size; /* includes padding bytes */
+	__le16 padding_data;
+	__le16 padding_hdr;
+	__le32 reserved;
+};
+
+#define SMEM_PRIVATE_CANARY	0xa5a5
+
+static const u8 SMEM_PTABLE_MAGIC[] = { 0x24, 0x54, 0x4f, 0x43 }; /* "$TOC" */
+/**
+ * struct smem_partition_header - header of the partitions
+ * @magic:	magic number, must be SMEM_PART_MAGIC
+ * @host0:	first processor/host with access to this partition
+ * @host1:	second processor/host with access to this partition
+ * @size:	size of the partition
+ * @offset_free_uncached: offset to the first free byte of uncached memory in
+ *		this partition
+ * @offset_free_cached: offset to the first free byte of cached memory in this
+ *		partition
+ * @reserved:	for now reserved entries
+ */
+struct smem_partition_header {
+	u8 magic[4];
+	__le16 host0;
+	__le16 host1;
+	__le32 size;
+	__le32 offset_free_uncached;
+	__le32 offset_free_cached;
+	__le32 reserved[3];
+};
+
+static const u8 SMEM_PART_MAGIC[] = { 0x24, 0x50, 0x52, 0x54 };		/*$PRT*/
+
+struct smem_partition_header *smem_cmn_partition;
+
+/* Pointer to the one and only smem handle */
+
+static struct smem_private_entry *
+phdr_to_first_private_entry(struct smem_partition_header *phdr)
+{
+	void *p = phdr;
+
+	return p + sizeof(*phdr);
+}
+
+static struct smem_private_entry *
+phdr_to_last_private_entry(struct smem_partition_header *phdr)
+{
+	void *p = phdr;
+
+	return p + le32_to_cpu(phdr->offset_free_uncached);
+}
+
+static struct smem_private_entry *
+private_entry_next(struct smem_private_entry *e)
+{
+	void *p = e;
+
+	return p + sizeof(*e) + le16_to_cpu(e->padding_hdr) +
+				le32_to_cpu(e->size);
+}
+
+static void *entry_to_item(struct smem_private_entry *e)
+{
+	void *p = e;
+
+	return p + sizeof(*e) + le16_to_cpu(e->padding_hdr);
+}
+
+static void *qcom_smem_get_private(struct smem_partition_header *phdr,
+							unsigned item,
+							size_t *size)
+{
+	struct smem_private_entry *e, *end;
+
+	e = phdr_to_first_private_entry(phdr);
+	end = phdr_to_last_private_entry(phdr);
+
+	while (e < end) {
+		if (e->canary != SMEM_PRIVATE_CANARY) {
+		printf("Found invalid canary in\
+				host common partition\n");
+		return -EINVAL;
+		}
+		if (le16_to_cpu(e->item) == item) {
+			if (size != NULL)
+				*size = le32_to_cpu(e->size) -
+					le16_to_cpu(e->padding_data);
+
+			return entry_to_item(e);
+		}
+
+		e = private_entry_next(e);
+	}
+
+	return -ENOENT;
+}
+
+static int qcom_smem_enumerate_partitions()
+{
+	struct smem_partition_header *header;
+	struct smem_ptable_entry *entry;
+	struct smem_private_ptable *ptable;
+	u32 version, host0, host1;
+	int i;
+
+	ptable = CONFIG_QCA_SMEM_BASE + CONFIG_QCA_SMEM_SIZE - SZ_4K;
+	if (memcmp(ptable->magic, SMEM_PTABLE_MAGIC, sizeof(ptable->magic)))
+		return -EINVAL;
+
+	version = le32_to_cpu(ptable->version);
+	if (version != 1) {
+		printf("Unsupported partition header version %d\n", version);
+		return -EINVAL;
+	}
+	for (i = 0; i < le32_to_cpu(ptable->num_entries); i++) {
+		entry = &ptable->entry[i];
+		host0 = le16_to_cpu(entry->host0);
+		host1 = le16_to_cpu(entry->host1);
+
+		if (host0 != SMEM_COMMON_HOST || host1 != SMEM_COMMON_HOST)
+			continue;
+
+		if (!le32_to_cpu(entry->offset))
+			continue;
+		printf("\noffset: 0X%X %u", entry->offset, entry->offset);
+
+		if (!le32_to_cpu(entry->size))
+			continue;
+		printf("\nsize: 0X%X %u", entry->size, entry->size);
+
+		if (smem_cmn_partition) {
+			printf("Already found a partition for host %x \n",
+				SMEM_COMMON_HOST);
+			return -EINVAL;
+		}
+
+		header = CONFIG_QCA_SMEM_BASE + le32_to_cpu(entry->offset);
+		host0 = le16_to_cpu(header->host0);
+		host1 = le16_to_cpu(header->host1);
+
+		if (memcmp(header->magic, SMEM_PART_MAGIC,
+			    sizeof(header->magic))) {
+			printf("Partition %d has invalid magic\n", i);
+			return -EINVAL;
+		}
+
+		if (host0 != SMEM_COMMON_HOST || host1 != SMEM_COMMON_HOST) {
+			printf("Partition %d hosts are invalid\n", i);
+			return -EINVAL;
+		}
+
+		if (header->size != entry->size) {
+			printf("Partition %d has invalid size\n", i);
+			return -EINVAL;
+		}
+
+		if (le32_to_cpu(header->offset_free_uncached) > le32_to_cpu(header->size)) {
+			printf("Partition %d has invalid free pointer\n", i);
+			return -EINVAL;
+		}
+
+		smem_cmn_partition = header;
+	}
+	smem_enumeration_status = smem_enu_sucess;
+	return 0;
+}
+#endif
+
 /**
  * smem_read_alloc_entry - reads an entry from SMEM
  * @type: the entry to read
@@ -157,7 +387,10 @@ unsigned smem_read_alloc_entry(smem_mem_type_t type, void *buf, int len)
 	unsigned *dest = buf;
 	unsigned src;
 	unsigned size;
-
+#ifdef CONFIG_SMEM_VERSION_C
+	void *ptr;
+	int ret;
+#endif
 
 	if (((len & 0x3) != 0) || (((unsigned)buf & 0x3) != 0))
 		return 1;
@@ -167,6 +400,27 @@ unsigned smem_read_alloc_entry(smem_mem_type_t type, void *buf, int len)
 		return 1;
 	}
 
+#ifdef CONFIG_SMEM_VERSION_C
+	if(smem_enumeration_status == smem_enu_no_init) {
+		ret = qcom_smem_enumerate_partitions();
+		if (ret) {
+			printf("Common SMEM Partition is not available\n");
+			smem_enumeration_status = smem_enu_failed;
+			return ret;
+		}
+	}
+
+        if ( smem_enumeration_status == smem_enu_sucess) {
+		ptr = qcom_smem_get_private(smem_cmn_partition,type, &size);
+		if (IS_ERR(ptr)) {
+			ret =  PTR_ERR(ptr);
+			return ret;
+		}
+		memcpy(dest, ptr, len);
+		return 0;
+	}
+	return -EINVAL;
+#endif
 	ainfo = &smem->alloc_info[type];
 	if (readl(&ainfo->allocated) == 0)
 	{
@@ -571,6 +825,29 @@ int smem_ram_ptable_init(struct smem_ram_ptable *smem_ram_ptable)
 
 	return 1;
 }
+
+/*
+ * smem_ptable_init - initializes RAM partition table from SMEM
+ *
+ */
+#ifdef CONFIG_SMEM_VERSION_C
+int smem_ram_ptable_init_v2(struct usable_ram_partition_table *usable_ram_partition_table)
+{
+	unsigned i;
+
+	i = smem_read_alloc_entry(SMEM_USABLE_RAM_PARTITION_TABLE,
+				usable_ram_partition_table,
+				sizeof(struct usable_ram_partition_table));
+	if (i != 0)
+		return 0;
+
+	if (usable_ram_partition_table->magic1 != _SMEM_RAM_PTABLE_MAGIC_1 ||
+		usable_ram_partition_table->magic2 != _SMEM_RAM_PTABLE_MAGIC_2) {
+		return 0;
+	}
+	return 1;
+}
+#endif
 
 void qca_smem_part_to_mtdparts(char *mtdid, int len)
 {

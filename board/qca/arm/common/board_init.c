@@ -372,6 +372,30 @@ int board_late_init(void)
 	return 0;
 }
 
+#ifdef CONFIG_SMEM_VERSION_C
+int ram_ptable_init_v2()
+{
+	struct usable_ram_partition_table rtable;
+	int mx = ARRAY_SIZE(rtable.ram_part_entry);
+	int i, ret;
+
+	if (smem_ram_ptable_init_v2(&rtable) > 0) {
+		gd->ram_size = 0;
+		for (i = 0; i < mx; i++) {
+			if (rtable.ram_part_entry[i].partition_category == RAM_PARTITION_SDRAM &&
+			    rtable.ram_part_entry[i].partition_type == RAM_PARTITION_SYS_MEMORY) {
+				gd->ram_size += rtable.ram_part_entry[i].length;
+				return 0;
+			}
+		}
+	} else {
+		gd->ram_size = fdtdec_get_uint(gd->fdt_blob, 0, "ddr_size", 256);
+		gd->ram_size <<= 20;
+	}
+	return 0;
+}
+#endif
+
 int dram_init(void)
 {
 	struct smem_ram_ptable rtable;
@@ -379,6 +403,11 @@ int dram_init(void)
 	int mx = ARRAY_SIZE(rtable.parts);
 
 	if (smem_ram_ptable_init(&rtable) > 0) {
+#ifdef CONFIG_SMEM_VERSION_C
+		if (rtable.version == 2) {
+			return ram_ptable_init_v2();
+		}
+#endif
 		gd->ram_size = 0;
 		for (i = 0; i < mx; i++) {
 			if (rtable.parts[i].category == RAM_PARTITION_SDRAM &&
