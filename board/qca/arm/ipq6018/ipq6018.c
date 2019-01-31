@@ -178,11 +178,6 @@ void emmc_clock_reset(void)
 	writel(0x0, GCC_SDCC1_BCR);
 }
 
-void emmc_sdhci_init(void)
-{
-	writel(readl(MSM_SDC1_BASE) | (1 << 7), MSM_SDC1_BASE); //SW_RST
-	udelay(10);
-}
 int board_mmc_init(bd_t *bis)
 {
 	int node;
@@ -205,7 +200,6 @@ int board_mmc_init(bd_t *bis)
 	emmc_clock_reset();
 	udelay(10);
 	emmc_clock_config();
-	emmc_sdhci_init();
 
 	if (add_sdhci(&mmc_host, 200000000, 400000)) {
 		printf("add_sdhci fail!\n");
