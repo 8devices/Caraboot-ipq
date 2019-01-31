@@ -735,10 +735,10 @@ class Pack(object):
                 rmtree(self.tmp_dir)
             os.makedirs(self.tmp_dir)
 
-            copy(self.images_dname + DTB, self.tmp_dir)
-            copy(self.images_dname + "Image", self.tmp_dir)
+            copy(self.images_dname + "/" + DTB, self.tmp_dir)
+            copy(self.images_dname + "/Image", self.tmp_dir)
 
-            cmd = [SKALES_DIR + "dtbTool -o " + self.tmp_dir + "/" + DTB + ".img " + self.tmp_dir]
+            cmd = [SKALES_DIR + "/dtbTool -o " + self.tmp_dir + "/" + DTB + ".img " + self.tmp_dir]
             ret = subprocess.call(cmd, shell=True)
             if ret != 0:
                 print ret
