@@ -1616,7 +1616,7 @@ def gen_kernelboot_img(parser):
     """Generate kernelboot.img needed by LK bootloader"""
 
     SKALES_DIR = parser.images_dname
-    TMP_DIR = parser.out_dname + "tmp_dir"
+    TMP_DIR = parser.out_dname + "/tmp_dir"
 
     try:
 
@@ -1629,17 +1629,17 @@ def gen_kernelboot_img(parser):
         else:
             KERNEL_IMG_NAME = "openwrt-" + ARCH_NAME + "-kernelboot.img"
 
-        src = parser.images_dname + "qcom-" + ARCH_NAME + "-hk01.dtb"
+        src = parser.images_dname + "/qcom-" + ARCH_NAME + "-hk01.dtb"
         if not os.path.exists(src):
             error("%s file not found" % src)
         copy(src, TMP_DIR)
 
-        src = parser.images_dname + "Image"
+        src = parser.images_dname + "/Image"
         if not os.path.exists(src):
 	    error("%s file not found" % src)
         copy(src, TMP_DIR)
 
-        cmd = [SKALES_DIR + "dtbTool -o " + TMP_DIR + "/qcom-ipq807x-hk01-dt.img " + TMP_DIR]
+        cmd = [SKALES_DIR + "/dtbTool -o " + TMP_DIR + "/qcom-ipq807x-hk01-dt.img " + TMP_DIR]
         ret = subprocess.call(cmd, shell=True)
         if ret != 0:
             print ret
@@ -1651,11 +1651,11 @@ def gen_kernelboot_img(parser):
             print ret
             error("Error executing gzip")
 
-        cmd = [SKALES_DIR + "mkbootimg",
+        cmd = [SKALES_DIR + "/mkbootimg",
                 "--kernel=" + TMP_DIR + "/Image.gz",
                 "--dt=" + TMP_DIR + "/qcom-ipq807x-hk01-dt.img",
                 "--cmdline=\'rootfsname=rootfs rootwait nosmp\'",
-                "--output=" + parser.out_dname + KERNEL_IMG_NAME,
+                "--output=" + parser.out_dname + "/" + KERNEL_IMG_NAME,
                 "--base=0x41200000"]
         ret = subprocess.call(cmd)
         if ret != 0:
