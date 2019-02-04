@@ -730,7 +730,7 @@ class Pack(object):
             if not os.path.exists(os.path.join(self.images_dname, DTB)):
                 error("%s file not found" % DTB)
 
-            self.tmp_dir = self.images_dname + "tmp_dir"
+            self.tmp_dir = self.images_dname + "/tmp_dir"
             if os.path.exists(self.tmp_dir):
                 rmtree(self.tmp_dir)
             os.makedirs(self.tmp_dir)
@@ -750,7 +750,7 @@ class Pack(object):
                 print ret
                 error("Error executing gzip")
 
-            cmd = [SKALES_DIR + "mkbootimg",
+            cmd = [SKALES_DIR + "/mkbootimg",
                     "--kernel=" + self.tmp_dir + "/Image.gz",
                     "--dt=" + self.tmp_dir + "/" + DTB + ".img",
                     "--cmdline=" + BOOT_ARGS,
@@ -1237,8 +1237,8 @@ class Pack(object):
         self.__mkimage(images)
 
         """Remove tmp_dir,if created earlier for lk-kernelboot image generation"""
-        if os.path.exists(self.images_dname + "tmp_dir"):
-            rmtree(self.images_dname + "tmp_dir")
+        if os.path.exists(self.images_dname + "/tmp_dir"):
+            rmtree(self.images_dname + "/tmp_dir")
 
     def main(self, flinfo, images_dname, out_fname, part_fname, fconf_fname, ipq_nand):
         """Start the packing process.

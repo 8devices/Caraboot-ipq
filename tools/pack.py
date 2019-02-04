@@ -1622,7 +1622,7 @@ def gen_kernelboot_img(parser):
     """Generate kernelboot.img needed by LK bootloader"""
 
     SKALES_DIR = parser.images_dname
-    TMP_DIR = parser.out_dname + "/tmp_dir"
+    TMP_DIR = parser.images_dname + "/tmp_dir"
 
     try:
 
@@ -1661,7 +1661,7 @@ def gen_kernelboot_img(parser):
                 "--kernel=" + TMP_DIR + "/Image.gz",
                 "--dt=" + TMP_DIR + "/qcom-ipq807x-hk01-dt.img",
                 "--cmdline=\'rootfsname=rootfs rootwait nosmp\'",
-                "--output=" + parser.out_dname + "/" + KERNEL_IMG_NAME,
+                "--output=" + parser.images_dname + "/" + KERNEL_IMG_NAME,
                 "--base=0x41200000"]
         ret = subprocess.call(cmd)
         if ret != 0:
