@@ -334,8 +334,6 @@ void set_flash_secondary_type(qca_smem_flash_info_t *smem)
 #ifdef CONFIG_USB_XHCI_IPQ
 void board_usb_deinit(int id)
 {
-	void __iomem *boot_clk_ctl, *usb_bcr, *qusb2_phy_bcr;
-	void __iomem *usb_phy_bcr, *usb_gen_cfg, *usb_guctl, *phy_base;
 	int nodeoff;
 	char node_name[8];
 
@@ -345,57 +343,35 @@ void board_usb_deinit(int id)
 		return;
 
 	if (id == 0) {
-		boot_clk_ctl = GCC_USB_0_BOOT_CLOCK_CTL;
-		usb_bcr = GCC_USB0_BCR;
-		qusb2_phy_bcr = GCC_QUSB2_0_PHY_BCR;
-		usb_phy_bcr = GCC_USB0_PHY_BCR;
-		usb_gen_cfg = USB30_1_GENERAL_CFG;
-		usb_guctl = USB30_1_GUCTL;
-		phy_base = USB30_PHY_1_QUSB2PHY_BASE;
-	}
-	else if (id == 1) {
-		boot_clk_ctl = GCC_USB_1_BOOT_CLOCK_CTL;
-		usb_bcr = GCC_USB1_BCR;
-		qusb2_phy_bcr = GCC_QUSB2_1_PHY_BCR;
-		phy_base = USB30_PHY_2_QUSB2PHY_BASE;
-	}
-	else {
-		return;
-	}
-	//Enable USB2 PHY Power down
-	setbits_le32(phy_base+0xB4, 0x1);
-
-	if (id == 0) {
+		/* Enable USB PHY Power down */
+		setbits_le32(USB30_PHY_1_QUSB2PHY_BASE + 0xB4, 0x1);
+		/* Disable clocks */
 		writel(0x8000, GCC_USB0_PHY_CFG_AHB_CBCR);
 		writel(0xcff0, GCC_USB0_MASTER_CBCR);
 		writel(0, GCC_SYS_NOC_USB0_AXI_CBCR);
-		writel(0, GCC_SNOC_BUS_TIMEOUT1_AHB_CBCR);
+		writel(0, GCC_SNOC_BUS_TIMEOUT2_AHB_CBCR);
 		writel(0, GCC_USB0_SLEEP_CBCR);
 		writel(0, GCC_USB0_MOCK_UTMI_CBCR);
 		writel(0, GCC_USB0_AUX_CBCR);
-	}
-	else if (id == 1) {
+		/* GCC_QUSB2_0_PHY_BCR */
+		set_mdelay_clearbits_le32(GCC_QUSB2_0_PHY_BCR, 0x1, 10);
+		/* GCC_USB0_PHY_BCR */
+		set_mdelay_clearbits_le32(GCC_USB0_PHY_BCR, 0x1, 10);
+		/* GCC Reset USB BCR */
+		set_mdelay_clearbits_le32(GCC_USB0_BCR, 0x1, 10);
+	} else if (id == 1) {
+		/* Enable USB PHY Power down */
+		setbits_le32(USB30_PHY_2_QUSB2PHY_BASE + 0xB4, 0x1);
+		/* Disable clocks */
 		writel(0x8000, GCC_USB1_PHY_CFG_AHB_CBCR);
 		writel(0xcff0, GCC_USB1_MASTER_CBCR);
-		writel(0, GCC_SNOC_BUS_TIMEOUT2_AHB_CBCR);
 		writel(0, GCC_USB1_SLEEP_CBCR);
 		writel(0, GCC_USB1_MOCK_UTMI_CBCR);
+		/* GCC_QUSB2_0_PHY_BCR */
+		set_mdelay_clearbits_le32(GCC_QUSB2_1_PHY_BCR, 0x1, 10);
+		/* GCC Reset USB0 BCR */
+		set_mdelay_clearbits_le32(GCC_USB1_BCR, 0x1, 10);
 	}
-
-	//GCC_QUSB2_0_PHY_BCR
-	setbits_le32(qusb2_phy_bcr, 0x1);
-	mdelay(10);
-	clrbits_le32(qusb2_phy_bcr, 0x1);
-
-	//GCC_USB0_PHY_BCR
-	setbits_le32(usb_phy_bcr, 0x1);
-	mdelay(10);
-	clrbits_le32(usb_phy_bcr, 0x1);
-
-	//GCC Reset USB0 BCR
-	setbits_le32(usb_bcr, 0x1);
-	mdelay(10);
-	clrbits_le32(usb_bcr, 0x1);
 }
 
 static void usb_clock_init(int id)
@@ -403,12 +379,12 @@ static void usb_clock_init(int id)
 	if (id == 0) {
 		writel(0x222000, GCC_USB0_GDSCR);
 		writel(0, GCC_SYS_NOC_USB0_AXI_CBCR);
-		writel(0, GCC_SNOC_BUS_TIMEOUT1_AHB_CBCR);
+		writel(0, GCC_SNOC_BUS_TIMEOUT2_AHB_CBCR);
 		writel(0x10b, GCC_USB0_MASTER_CFG_RCGR);
 		writel(0x1, GCC_USB0_MASTER_CMD_RCGR);
 		writel(1, GCC_SYS_NOC_USB0_AXI_CBCR);
 		writel(0xcff1, GCC_USB0_MASTER_CBCR);
-		writel(1, GCC_SNOC_BUS_TIMEOUT1_AHB_CBCR);
+		writel(1, GCC_SNOC_BUS_TIMEOUT2_AHB_CBCR);
 		writel(1, GCC_USB0_SLEEP_CBCR);
 		writel(0x210b, GCC_USB0_MOCK_UTMI_CFG_RCGR);
 		writel(0x1, GCC_USB0_MOCK_UTMI_M);
@@ -419,12 +395,9 @@ static void usb_clock_init(int id)
 		writel(0x8001, GCC_USB0_PHY_CFG_AHB_CBCR);
 		writel(1, GCC_USB0_AUX_CBCR);
 		writel(1, GCC_USB0_PIPE_CBCR);
-	}
-	else if (id == 1) {
+	} else if (id == 1) {
 		writel(0x222000, GCC_USB1_GDSCR);
-		writel(0, GCC_SNOC_BUS_TIMEOUT2_AHB_CBCR);
 		writel(0xcff1, GCC_USB1_MASTER_CBCR);
-		writel(1, GCC_SNOC_BUS_TIMEOUT2_AHB_CBCR);
 		writel(1, GCC_USB1_SLEEP_CBCR);
 		writel(0x210b, GCC_USB1_MOCK_UTMI_CFG_RCGR);
 		writel(0x1, GCC_USB1_MOCK_UTMI_M);
@@ -436,18 +409,47 @@ static void usb_clock_init(int id)
 	}
 }
 
-static void usb_init_ssphy(int index)
+static void usb_init_hsphy(void __iomem *phybase)
 {
-	void __iomem *phybase;
+	/* Enable QUSB2PHY Power down */
+	setbits_le32(phybase+0xB4, 0x1);
 
-	if (index == 0) {
-		phybase = USB30_PHY_1_USB3PHY_AHB2PHY_BASE;
-	}
-	else if (index == 1) {
-		phybase = USB30_PHY_2_USB2PHY_AHB2PHY_BASE;
-	} else
-		return;
+	/* PHY Config Sequence */
+	/* QUSB2PHY_PLL:PLL Feedback Divider Value */
+	out_8(phybase+0x00, 0x14);
+	/* QUSB2PHY_PORT_TUNE1: USB Product Application Tuning Register A */
+	out_8(phybase+0x80, 0xF8);
+	/* QUSB2PHY_PORT_TUNE2: USB Product Application Tuning Register B */
+	out_8(phybase+0x84, 0xB3);
+	/* QUSB2PHY_PORT_TUNE3: USB Product Application Tuning Register C */
+	out_8(phybase+0x88, 0x83);
+	/* QUSB2PHY_PORT_TUNE4: USB Product Application Tuning Register D */
+	out_8(phybase+0x8C, 0xC0);
+	/* QUSB2PHY_PORT_TEST2 */
+	out_8(phybase+0x9C, 0x14);
+	/* QUSB2PHY_PLL_TUNE: PLL Test Configuration */
+	out_8(phybase+0x08, 0x30);
+	/* QUSB2PHY_PLL_USER_CTL1: PLL Control Configuration */
+	out_8(phybase+0x0C, 0x79);
+	/* QUSB2PHY_PLL_USER_CTL2: PLL Control Configuration */
+	out_8(phybase+0x10, 0x21);
+	/* QUSB2PHY_PORT_TUNE5 */
+	out_8(phybase+0x90, 0x00);
+	/* QUSB2PHY_PLL_PWR_CTL: PLL Manual SW Programming
+	 * and Biasing Power Options */
+	out_8(phybase+0x18, 0x00);
+	/* QUSB2PHY_PLL_AUTOPGM_CTL1: Auto vs. Manual PLL/Power-mode
+	 * programming State Machine Control Options */
+	out_8(phybase+0x1C, 0x9F);
+	/* QUSB2PHY_PLL_TEST: PLL Test Configuration-Disable diff ended clock */
+	out_8(phybase+0x04, 0x80);
 
+	/* Disable QUSB2PHY Power down */
+	clrbits_le32(phybase+0xB4, 0x1);
+}
+
+static void usb_init_ssphy(void __iomem *phybase)
+{
 	out_8(phybase + USB3_PHY_POWER_DOWN_CONTROL,0x1);
 	out_8(phybase + QSERDES_COM_SYSCLK_EN_SEL,0x1a);
 	out_8(phybase + QSERDES_COM_BIAS_EN_CLKBUFLR_EN,0x08);
@@ -459,28 +461,28 @@ static void usb_init_ssphy(int index)
 	out_8(phybase + QSERDES_COM_CMN_CONFIG,0x06);
 	out_8(phybase + QSERDES_COM_PLL_IVCO,0x0f);
 	out_8(phybase + QSERDES_COM_SYS_CLK_CTRL,0x06);
-	out_8(phybase + QSERDES_COM_DEC_START_MODE0,0x82);
-	out_8(phybase + QSERDES_COM_DIV_FRAC_START1_MODE0,0x55);
-	out_8(phybase + QSERDES_COM_DIV_FRAC_START2_MODE0,0x55);
-	out_8(phybase + QSERDES_COM_DIV_FRAC_START3_MODE0,0x03);
-	out_8(phybase + QSERDES_COM_CP_CTRL_MODE0,0x0b);
+	out_8(phybase + QSERDES_COM_DEC_START_MODE0,0x68);
+	out_8(phybase + QSERDES_COM_DIV_FRAC_START1_MODE0,0xAB);
+	out_8(phybase + QSERDES_COM_DIV_FRAC_START2_MODE0,0xAA);
+	out_8(phybase + QSERDES_COM_DIV_FRAC_START3_MODE0,0x02);
+	out_8(phybase + QSERDES_COM_CP_CTRL_MODE0,0x09);
 	out_8(phybase + QSERDES_COM_PLL_RCTRL_MODE0,0x16);
 	out_8(phybase + QSERDES_COM_PLL_CCTRL_MODE0,0x28);
-	out_8(phybase + QSERDES_COM_INTEGLOOP_GAIN0_MODE0,0x80);
-	out_8(phybase + QSERDES_COM_LOCK_CMP1_MODE0,0x15);
-	out_8(phybase + QSERDES_COM_LOCK_CMP2_MODE0,0x34);
+	out_8(phybase + QSERDES_COM_INTEGLOOP_GAIN0_MODE0,0xA0);
+	out_8(phybase + QSERDES_COM_LOCK_CMP1_MODE0,0xAA);
+	out_8(phybase + QSERDES_COM_LOCK_CMP2_MODE0,0x29);
 	out_8(phybase + QSERDES_COM_LOCK_CMP3_MODE0,0x00);
 	out_8(phybase + QSERDES_COM_CORE_CLK_EN,0x00);
 	out_8(phybase + QSERDES_COM_LOCK_CMP_CFG,0x00);
 	out_8(phybase + QSERDES_COM_VCO_TUNE_MAP,0x00);
 	out_8(phybase + QSERDES_COM_BG_TIMER,0x0a);
 	out_8(phybase + QSERDES_COM_SSC_EN_CENTER,0x01);
-	out_8(phybase + QSERDES_COM_SSC_PER1,0x31);
+	out_8(phybase + QSERDES_COM_SSC_PER1,0x7D);
 	out_8(phybase + QSERDES_COM_SSC_PER2,0x01);
 	out_8(phybase + QSERDES_COM_SSC_ADJ_PER1,0x00);
 	out_8(phybase + QSERDES_COM_SSC_ADJ_PER2,0x00);
-	out_8(phybase + QSERDES_COM_SSC_STEP_SIZE1,0xde);
-	out_8(phybase + QSERDES_COM_SSC_STEP_SIZE2,0x07);
+	out_8(phybase + QSERDES_COM_SSC_STEP_SIZE1,0x0A);
+	out_8(phybase + QSERDES_COM_SSC_STEP_SIZE2,0x05);
 	out_8(phybase + QSERDES_RX_UCDR_SO_GAIN,0x06);
 	out_8(phybase + QSERDES_RX_RX_EQU_ADAPTOR_CNTRL2,0x02);
 	out_8(phybase + QSERDES_RX_RX_EQU_ADAPTOR_CNTRL3,0x6c);
@@ -525,85 +527,51 @@ static void usb_init_ssphy(int index)
 static void usb_init_phy(int index)
 {
 	void __iomem *boot_clk_ctl, *usb_bcr, *qusb2_phy_bcr;
-	void __iomem *usb_phy_bcr, *usb3_phy_bcr, *usb_gen_cfg, *usb_guctl, *phy_base;
 
 	if (index == 0) {
 		boot_clk_ctl = GCC_USB_0_BOOT_CLOCK_CTL;
 		usb_bcr = GCC_USB0_BCR;
 		qusb2_phy_bcr = GCC_QUSB2_0_PHY_BCR;
-		usb_phy_bcr = GCC_USB0_PHY_BCR;
-		usb3_phy_bcr = GCC_USB3PHY_0_PHY_BCR;
-		usb_gen_cfg = USB30_1_GENERAL_CFG;
-		usb_guctl = USB30_1_GUCTL;
-		phy_base = USB30_PHY_1_QUSB2PHY_BASE;
-	}
-	else if (index == 1) {
+	} else if (index == 1) {
 		boot_clk_ctl = GCC_USB_1_BOOT_CLOCK_CTL;
 		usb_bcr = GCC_USB1_BCR;
 		qusb2_phy_bcr = GCC_QUSB2_1_PHY_BCR;
-		phy_base = USB30_PHY_2_QUSB2PHY_BASE;
-	}
-	else {
+	} else {
 		return;
 	}
-	//2. Enable SS Ref Clock
+	/* Enable SS Ref Clock */
 	setbits_le32(GCC_USB_SS_REF_CLK_EN, 0x1);
 
-	//3. Disable USB Boot Clock
+	/* Disable USB Boot Clock */
 	clrbits_le32(boot_clk_ctl, 0x0);
 
-	//4. GCC Reset USB0 BCR
-	setbits_le32(usb_bcr, 0x1);
+	/* GCC Reset USB BCR */
+	set_mdelay_clearbits_le32(usb_bcr, 0x1, 10);
 
-	//5. Delay 100us
-	mdelay(10);
-
-	//6. GCC Reset USB0 BCR
-	clrbits_le32(usb_bcr, 0x1);
-	//7. GCC_QUSB2_0_PHY_BCR
+	/* GCC_QUSB2_PHY_BCR */
 	setbits_le32(qusb2_phy_bcr, 0x1);
 
-	//8. GCC_USB0_PHY_BCR
-	setbits_le32(usb_phy_bcr, 0x1);
-	setbits_le32(usb3_phy_bcr, 0x1);
+	if (index == 0) {
+		/* GCC_USB0_PHY_BCR */
+		setbits_le32(GCC_USB0_PHY_BCR, 0x1);
+		setbits_le32(GCC_USB3PHY_0_PHY_BCR, 0x1);
+		mdelay(10);
+		clrbits_le32(GCC_USB3PHY_0_PHY_BCR, 0x1);
+		clrbits_le32(GCC_USB0_PHY_BCR, 0x1);
+		/* Config user control register */
+		writel(0x0c80c010, USB30_1_GUCTL);
+	}
 
-	//9. Delay 100us
-	mdelay(10);
-
-	//10. GCC_USB0_PHY_BCR
-	clrbits_le32(usb3_phy_bcr, 0x1);
-	clrbits_le32(usb_phy_bcr, 0x1);
-
-	//11. GCC_QUSB2_0_PHY_BCR
+	/* GCC_QUSB2_0_PHY_BCR */
 	clrbits_le32(qusb2_phy_bcr, 0x1);
-
-	//12. Delay 100us
 	mdelay(10);
 
-	//20. Config user control register
-	writel(0x0c80c010, usb_guctl);
-
-	//21. Enable USB2 PHY Power down
-	setbits_le32(phy_base+0xB4, 0x1);
-
-	//22. PHY Config Sequence
-	out_8(phy_base+0x80, 0xF8);
-	out_8(phy_base+0x84, 0x83);
-	out_8(phy_base+0x88, 0x83);
-	out_8(phy_base+0x8C, 0xC0);
-	out_8(phy_base+0x9C, 0x14);
-	out_8(phy_base+0x08, 0x30);
-	out_8(phy_base+0x0C, 0x79);
-	out_8(phy_base+0x10, 0x21);
-	out_8(phy_base+0x90, 0x00);
-	out_8(phy_base+0x18, 0x00);
-	out_8(phy_base+0x1C, 0x9F);
-	out_8(phy_base+0x04, 0x80);
-
-	//23. Disable USB2 PHY Power down
-	clrbits_le32(phy_base+0xB4, 0x1);
-
-	usb_init_ssphy(index);
+	if (index == 0) {
+		usb_init_hsphy(USB30_PHY_1_QUSB2PHY_BASE);
+		usb_init_ssphy(USB30_PHY_1_USB3PHY_AHB2PHY_BASE);
+	} else {
+		usb_init_hsphy(USB30_PHY_2_QUSB2PHY_BASE);
+	}
 }
 
 int ipq_board_usb_init(void)

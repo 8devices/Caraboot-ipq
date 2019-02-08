@@ -62,7 +62,6 @@
 /* USB Registers */
 #define GCC_USB0_GDSCR			0x183E078
 #define GCC_SYS_NOC_USB0_AXI_CBCR	0x1826040
-#define GCC_SNOC_BUS_TIMEOUT1_AHB_CBCR	0x184700C
 #define GCC_USB0_MASTER_CFG_RCGR	0x183E010
 #define GCC_USB0_MASTER_CMD_RCGR	0x183E00C
 #define GCC_USB0_MASTER_CBCR		0x183E000
@@ -191,6 +190,11 @@
 #define GCC_PCIE0_AXI_S_BRIDGE_CBCR	0x01875048
 #define GCC_PCIE0_RCHNG_CMD_RCGR	0x01875070
 #define GCC_PCIE0_RCHNG_CFG_RCGR	0x01875074
+
+#define set_mdelay_clearbits_le32(addr, value, delay)	\
+	 setbits_le32(addr, value);			\
+	 mdelay(delay);					\
+	 clrbits_le32(addr, value);			\
 
 #ifdef CONFIG_SMEM_VERSION_C
 #define RAM_PART_NAME_LENGTH 16
