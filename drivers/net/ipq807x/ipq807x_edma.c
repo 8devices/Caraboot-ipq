@@ -1870,13 +1870,18 @@ int ipq807x_edma_init(void *edma_board_cfg)
 					else if ( mode == PORT_WRAPPER_QSGMII)
 						qca8075_phy_interface_set_mode(0x0, 0x4);
 					break;
+#ifdef CONFIG_QCA8033_PHY
 				case QCA8033_PHY:
 					ipq_qca8033_phy_init(&ipq807x_edma_dev[i]->ops[phy_id], phy_addr);
 					break;
+#endif
+#ifdef CONFIG_QCA8081_PHY
 				case QCA8081_PHY:
 				case QCA8081_1_1_PHY:
 					ipq_qca8081_phy_init(&ipq807x_edma_dev[i]->ops[phy_id], phy_addr);
 					break;
+#endif
+#ifdef CONFIG_QCA_AQUANTIA_PHY
 				case AQUANTIA_PHY_107:
 				case AQUANTIA_PHY_109:
 				case AQUANTIA_PHY_111:
@@ -1886,6 +1891,7 @@ int ipq807x_edma_init(void *edma_board_cfg)
 					ipq_board_fw_download(phy_addr);
 					ipq_qca_aquantia_phy_init(&ipq807x_edma_dev[i]->ops[phy_id], phy_addr);
 					break;
+#endif
 				default:
 					ipq_qca8075_phy_map_ops(&ipq807x_edma_dev[i]->ops[phy_id]);
 					break;
