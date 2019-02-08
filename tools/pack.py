@@ -769,9 +769,9 @@ class Pack(object):
                     section_conf = "lkboot"
                 else:
                     section_conf = "u-boot"
-            elif section_conf == "rootfs" and (self.flash_type == "nand" or self.flash_type == "norplusnand"):
+            elif section_conf == "rootfs" and self.flash_type in ["nand", "nand-4k", "norplusnand", "norplusnand-4k"]:
                 section_conf = "ubi"
-            elif section_conf == "wififw" and (self.flash_type == "nand" or self.flash_type == "norplusnand"):
+            elif section_conf == "wififw" and self.flash_type in ["nand", "nand-4k", "norplusnand", "norplusnand-4k"]:
                 section_conf = "wififw_ubi"
 
 	    if soc_version:
@@ -1078,9 +1078,9 @@ class Pack(object):
             else:
                 print " Using u-boot..."
 	        section_conf = "u-boot"
-	elif section_conf == "rootfs" and (self.flash_type == "nand" or self.flash_type == "norplusnand"):
+	elif section_conf == "rootfs" and self.flash_type in ["nand", "nand-4k", "norplusnand", "norplusnand-4k"]:
 	    section_conf = "ubi"
-	elif section_conf == "wififw" and (self.flash_type == "nand" or self.flash_type == "norplusnand"):
+	elif section_conf == "wififw" and self.flash_type in ["nand", "nand-4k", "norplusnand", "norplusnand-4k"]:
 	    section_conf = "wififw_ubi"
 
 	if soc_version:
@@ -1349,7 +1349,7 @@ class Pack(object):
 
         if flinfo.type != "emmc":
             if root.find(".//data[@type='NAND_PARAMETER']/entry") != None:
-                if flinfo.type == "nand-4k":
+                if self.flash_type == "nand-4k" or self.flash_type == "norplusnand-4k":
                     flash_param = root.find(".//data[@type='NAND_PARAMETER']/entry[@type='4k']")
                 else:
                     flash_param = root.find(".//data[@type='NAND_PARAMETER']/entry[@type='2k']")
@@ -1435,6 +1435,8 @@ class Pack(object):
                         part_info = root.find(".//data[@type='NAND_PARAMETER']/entry[@type='4k']")
                 else:
                     part_info = root.find(".//data[@type='" + "NAND_PARAMETER']")
+            elif ftype == "norplusnand-4k":
+                part_info = root.find(".//data[@type='" + "NORPLUSNAND_PARAMETER']")
             else:
                 part_info = root.find(".//data[@type='" + ftype.upper() + "_PARAMETER']")
 
@@ -1447,7 +1449,7 @@ class Pack(object):
             pages_per_block = int(part_info.find(".//pages_per_block").text)
             blocks_per_chip = int(part_info.find(".//total_block").text)
 
-            if ftype == "norplusnand" or ftype == "norplusemmc" or ftype == "tiny-nor":
+            if ftype in ["tiny-nor", "norplusnand", "norplusnand-4k", "norplusemmc"]:
                 ftype = "nor"
             if ftype == "nand-4k":
                 ftype = "nand"
@@ -1465,7 +1467,7 @@ class Pack(object):
     def __process_board(self, images, root):
 
         try:
-            if self.flash_type in [ "nand", "nand-4k", "nor", "tiny-nor", "norplusnand" ]:
+            if self.flash_type in [ "nand", "nand-4k", "nor", "tiny-nor", "norplusnand", "norplusnand-4k" ]:
                 self.__process_board_flash(self.flash_type, images, root)
             elif self.flash_type == "emmc":
                 self.__process_board_flash_emmc(self.flash_type, images, root)
@@ -1697,6 +1699,11 @@ def main():
     if "nand" in parser.flash_type.split(","):
         if root.find(".//data[@type='NAND_PARAMETER']/entry") != None:
             parser.flash_type = parser.flash_type + ",nand-4k"
+
+# Add norplusnand-4k flash type, if norplusnand flash type is specified
+    if "norplusnand" in parser.flash_type.split(","):
+        if root.find(".//data[@type='NAND_PARAMETER']/entry") != None:
+            parser.flash_type = parser.flash_type + ",norplusnand-4k"
 
 # Format the output image name from Arch, flash type and mode
     for flash_type in parser.flash_type.split(","):
