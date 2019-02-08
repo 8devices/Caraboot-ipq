@@ -72,7 +72,6 @@
           text_base  --> |------------|
 */
 
-#define CONFIG_IPQ807x_I2C	1
 #ifdef CONFIG_IPQ807x_I2C
 #define CONFIG_SYS_I2C_QUP
 #define CONFIG_CMD_I2C
@@ -274,7 +273,6 @@ extern loff_t board_env_size;
 /*
  * USB Support
  */
-#define CONFIG_USB_XHCI_IPQ
 #ifdef CONFIG_USB_XHCI_IPQ
 #define CONFIG_USB_XHCI
 #define CONFIG_USB_XHCI_DWC3
@@ -285,7 +283,6 @@ extern loff_t board_env_size;
 #define CONFIG_USB_MAX_CONTROLLER_COUNT         2
 #endif
 
-#define CONFIG_PCI_IPQ
 #define PCI_MAX_DEVICES	2
 #ifdef CONFIG_PCI_IPQ
 #define CONFIG_PCI

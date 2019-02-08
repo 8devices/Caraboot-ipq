@@ -58,7 +58,9 @@ const char *del_node[] = {"uboot",
 			  "sbl",
 			  NULL};
 const add_node_t add_fdt_node[] = {{}};
+#ifdef CONFIG_PCI_IPQ
 static int pci_initialised;
+#endif
 static int aq_phy_initialised;
 struct dumpinfo_t dumpinfo_n[] = {
 	/* TZ stores the DDR physical address at which it stores the
@@ -539,6 +541,7 @@ void board_nand_init(void)
 #endif
 }
 
+#ifdef CONFIG_PCI_IPQ
 static void pcie_clock_init(int id)
 {
 
@@ -657,7 +660,6 @@ static void pcie_clock_deinit(int id)
 	}
 }
 
-#ifdef CONFIG_PCI_IPQ
 void board_pci_init(int id)
 {
 	int node, gpio_node;

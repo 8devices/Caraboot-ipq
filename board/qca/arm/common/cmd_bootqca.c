@@ -323,12 +323,15 @@ static int authenticate_rootfs(unsigned int kernel_addr)
 static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
 	char runcmd[256];
-	int ret,i;
+	int ret;
 	unsigned int request;
 #ifdef CONFIG_QCA_MMC
 	block_dev_desc_t *blk_dev;
 	disk_partition_t disk_info;
 	unsigned int active_part = 0;
+#endif
+#ifdef CONFIG_USB_XHCI_IPQ
+	int i;
 #endif
 
 	if (argc == 2 && strncmp(argv[1], "debug", 5) == 0)
@@ -503,12 +506,15 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 
 static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
-	int ret,i;
+	int ret;
 	char runcmd[256];
 #ifdef CONFIG_QCA_MMC
 	block_dev_desc_t *blk_dev;
 	disk_partition_t disk_info;
 	unsigned int active_part = 0;
+#endif
+#ifdef CONFIG_USB_XHCI_IPQ
+	int i;
 #endif
 
 	if (argc == 2 && strncmp(argv[1], "debug", 5) == 0)
