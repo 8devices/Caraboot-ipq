@@ -1634,8 +1634,10 @@ def gen_kernelboot_img(parser):
 
         if MODE == "64":
             KERNEL_IMG_NAME = "openwrt-" + ARCH_NAME + "_" + MODE + "-kernelboot.img"
+            BASE_ADDR = "0x41078000"
         else:
             KERNEL_IMG_NAME = "openwrt-" + ARCH_NAME + "-kernelboot.img"
+            BASE_ADDR = "0x41200000"
 
         src = parser.images_dname + "/qcom-" + ARCH_NAME + "-hk01.dtb"
         if not os.path.exists(src):
@@ -1664,7 +1666,7 @@ def gen_kernelboot_img(parser):
                 "--dt=" + TMP_DIR + "/qcom-ipq807x-hk01-dt.img",
                 "--cmdline=\'rootfsname=rootfs rootwait nosmp\'",
                 "--output=" + parser.images_dname + "/" + KERNEL_IMG_NAME,
-                "--base=0x41200000"]
+                "--base=" + BASE_ADDR]
         ret = subprocess.call(cmd)
         if ret != 0:
             print ret
