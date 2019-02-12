@@ -496,6 +496,11 @@ __weak void fdt_fixup_cpr(void *blob)
 	return;
 }
 
+__weak void fdt_fixup_set_dload_warm_reset(void *blob)
+{
+	return;
+}
+
 /*
  * For newer kernel that boot with device tree (3.14+), all of memory is
  * described in the /memory node, including areas that the kernel should not be
@@ -592,6 +597,9 @@ int ft_board_setup(void *blob, bd_t *bd)
 	fdt_fixup_sd_ldo_gpios_toggle(blob);
 	fdt_fixup_cpr(blob);
 	fdt_low_memory_fixup(blob);
+	s = getenv("dload_warm_reset");
+	if (s)
+		fdt_fixup_set_dload_warm_reset(blob);
 
 #ifdef CONFIG_QCA_MMC
 	board_mmc_deinit();
