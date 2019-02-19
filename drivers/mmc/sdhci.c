@@ -252,7 +252,10 @@ static int sdhci_send_command(struct mmc *mmc, struct mmc_cmd *cmd,
 	static unsigned int cmd_timeout = CONFIG_SDHCI_CMD_DEFAULT_TIMEOUT;
 
 	sdhci_writel(host, SDHCI_INT_ALL_MASK, SDHCI_INT_STATUS);
-	mask = SDHCI_CMD_INHIBIT | SDHCI_DATA_INHIBIT;
+
+	mask = SDHCI_CMD_INHIBIT;
+	if ((data != NULL) || (cmd->resp_type & MMC_RSP_BUSY))
+		mask |= SDHCI_DATA_INHIBIT;
 
 	/* We shouldn't wait for data inihibit for stop commands, even
 	   though they might use busy signaling */
