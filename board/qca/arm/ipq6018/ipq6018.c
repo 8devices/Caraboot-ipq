@@ -336,6 +336,13 @@ void board_usb_deinit(int id)
 {
 	void __iomem *boot_clk_ctl, *usb_bcr, *qusb2_phy_bcr;
 	void __iomem *usb_phy_bcr, *usb_gen_cfg, *usb_guctl, *phy_base;
+	int nodeoff;
+	char node_name[8];
+
+	snprintf(node_name, sizeof(node_name), "usb%d", id);
+	nodeoff = fdt_path_offset(gd->fdt_blob, node_name);
+	if (fdtdec_get_int(gd->fdt_blob, nodeoff, "qcom,emulation", 0))
+		return;
 
 	if (id == 0) {
 		boot_clk_ctl = GCC_USB_0_BOOT_CLOCK_CTL;
@@ -602,12 +609,11 @@ static void usb_init_phy(int index)
 int ipq_board_usb_init(void)
 {
 	int i, nodeoff;
-	char node, usb_node[4] = "usb\0";
+	char node_name[8];
 
 	for (i=0; i<CONFIG_USB_MAX_CONTROLLER_COUNT; i++) {
-		node = i + '0';
-		usb_node[3] = node;
-		nodeoff = fdt_path_offset(gd->fdt_blob, usb_node);
+		snprintf(node_name, sizeof(node_name), "usb%d", i);
+		nodeoff = fdt_path_offset(gd->fdt_blob, node_name);
 		if (!fdtdec_get_int(gd->fdt_blob, nodeoff, "qcom,emulation", 0)) {
 			usb_clock_init(i);
 			usb_init_phy(i);
