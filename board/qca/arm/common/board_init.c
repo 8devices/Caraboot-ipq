@@ -17,6 +17,7 @@
 #include <asm/arch-qca-common/smem.h>
 #include <asm/arch-qca-common/uart.h>
 #include <asm/arch-qca-common/gpio.h>
+#include <asm/arch-qca-common/scm.h>
 #include <memalign.h>
 #include <fdtdec.h>
 #include <mmc.h>
@@ -78,6 +79,11 @@ void ipq_uboot_fdt_fixup(void)
 }
 
 __weak void uart_wait_tx_empty(void)
+{
+	return;
+}
+
+__weak void sdi_disable(void)
 {
 	return;
 }
@@ -334,6 +340,7 @@ int board_late_init(void)
 	uint32_t flash_type;
 	uint32_t soc_ver_major, soc_ver_minor;
 	int ret;
+	char *s = NULL;
 
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 
@@ -369,6 +376,13 @@ int board_late_init(void)
 	 * load dtb above CONFIG_IPQ_FDT_HIGH region.
 	 */
 	run_command("setenv fdt_high " MK_STR(CONFIG_IPQ_FDT_HIGH) "\n", 0);
+
+	s = getenv("dload_warm_reset");
+	if (s) {
+		printf("Dload magic cookie will not be set for warm reset\n");
+		sdi_disable();
+	}
+
 	return 0;
 }
 

@@ -1513,3 +1513,7 @@ void set_platform_specific_default_env(void)
 	}
 }
 
+void sdi_disable(void)
+{
+	qca_scm_sdi();
+}
