@@ -557,9 +557,18 @@ int qca_scm_secure_authenticate(void *cmd_buf, size_t cmd_len)
 int qca_scm_call_write(u32 svc_id, u32 cmd_id, u32 *addr, u32 val)
 {
 	int ret = 0;
-
 	struct qca_scm_desc desc = {0};
-	desc.arginfo = QCA_SCM_ARGS(2, SCM_READ_OP);
+
+	/* In ipq807x, this SCM call is called as a Fast
+	 * SCM call which means it will get executed in
+	 * EL3 monitor mode itself without jumping to QSEE.
+	 * But, In ipq6018, We need to jump into QSEE which
+	 * will execute the SCM call, as we do not have
+	 * support for Fast SCM call in ipq6018.
+	 */
+
+	desc.arginfo = QCA_SCM_ARGS(2, SCM_VAL, SCM_VAL);
+
 	desc.args[0] = (u32)addr;
 	desc.args[1] = val;
 	ret = scm_call_64(svc_id, cmd_id, &desc);
