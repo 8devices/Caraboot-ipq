@@ -16,22 +16,22 @@
 
 / {
 
-	serial@78B3000 {
+	serial@78B1000 {
 		compatible = "qca,ipq-uartdm";
-		reg = <0x78B3000 0x200>;
+		reg = <0x78B1000 0x200>;
 		id = <4>;
 		bit_rate = <0xee>;
 		serial_gpio {
 			gpio1 {
-				gpio = <23>;
-				func = <2>;
+				gpio = <44>;
+				func = <1>;
 				pull = <GPIO_NO_PULL>;
 				oe = <GPIO_OE_ENABLE>;
 			};
 
 			gpio2 {
-				gpio = <24>;
-				func = <2>;
+				gpio = <45>;
+				func = <1>;
 				pull = <GPIO_NO_PULL>;
 				oe = <GPIO_OE_ENABLE>;
 			};
