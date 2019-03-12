@@ -23,5 +23,22 @@
 		console = "/serial@78B1000";
 		usb0 = "/xhci@8a00000";
 	};
+	ess-switch {
+		switch_mac_mode = <PORT_WRAPPER_PSGMII>;
+		switch_mac_mode1 = <UNUSED>;
+		switch_mac_mode2 = <UNUSED>;
+		malibu_gpio = <76>;
+		malibu_gpio_cnt = <1>;
+		port_phyinfo {
+			port@0 {
+				phy_address = <0>;
+				phy_type = <MALIBU_PHY_TYPE>;
+			};
+			port@1 {
+				phy_address = <1>;
+				phy_type = <MALIBU_PHY_TYPE>;
+			};
+		};
+	};
 };
 

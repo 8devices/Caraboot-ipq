@@ -25,4 +25,22 @@
 		pci0 = "/pci@20000000";
 		usb0 = "/xhci@8a00000";
 	};
+	ess-switch {
+		switch_mac_mode = <PORT_WRAPPER_SGMII_PLUS>;
+		switch_mac_mode1 = <UNUSED>;
+		switch_mac_mode2 = <PORT_WRAPPER_SGMII_PLUS>;
+		napa_gpio = <77>;
+		napa_gpio_cnt = <1>;
+		port_phyinfo {
+			port@0 {
+				phy_address = <16>;
+				phy_type = <QCA8081_PHY_TYPE>;
+			};
+			port@1 {
+				phy_address = <20>;
+				phy_type = <QCA8081_PHY_TYPE>;
+			};
+		};
+	};
+
 };
