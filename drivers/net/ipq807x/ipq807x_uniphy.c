@@ -171,7 +171,7 @@ static void ppe_uniphy_sgmii_plus_mode_set(uint32_t uniphy_index)
 		(uniphy_index * PPE_UNIPHY_REG_INC) + UNIPHY_PLL_RESET_REG_OFFSET);
 	ppe_gcc_uniphy_xpcs_reset(uniphy_index, true);
 
-	writel(0x800, PPE_UNIPHY_BASE + (uniphy_index * PPE_UNIPHY_REG_INC)
+	writel(0x820, PPE_UNIPHY_BASE + (uniphy_index * PPE_UNIPHY_REG_INC)
 			 + PPE_UNIPHY_MODE_CONTROL);
 	ppe_gcc_uniphy_soft_reset(uniphy_index);
 	ppe_uniphy_calibration(uniphy_index);
