@@ -401,7 +401,8 @@ static int program_ethphy_fw(unsigned int phy_addr, uint32_t load_addr, uint32_t
 		aq_phy_reg_write(0x0, phy_addr, AQUANTIA_REG_ADDRESS(0x1e, 0x200), 0xc000);
 		msb1 = msw >> 8;
 		msb2 = msw & 0xFF;
-		lsb1 = lsw & 0xFF;
+		lsb1 = lsw >> 8;
+		lsb2 = lsw & 0xFF;
 		computed_crc = cyg_crc16_computed(&msb1, 0x1, computed_crc);
 		computed_crc = cyg_crc16_computed(&msb2, 0x1, computed_crc);
 		computed_crc = cyg_crc16_computed(&lsb1, 0x1, computed_crc);
@@ -410,6 +411,12 @@ static int program_ethphy_fw(unsigned int phy_addr, uint32_t load_addr, uint32_t
 
 	switch (byte_sz & 0x3) {
 	case 0x1:
+		lsw = buf[byte_ptr++];
+		msw = 0x0000;
+		break;
+	case 0x2:
+		lsw = (buf[byte_ptr + 1] << 8) | buf[byte_ptr];
+		byte_ptr += 2;
 		msw = 0x0000;
 		break;
 	case 0x3:
@@ -490,9 +497,10 @@ static int program_ethphy_fw(unsigned int phy_addr, uint32_t load_addr, uint32_t
 	printf("done.\n");
 	aq_phy_reg_write(0x0, phy_addr, AQUANTIA_REG_ADDRESS(0x1e, 0xc441), 0x2010);
 	mailbox_crc = aq_phy_reg_read(0x0, phy_addr, AQUANTIA_REG_ADDRESS(0x1e, 0x201));
-	if (mailbox_crc != computed_crc)
+	if (mailbox_crc != computed_crc) {
 		printf("phy fw image load  CRC-16 (0x%X) does not match calculated CRC-16 (0x%X)\n", mailbox_crc, computed_crc);
-	else
+		return 0;
+	} else
 		printf("phy fw image load good CRC-16 matches (0x%X)\n", mailbox_crc);
 
 	aq_phy_reg_write(0x0, phy_addr, AQUANTIA_REG_ADDRESS(0x1e, 0x0), 0x0);
