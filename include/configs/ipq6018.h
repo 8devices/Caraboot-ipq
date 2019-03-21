@@ -113,7 +113,7 @@
  * TFTP file can only be written in Linux HLOS region and WLAN AREA.
  */
 #define IPQ_TFTP_MIN_ADDR		(CONFIG_SYS_SDRAM_BASE + (16 << 20))
-#define CONFIG_TZ_END_ADDR		(CONFIG_SYS_SDRAM_BASE + (88 << 21))
+#define CONFIG_TZ_END_ADDR		0x49100000
 #define CONFIG_SYS_SDRAM_END	((long long)CONFIG_SYS_SDRAM_BASE + gd->ram_size)
 
 #ifndef __ASSEMBLY__
@@ -307,6 +307,24 @@ extern loff_t board_env_size;
 #define CONFIG_QCA8033_PHY		1
 #define CONFIG_QCA8081_PHY		1
 #define CONFIG_IPQ_ETH_INIT_DEFER
+
+/*
+ * CRASH DUMP ENABLE
+ */
+#define CONFIG_QCA_APPSBL_DLOAD
+#define CONFIG_IPQ6018_DMAGIC_ADDR	0x193D100
+#ifdef CONFIG_QCA_APPSBL_DLOAD
+#define CONFIG_CMD_TFTPPUT
+/* We will be uploading very big files */
+#undef CONFIG_NET_RETRY_COUNT
+#define CONFIG_NET_RETRY_COUNT  500
+
+#define IPQ_TEMP_DUMP_ADDR 0x44000000
+#endif
+
+#define CONFIG_QCA_KERNEL_CRASHDUMP_ADDRESS	*((unsigned int *)0x08600658)
+#define CONFIG_CPU_CONTEXT_DUMP_SIZE		4096
+#define CONFIG_TLV_DUMP_SIZE			2048
 
 /* L1 cache line size is 64 bytes, L2 cache line size is 128 bytes
  * Cache flush and invalidation based on L1 cache, so the cache line
