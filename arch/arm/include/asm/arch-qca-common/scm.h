@@ -32,7 +32,6 @@
 #define SCM_FLAG_COLDBOOT_CPU1		0x1
 #define SCM_SVC_ID_SHIFT		0xA
 #define IS_CALL_AVAIL_CMD		0x1
-#define SCM_CMD_SEC_AUTH		0x15
 
 /* scm_v8 */
 #define SCM_VAL				0x0

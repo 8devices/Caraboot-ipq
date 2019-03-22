@@ -140,6 +140,7 @@
 #define GCC_USB1_PIPE_CBCR		0x183F040
 
 #define KERNEL_AUTH_CMD                0x13
+#define SCM_CMD_SEC_AUTH		0x15
 
 #define USB0_SSPHY_BASE 0x78000
 #define USB1_SSPHY_BASE 0x58000

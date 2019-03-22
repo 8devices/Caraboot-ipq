@@ -29,6 +29,7 @@
 #define GCC_SDCC1_BCR		0x1818000
 
 #define KERNEL_AUTH_CMD		0x13
+#define SCM_CMD_SEC_AUTH	0x15
 
 unsigned int smem_get_board_machtype(void);
 
