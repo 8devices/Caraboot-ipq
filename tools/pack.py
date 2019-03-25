@@ -85,6 +85,7 @@ ARCH_NAME = ""
 SRC_DIR = ""
 MODE = ""
 image_type = "all"
+memory_size = "default"
 lk = "false"
 
 #
@@ -603,7 +604,10 @@ class Pack(object):
                     memory = section.find(".//memory").text
                 except AttributeError, e:
                     memory = "128M16"
-                filename = "cdt-" + board + "_" + memory + ".bin"
+                if memory_size != "default":
+                    filename = "cdt-" + board + "_" + memory + "_LM" + memory_size + ".bin"
+                else:
+                    filename = "cdt-" + board + "_" + memory + ".bin"
             else:
                 filename = "cdt-" + board + ".bin"
 
@@ -1027,7 +1031,10 @@ class Pack(object):
                 except AttributeError, e:
                     memory = "128M16"
 
-                filename = "cdt-" + board + "_" + memory + ".bin"
+                if memory_size != "default":
+                    filename = "cdt-" + board + "_" + memory + "_LM" + memory_size + ".bin"
+                else:
+                    filename = "cdt-" + board + "_" + memory + ".bin"
                 file_info = "ddr-" + board + "_" + memory
             else:
                 filename = "cdt-" + board + ".bin"
@@ -1520,6 +1527,7 @@ class ArgParser(object):
 	global SRC_DIR
 	global ARCH_NAME
 	global image_type
+	global memory_size
         global lk
 
         """Start the parsing process, and populate members with parsed value.
@@ -1530,7 +1538,7 @@ class ArgParser(object):
 	cdir = os.path.abspath(os.path.dirname(""))
         if len(sys.argv) > 1:
             try:
-                opts, args = getopt(sys.argv[1:], "", ["arch=", "fltype=", "srcPath=", "inImage=", "outImage=", "image_type=", "lk"])
+                opts, args = getopt(sys.argv[1:], "", ["arch=", "fltype=", "srcPath=", "inImage=", "outImage=", "image_type=", "memory=", "lk"])
             except GetoptError, e:
 		raise UsageError(e.msg)
 
@@ -1552,6 +1560,9 @@ class ArgParser(object):
 
 		elif option == "--image_type":
 		    image_type = value
+
+                elif option == "--memory":
+                    memory_size = value
 
                 elif option =="--lk":
                     lk = "true"
@@ -1615,6 +1626,10 @@ class ArgParser(object):
 	print "  --inImage \tPath to the direcory containg binaries and images needed for singleimage"
 	print
         print "  --outImage \tPath to the directory where single image will be generated"
+        print
+        print "  --memory \tMemory size for low memory profile"
+        print " \t\tIf it is not specified CDTs with default memory size are taken for single-image packing.\n"
+        print " \t\tIf specified, CDTs created with specified memory size will be used for single-image.\n"
         print
         print "  --lk \t\tReplace u-boot with lkboot for appsbl"
         print " \t\tThis Argument does not take any value"
