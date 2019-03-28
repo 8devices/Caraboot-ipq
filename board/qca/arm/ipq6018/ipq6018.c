@@ -146,6 +146,7 @@ void emmc_clock_config()
 	writel(readl(GCC_SDCC1_APPS_CBCR)|0x1, GCC_SDCC1_APPS_CBCR);
 	/* Add 10us delay for CLK_OFF to get cleared */
 	udelay(10);
+	writel(readl(GCC_SDCC1_AHB_CBCR)|0x1, GCC_SDCC1_AHB_CBCR);
 	/* PLL0 - 192Mhz */
 	writel(0x20B, GCC_SDCC1_APPS_CFG_RCGR);
 	/* Delay for clock operation complete */
