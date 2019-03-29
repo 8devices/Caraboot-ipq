@@ -14,7 +14,10 @@
 #ifndef SPI_NAND_DEV_H
 #define SPI_NAND_DEV_H
 #define MTD_MAX_OOBFREE_ENTRIES_LARGE	32
+#ifdef MTD_MAX_ECCPOS_ENTRIES_LARGE
+#undef MTD_MAX_ECCPOS_ENTRIES_LARGE
 #define MTD_MAX_ECCPOS_ENTRIES_LARGE	640
+#endif
 #define INT_MAX				((int)(~0U>>1))
 
 /* Flash opcodes. */

@@ -213,6 +213,7 @@ typedef enum {
 } smem_mem_type_t;
 
 unsigned smem_read_alloc_entry(smem_mem_type_t type, void *buf, int len);
+int ipq_get_tz_version(char *version_name, int buf_size);
 /* Reserved-memory node names*/
 extern const char *rsvd_node;
 extern const char *del_node[];
