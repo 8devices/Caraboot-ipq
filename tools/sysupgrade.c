@@ -44,8 +44,6 @@
 #define UBI_EC_HDR_MAGIC  0x55424923
 #define UBI_VID_HDR_MAGIC 0x55424921
 
-#define ARRAY_SIZE(array)	sizeof(array)/sizeof(array[0])
-
 struct image_section sections[] = {
 	{
 		.section_type		= UBOOT_TYPE,
@@ -132,7 +130,7 @@ struct image_section sections[] = {
 	},
 };
 
-#define NO_OF_SECTIONS		ARRAY_SIZE(sections)
+#define NO_OF_SECTIONS	ARRAY_SIZE(sections)
 int src_size;
 
 int check_mbn_elf(struct image_section **sec)
