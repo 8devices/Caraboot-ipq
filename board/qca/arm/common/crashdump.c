@@ -16,6 +16,8 @@
 #include <nand.h>
 #include <spi.h>
 #include <spi_flash.h>
+#include <usb.h>
+#include <fat.h>
 #include <asm/errno.h>
 #include <asm/io.h>
 #include <asm/arch-qca-common/scm.h>
@@ -23,6 +25,7 @@
 #include <asm/arch-qca-common/qca_common.h>
 
 #define MAX_TFTP_SIZE 0x40000000
+#define MAX_SEARCH_PARTITIONS 16
 
 #define MAX_UNAME_SIZE			1024
 #define QCA_WDT_SCM_TLV_TYPE_SIZE	1
@@ -46,6 +49,8 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 static qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
+/* USB device id and part index used by usbdump */
+static int usb_dev_indx, usb_dev_part;
 
 enum {
     /*Basic DDR segments */
@@ -150,18 +155,12 @@ static int krait_release_secondary(void)
 	return 0;
 }
 
-static int tftpdump (int is_aligned_access, uint32_t memaddr, uint32_t size, char *name)
+static int dump_to_dst (int is_aligned_access, uint32_t memaddr, uint32_t size, char *name)
 {
 	char runcmd[128];
-	char *dumpdir;
+	char *usb_dump = NULL;
 
-	if ((dumpdir = getenv("dumpdir")) != NULL) {
-		printf("Using directory %s in TFTP server\n", dumpdir);
-	} else {
-		dumpdir = "";
-		printf("Env 'dumpdir' not set. Using / dir in TFTP server\n");
-	}
-
+	usb_dump = getenv("dump_to_usb");
 	if (is_aligned_access) {
 		if (IPQ_TEMP_DUMP_ADDR) {
 			snprintf(runcmd, sizeof(runcmd), "cp.l 0x%x 0x%x 0x%x", memaddr,
@@ -176,8 +175,22 @@ static int tftpdump (int is_aligned_access, uint32_t memaddr, uint32_t size, cha
 		}
 	}
 
-	snprintf(runcmd, sizeof(runcmd), "tftpput 0x%x 0x%x %s/%s",
-		memaddr, size, dumpdir, name);
+	if (usb_dump)
+		snprintf(runcmd, sizeof(runcmd), "fatwrite usb %d:%d 0x%x %s 0x%x",
+					usb_dev_indx, usb_dev_part, memaddr, name, size);
+	else {
+		char *dumpdir;
+		dumpdir = getenv("dumpdir");
+		if (dumpdir != NULL) {
+			printf("Using directory %s in TFTP server\n", dumpdir);
+		} else {
+			dumpdir = "";
+			printf("Env 'dumpdir' not set. Using / dir in TFTP server\n");
+		}
+
+		snprintf(runcmd, sizeof(runcmd), "tftpput 0x%x 0x%x %s/%s",
+						memaddr, size, dumpdir, name);
+	}
 
 	if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
 		return CMD_RET_FAILURE;
@@ -185,6 +198,7 @@ static int tftpdump (int is_aligned_access, uint32_t memaddr, uint32_t size, cha
 	return CMD_RET_SUCCESS;
 
 }
+
 /* Extracts the type and length in TLV for current offset */
 static int qca_wdt_scm_extract_tlv_info(
                 struct qca_wdt_scm_tlv_msg *scm_tlv_msg,
@@ -326,8 +340,8 @@ static int dump_wlan_segments(struct dumpinfo_t *dumpinfo, int indx)
 				 wlan_tlv_size = tlv_info.size;
 			}
 
-			ret_val = tftpdump (dumpinfo[indx].is_aligned_access,memaddr,
-								wlan_tlv_size, wlan_segment_name);
+			ret_val = dump_to_dst (dumpinfo[indx].is_aligned_access,memaddr,
+						wlan_tlv_size, wlan_segment_name);
 			udelay(10000); /* give some delay for server */
 			if (ret_val == CMD_RET_FAILURE)
 				return CMD_RET_FAILURE;
@@ -339,8 +353,6 @@ static int dump_wlan_segments(struct dumpinfo_t *dumpinfo, int indx)
 
 static int do_dumpqca_data(unsigned int dump_level)
 {
-	char *serverip = NULL;
-	/* dump to root of TFTP server if none specified */
 	uint32_t memaddr;
 	uint32_t remaining;
 	int indx;
@@ -351,12 +363,74 @@ static int do_dumpqca_data(unsigned int dump_level)
 	int dump_entries = dump_entries_n;
 	int dynamic_enum_count;
 	char wlan_segment_name[32];
-	serverip = getenv("serverip");
-	if (serverip != NULL) {
-		printf("Using serverip from env %s\n", serverip);
-	} else {
-		printf("\nServer ip not found, run dhcp or configure\n");
-		return CMD_RET_FAILURE;
+	char *usb_dump = NULL;
+
+	usb_dump = getenv("dump_to_usb");
+	if (!usb_dump) {
+		char *serverip = NULL;
+		/* dump to root of TFTP server if none specified */
+		serverip = getenv("serverip");
+		if (serverip != NULL) {
+			printf("Using serverip from env %s\n", serverip);
+		} else {
+			printf("\nServer ip not found, run dhcp or configure\n");
+			return CMD_RET_FAILURE;
+		}
+	}
+	else {
+#if defined(CONFIG_USB_STORAGE) && defined(CONFIG_FS_FAT)
+		static block_dev_desc_t *stor_dev;
+		disk_partition_t info;
+		int dev_indx, part_indx, max_dev_avail = 0, part = -1;
+		int fat_fs = 0;
+		char dev_str[3]; //dev_str = dev:part
+
+		if(run_command("usb start", 0) != CMD_RET_SUCCESS) {
+			printf("USB enumeration failed\n");
+			return CMD_RET_FAILURE;
+		}
+
+		max_dev_avail = usb_max_dev_avail();
+		for(dev_indx = 0; (fat_fs != 1) && (dev_indx < max_dev_avail); dev_indx++) {
+
+			// get storage device
+			stor_dev = usb_stor_get_dev(dev_indx);
+			if(stor_dev == NULL) {
+				printf("No storage device available\n");
+				goto stop_dump;
+			}
+
+			// get valid partition
+			for(part_indx = 1; part_indx <= MAX_SEARCH_PARTITIONS; part_indx++) {
+
+				snprintf(dev_str, sizeof(dev_str)+1, "%d:%d", dev_indx, part_indx);
+				part = get_device_and_partition("usb", dev_str, &stor_dev, &info, 1);
+				if (part < 0) {
+					printf("No valid partition available for device %d\n", dev_indx);
+					break;
+				}
+
+				if (fat_set_blk_dev(stor_dev, &info) == 0) {
+					fat_fs = 1;
+					printf("Selected Device for USBdump:\n");
+					dev_print(stor_dev);
+					break;
+				}
+			}
+		}
+
+		if (fat_fs == 1)
+			dev_indx = dev_indx - 1;
+		if (dev_indx == max_dev_avail) {
+			printf("No devices available for usbdump collection\n");
+			goto stop_dump;
+		}
+		usb_dev_indx = dev_indx;
+		usb_dev_part = part_indx;
+		printf("Collecting crashdump on Partition %d of USB device %d\n", usb_dev_part, usb_dev_indx);
+#else
+		printf("\nWarning: Enable FAT FS configs for USBdump\n");
+#endif
 	}
 
 	ret = qca_scm_call(SCM_SVC_FUSE,
@@ -402,23 +476,31 @@ static int do_dumpqca_data(unsigned int dump_level)
 						      - dumpinfo[indx - 1].size
 						      - 0x400000;
 
-			remaining = dumpinfo[indx].size;
-			while (remaining > 0) {
-				snprintf(dumpinfo[indx].name, sizeof(dumpinfo[indx].name), "EBICS%d.BIN", ebi_indx);
-
-				if (remaining > MAX_TFTP_SIZE) {
-					dumpinfo[indx].size = MAX_TFTP_SIZE;
+			if (usb_dump) {
+				ret = dump_to_dst (dumpinfo[indx].is_aligned_access, memaddr, dumpinfo[indx].size, dumpinfo[indx].name);
+				if (ret == CMD_RET_FAILURE) {
+					goto stop_dump;
 				}
-				else {
-					dumpinfo[indx].size = remaining;
-				}
-				ret = tftpdump (dumpinfo[indx].is_aligned_access, memaddr, dumpinfo[indx].size, dumpinfo[indx].name);
-				if (ret == CMD_RET_FAILURE)
-					return CMD_RET_FAILURE;
+			}
+			else {
+				remaining = dumpinfo[indx].size;
+				while (remaining > 0) {
+					snprintf(dumpinfo[indx].name, sizeof(dumpinfo[indx].name), "EBICS%d.BIN", ebi_indx);
 
-				memaddr += dumpinfo[indx].size;
-				remaining -= dumpinfo[indx].size;
-				ebi_indx++;
+					if (remaining > MAX_TFTP_SIZE) {
+						dumpinfo[indx].size = MAX_TFTP_SIZE;
+					}
+					else {
+						dumpinfo[indx].size = remaining;
+					}
+					ret = dump_to_dst (dumpinfo[indx].is_aligned_access, memaddr, dumpinfo[indx].size, dumpinfo[indx].name);
+					if (ret == CMD_RET_FAILURE)
+						goto stop_dump;
+
+					memaddr += dumpinfo[indx].size;
+					remaining -= dumpinfo[indx].size;
+					ebi_indx++;
+				}
 			}
 		}
 		else
@@ -428,24 +510,30 @@ static int do_dumpqca_data(unsigned int dump_level)
 				if (dumpinfo[indx].size && memaddr) {
 					if(dumpinfo[indx].dump_level == MINIMAL_DUMP){
 						snprintf(wlan_segment_name, sizeof(wlan_segment_name), "%lx.BIN", memaddr);
-						ret = tftpdump (dumpinfo[indx].is_aligned_access, memaddr, dumpinfo[indx].size, wlan_segment_name);
+						ret = dump_to_dst (dumpinfo[indx].is_aligned_access, memaddr, dumpinfo[indx].size, wlan_segment_name);
 						if (ret == CMD_RET_FAILURE)
-							return CMD_RET_FAILURE;
+							goto stop_dump;
 					}
-					else{
-						ret = tftpdump (dumpinfo[indx].is_aligned_access, memaddr, dumpinfo[indx].size, dumpinfo[indx].name);
+					else {
+						ret = dump_to_dst (dumpinfo[indx].is_aligned_access, memaddr, dumpinfo[indx].size, dumpinfo[indx].name);
 						if (ret == CMD_RET_FAILURE)
-							return CMD_RET_FAILURE;
+							goto stop_dump;
 					}
 				}
 				else {
 					ret = dump_wlan_segments(dumpinfo, indx);
 					if (ret == CMD_RET_FAILURE)
-						return CMD_RET_FAILURE;
+						goto stop_dump;
 				}
 		}
 	}
-	return CMD_RET_SUCCESS;
+
+stop_dump:
+#if defined(CONFIG_USB_STORAGE) && defined(CONFIG_FS_FAT)
+	if (usb_dump)
+		run_command("usb stop", 0);
+#endif
+	return ret;
 }
 
 /**
