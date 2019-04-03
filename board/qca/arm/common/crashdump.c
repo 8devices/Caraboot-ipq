@@ -47,6 +47,74 @@
 DECLARE_GLOBAL_DATA_PTR;
 static qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 
+enum {
+    /*Basic DDR segments */
+	QCA_WDT_LOG_DUMP_TYPE_INVALID,
+	QCA_WDT_LOG_DUMP_TYPE_UNAME,
+	QCA_WDT_LOG_DUMP_TYPE_DMESG,
+	QCA_WDT_LOG_DUMP_TYPE_LEVEL1_PT,
+	/* Module structures are in highmem zone*/
+	QCA_WDT_LOG_DUMP_TYPE_WLAN_MOD,
+};
+/* This will be used for parsing the TLV data */
+struct qca_wdt_scm_tlv_msg {
+      unsigned char *msg_buffer;
+      unsigned char *cur_msg_buffer_pos;
+      unsigned int len;
+};
+
+/* Structure to hold crashdump related pointers */
+struct st_tlv_info {
+    uint64_t start;
+    uint64_t size;
+};
+/* Actual crashdump related data */
+struct qca_wdt_crashdump_data {
+	unsigned char uname[MAX_UNAME_SIZE];
+	unsigned int uname_length;
+	unsigned char *cpu_context;
+	unsigned char *log_buf;
+	unsigned int log_buf_len;
+	unsigned char *pt_start;
+	unsigned int pt_len;
+};
+
+/* Context for NAND Flash memory */
+struct crashdump_flash_nand_cxt {
+       loff_t start_crashdump_offset;
+       loff_t cur_crashdump_offset;
+       int cur_page_data_len;
+       int write_size;
+       unsigned char temp_data[MAX_NAND_PAGE_SIZE];
+};
+
+/* Context for SPI NOR Flash memory */
+struct crashdump_flash_spi_cxt {
+       loff_t start_crashdump_offset;
+       loff_t cur_crashdump_offset;
+};
+
+#ifdef CONFIG_QCA_MMC
+/* Context for EMMC Flash memory */
+struct crashdump_flash_emmc_cxt {
+       loff_t start_crashdump_offset;
+       loff_t cur_crashdump_offset;
+       int cur_blk_data_len;
+       int write_size;
+       unsigned char temp_data[MAX_EMMC_BLK_LEN];
+};
+#endif
+
+
+static struct spi_flash *crashdump_spi_flash;
+static struct crashdump_flash_nand_cxt crashdump_nand_cnxt;
+static struct crashdump_flash_spi_cxt crashdump_flash_spi_cnxt;
+#ifdef CONFIG_QCA_MMC
+static struct mmc *mmc;
+static struct crashdump_flash_emmc_cxt crashdump_emmc_cnxt;
+#endif
+static struct qca_wdt_crashdump_data g_crashdump_data;
+struct qca_wdt_scm_tlv_msg tlv_msg ;
 __weak int scm_set_boot_addr(bool enable_sec_core)
 {
 	return -1;
@@ -116,8 +184,147 @@ static int tftpdump (int is_aligned_access, uint32_t memaddr, uint32_t size, cha
 	return CMD_RET_SUCCESS;
 
 }
+/* Extracts the type and length in TLV for current offset */
+static int qca_wdt_scm_extract_tlv_info(
+                struct qca_wdt_scm_tlv_msg *scm_tlv_msg,
+                unsigned char *type,
+                unsigned int *size)
+{
+	unsigned char *x = scm_tlv_msg->cur_msg_buffer_pos;
+	unsigned char *y = scm_tlv_msg->msg_buffer +
+                                scm_tlv_msg->len;
 
-static int do_dumpqca_data(void)
+        if ((x + QCA_WDT_SCM_TLV_TYPE_LEN_SIZE) >= y)
+                return -EINVAL;
+
+        *type = x[0];
+        *size = x[1] | (x[2] << 8);
+        return 0;
+}
+
+/* Extracts the value from TLV for current offset */
+static int qca_wdt_scm_extract_tlv_data(
+		struct qca_wdt_scm_tlv_msg *scm_tlv_msg,
+		unsigned char *data,
+		unsigned int size)
+{
+	unsigned char *x = scm_tlv_msg->cur_msg_buffer_pos;
+	unsigned char *y = scm_tlv_msg->msg_buffer + scm_tlv_msg->len;
+
+	if ((x + QCA_WDT_SCM_TLV_TYPE_LEN_SIZE + size) >= y)
+		return -EINVAL;
+
+	memcpy(data, x + 3, size);
+
+	scm_tlv_msg->cur_msg_buffer_pos +=
+		(size + QCA_WDT_SCM_TLV_TYPE_LEN_SIZE);
+	return 0;
+}
+
+/*
+* This function parses the TLV message and stores the actual values
+* in crashdump_data. For each TLV, It first determines the type and
+* length, then it extracts the actual value and stores in the appropriate
+* field in crashdump_data.
+*/
+static int qca_wdt_extract_crashdump_data(
+		struct qca_wdt_scm_tlv_msg *scm_tlv_msg,
+		struct qca_wdt_crashdump_data *crashdump_data)
+{
+	unsigned char cur_type = QCA_WDT_LOG_DUMP_TYPE_INVALID;
+	unsigned int cur_size;
+	int ret_val;
+	struct st_tlv_info tlv_info;
+	int static_enum_count;
+
+	for (static_enum_count = QCA_WDT_LOG_DUMP_TYPE_INVALID; static_enum_count
+			< QCA_WDT_LOG_DUMP_TYPE_WLAN_MOD ; static_enum_count++ ) {
+		ret_val = qca_wdt_scm_extract_tlv_info(scm_tlv_msg,
+			&cur_type, &cur_size);
+		if (!ret_val && cur_type == QCA_WDT_LOG_DUMP_TYPE_UNAME ){
+			crashdump_data->uname_length = cur_size;
+			ret_val = qca_wdt_scm_extract_tlv_data(scm_tlv_msg,
+					crashdump_data->uname, cur_size);
+		}else if (!ret_val && cur_type == QCA_WDT_LOG_DUMP_TYPE_DMESG){
+			ret_val = qca_wdt_scm_extract_tlv_data(scm_tlv_msg,
+				(unsigned char *)&tlv_info,
+				cur_size);
+			if (!ret_val) {
+				crashdump_data->log_buf = (uint32_t *)tlv_info.start;
+				crashdump_data->log_buf_len = *(uint32_t *)tlv_info.size;
+		         }
+		}else if (!ret_val && cur_type == QCA_WDT_LOG_DUMP_TYPE_LEVEL1_PT){
+			ret_val = qca_wdt_scm_extract_tlv_data(scm_tlv_msg,(unsigned char *)&tlv_info,cur_size);
+			if (!ret_val) {
+				crashdump_data->pt_start = (uint32_t *)tlv_info.start;
+				crashdump_data->pt_len = tlv_info.size;
+			}
+		}
+	}
+	return ret_val;
+}
+
+uint32_t dump_minimal(struct dumpinfo_t *dumpinfo, int indx) {
+
+	if (g_crashdump_data.pt_start &&
+		!strncmp(dumpinfo[indx].name,
+			"PT.BIN", strlen("PT.BIN"))) {
+		dumpinfo[indx].start = g_crashdump_data.pt_start;
+		dumpinfo[indx].size = g_crashdump_data.pt_len;
+	} else if (g_crashdump_data.log_buf &&
+		!strncmp(dumpinfo[indx].name,
+		"DMESG.BIN", strlen("DMESG.BIN"))) {
+		dumpinfo[indx].start = g_crashdump_data.log_buf;
+		dumpinfo[indx].size = g_crashdump_data.log_buf_len;
+	} else if (!strncmp(dumpinfo[indx].name,
+		"UNAME", strlen("UNAME"))) {
+		dumpinfo[indx].start = g_crashdump_data.uname;
+		dumpinfo[indx].size =
+		g_crashdump_data.uname_length;
+	} else if (!strncmp(dumpinfo[indx].name,
+		"CPU_INFO", strlen("CPU_INFO"))) {
+		dumpinfo[indx].start =
+		g_crashdump_data.cpu_context;
+		dumpinfo[indx].size =
+		CONFIG_CPU_CONTEXT_DUMP_SIZE;
+	}
+	return dumpinfo[indx].start;
+}
+
+static int dump_wlan_segments(struct dumpinfo_t *dumpinfo, int indx)
+{
+	uint32_t memaddr;
+	struct qca_wdt_scm_tlv_msg *scm_tlv_msg = &tlv_msg;
+	unsigned char cur_type = QCA_WDT_LOG_DUMP_TYPE_WLAN_MOD;
+	unsigned int cur_size;
+	int ret_val;
+	struct st_tlv_info tlv_info;
+	uint32_t wlan_tlv_size;
+	char wlan_segment_name[32];
+
+	if(strncmp(dumpinfo[indx].name, "WLAN_MOD" ,strlen("WLAN_MOD"))) {
+		return CMD_RET_FAILURE;
+	}
+
+	do {
+		ret_val = qca_wdt_scm_extract_tlv_info(scm_tlv_msg,
+			&cur_type, &cur_size);
+		if (!ret_val && cur_type == QCA_WDT_LOG_DUMP_TYPE_WLAN_MOD )
+			ret_val = qca_wdt_scm_extract_tlv_data(scm_tlv_msg,
+				(unsigned char *)&tlv_info,cur_size);
+		memaddr = (uint32_t *)tlv_info.start;
+		wlan_tlv_size = tlv_info.size;
+		snprintf(wlan_segment_name, sizeof(wlan_segment_name), "%lx.BIN", memaddr);
+		ret_val = tftpdump (dumpinfo[indx].is_aligned_access, memaddr, wlan_tlv_size, wlan_segment_name);
+		udelay(10000); /* give some delay for server */
+		if (ret_val == CMD_RET_FAILURE)
+			return CMD_RET_FAILURE;
+	}while (cur_type != QCA_WDT_LOG_DUMP_TYPE_INVALID);
+	return CMD_RET_SUCCESS;
+};
+
+
+static int do_dumpqca_data(unsigned int dump_level)
 {
 	char *serverip = NULL;
 	/* dump to root of TFTP server if none specified */
@@ -129,7 +336,8 @@ static int do_dumpqca_data(void)
 	char buf = 1;
 	struct dumpinfo_t *dumpinfo = dumpinfo_n;
 	int dump_entries = dump_entries_n;
-
+	int dynamic_enum_count;
+	char wlan_segment_name[32];
 	serverip = getenv("serverip");
 	if (serverip != NULL) {
 		printf("Using serverip from env %s\n", serverip);
@@ -151,6 +359,8 @@ static int do_dumpqca_data(void)
 	}
 
 	for (indx = 0; indx < dump_entries; indx++) {
+		if (dump_level != dumpinfo[indx].dump_level)
+			continue;
 		printf("\nProcessing %s:", dumpinfo[indx].name);
 
 		if (dumpinfo[indx].is_redirected) {
@@ -200,12 +410,27 @@ static int do_dumpqca_data(void)
 		}
 		else
 		{
-			ret = tftpdump (dumpinfo[indx].is_aligned_access, memaddr, dumpinfo[indx].size, dumpinfo[indx].name);
-			if (ret == CMD_RET_FAILURE)
-				return CMD_RET_FAILURE;
+			if (dumpinfo[indx].dump_level == MINIMAL_DUMP )
+				memaddr = dump_minimal(dumpinfo, indx);
+				if (dumpinfo[indx].size && memaddr) {
+					if(dumpinfo[indx].dump_level == MINIMAL_DUMP){
+						snprintf(wlan_segment_name, sizeof(wlan_segment_name), "%lx.BIN", memaddr);
+						ret = tftpdump (dumpinfo[indx].is_aligned_access, memaddr, dumpinfo[indx].size, wlan_segment_name);
+						if (ret == CMD_RET_FAILURE)
+							return CMD_RET_FAILURE;
+					}
+					else{
+						ret = tftpdump (dumpinfo[indx].is_aligned_access, memaddr, dumpinfo[indx].size, dumpinfo[indx].name);
+						if (ret == CMD_RET_FAILURE)
+							return CMD_RET_FAILURE;
+					}
+				}
+				else {
+					ret = dump_wlan_segments(dumpinfo, indx);
+					if (ret == CMD_RET_FAILURE)
+						return CMD_RET_FAILURE;
+				}
 		}
-
-		udelay(10000); /* give some delay for server */
 	}
 	return CMD_RET_SUCCESS;
 }
@@ -214,7 +439,7 @@ static int do_dumpqca_data(void)
  * Inovke the dump routine and in case of failure, do not stop unless the user
  * requested to stop
  */
-void dump_func(void)
+void dump_func(unsigned int dump_level)
 {
 	uint64_t etime;
 	uint64_t ptime;
@@ -250,7 +475,7 @@ void dump_func(void)
 			printf("Ping failed\n");
 			goto reset;
 		}
-		if (do_dumpqca_data() == CMD_RET_FAILURE)
+		if (do_dumpqca_data(dump_level) == CMD_RET_FAILURE)
 			printf("Crashdump saving failed!\n");
 		goto reset;
 	} else {
@@ -258,7 +483,7 @@ void dump_func(void)
 		printf("\nHit any key within 10s to stop dump activity...");
 		while (!tstc()) {       /* while no incoming data */
 			if (get_timer_masked() >= etime) {
-				if (do_dumpqca_data() == CMD_RET_FAILURE)
+				if (do_dumpqca_data(dump_level) == CMD_RET_FAILURE)
 					printf("Crashdump saving failed!\n");
 				break;
 			}
@@ -269,145 +494,6 @@ void dump_func(void)
 	 */
 reset:
 	run_command("reset", 0);
-}
-
-/* Type in TLV for crashdump data type */
-enum {
-	QCA_WDT_LOG_DUMP_TYPE_INVALID,
-	QCA_WDT_LOG_DUMP_TYPE_UNAME,
-};
-
-/* This will be used for parsing the TLV data */
-struct qca_wdt_scm_tlv_msg {
-	unsigned char *msg_buffer;
-	unsigned char *cur_msg_buffer_pos;
-	unsigned int len;
-};
-
-/* Actual crashdump related data */
-struct qca_wdt_crashdump_data {
-	unsigned char uname[MAX_UNAME_SIZE];
-	unsigned int uname_length;
-	unsigned char *cpu_context;
-};
-
-/* Context for NAND Flash memory */
-struct crashdump_flash_nand_cxt {
-	loff_t start_crashdump_offset;
-	loff_t cur_crashdump_offset;
-	int cur_page_data_len;
-	int write_size;
-	unsigned char temp_data[MAX_NAND_PAGE_SIZE];
-};
-
-/* Context for SPI NOR Flash memory */
-struct crashdump_flash_spi_cxt {
-	loff_t start_crashdump_offset;
-	loff_t cur_crashdump_offset;
-};
-
-#ifdef CONFIG_QCA_MMC
-/* Context for EMMC Flash memory */
-struct crashdump_flash_emmc_cxt {
-	loff_t start_crashdump_offset;
-	loff_t cur_crashdump_offset;
-	int cur_blk_data_len;
-	int write_size;
-	unsigned char temp_data[MAX_EMMC_BLK_LEN];
-};
-#endif
-
-static struct spi_flash *crashdump_spi_flash;
-static struct crashdump_flash_nand_cxt crashdump_nand_cnxt;
-static struct crashdump_flash_spi_cxt crashdump_flash_spi_cnxt;
-#ifdef CONFIG_QCA_MMC
-static struct mmc *mmc;
-static struct crashdump_flash_emmc_cxt crashdump_emmc_cnxt;
-#endif
-static struct qca_wdt_crashdump_data g_crashdump_data;
-
-/* Extracts the type and length in TLV for current offset */
-static int qca_wdt_scm_extract_tlv_info(
-		struct qca_wdt_scm_tlv_msg *scm_tlv_msg,
-		unsigned char *type,
-		unsigned int *size)
-{
-	unsigned char *x = scm_tlv_msg->cur_msg_buffer_pos;
-	unsigned char *y = scm_tlv_msg->msg_buffer +
-				scm_tlv_msg->len;
-
-	if ((x + QCA_WDT_SCM_TLV_TYPE_LEN_SIZE) >= y)
-		return -EINVAL;
-
-	*type = x[0];
-	*size = x[1] | (x[2] << 8);
-
-	return 0;
-}
-
-/* Extracts the value from TLV for current offset */
-static int qca_wdt_scm_extract_tlv_data(
-		struct qca_wdt_scm_tlv_msg *scm_tlv_msg,
-		unsigned char *data,
-		unsigned int size)
-{
-	unsigned char *x = scm_tlv_msg->cur_msg_buffer_pos;
-	unsigned char *y = scm_tlv_msg->msg_buffer + scm_tlv_msg->len;
-
-	if ((x + QCA_WDT_SCM_TLV_TYPE_LEN_SIZE + size) >= y)
-		return -EINVAL;
-
-	memcpy(data, x + 3, size);
-
-	scm_tlv_msg->cur_msg_buffer_pos +=
-		(size + QCA_WDT_SCM_TLV_TYPE_LEN_SIZE);
-
-	return 0;
-}
-
-/*
-* This function parses the TLV message and stores the actual values
-* in crashdump_data. For each TLV, It first determines the type and
-* length, then it extracts the actual value and stores in the appropriate
-* field in crashdump_data.
-*/
-static int qca_wdt_extract_crashdump_data(
-		struct qca_wdt_scm_tlv_msg *scm_tlv_msg,
-		struct qca_wdt_crashdump_data *crashdump_data)
-{
-	unsigned char cur_type = QCA_WDT_LOG_DUMP_TYPE_INVALID;
-	unsigned int cur_size;
-	int ret_val;
-
-	do {
-		ret_val = qca_wdt_scm_extract_tlv_info(scm_tlv_msg,
-				&cur_type, &cur_size);
-
-		if (ret_val)
-			break;
-
-		switch (cur_type) {
-                case QCA_WDT_LOG_DUMP_TYPE_UNAME:
-			crashdump_data->uname_length = cur_size;
-			ret_val = qca_wdt_scm_extract_tlv_data(scm_tlv_msg,
-					crashdump_data->uname, cur_size);
-
-			break;
-
-		case QCA_WDT_LOG_DUMP_TYPE_INVALID:
-			break;
-
-		default:
-			ret_val = -EINVAL;
-			break;
-		}
-
-		if (ret_val != 0)
-			break;
-
-	} while (cur_type != QCA_WDT_LOG_DUMP_TYPE_INVALID);
-
-	return ret_val;
 }
 
 /*
@@ -863,6 +949,8 @@ static int qca_wdt_write_crashdump_data(
 	return ret;
 }
 
+
+
 /*
 * Function for collecting the crashdump data in flash. It extracts the
 * crashdump TLV(Type Length Value) data and CPU context information from
@@ -870,11 +958,10 @@ static int qca_wdt_write_crashdump_data(
 * the type of boot flash memory and writes all these crashdump information
 * in provided offset in flash memory.
 */
-int do_dumpqca_flash_data(const char *offset)
+int do_dumpqca_minimal_data(const char *offset)
 {
 	unsigned char *kernel_crashdump_address =
 		(unsigned char *) CONFIG_QCA_KERNEL_CRASHDUMP_ADDRESS;
-	struct qca_wdt_scm_tlv_msg tlv_msg;
 	int flash_type;
 	int ret_val;
 	loff_t crashdump_offset;
@@ -905,9 +992,14 @@ int do_dumpqca_flash_data(const char *offset)
 
 	ret_val = qca_wdt_extract_crashdump_data(&tlv_msg, &g_crashdump_data);
 
-	if (!ret_val)
-		ret_val = qca_wdt_write_crashdump_data(&g_crashdump_data,
-				flash_type, crashdump_offset);
+	if (!ret_val) {
+		if (getenv("dump_to_flash")) {
+			ret_val = qca_wdt_write_crashdump_data(&g_crashdump_data,
+					flash_type, crashdump_offset);
+		} else {
+			dump_func(MINIMAL_DUMP);
+		}
+	}
 
 	if (ret_val) {
 		printf("crashdump data writing in flash failure\n");

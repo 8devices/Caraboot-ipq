@@ -32,6 +32,12 @@
 #define XMK_STR(x)#x
 #define MK_STR(x)XMK_STR(x)
 
+/* Crashdump levels */
+enum {
+	FULL_DUMP,
+	MINIMAL_DUMP
+};
+
 struct ipq_i2c_platdata {
 	int type;
 };
@@ -53,7 +59,7 @@ int qca_mmc_init(bd_t *, qca_mmc *);
 void board_mmc_deinit(void);
 void board_pci_deinit(void);
 void set_flash_secondary_type(qca_smem_flash_info_t *);
-void dump_func(void);
+void dump_func(unsigned int dump_level);
 int do_dumpqca_flash_data(const char *);
 int apps_iscrashed(void);
 int set_uuid_bootargs(char *boot_args, char *part_name, int buflen, bool gpt_flag);
@@ -74,6 +80,7 @@ struct dumpinfo_t{
 			    * to address to be dumped
 			    */
 	uint32_t offset; /* offset to be added to start address */
+	uint32_t dump_level;
 };
 extern struct dumpinfo_t dumpinfo_n[];
 extern int dump_entries_n;
