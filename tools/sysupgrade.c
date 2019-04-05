@@ -1430,7 +1430,7 @@ int is_image_authenticated(void)
 	return 1;
 }
 
-int sec_image_auth()
+int sec_image_auth(void)
 {
 	int fd, i, len;
 	char *buf = NULL;
