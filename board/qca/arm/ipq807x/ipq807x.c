@@ -243,6 +243,11 @@ void reset_cpu(unsigned long a)
 	while(1);
 }
 
+void reset_board(void)
+{
+	run_command("reset", 0);
+}
+
 void emmc_clock_config(int mode)
 {
 	/* Enable root clock generator */

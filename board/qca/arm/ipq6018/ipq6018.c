@@ -25,6 +25,9 @@
 #include <mmc.h>
 #include <sdhci.h>
 #include <usb.h>
+#include <i2c.h>
+#include <dm.h>
+#include <command.h>
 
 #define DLOAD_MAGIC_COOKIE	0x10
 DECLARE_GLOBAL_DATA_PTR;
@@ -70,6 +73,8 @@ struct dumpinfo_t dumpinfo_s[] = {
 	{ "UTCM.BIN", 0x08600658, 0x00030000, 0, 1, 0x2000 },
 };
 int dump_entries_s = ARRAY_SIZE(dumpinfo_s);
+u32 *tz_wonce = (u32 *)CONFIG_IPQ6018_TZ_WONCE_3_ADDR;
+
 
 void uart2_configure_mux(void)
 {
@@ -163,6 +168,40 @@ void qca_serial_init(struct ipq_serial_platdata *plat)
 		writel(1, GCC_BLSP1_UART2_APPS_CBCR);
 	}
 	qca_gpio_init(node);
+}
+
+int do_pmic_reset()
+{
+	struct udevice *bus, *dev;
+	int bus_no=0;
+	int ret;
+	uchar byte = CONFIG_IPQ6018_PMIC_RESET_VAL;
+
+	ret = uclass_get_device_by_seq(UCLASS_I2C, bus_no, &bus);
+	if (ret) {
+		debug("%s: No bus %d\n", __func__, bus_no);
+		return -1;
+	}
+
+	ret = dm_i2c_probe(bus, CONFIG_IPQ6018_PMIC_CHIP_ADDR, 0, &dev);
+	if (ret) {
+		printf("Probe failed\n");
+		return -1;
+	}
+
+	ret = i2c_get_chip(bus, CONFIG_IPQ6018_PMIC_CHIP_ADDR, 1, &dev);
+	if (ret) {
+		printf("Error 'i2c_get_chip': %d\n",ret);
+		return CMD_RET_FAILURE;
+	}
+
+	ret = dm_i2c_write(dev, CONFIG_IPQ6018_PMIC_OFFSET, &byte, 1);
+	if (ret) {
+		printf("Error writing the chip: %d\n", ret);
+		return CMD_RET_FAILURE;
+	}
+
+	return 0;
 }
 
 void reset_crashdump(void)
@@ -957,6 +996,18 @@ void reset_cpu(unsigned long a)
 		qti_scm_pshold();
 	}
 	while(1);
+}
+
+void reset_board(void)
+{
+	if(*tz_wonce == 0) {	/*COLD REBOOT*/
+		if(do_pmic_reset())
+			printf("PMIC Reset failed, please do power cycle\n");
+	}
+	else {		/*WARM REBOOT*/
+		psci_sys_reset();
+	}
+	while(1);	/*loop here inorder to avoid returning to console*/
 }
 
 void ipq_fdt_fixup_socinfo(void *blob)

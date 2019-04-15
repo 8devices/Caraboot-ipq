@@ -188,6 +188,11 @@ void reset_cpu(unsigned long a)
 	while(1);
 }
 
+void reset_board(void)
+{
+	run_command("reset", 0);
+}
+
 void ipq_uboot_fdt_fixup(void)
 {
 	int ret, len;

@@ -146,6 +146,11 @@ void reset_cpu(ulong addr)
 	while (1);
 }
 
+void reset_board(void)
+{
+	run_command("reset", 0);
+}
+
 void board_nand_init(void)
 {
 	int gpio_node;
