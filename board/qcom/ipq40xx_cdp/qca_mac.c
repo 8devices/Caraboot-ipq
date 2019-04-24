@@ -21,7 +21,7 @@
 #define CALDATA_SIZE_LARGEST 12064
 
 #define ART_FLASH_OFFSET 0x170000
-#define ART_FLASH_SIZE 0x8000
+#define ART_FLASH_SIZE 0x10000
 
 #define MACSTR "%02X:%02X:%02X:%02X:%02X:%02X"
 #define MAC2STR(a) (uint8_t)(a)[0], (uint8_t)(a)[1], (uint8_t)(a)[2], \
@@ -234,6 +234,6 @@ U_BOOT_CMD(
 	"get/set MAC address",
 	"mac get	- get MAC addresses\n"
 	"mac set [wifi0mac|-] [wifi1mac|-] [eth0mac|-] [eth1mac|-] ...\n"
-	"		- set MAC addressesi\n"
+	"		- set MAC address\n"
 );
 
