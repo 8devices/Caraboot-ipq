@@ -270,6 +270,12 @@ char * const argv[])
 	}
 
 	if (flash_cmd) {
+
+		if (file_size > part_size) {
+			printf("Image size is greater than partition memory\n");
+			return CMD_RET_FAILURE;
+		}
+
 		if (flash_type == SMEM_BOOT_NAND_FLASH) {
 
 			adj_size = file_size % nand->writesize;
