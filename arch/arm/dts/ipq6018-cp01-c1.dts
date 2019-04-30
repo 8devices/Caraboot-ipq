@@ -33,6 +33,7 @@
 		napa_gpio_cnt = <1>;
 		malibu_gpio = <75>;
 		malibu_gpio_cnt = <1>;
+		mdc_mdio_gpio = <64 65>;
 		port_phyinfo {
 			port@0 {
 				phy_address = <0>;

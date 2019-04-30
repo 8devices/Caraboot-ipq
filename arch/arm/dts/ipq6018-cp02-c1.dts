@@ -31,6 +31,7 @@
 		switch_mac_mode2 = <PORT_WRAPPER_SGMII_PLUS>;
 		napa_gpio = <77>;
 		napa_gpio_cnt = <1>;
+		mdc_mdio_gpio = <64 65>;
 		port_phyinfo {
 			port@0 {
 				phy_address = <16>;
