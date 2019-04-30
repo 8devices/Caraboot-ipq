@@ -845,10 +845,39 @@ void malibu_phy_reset_init_done(void)
 	}
 }
 
+int get_mdc_mdio_gpio(int mdc_mdio_gpio[2])
+{
+	int mdc_mdio_gpio_cnt = 2, node;
+	int res = -1;
+	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
+	if (node >= 0) {
+		res = fdtdec_get_int_array(gd->fdt_blob, node, "mdc_mdio_gpio",
+					   (u32 *)mdc_mdio_gpio, mdc_mdio_gpio_cnt);
+		if (res >= 0)
+			return mdc_mdio_gpio_cnt;
+	}
+
+	return res;
+}
+
+void set_function_select_as_mdc_mdio(void)
+{
+	int mdc_mdio_gpio[2] = {0}, mdc_mdio_gpio_cnt, i;
+	unsigned int *mdc_mdio_gpio_base;
+
+	mdc_mdio_gpio_cnt = get_mdc_mdio_gpio(mdc_mdio_gpio);
+	if (mdc_mdio_gpio_cnt >= 1) {
+		for (i = 0; i < mdc_mdio_gpio_cnt; i++) {
+			if (mdc_mdio_gpio[i] >=0) {
+				mdc_mdio_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(mdc_mdio_gpio[i]);
+				writel(0x7, mdc_mdio_gpio_base);
+			}
+		}
+	}
+}
+
 void eth_clock_enable(void)
 {
-	int tlmm_base = 0x1025000;
-
 	/*
 	 * ethernet clk rcgr block init -- start
 	 * these clk init will be moved to sbl later
@@ -902,15 +931,13 @@ void eth_clock_enable(void)
 	 * these clk init will be moved to sbl later
 	 */
 
+	/* set function select as mdio */
+	set_function_select_as_mdc_mdio();
+
 	/* bring phy out of reset */
-	writel(7, tlmm_base + 0x1f000);
-	writel(7, tlmm_base + 0x20000);
-	writel(0x203, tlmm_base);
-	writel(0, tlmm_base + 0x4);
 	malibu_phy_reset_init();
 	napa_phy_reset_init();
 	mdelay(500);
-	writel(2, tlmm_base + 0x4);
 	malibu_phy_reset_init_done();
 	napa_phy_reset_init_done();
 	mdelay(500);
