@@ -493,7 +493,7 @@ void dump_func(unsigned int dump_level)
 	 * when crashmagic is found
 	 */
 reset:
-	run_command("reset", 0);
+	reset_board();
 }
 
 /*
