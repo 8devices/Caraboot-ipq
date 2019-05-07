@@ -82,6 +82,7 @@ typedef struct {
 void __stack_chk_fail(void)
 {
 	printf("stack-protector: U-boot stack is corrupted.\n");
+	bad_mode ();
 }
 /*
  * Set the root device and bootargs for mounting root filesystem.
