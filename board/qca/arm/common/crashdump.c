@@ -55,6 +55,7 @@ enum {
 	QCA_WDT_LOG_DUMP_TYPE_LEVEL1_PT,
 	/* Module structures are in highmem zone*/
 	QCA_WDT_LOG_DUMP_TYPE_WLAN_MOD,
+	QCA_WDT_LOG_DUMP_TYPE_WLAN_MOD_INFO,
 };
 /* This will be used for parsing the TLV data */
 struct qca_wdt_scm_tlv_msg {
@@ -309,16 +310,28 @@ static int dump_wlan_segments(struct dumpinfo_t *dumpinfo, int indx)
 	do {
 		ret_val = qca_wdt_scm_extract_tlv_info(scm_tlv_msg,
 			&cur_type, &cur_size);
-		if (!ret_val && cur_type == QCA_WDT_LOG_DUMP_TYPE_WLAN_MOD )
+		if (!ret_val && ( cur_type == QCA_WDT_LOG_DUMP_TYPE_WLAN_MOD ||
+						cur_type == QCA_WDT_LOG_DUMP_TYPE_WLAN_MOD_INFO )) {
 			ret_val = qca_wdt_scm_extract_tlv_data(scm_tlv_msg,
 				(unsigned char *)&tlv_info,cur_size);
-		memaddr = (uint32_t *)tlv_info.start;
-		wlan_tlv_size = tlv_info.size;
-		snprintf(wlan_segment_name, sizeof(wlan_segment_name), "%lx.BIN", memaddr);
-		ret_val = tftpdump (dumpinfo[indx].is_aligned_access, memaddr, wlan_tlv_size, wlan_segment_name);
-		udelay(10000); /* give some delay for server */
-		if (ret_val == CMD_RET_FAILURE)
-			return CMD_RET_FAILURE;
+			memaddr = (uint32_t *)tlv_info.start;
+
+			if (cur_type == QCA_WDT_LOG_DUMP_TYPE_WLAN_MOD_INFO) {
+				snprintf(wlan_segment_name,	sizeof(wlan_segment_name),
+							 "MODULE_INFO.txt");
+				wlan_tlv_size = *(uint32_t *) tlv_info.size;
+			} else {
+				snprintf(wlan_segment_name,
+						 sizeof(wlan_segment_name), "%lx.BIN", memaddr);
+				 wlan_tlv_size = tlv_info.size;
+			}
+
+			ret_val = tftpdump (dumpinfo[indx].is_aligned_access,memaddr,
+								wlan_tlv_size, wlan_segment_name);
+			udelay(10000); /* give some delay for server */
+			if (ret_val == CMD_RET_FAILURE)
+				return CMD_RET_FAILURE;
+		}
 	}while (cur_type != QCA_WDT_LOG_DUMP_TYPE_INVALID);
 	return CMD_RET_SUCCESS;
 };
