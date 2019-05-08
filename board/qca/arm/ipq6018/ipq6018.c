@@ -894,6 +894,21 @@ void malibu_phy_reset_init(void)
 	}
 }
 
+void sfp_reset_init(void)
+{
+	int sfp_gpio = -1, node;
+	unsigned int *sfp_gpio_base;
+
+		node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
+		if (node >= 0)
+			sfp_gpio = fdtdec_get_uint(gd->fdt_blob, node, "sfp_gpio", -1);
+
+		if (sfp_gpio >=0) {
+			sfp_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(sfp_gpio);
+			writel(0x2C1, sfp_gpio_base);
+		}
+}
+
 void aquantia_phy_reset_init_done(void)
 {
 	int aquantia_gpio;
@@ -1019,6 +1034,7 @@ void eth_clock_enable(void)
 	malibu_phy_reset_init();
 	aquantia_phy_reset_init();
 	napa_phy_reset_init();
+	sfp_reset_init();
 	mdelay(500);
 	malibu_phy_reset_init_done();
 	aquantia_phy_reset_init_done();
