@@ -39,7 +39,7 @@ const char *del_node[] = {"uboot",
 			  "sbl",
 			  NULL};
 const add_node_t add_fdt_node[] = {{}};
-
+static int aq_phy_initialised;
 struct dumpinfo_t dumpinfo_n[] = {
 	/* TZ stores the DDR physical address at which it stores the
 	 * APSS regs, UTCM copy dump. We will have the TZ IMEM
@@ -790,6 +790,19 @@ int set_uuid_bootargs(char *boot_args, char *part_name, int buflen, bool gpt_fla
 	return 0;
 }
 
+int get_aquantia_gpio(void)
+{
+	int aquantia_gpio = -1, node;
+
+	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
+	if (node >= 0)
+		aquantia_gpio = fdtdec_get_uint(gd->fdt_blob, node, "aquantia_gpio", -1);
+	else
+		return node;
+
+	return aquantia_gpio;
+}
+
 int get_napa_gpio(int napa_gpio[2])
 {
 	int napa_gpio_cnt = -1, node;
@@ -828,6 +841,25 @@ int get_malibu_gpio(int malibu_gpio[2])
 	return res;
 }
 
+void aquantia_phy_reset_init(void)
+{
+	int aquantia_gpio = -1, node;
+	unsigned int *aquantia_gpio_base;
+
+	if (!aq_phy_initialised) {
+		node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
+		if (node >= 0)
+			aquantia_gpio = fdtdec_get_uint(gd->fdt_blob, node, "aquantia_gpio", -1);
+
+		if (aquantia_gpio >=0) {
+			aquantia_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(aquantia_gpio);
+			writel(0x203, aquantia_gpio_base);
+			gpio_direction_output(aquantia_gpio, 0x0);
+		}
+		aq_phy_initialised = 1;
+	}
+}
+
 void napa_phy_reset_init(void)
 {
 	int napa_gpio[2] = {0}, napa_gpio_cnt, i;
@@ -859,6 +891,16 @@ void malibu_phy_reset_init(void)
 				gpio_direction_output(malibu_gpio[i], 0x0);
 			}
 		}
+	}
+}
+
+void aquantia_phy_reset_init_done(void)
+{
+	int aquantia_gpio;
+
+	aquantia_gpio = get_aquantia_gpio();
+	if (aquantia_gpio >= 0) {
+		gpio_set_value(aquantia_gpio, 0x1);
 	}
 }
 
@@ -975,9 +1017,11 @@ void eth_clock_enable(void)
 
 	/* bring phy out of reset */
 	malibu_phy_reset_init();
+	aquantia_phy_reset_init();
 	napa_phy_reset_init();
 	mdelay(500);
 	malibu_phy_reset_init_done();
+	aquantia_phy_reset_init_done();
 	napa_phy_reset_init_done();
 	mdelay(500);
 }
