@@ -346,5 +346,6 @@ extern loff_t board_env_size;
  */
 
 #define CONFIG_ARMV7_PSCI
+#define CONFIG_IPQ_ELF_AUTH
 
 #endif /* _IPQ6018_H */

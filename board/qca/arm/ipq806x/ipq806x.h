@@ -24,6 +24,7 @@
 #define GMAC_AHB_RESET		0x903E24
 
 #define KERNEL_AUTH_CMD                 0x7
+#define SCM_CMD_SEC_AUTH		0x15
 
 #define MSM_TMR_BASE        0x0200A000
 
