@@ -261,9 +261,6 @@ struct smem_ram_ptn {
 	unsigned reserved2, reserved3, reserved4, reserved5;
 } __attribute__ ((__packed__));
 
-__weak void aquantia_phy_reset_init_done(void) {}
-__weak void aquantia_phy_reset_init(void) {}
-
 struct smem_ram_ptable {
 #define _SMEM_RAM_PTABLE_MAGIC_1	0x9DA5E0A8
 #define _SMEM_RAM_PTABLE_MAGIC_2	0xAF9EC4E2
