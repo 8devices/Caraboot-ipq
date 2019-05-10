@@ -1878,7 +1878,7 @@ int ipq6018_edma_init(void *edma_board_cfg)
 					ipq_qca8081_phy_init(&ipq6018_edma_dev[i]->ops[phy_id], phy_addr);
 					break;
 #endif
-#ifdef CONFIG_QCA_AQUANTIA_PHY
+#ifdef CONFIG_IPQ6018_QCA_AQUANTIA_PHY
 				case AQUANTIA_PHY_107:
 				case AQUANTIA_PHY_109:
 				case AQUANTIA_PHY_111:
@@ -1886,7 +1886,7 @@ int ipq6018_edma_init(void *edma_board_cfg)
 				case AQUANTIA_PHY_111B0:
 				case AQUANTIA_PHY_112C:
 					ipq_board_fw_download(phy_addr);
-					ipq_qca_aquantia_phy_init(&ipq807x_edma_dev[i]->ops[phy_id], phy_addr);
+					ipq_qca_aquantia_phy_init(&ipq6018_edma_dev[i]->ops[phy_id], phy_addr);
 					break;
 #endif
 				default:
