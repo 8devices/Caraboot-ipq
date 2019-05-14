@@ -150,4 +150,8 @@
 		qcom,emulation = <1>;
 	};
 
+	timer {
+		gpt_freq_hz = <240000>;
+	};
+
 };
