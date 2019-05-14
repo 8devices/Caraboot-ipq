@@ -975,57 +975,119 @@ void set_function_select_as_mdc_mdio(void)
 void eth_clock_enable(void)
 {
 	/*
-	 * ethernet clk rcgr block init -- start
-	 * these clk init will be moved to sbl later
+	 * ethernet clk rcgr block init
 	 */
+	writel(0x100, GCC_NSS_PORT1_RX_CFG_RCGR);
+	writel(0x1, GCC_NSS_PORT1_RX_CMD_RCGR);
+	writel(0x2, GCC_NSS_PORT1_RX_CMD_RCGR);
 
-	writel(0x100 ,0x01868024);
-	writel(0x1 ,0x01868020);
-	writel(0x2 ,0x01868020);
-	writel(0x100 ,0x0186802C);
-	writel(0x1 ,0x01868028);
-	writel(0x2 ,0x01868028);
-	writel(0x100 ,0x01868034);
-	writel(0x1 ,0x01868030);
-	writel(0x2 ,0x01868030);
-	writel(0x100 ,0x0186803C);
-	writel(0x1 ,0x01868038);
-	writel(0x2 ,0x01868038);
-	writel(0x100 ,0x01868044);
-	writel(0x1 ,0x01868040);
-	writel(0x2 ,0x01868040);
-	writel(0x100 ,0x0186804C);
-	writel(0x1 ,0x01868048);
-	writel(0x2 ,0x01868048);
-	writel(0x100 ,0x01868054);
-	writel(0x1 ,0x01868050);
-	writel(0x2 ,0x01868050);
-	writel(0x100 ,0x0186805C);
-	writel(0x1 ,0x01868058);
-	writel(0x2 ,0x01868058);
-	writel(0x100 ,0x01868064);
-	writel(0x1 ,0x01868060);
-	writel(0x2 ,0x01868060);
-	writel(0x100 ,0x0186806C);
-	writel(0x1 ,0x01868068);
-	writel(0x2 ,0x01868068);
-	writel(0x100 ,0x01868074);
-	writel(0x1 ,0x01868070);
-	writel(0x2 ,0x01868070);
-	writel(0x100 ,0x0186807C);
-	writel(0x1 ,0x01868078);
-	writel(0x2 ,0x01868078);
-	writel(0x101 ,0x01868084);
-	writel(0x1 ,0x01868080);
-	writel(0x2 ,0x01868080);
-	writel(0x100 ,0x0186808C);
-	writel(0x1 ,0x01868088);
-	writel(0x2 ,0x01868088);
+	writel(0x100, GCC_NSS_PORT1_TX_CFG_RCGR);
+	writel(0x1, GCC_NSS_PORT1_TX_CMD_RCGR);
+	writel(0x2, GCC_NSS_PORT1_TX_CMD_RCGR);
+
+	writel(0x100, GCC_NSS_PORT2_RX_CFG_RCGR);
+	writel(0x1, GCC_NSS_PORT2_RX_CMD_RCGR);
+	writel(0x2, GCC_NSS_PORT2_RX_CMD_RCGR);
+
+	writel(0x100, GCC_NSS_PORT2_TX_CFG_RCGR);
+	writel(0x1, GCC_NSS_PORT2_TX_CMD_RCGR);
+	writel(0x2, GCC_NSS_PORT2_TX_CMD_RCGR);
+
+	writel(0x100, GCC_NSS_PORT3_RX_CFG_RCGR);
+	writel(0x1, GCC_NSS_PORT3_RX_CMD_RCGR);
+	writel(0x2, GCC_NSS_PORT3_RX_CMD_RCGR);
+
+	writel(0x100, GCC_NSS_PORT3_TX_CFG_RCGR);
+	writel(0x1, GCC_NSS_PORT3_TX_CMD_RCGR);
+	writel(0x2, GCC_NSS_PORT3_TX_CMD_RCGR);
+
+	writel(0x100, GCC_NSS_PORT4_RX_CFG_RCGR);
+	writel(0x1, GCC_NSS_PORT4_RX_CMD_RCGR);
+	writel(0x2, GCC_NSS_PORT4_RX_CMD_RCGR);
+
+	writel(0x100, GCC_NSS_PORT4_TX_CFG_RCGR);
+	writel(0x1, GCC_NSS_PORT4_TX_CMD_RCGR);
+	writel(0x2, GCC_NSS_PORT4_TX_CMD_RCGR);
+
+	writel(0x100, GCC_NSS_PORT5_RX_CFG_RCGR);
+	writel(0x1, GCC_NSS_PORT5_RX_CMD_RCGR);
+	writel(0x2, GCC_NSS_PORT5_RX_CMD_RCGR);
+
+	writel(0x100, GCC_NSS_PORT5_TX_CFG_RCGR);
+	writel(0x1, GCC_NSS_PORT5_TX_CMD_RCGR);
+	writel(0x2, GCC_NSS_PORT5_TX_CMD_RCGR);
+
+	writel(0x103, GCC_NSS_PPE_CFG_RCGR);
+	writel(0x1, GCC_NSS_PPE_CMD_RCGR);
+	writel(0x2, GCC_NSS_PPE_CMD_RCGR);
+
+	writel(0x103, GCC_NSS_CRYPTO_CFG_RCGR);
+	writel(0x1, GCC_NSS_CRYPTO_CMD_RCGR);
+	writel(0x2, GCC_NSS_CRYPTO_CMD_RCGR);
+
+	writel(0x105, GCC_SNOC_NSSNOC_BFDCD_CFG_RCGR);
+	writel(0x1, GCC_SNOC_NSSNOC_BFDCD_CMD_RCGR);
+	writel(0x2, GCC_SNOC_NSSNOC_BFDCD_CMD_RCGR);
+
+	writel(0x109, GCC_QDSS_AT_CFG_RCGR);
+	writel(0x1, GCC_QDSS_AT_CMD_RCGR);
+	writel(0x2, GCC_QDSS_AT_CMD_RCGR);
+
+	writel(0x107, GCC_NSS_CE_CFG_RCGR);
+	writel(0x1, GCC_NSS_CE_CMD_RCGR);
+	writel(0x2, GCC_NSS_CE_CMD_RCGR);
+
+	writel(0x10F, GCC_PCNOC_BFDCD_CFG_RCGR);
+	writel(0x1, GCC_PCNOC_BFDCD_CMD_RCGR);
+	writel(0x2, GCC_PCNOC_BFDCD_CMD_RCGR);
 
 	/*
-	 * ethernet clk rcgr block init -- end
-	 * these clk init will be moved to sbl later
+	 * ethernet clk cbcr block init
 	 */
+	writel(CLK_TOGGLE_ENABLE, GCC_NSS_PORT1_RX_CBCR);
+	writel(CLK_TOGGLE_ENABLE, GCC_NSS_PORT1_TX_CBCR);
+
+	writel(CLK_TOGGLE_ENABLE, GCC_NSS_PORT2_RX_CBCR);
+	writel(CLK_TOGGLE_ENABLE, GCC_NSS_PORT2_TX_CBCR);
+
+	writel(CLK_TOGGLE_ENABLE, GCC_NSS_PORT3_RX_CBCR);
+	writel(CLK_TOGGLE_ENABLE, GCC_NSS_PORT3_TX_CBCR);
+
+	writel(CLK_TOGGLE_ENABLE, GCC_NSS_PORT4_RX_CBCR);
+	writel(CLK_TOGGLE_ENABLE, GCC_NSS_PORT4_TX_CBCR);
+
+	writel(CLK_TOGGLE_ENABLE, GCC_NSS_PORT5_RX_CBCR);
+	writel(CLK_TOGGLE_ENABLE, GCC_NSS_PORT5_TX_CBCR);
+
+	writel(CLK_TOGGLE_ENABLE, GCC_NSS_PPE_CBCR);
+	writel(CLK_TOGGLE_ENABLE, GCC_NSS_PPE_CFG_CBCR);
+	writel(CLK_TOGGLE_ENABLE, GCC_NSS_EDMA_CBCR);
+	writel(CLK_TOGGLE_ENABLE, GCC_NSS_EDMA_CFG_CBCR);
+	writel(CLK_TOGGLE_ENABLE, GCC_NSS_PTP_REF_CBCR);
+	writel(CLK_TOGGLE_ENABLE, GCC_NSSNOC_PPE_CBCR);
+	writel(CLK_TOGGLE_ENABLE, GCC_NSSNOC_PPE_CFG_CBCR);
+
+	writel(CLK_TOGGLE_ENABLE, GCC_NSS_CRYPTO_CBCR);
+
+	writel(CLK_TOGGLE_ENABLE, GCC_NSSNOC_SNOC_CBCR);
+	writel(CLK_TOGGLE_ENABLE, GCC_SNOC_NSSNOC_CBCR);
+	writel(CLK_TOGGLE_ENABLE, GCC_NSS_NOC_CBCR);
+
+	writel(CLK_TOGGLE_ENABLE, GCC_NSSNOC_ATB_CBCR);
+
+	/*
+	 * GCC_XO_CLK_SRC RCGR Regs will be config by HW
+	 */
+	writel(CLK_TOGGLE_ENABLE, GCC_NSSNOC_QOSGEN_REF_CBCR);
+	writel(CLK_TOGGLE_ENABLE, GCC_NSSNOC_TIMEOUT_REF_CBCR);
+
+	writel(CLK_TOGGLE_ENABLE, GCC_NSS_CE_AXI_CBCR);
+	writel(CLK_TOGGLE_ENABLE, GCC_NSS_CE_APB_CBCR);
+	writel(CLK_TOGGLE_ENABLE, GCC_NSSNOC_CE_AXI_CBCR);
+	writel(CLK_TOGGLE_ENABLE, GCC_NSSNOC_CE_APB_CBCR);
+	writel(CLK_TOGGLE_ENABLE, GCC_NSSNOC_UBI0_AHB_CBCR);
+
+	writel(CLK_TOGGLE_ENABLE, GCC_NSS_CFG_CBCR);
 
 	/* set function select as mdio */
 	set_function_select_as_mdc_mdio();
