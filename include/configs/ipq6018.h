@@ -108,12 +108,12 @@
 #define CONFIG_ENV_SECT_SIZE		(64 * 1024)
 /*
  * IPQ_TFTP_MIN_ADDR: Starting address of Linux HLOS region.
- * CONFIG_TZ_END_ADDR: Ending address of Trust Zone and starting
- * address of WLAN Area.
+ * CONFIG_TZ_END_ADDR: Ending address of Trust Zone/SMEM(for ipq6018)
+ * and starting address of WLAN Area.
  * TFTP file can only be written in Linux HLOS region and WLAN AREA.
  */
 #define IPQ_TFTP_MIN_ADDR		(CONFIG_SYS_SDRAM_BASE + (16 << 20))
-#define CONFIG_TZ_END_ADDR		0x49100000
+#define CONFIG_TZ_END_ADDR		0x4AB00000
 #define CONFIG_SYS_SDRAM_END	((long long)CONFIG_SYS_SDRAM_BASE + gd->ram_size)
 
 #ifndef __ASSEMBLY__
