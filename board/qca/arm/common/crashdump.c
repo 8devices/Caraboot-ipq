@@ -999,7 +999,7 @@ int do_dumpqca_minimal_data(const char *offset)
 		return -EINVAL;
 
 	g_crashdump_data.cpu_context = kernel_crashdump_address;
-	tlv_msg.msg_buffer = kernel_crashdump_address + CONFIG_CPU_CONTEXT_DUMP_SIZE;
+	tlv_msg.msg_buffer = kernel_crashdump_address + TLV_BUF_OFFSET;
 	tlv_msg.cur_msg_buffer_pos = tlv_msg.msg_buffer;
 	tlv_msg.len = CONFIG_TLV_DUMP_SIZE;
 
