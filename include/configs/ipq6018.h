@@ -144,7 +144,7 @@ extern loff_t board_env_size;
 /*
  * USB Support
  */
-#define CONFIG_USB_XHCI_IPQ
+#undef CONFIG_USB_XHCI_IPQ
 #ifdef CONFIG_USB_XHCI_IPQ
 #define CONFIG_USB_XHCI
 #define CONFIG_USB_XHCI_DWC3
