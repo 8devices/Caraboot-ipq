@@ -21,7 +21,7 @@
 		compatible = "qca,ipq-uartdm";
 		reg = <0x78B1000 0x200>;
 		id = <4>;
-		bit_rate = <0xee>;
+		bit_rate = <0xff>;
 		serial_gpio {
 			gpio1 {
 				gpio = <44>;
