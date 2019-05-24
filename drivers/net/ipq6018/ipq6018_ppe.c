@@ -161,15 +161,6 @@ static void ipq6018_vsi_setup(int vsi, uint8_t group_mask)
 }
 
 /*
- * ipq6018_gmac_enable()
- */
-
-static void ipq6018_gmac_enable(void)
-{
-	writel(0x0, 0x1008004);
-}
-
-/*
  * ipq6018_gmac_port_enable()
  */
 static void ipq6018_gmac_port_enable(int port)
@@ -1219,8 +1210,6 @@ void ipq6018_ppe_provision_init(void)
 	/* tdm/sched configuration */
 	ipq6018_ppe_tdm_configuration();
 	ipq6018_ppe_sched_configuration();
-
-	ipq6018_gmac_enable();
 
 	/* disable clock gating */
 	ipq6018_ppe_reg_write(0x000008, 0x0);
