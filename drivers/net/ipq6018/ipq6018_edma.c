@@ -432,7 +432,6 @@ static int ipq6018_edma_rx_complete(struct ipq6018_edma_common_info *c_info)
 	return 0;
 }
 
-#define MIN_PKT_SIZE 33
 /*
  * ipq6018_eth_snd()
  *	Transmit a packet using an EDMA ring
@@ -530,14 +529,7 @@ static int ipq6018_eth_snd(struct eth_device *dev, void *packet, int length)
 	 * copy the packet
 	 */
 	memcpy(skb + IPQ6018_EDMA_TX_PREHDR_SIZE, packet, length);
-	/*
-	 * The EDMA HW is unable to process packets less than MIN_PKT_SIZE(33) bytes,
-	 * then the EDMA stalls. This is to pad the packets up to MIN_PKT_SIZE.
-	 */
-	if (length < MIN_PKT_SIZE) {
-		memset(skb + IPQ6018_EDMA_TX_PREHDR_SIZE + length, 0x00, (MIN_PKT_SIZE - length));
-		length = MIN_PKT_SIZE;
-	}
+
 	/*
 	 * Populate Tx descriptor
 	 */
