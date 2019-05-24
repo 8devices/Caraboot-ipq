@@ -972,11 +972,76 @@ void set_function_select_as_mdc_mdio(void)
 	}
 }
 
+static void ppe_clk_init(void)
+{
+	uint32_t reg_val, i;
+	int gcc_ppeclock_base = 0x01868000;
+	int gcc_pll_base = 0x0009B780;
+
+	reg_val = readl(gcc_pll_base + 4);
+	reg_val=(reg_val&0xfffffff0)|0x7;
+	writel(reg_val, gcc_pll_base + 0x4);
+	reg_val = readl(gcc_pll_base);
+	reg_val=reg_val | 0x40;
+	writel(reg_val, gcc_pll_base);
+	mdelay(1);
+	reg_val=reg_val & (~0x40);
+	writel(reg_val, gcc_pll_base);
+	writel(0xbf, gcc_pll_base);
+	reg_val = readl(gcc_pll_base);
+	mdelay(1);
+	writel(0xff, gcc_pll_base);
+	reg_val = readl(gcc_pll_base);
+	mdelay(1);
+	/*set clock src and div*/
+	reg_val = 1 | (1 << 8);
+	writel(reg_val, gcc_ppeclock_base + 0x84);
+	/*issue command*/
+	reg_val = readl(gcc_ppeclock_base + 0x80);
+	reg_val |= 1;
+	writel(reg_val, gcc_ppeclock_base + 0x80);
+	mdelay(100);
+	reg_val = readl(gcc_ppeclock_base + 0x80);
+	reg_val |= 2;
+	writel(reg_val, gcc_ppeclock_base + 0x80);
+
+	/*set CBCR*/
+	for (i= 0; i < 4; i++) {
+		reg_val = readl(gcc_ppeclock_base + 0x190 + i*4);
+		reg_val |= 1;
+		writel(reg_val, gcc_ppeclock_base + 0x190 + i*4);
+	}
+
+	/*enable nss noc ppe*/
+	reg_val = readl(gcc_ppeclock_base + 0x300);
+	reg_val |= 1;
+	writel(reg_val, gcc_ppeclock_base + 0x300);
+
+	/*enable nss noc ppe config*/
+	reg_val = readl(gcc_ppeclock_base + 0x304);
+	reg_val |= 1;
+	writel(reg_val, gcc_ppeclock_base + 0x304);
+
+	/*enable crypto ppe*/
+	reg_val = readl(gcc_ppeclock_base + 0x310);
+	reg_val |= 1;
+	writel(reg_val, gcc_ppeclock_base + 0x310);
+
+	/*enable mac, ipe btq*/
+	for (i= 0; i < 8; i++) {
+		reg_val = readl(gcc_ppeclock_base + 0x320 + i*4);
+		reg_val |= 1;
+		writel(reg_val, gcc_ppeclock_base + 0x320 + i*4);
+	}
+}
+
 void eth_clock_enable(void)
 {
 	/*
 	 * ethernet clk rcgr block init
 	 */
+	ppe_clk_init();
+
 	writel(0x100, GCC_NSS_PORT1_RX_CFG_RCGR);
 	writel(0x1, GCC_NSS_PORT1_RX_CMD_RCGR);
 	writel(0x2, GCC_NSS_PORT1_RX_CMD_RCGR);
