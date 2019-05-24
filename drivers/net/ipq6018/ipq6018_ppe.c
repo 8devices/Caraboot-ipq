@@ -694,8 +694,8 @@ void ipq6018_ppe_provision_init(void)
 	int i;
 	uint32_t queue;
 
-	/* Port4 Port5, Port6 port mux configuration, all GMAC */
-	writel(0x3b, 0x3a000010);
+	/* Port4 Port5 port mux configuration, all GMAC */
+	writel(0x10, 0x3a000010);
 
 	/* tdm/sched configuration */
 	ipq6018_ppe_tdm_configuration();
@@ -717,7 +717,6 @@ void ipq6018_ppe_provision_init(void)
 	ipq6018_ppe_vp_port_tbl_set(3, 2);
 	ipq6018_ppe_vp_port_tbl_set(4, 2);
 	ipq6018_ppe_vp_port_tbl_set(5, 2);
-	ipq6018_ppe_vp_port_tbl_set(6, 2);
 
 #else
 	ipq6018_ppe_vp_port_tbl_set(1, 2);
@@ -789,7 +788,7 @@ void ipq6018_ppe_provision_init(void)
 
 	ipq6018_ppe_interface_mode_init();
 	/* Port 0-5 enable */
-	for (i = 0; i < 6; i++) {
+	for (i = 0; i < 5; i++) {
 		ipq6018_gmac_port_enable(i);
 		ppe_port_bridge_txmac_set(i + 1, 1);
 	}
