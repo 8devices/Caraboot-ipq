@@ -1586,42 +1586,6 @@ int ipq6018_edma_hw_init(struct ipq6018_edma_hw *ehw)
 	ipq6018_edma_configure_rings(ehw);
 
 	/*
-	 * Clear the TXDESC2CMPL_MAP_xx reg before setting up
-	 * the mapping. This register holds TXDESC to TXFILL ring
-	 * mapping.
-	 */
-	ipq6018_edma_reg_write(IPQ6018_EDMA_REG_TXDESC2CMPL_MAP_0, 0);
-	ipq6018_edma_reg_write(IPQ6018_EDMA_REG_TXDESC2CMPL_MAP_1, 0);
-	ipq6018_edma_reg_write(IPQ6018_EDMA_REG_TXDESC2CMPL_MAP_2, 0);
-	desc_index = ehw->txcmpl_ring_start;
-
-	/*
-	 * 3 registers to hold the completion mapping for total 24
-	 * TX desc rings (0-9,10-19 and rest). In each entry 3 bits hold
-	 * the mapping for a particular TX desc ring.
-	 */
-	for (i = ehw->txdesc_ring_start;
-		i < ehw->txdesc_ring_end; i++) {
-		if (i >= 0 && i <= 9)
-			reg = IPQ6018_EDMA_REG_TXDESC2CMPL_MAP_0;
-		else if (i >= 10 && i <= 19)
-			reg = IPQ6018_EDMA_REG_TXDESC2CMPL_MAP_1;
-		else
-			reg = IPQ6018_EDMA_REG_TXDESC2CMPL_MAP_2;
-
-		pr_debug("Configure TXDESC:%u to use TXCMPL:%u\n",
-			 i, desc_index);
-
-		data = ipq6018_edma_reg_read(reg);
-		data |= (desc_index & 0x7) << ((i % 10) * 3);
-		ipq6018_edma_reg_write(reg, data);
-
-		desc_index++;
-		if (desc_index == ehw->txcmpl_ring_end)
-			desc_index = ehw->txcmpl_ring_start;
-	}
-
-	/*
 	 * Set PPE QID to EDMA Rx ring mapping.
 	 * When coming up use only queue 0.
 	 * HOST EDMA rings. FW EDMA comes up and overwrites as required.
@@ -1671,16 +1635,6 @@ int ipq6018_edma_hw_init(struct ipq6018_edma_hw *ehw)
 		ipq6018_edma_reg_read(reg));
 	reg = IPQ6018_EDMA_REG_RXDESC2FILL_MAP_1;
 	pr_debug("EDMA_REG_RXDESC2FILL_MAP_1: 0x%x\n",
-		 ipq6018_edma_reg_read(reg));
-
-	reg = IPQ6018_EDMA_REG_TXDESC2CMPL_MAP_0;
-	pr_debug("EDMA_REG_TXDESC2CMPL_MAP_0: 0x%x\n",
-		 ipq6018_edma_reg_read(reg));
-	reg = IPQ6018_EDMA_REG_TXDESC2CMPL_MAP_1;
-	pr_debug("EDMA_REG_TXDESC2CMPL_MAP_1: 0x%x\n",
-		 ipq6018_edma_reg_read(reg));
-	reg = IPQ6018_EDMA_REG_TXDESC2CMPL_MAP_2;
-	pr_debug("EDMA_REG_TXDESC2CMPL_MAP_2: 0x%x\n",
 		 ipq6018_edma_reg_read(reg));
 
 	/*
