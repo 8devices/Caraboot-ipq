@@ -1089,6 +1089,13 @@ void eth_clock_enable(void)
 
 	writel(CLK_TOGGLE_ENABLE, GCC_NSS_CFG_CBCR);
 
+	/*
+	 * Take NSS PPE out of reset
+	 */
+	writel(PPE_ASSERT, GCC_NSS_PPE_RESET);
+	mdelay(500);
+	writel(PPE_DEASSERT, GCC_NSS_PPE_RESET);
+
 	/* set function select as mdio */
 	set_function_select_as_mdc_mdio();
 
