@@ -21,6 +21,13 @@
 #define CLK_TOGGLE_ENABLE 0x1
 
 /*
+ * PPE Out of Reset Register and values
+ */
+#define GCC_NSS_PPE_RESET 0x01868014
+#define PPE_ASSERT 0xf0000
+#define PPE_DEASSERT 0x0
+
+/*
  * GCC_NSS_RCGR Registers
  */
 #define GCC_NSS_PORT1_RX_CFG_RCGR		0x01868024
