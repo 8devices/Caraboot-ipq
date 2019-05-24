@@ -230,7 +230,7 @@ uint32_t ipq6018_edma_clean_tx(struct ipq6018_edma_hw *ehw,
 
 		if (unlikely(!skb)) {
 			pr_debug("Invalid skb: cons_idx:%u prod_idx:%u status %x\n",
-				cons_idx, prod_idx, txcmpl->status);
+				cons_idx, prod_idx, txcmpl_desc->status);
 		}
 
 		if (++cons_idx == txcmpl_ring->count)
