@@ -56,6 +56,13 @@ typedef struct {
 } add_node_t;
 
 int qca_mmc_init(bd_t *, qca_mmc *);
+
+#if defined(CONFIG_QCA_MMC) && !defined(CONFIG_SDHCI_SUPPORT)
+int board_mmc_env_init(qca_mmc mmc_host);
+#endif
+
+int ipq_board_usb_init(void);
+int spi_nand_init(void);
 void board_mmc_deinit(void);
 void board_pci_deinit(void);
 void set_flash_secondary_type(qca_smem_flash_info_t *);

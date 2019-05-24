@@ -291,6 +291,10 @@ struct sdhci_host {
 	struct mmc_config cfg;
 };
 
+#if defined(CONFIG_QCA_MMC) && defined(CONFIG_SDHCI_SUPPORT)
+int board_mmc_env_init(struct sdhci_host mmc_host);
+#endif
+
 #ifdef CONFIG_MMC_SDHCI_IO_ACCESSORS
 
 static inline void sdhci_writel(struct sdhci_host *host, u32 val, int reg)

@@ -249,7 +249,7 @@ int board_eth_init(bd_t *bis)
 	}
 	edma_cfg->unit = fdtdec_get_uint(gd->fdt_blob, node, "unit", 0);
 	edma_cfg->phy = fdtdec_get_uint(gd->fdt_blob, node, "phy", 0);
-	strcpy(edma_cfg->phy_name, fdt_getprop(gd->fdt_blob, node, "phy_name", &len));
+	strcpy((char *)edma_cfg->phy_name, fdt_getprop(gd->fdt_blob, node, "phy_name", &len));
 
 	status = ipq40xx_edma_init(edma_cfg);
 	return status;
@@ -273,7 +273,7 @@ void emmc_sdhci_init(void)
 
 int board_mmc_init(bd_t *bis)
 {
-	int ret;
+	int ret = 0;
 	int node, gpio_node;
 	fdt_addr_t base;
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
@@ -333,7 +333,7 @@ void board_mmc_deinit(void)
 #endif
 
 
-static void pcie_clock_init()
+static void pcie_clock_init(void)
 {
 
 	/* Enable PCIE CLKS */
@@ -627,7 +627,7 @@ static int scm_boot_addr_already_set;
 extern int get_cpu_id(void);
 static volatile int core_var;
 
-volatile void bring_secondary_core_down(unsigned int state)
+void bring_secondary_core_down(unsigned int state)
 {
 	int current_cpu_id;
 

@@ -574,7 +574,6 @@ int spi_flash_cmd_read_ops(struct spi_flash *flash, u32 offset,
 static int spi_nor_generic_init(struct spi_slave *spi, struct spi_flash *flash,
 			u8 *idcode)
 {
-	int ret;
 	unsigned short jedec;
 	qca_smem_flash_info_t sfi;
 

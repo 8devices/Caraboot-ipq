@@ -20,6 +20,7 @@
 #include "spi_nand_dev.h"
 #include <malloc.h>
 #include "spi.h"
+#include "sf_internal.h"
 #include <watchdog.h>
 
 #define CONFIG_SF_DEFAULT_SPEED		(48 * 1000 * 1000)
