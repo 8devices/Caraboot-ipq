@@ -30,16 +30,6 @@
 		malibu_gpio = <76>;
 		malibu_gpio_cnt = <1>;
 		mdc_mdio_gpio = <64 65>;
-		port_phyinfo {
-			port@0 {
-				phy_address = <0>;
-				phy_type = <MALIBU_PHY_TYPE>;
-			};
-			port@1 {
-				phy_address = <1>;
-				phy_type = <MALIBU_PHY_TYPE>;
-			};
-		};
 	};
 };
 
