@@ -485,8 +485,15 @@ static int sdhci_set_clock(struct mmc *mmc, unsigned int clock)
 		timeout--;
 		udelay(1000);
 	}
-
+#ifdef CONFIG_IPQ6018
+	/*Forcefully change the clk to 24MHz for IPQ6018*/
+	if (clock == 52000000)
+		clk |= 0x00000407;
+	else
+		clk |= SDHCI_CLOCK_CARD_EN;
+#else
 	clk |= SDHCI_CLOCK_CARD_EN;
+#endif
 	sdhci_writew(host, clk, SDHCI_CLOCK_CONTROL);
 	return 0;
 }

@@ -225,9 +225,12 @@ void emmc_clock_config()
 	writel(0x20B, GCC_SDCC1_APPS_CFG_RCGR);
 	/* Delay for clock operation complete */
 	udelay(10);
-	writel(0x1, GCC_SDCC1_APPS_M);
+/*	writel(0x1, GCC_SDCC1_APPS_M);
 	writel(0xFC, GCC_SDCC1_APPS_N);
 	writel(0xFD, GCC_SDCC1_APPS_D);
+*/
+	writel(0, GCC_SDCC1_APPS_M);
+	writel(0, GCC_SDCC1_APPS_N);
 	/* Delay for clock operation complete */
 	udelay(10);
 	/* Update APPS_CMD_RCGR to reflect source selection */
