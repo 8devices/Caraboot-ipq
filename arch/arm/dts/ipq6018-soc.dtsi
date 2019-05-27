@@ -66,10 +66,6 @@
 		reg = <0x7000000 0xcd00>;
 	};
 
-	mmc: sdhci@07804000 {
-		compatible = "qcom,sdhci-msm";
-	};
-
 	spi {
 		status = "ok";
 
