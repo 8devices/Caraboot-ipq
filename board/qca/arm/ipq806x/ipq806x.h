@@ -222,4 +222,9 @@ void reset_crashdump(void);
 void ipq_fdt_fixup_socinfo(void *blob);
 void board_pci_init(int id);
 void board_pcie_clock_init(int id);
+
+__weak void mmc_iopad_config(struct sdhci_host *host)
+{
+	return;
+}
 #endif /* _IPQ806X_H_ */

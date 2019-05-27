@@ -203,6 +203,9 @@
 #define SDHCI_MAX_DIV_SPEC_200	256
 #define SDHCI_MAX_DIV_SPEC_300	2046
 
+/*Vendor Specific register*/
+#define SDHCI_VENDOR_IOPAD 0x20C
+
 /*
  * quirks
  */

@@ -236,6 +236,15 @@ void emmc_clock_config()
 	udelay(10);
 }
 
+void mmc_iopad_config(struct sdhci_host *host)
+{
+	u32 val;
+	val = sdhci_readb(host, SDHCI_VENDOR_IOPAD);
+	/*set bit 15 & 16*/
+	val |= 0x18000;
+	writel(val, host->ioaddr + SDHCI_VENDOR_IOPAD);
+}
+
 void emmc_clock_disable(void)
 {
 	/* Clear divider */
