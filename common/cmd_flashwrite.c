@@ -271,11 +271,6 @@ char * const argv[])
 
 	if (flash_cmd) {
 
-		if (file_size > part_size) {
-			printf("Image size is greater than partition memory\n");
-			return CMD_RET_FAILURE;
-		}
-
 		if (flash_type == SMEM_BOOT_NAND_FLASH) {
 
 			adj_size = file_size % nand->writesize;
@@ -291,6 +286,11 @@ char * const argv[])
 				if (adj_size)
 					file_size = file_size + 1;
 			}
+		}
+
+		if (file_size > part_size) {
+			printf("Image size is greater than partition memory\n");
+			return CMD_RET_FAILURE;
 		}
 
 		ret = write_to_flash(flash_type, load_addr, offset, part_size,
