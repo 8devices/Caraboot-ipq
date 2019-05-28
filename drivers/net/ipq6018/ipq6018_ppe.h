@@ -37,12 +37,11 @@
 #define PORT_GMAC_TYPE				1
 #define PORT_XGMAC_TYPE				2
 struct port_mux_ctrl {
-	uint32_t  port4_pcs_sel:1;
+	uint32_t  port3_pcs_sel:2;
+	uint32_t  port4_pcs_sel:2;
 	uint32_t  port5_pcs_sel:2;
 	uint32_t  port5_gmac_sel:1;
-	uint32_t  port6_pcs_sel:1;
-	uint32_t  port6_gmac_sel:1;
-	uint32_t  _reserved0:26;
+	uint32_t  _reserved0:25;
 };
 union port_mux_ctrl_u {
 	uint32_t val;
@@ -105,17 +104,14 @@ union ipo_action_u {
 };
 
 #define IPQ6018_PORT_MUX_CTRL			0x10
-#define PORT4_PCS_SEL_GMII_FROM_PCS0		1
-#define PORT4_PCS_SEL_RGMII 			0
-#define PORT5_PCS_SEL_RGMII 			0
-#define PORT5_PCS_SEL_GMII_FROM_PCS0 		1
-#define PORT5_PCS_SEL_GMII_FROM_PCS1		2
-#define PORT5_GMAC_SEL_GMAC			1
-#define PORT5_GMAC_SEL_XGMAC			0
-#define PORT6_PCS_SEL_RGMII			0
-#define PORT6_PCS_SEL_GMII_FROM_PCS2		1
-#define PORT6_GMAC_SEL_GMAC			1
-#define PORT6_GMAC_SEL_XGMAC			0
+#define CPPE_PORT3_PCS_SEL_PCS0_CHANNEL2 0
+#define CPPE_PORT3_PCS_SEL_PCS0_CHANNEL4 1
+#define CPPE_PORT4_PCS_SEL_PCS0_CHANNEL3 0
+#define CPPE_PORT4_PCS_SEL_PCS0_SGMIIPLUS 1
+#define CPPE_PORT5_PCS_SEL_PCS0_CHANNEL4 0
+#define CPPE_PORT5_PCS_SEL_PCS1_CHANNEL0 1
+#define CPPE_PORT5_GMAC_SEL_GMAC 0
+#define CPPE_PORT5_GMAC_SEL_XGMAC 1
 
 #define PORT_PHY_STATUS_ADDRESS			0x44
 #define PORT_PHY_STATUS_PORT5_1_OFFSET		8
