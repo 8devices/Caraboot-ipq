@@ -45,7 +45,7 @@ DECLARE_GLOBAL_DATA_PTR;
 static struct ipq6018_eth_dev *ipq6018_edma_dev[IPQ6018_EDMA_DEV];
 
 uchar ipq6018_def_enetaddr[6] = {0x00, 0x03, 0x7F, 0xBA, 0xDB, 0xAD};
-phy_info_t *phy_info[PHY_MAX] = {0};
+phy_info_t *phy_info[IPQ6018_PHY_MAX] = {0};
 int sgmii_mode[2] = {0};
 
 extern void qca8075_ess_reset(void);
@@ -905,7 +905,7 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 	 * we will proceed even if single link is up
 	 * else we will return with -1;
 	 */
-	for (i =  0; i < PHY_MAX; i++) {
+	for (i =  0; i < IPQ6018_PHY_MAX; i++) {
 
 		if (i == sfp_port) {
 			status = phy_status_get_from_ppe(i);
@@ -1653,7 +1653,7 @@ void get_phy_address(int offset)
 	int phy_address;
 	int i;
 
-	for (i = 0; i < PHY_MAX; i++)
+	for (i = 0; i < IPQ6018_PHY_MAX; i++)
 		phy_info[i] = ipq6018_alloc_mem(sizeof(phy_info_t));
 	i = 0;
 	for (offset = fdt_first_subnode(gd->fdt_blob, offset); offset > 0;
@@ -1775,7 +1775,7 @@ int ipq6018_edma_init(void *edma_board_cfg)
 		if (ret)
 			goto init_failed;
 
-		for (phy_id =  0; phy_id < PHY_MAX; phy_id++) {
+		for (phy_id =  0; phy_id < IPQ6018_PHY_MAX; phy_id++) {
 			if (phy_node >= 0) {
 				phy_addr = phy_info[phy_id]->phy_address;
 			} else {
