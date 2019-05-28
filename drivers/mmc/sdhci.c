@@ -673,6 +673,8 @@ int add_sdhci(struct sdhci_host *host, u32 max_clk, u32 min_clk)
 
 	sdhci_reset(host, SDHCI_RESET_ALL);
 
+	mmc_iopad_config(host);
+
 	host->mmc = mmc_create(&host->cfg, host);
 	if (host->mmc == NULL) {
 		printf("%s: mmc create fail!\n", __func__);
