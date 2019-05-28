@@ -455,7 +455,7 @@ void board_usb_deinit(int id)
 static void usb_clock_init(int id)
 {
 	if (id == 0) {
-		writel(0x222000, GCC_USB0_GDSCR);
+		writel(0x222004, GCC_USB0_GDSCR);
 		writel(0, GCC_SYS_NOC_USB0_AXI_CBCR);
 		writel(0, GCC_SNOC_BUS_TIMEOUT2_AHB_CBCR);
 		writel(0x10b, GCC_USB0_MASTER_CFG_RCGR);
@@ -474,7 +474,7 @@ static void usb_clock_init(int id)
 		writel(1, GCC_USB0_AUX_CBCR);
 		writel(1, GCC_USB0_PIPE_CBCR);
 	} else if (id == 1) {
-		writel(0x222000, GCC_USB1_GDSCR);
+		writel(0x222004, GCC_USB1_GDSCR);
 		writel(0xcff1, GCC_USB1_MASTER_CBCR);
 		writel(1, GCC_USB1_SLEEP_CBCR);
 		writel(0x210b, GCC_USB1_MOCK_UTMI_CFG_RCGR);
