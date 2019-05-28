@@ -112,6 +112,10 @@
 		nand_gpio {};
 	};
 
+	mmc: sdhci@7804000 {
+		compatible = "qcom,sdhci-msm";
+        };
+
 	i2c0: i2c@78b6000 {
 		compatible = "qcom,qup-i2c";
 		#address-cells = <1>;
