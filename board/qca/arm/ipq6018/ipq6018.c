@@ -150,7 +150,7 @@ void qca_serial_init(struct ipq_serial_platdata *plat)
 
 	writel(1, GCC_BLSP1_UART1_APPS_CBCR);
 
-	node = fdt_path_offset(gd->fdt_blob, "/serial@78B3000/serial_gpio");
+	node = fdt_path_offset(gd->fdt_blob, "/serial@78B1000/serial_gpio");
 	if (node < 0) {
 		printf("Could not find serial_gpio node\n");
 		return;
