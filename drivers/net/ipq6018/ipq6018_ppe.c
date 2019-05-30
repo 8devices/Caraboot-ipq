@@ -1104,6 +1104,9 @@ static void ipq6018_ppe_e_sp_cfg_tbl_drr_id_set(int id)
 static void ppe_port_mux_set(int port_id, int port_type, int mode)
 {
 	union port_mux_ctrl_u port_mux_ctrl;
+	int nodeoff;
+
+	nodeoff = fdt_path_offset(gd->fdt_blob, "/ess-switch");
 
 	ipq6018_ppe_reg_read(IPQ6018_PORT_MUX_CTRL,  &(port_mux_ctrl.val));
 
@@ -1114,7 +1117,10 @@ static void ppe_port_mux_set(int port_id, int port_type, int mode)
 				port_mux_ctrl.bf.port3_pcs_sel = CPPE_PORT3_PCS_SEL_PCS0_CHANNEL2;
 				port_mux_ctrl.bf.port4_pcs_sel = CPPE_PORT4_PCS_SEL_PCS0_SGMIIPLUS;
 			} else if (mode == PORT_WRAPPER_PSGMII) {
-				port_mux_ctrl.bf.port3_pcs_sel = CPPE_PORT3_PCS_SEL_PCS0_CHANNEL2;
+				if (fdtdec_get_int(gd->fdt_blob, nodeoff, "malibu2port_phy", 0))
+					port_mux_ctrl.bf.port3_pcs_sel = CPPE_PORT3_PCS_SEL_PCS0_CHANNEL4;
+				else
+					port_mux_ctrl.bf.port3_pcs_sel = CPPE_PORT3_PCS_SEL_PCS0_CHANNEL2;
 				port_mux_ctrl.bf.port4_pcs_sel = CPPE_PORT4_PCS_SEL_PCS0_CHANNEL3;
 			}
 			break;
@@ -1138,6 +1144,9 @@ static void ppe_port_mux_mac_type_set(int port_id, int mode)
 
 	switch(mode)
 	{
+		case PORT_WRAPPER_PSGMII:
+			port_type = PORT_GMAC_TYPE;
+			break;
 		case PORT_WRAPPER_SGMII0_RGMII4:
 			port_type = PORT_GMAC_TYPE;
 			break;
@@ -1184,7 +1193,9 @@ void ipq6018_ppe_interface_mode_init(void)
 	ppe_uniphy_mode_set(PPE_UNIPHY_INSTANCE0, mode0);
 	ppe_uniphy_mode_set(PPE_UNIPHY_INSTANCE1, mode1);
 
-	ppe_port_mux_mac_type_set(PORT5, mode1);
+	ppe_port_mux_mac_type_set(3, mode0);
+	ppe_port_mux_mac_type_set(4, mode0);
+	ppe_port_mux_mac_type_set(5, mode1);
 }
 
 /*
@@ -1194,9 +1205,6 @@ void ipq6018_ppe_provision_init(void)
 {
 	int i;
 	uint32_t queue;
-
-	/* Port4 Port5 port mux configuration, all GMAC */
-	writel(0x10, 0x3a000010);
 
 	/* tdm/sched configuration */
 	ipq6018_ppe_tdm_configuration();
