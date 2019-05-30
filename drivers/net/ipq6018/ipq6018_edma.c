@@ -1003,6 +1003,8 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 						set_sgmii_mode(i, 1);
 					if ((phy_info[i]->phy_type == QCA8081_PHY_TYPE) && (i == 4))
 						speed_clock1 = 0x301;
+					if ((phy_info[i]->phy_type == QCA8081_PHY_TYPE) && (i == 3))
+						speed_clock1 = 0x301;
 				}
 				break;
 			case FAL_SPEED_10000:
@@ -1020,7 +1022,7 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 				if (phy_node >= 0) {
 					if (phy_info[i]->phy_type == QCA8081_PHY_TYPE) {
 						mac_speed = 0x2;
-						if (i == 4)
+						if (i == 4 || i == 3)
 							speed_clock1 = 0x301;
 						else if (i == 5)
 							speed_clock1 = 0x101;
@@ -1078,12 +1080,11 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 					ppe_port_bridge_txmac_set(i + 1, 1);
 					if (i == 4)
 						ppe_uniphy_mode_set(0x1, PORT_WRAPPER_SGMII_PLUS);
-					else if (i == 5)
-						ppe_uniphy_mode_set(0x2, PORT_WRAPPER_SGMII_PLUS);
+					else if (i == 3)
+						ppe_uniphy_mode_set(0x0, PORT_WRAPPER_SGMII_PLUS);
 				}
 			}
 		}
-		ipq6018_speed_clock_set(i, speed_clock1, speed_clock2);
 		if (i == aquantia_port)
 			ipq6018_uxsgmii_speed_set(i, mac_speed, duplex, status);
 		else if (i == sfp_port)
