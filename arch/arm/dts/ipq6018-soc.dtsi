@@ -27,6 +27,7 @@
 				gpio = <44>;
 				func = <1>;
 				pull = <GPIO_NO_PULL>;
+				drvstr = <GPIO_8MA>;
 				oe = <GPIO_OE_ENABLE>;
 			};
 
@@ -34,6 +35,7 @@
 				gpio = <45>;
 				func = <1>;
 				pull = <GPIO_NO_PULL>;
+				drvstr = <GPIO_8MA>;
 				oe = <GPIO_OE_ENABLE>;
 			};
 		};
@@ -122,49 +124,49 @@
 				gpio = <1>;
 				func = <1>;
 				pull = <GPIO_PULL_DOWN>;
-				drvstr = <GPIO_2MA>;
+				drvstr = <GPIO_8MA>;
 				oe = <GPIO_OE_DISABLE>;
 			};
 			gpio2 {
 				gpio = <3>;
 				func = <1>;
 				pull = <GPIO_PULL_DOWN>;
-				drvstr = <GPIO_2MA>;
+				drvstr = <GPIO_8MA>;
 				oe = <GPIO_OE_DISABLE>;
 			};
 			gpio3 {
 				gpio = <4>;
 				func = <1>;
 				pull = <GPIO_PULL_DOWN>;
-				drvstr = <GPIO_2MA>;
+				drvstr = <GPIO_8MA>;
 				oe = <GPIO_OE_DISABLE>;
 			};
 			gpio4 {
 				gpio = <5>;
 				func = <1>;
 				pull = <GPIO_PULL_DOWN>;
-				drvstr = <GPIO_2MA>;
+				drvstr = <GPIO_8MA>;
 				oe = <GPIO_OE_DISABLE>;
 			};
 			gpio5 {
 				gpio = <6>;
 				func = <1>;
 				pull = <GPIO_PULL_DOWN>;
-				drvstr = <GPIO_2MA>;
+				drvstr = <GPIO_8MA>;
 				oe = <GPIO_OE_DISABLE>;
 			};
 			gpio6 {
 				gpio = <7>;
 				func = <1>;
 				pull = <GPIO_PULL_DOWN>;
-				drvstr = <GPIO_2MA>;
+				drvstr = <GPIO_8MA>;
 				oe = <GPIO_OE_DISABLE>;
 			};
 			gpio7 {
 				gpio = <8>;
 				func = <1>;
 				pull = <GPIO_PULL_DOWN>;
-				drvstr = <GPIO_2MA>;
+				drvstr = <GPIO_8MA>;
 				oe = <GPIO_OE_DISABLE>;
 			};
 			gpio8 {
@@ -178,42 +180,42 @@
 				gpio = <11>;
 				func = <1>;
 				pull = <GPIO_PULL_DOWN>;
-				drvstr = <GPIO_2MA>;
+				drvstr = <GPIO_8MA>;
 				oe = <GPIO_OE_DISABLE>;
 			};
 			gpio10 {
 				gpio = <12>;
 				func = <1>;
 				pull = <GPIO_PULL_DOWN>;
-				drvstr = <GPIO_2MA>;
+				drvstr = <GPIO_8MA>;
 				oe = <GPIO_OE_DISABLE>;
 			};
 			gpio11 {
 				gpio = <13>;
 				func = <1>;
 				pull = <GPIO_PULL_DOWN>;
-				drvstr = <GPIO_2MA>;
+				drvstr = <GPIO_8MA>;
 				oe = <GPIO_OE_DISABLE>;
 			};
 			gpio12 {
 				gpio = <14>;
 				func = <1>;
 				pull = <GPIO_PULL_DOWN>;
-				drvstr = <GPIO_2MA>;
+				drvstr = <GPIO_8MA>;
 				oe = <GPIO_OE_DISABLE>;
 			};
 			gpio13 {
 				gpio = <15>;
 				func = <1>;
 				pull = <GPIO_PULL_DOWN>;
-				drvstr = <GPIO_2MA>;
+				drvstr = <GPIO_8MA>;
 				oe = <GPIO_OE_DISABLE>;
 			};
 			gpio14 {
 				gpio = <17>;
 				func = <1>;
 				pull = <GPIO_PULL_DOWN>;
-				drvstr = <GPIO_2MA>;
+				drvstr = <GPIO_8MA>;
 				oe = <GPIO_OE_DISABLE>;
 			};
 
@@ -244,7 +246,7 @@
 				func = <0>;
 				out = <GPIO_OUT_HIGH>;
 				pull = <GPIO_PULL_DOWN>;
-				drvstr = <GPIO_2MA>;
+				drvstr = <GPIO_8MA>;
 				oe = <GPIO_OE_ENABLE>;
 				vm = <GPIO_VM_ENABLE>;
 				od_en = <GPIO_OD_DISABLE>;
@@ -265,7 +267,7 @@
 				gpio = <46>;
 				func = <1>;
 				pull = <GPIO_PULL_UP>;
-				drvstr = <GPIO_2MA>;
+				drvstr = <GPIO_8MA>;
 				oe = <GPIO_OE_ENABLE>;
 			};
 
@@ -273,7 +275,7 @@
 				gpio = <47>;
 				func = <1>;
 				pull = <GPIO_PULL_UP>;
-				drvstr = <GPIO_2MA>;
+				drvstr = <GPIO_8MA>;
 				oe = <GPIO_OE_ENABLE>;
 			};
 		};
