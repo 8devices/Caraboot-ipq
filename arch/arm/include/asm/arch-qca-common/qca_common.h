@@ -94,6 +94,7 @@ struct dumpinfo_t{
 			    */
 	uint32_t offset; /* offset to be added to start address */
 	uint32_t dump_level;
+	uint32_t to_compress; /* non-zero represent for compressed dump*/
 };
 extern struct dumpinfo_t dumpinfo_n[];
 extern int dump_entries_n;

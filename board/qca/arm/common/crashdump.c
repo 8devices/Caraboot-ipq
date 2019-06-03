@@ -404,7 +404,7 @@ static int dump_wlan_segments(struct dumpinfo_t *dumpinfo, int indx)
 
 static int do_dumpqca_data(unsigned int dump_level)
 {
-	uint32_t memaddr;
+	uint32_t memaddr, comp_addr = 0x0;
 	uint32_t remaining;
 	int indx;
 	int ebi_indx = 0;
@@ -412,8 +412,8 @@ static int do_dumpqca_data(unsigned int dump_level)
 	char buf = 1;
 	struct dumpinfo_t *dumpinfo = dumpinfo_n;
 	int dump_entries = dump_entries_n;
-	char wlan_segment_name[32];
-	char *usb_dump = NULL;
+	char wlan_segment_name[32], runcmd[128], *s;
+	char *usb_dump = NULL, *compress = NULL;
 	ulong is_usb_dump = 0;
 
 	usb_dump = getenv("dump_to_usb");
@@ -507,7 +507,6 @@ static int do_dumpqca_data(unsigned int dump_level)
 	for (indx = 0; indx < dump_entries; indx++) {
 		if (dump_level != dumpinfo[indx].dump_level)
 			continue;
-		printf("\nProcessing %s:", dumpinfo[indx].name);
 
 		if (dumpinfo[indx].is_redirected) {
 			memaddr = *((uint32_t *)(dumpinfo[indx].start));
@@ -525,17 +524,57 @@ static int do_dumpqca_data(unsigned int dump_level)
 
 		if (!strncmp(dumpinfo[indx].name, "EBICS", strlen("EBICS")))
 		{
-			if (!strncmp(dumpinfo[indx].name,
-				     "EBICS0", strlen("EBICS0")))
-				dumpinfo[indx].size = gd->ram_size;
+			compress = getenv("dump_compressed");
+			if (compress) {
+				if (!strncmp(dumpinfo[indx].name, "EBICS2", strlen("EBICS2"))) {
+					memaddr = CONFIG_SYS_SDRAM_BASE + (gd->ram_size / 2);
+					dumpinfo[indx].size = gd->ram_size / 2;
+					comp_addr = memaddr;
+				}
+				if (!strncmp(dumpinfo[indx].name, "EBICS_S2", strlen("EBICS_S2"))) {
+					dumpinfo[indx].size = gd->ram_size - (CONFIG_TZ_END_ADDR - CONFIG_SYS_SDRAM_BASE);
+					comp_addr = memaddr;
+				}
+				if (!strncmp(dumpinfo[indx].name, "EBICS1", strlen("EBICS1"))) {
+					dumpinfo[indx].size = (gd->ram_size / 2)
+								- (dumpinfo[indx + 1].size + 0x400000);
+				}
+			}
+			else {
+				if (!strncmp(dumpinfo[indx].name,
+					     "EBICS0", strlen("EBICS0")))
+					dumpinfo[indx].size = gd->ram_size;
 
-			if (!strncmp(dumpinfo[indx].name,
-				     "EBICS_S1", strlen("EBICS_S1")))
-				dumpinfo[indx].size = gd->ram_size
-						      - dumpinfo[indx - 1].size
-						      - CONFIG_TZ_SIZE;
+				if (!strncmp(dumpinfo[indx].name,
+					     "EBICS_S1", strlen("EBICS_S1")))
+					dumpinfo[indx].size = gd->ram_size
+							      - dumpinfo[indx - 1].size
+							      - CONFIG_TZ_SIZE;
+			}
 
-			if (is_usb_dump == 1) {
+			if (compress && (dumpinfo[indx].to_compress == 1)) {
+
+				snprintf(runcmd, sizeof(runcmd), "zip 0x%x 0x%x 0x%x", memaddr, dumpinfo[indx].size, comp_addr);
+				if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
+					printf("gzip compression of %s failed\n", dumpinfo[indx].name);
+				else {
+					s = getenv("filesize");
+					dumpinfo[indx].size = (int)simple_strtol(s, NULL, 16); //compressed_file_size
+					memaddr = comp_addr;
+					snprintf(dumpinfo[indx].name, sizeof(dumpinfo[indx].name), "%s.gz", dumpinfo[indx].name);
+				}
+			}
+
+#ifdef CONFIG_IPQ40XX
+			if (buf != 1)
+#endif
+				if ((compress && (dumpinfo[indx].to_compress != 1)) ||
+				    (!compress && (dumpinfo[indx].to_compress == 1))) {
+					continue;
+				}
+
+			printf("\nProcessing %s:\n", dumpinfo[indx].name);
+			if (is_usb_dump == 1 || compress) {
 				ret = dump_to_dst (dumpinfo[indx].is_aligned_access, memaddr, dumpinfo[indx].size, dumpinfo[indx].name);
 				if (ret == CMD_RET_FAILURE) {
 					goto stop_dump;
@@ -552,6 +591,7 @@ static int do_dumpqca_data(unsigned int dump_level)
 					else {
 						dumpinfo[indx].size = remaining;
 					}
+
 					ret = dump_to_dst (dumpinfo[indx].is_aligned_access, memaddr, dumpinfo[indx].size, dumpinfo[indx].name);
 					if (ret == CMD_RET_FAILURE)
 						goto stop_dump;
@@ -564,6 +604,7 @@ static int do_dumpqca_data(unsigned int dump_level)
 		}
 		else
 		{
+			printf("\nProcessing %s:\n", dumpinfo[indx].name);
 			if (dumpinfo[indx].dump_level == MINIMAL_DUMP )
 				memaddr = dump_minimal(dumpinfo, indx);
 			if (dumpinfo[indx].size && memaddr) {

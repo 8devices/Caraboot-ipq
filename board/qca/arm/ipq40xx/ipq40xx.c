@@ -77,6 +77,9 @@ const add_node_t add_fdt_node[] = {
 
 struct dumpinfo_t dumpinfo_n[] = {
 	{ "EBICS0.BIN", 0x80000000, 0x10000000, 0 },
+	{ "EBICS2.BIN", 0xA0000000, 0x10000000, 0, 0, 0, 0, 1 },
+	{ "EBICS1.BIN", CONFIG_UBOOT_END_ADDR, 0x10000000, 0, 0, 0, 0, 1 },
+	{ "EBICS0.BIN", 0x80000000, CONFIG_QCA_UBOOT_OFFSET, 0, 0, 0, 0, 1 },
 };
 
 int dump_entries_n = ARRAY_SIZE(dumpinfo_n);
