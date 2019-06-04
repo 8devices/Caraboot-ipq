@@ -35,9 +35,7 @@
 
 #define CONFIG_SYS_BOOTM_LEN		0x4000000
 
-#define CONFIG_ENV_SIZE			0x2000
 #define CONFIG_ENV_SIZE_MAX		(256 << 10) /* 256 KB */
-#define CONFIG_SYS_MALLOC_LEN		(CONFIG_ENV_SIZE_MAX + (256 << 10))
 
 /*
  * Size of malloc() pool
