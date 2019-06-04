@@ -173,8 +173,4 @@ unsigned int get_board_index(unsigned int machid);
 void reset_crashdump(void);
 void ipq_fdt_fixup_socinfo(void *blob);
 
-__weak void mmc_iopad_config(struct sdhci_host *host)
-{
-	return;
-}
 #endif

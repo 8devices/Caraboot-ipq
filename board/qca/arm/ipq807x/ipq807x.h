@@ -304,8 +304,4 @@ __weak int ipq_get_tz_version(char *version_name, int buf_size)
 	return 1;
 }
 
-__weak void mmc_iopad_config(struct sdhci_host *host)
-{
-	return;
-}
 #endif /* _IPQ807X_H_ */
