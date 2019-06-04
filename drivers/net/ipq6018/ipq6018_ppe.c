@@ -173,12 +173,28 @@ static void ipq6018_gmac_port_enable(int port)
 void ipq6018_speed_clock_set(int port, int speed_clock1, int speed_clock2)
 {
 	int i;
+	uint32_t reg_value;
 
 	for (i = 0; i < 2; i++)
 	{
-		writel(speed_clock2, GCC_NSS_PORT1_RX_MISC + i*4 + port*0x10);
-		writel(speed_clock1, GCC_NSS_PORT1_RX_CFG_RCGR + i*8 + port*0x10);
-		writel(0x1, GCC_NSS_PORT1_RX_CMD_RCGR + i*8 + port*0x10);
+		/* gcc port first clock divider */
+		reg_value = 0;
+		reg_value = readl(GCC_NSS_PORT1_RX_CFG_RCGR + i*8 + port*0x10);
+		reg_value &= ~0x71f;
+		reg_value |= speed_clock1;
+		writel(reg_value, GCC_NSS_PORT1_RX_CFG_RCGR + i*8 + port*0x10);
+		/* gcc port second clock divider */
+		reg_value = 0;
+		reg_value = readl(GCC_NSS_PORT1_RX_MISC + i*4 + port*0x10);
+		reg_value &= ~0xf;
+		reg_value |= speed_clock2;
+		writel(reg_value, GCC_NSS_PORT1_RX_MISC + i*4 + port*0x10);
+		/* update above clock configuration */
+		reg_value = 0;
+		reg_value = readl(GCC_NSS_PORT1_RX_CMD_RCGR + i*8 + port*0x10);
+		reg_value &= ~0x1;
+		reg_value |= 0x1;
+		writel(reg_value, GCC_NSS_PORT1_RX_CMD_RCGR + i*8 + port*0x10);
 	}
 }
 
@@ -309,10 +325,10 @@ void ipq6018_10g_r_speed_set(int port, int status)
 	uint32_t uniphy_index;
 
 	/* Setting the speed only for PORT5 and PORT6 */
-	if (port == (PORT5 - PPE_UNIPHY_INSTANCE1))
+	if (port == (PORT4 - PPE_UNIPHY_INSTANCE0))
+		uniphy_index = PPE_UNIPHY_INSTANCE0;
+	else if (port == (PORT5 - PPE_UNIPHY_INSTANCE0))
 		uniphy_index = PPE_UNIPHY_INSTANCE1;
-	else if (port == (PORT6 - PPE_UNIPHY_INSTANCE1))
-		uniphy_index = PPE_UNIPHY_INSTANCE2;
 	else
 		return;
 
@@ -329,10 +345,10 @@ void ipq6018_uxsgmii_speed_set(int port, int speed, int duplex,
 	uint32_t uniphy_index;
 
 	/* Setting the speed only for PORT5 and PORT6 */
-	if (port == (PORT5 - PPE_UNIPHY_INSTANCE1))
+	if (port == (PORT4 - PPE_UNIPHY_INSTANCE0))
+		uniphy_index = PPE_UNIPHY_INSTANCE0;
+	else if (port == (PORT5 - PPE_UNIPHY_INSTANCE0))
 		uniphy_index = PPE_UNIPHY_INSTANCE1;
-	else if (port == (PORT6 - PPE_UNIPHY_INSTANCE1))
-		uniphy_index = PPE_UNIPHY_INSTANCE2;
 	else
 		return;
 
@@ -1116,16 +1132,23 @@ static void ppe_port_mux_set(int port_id, int port_type, int mode)
 			if (mode == PORT_WRAPPER_SGMII_PLUS) {
 				port_mux_ctrl.bf.port3_pcs_sel = CPPE_PORT3_PCS_SEL_PCS0_CHANNEL2;
 				port_mux_ctrl.bf.port4_pcs_sel = CPPE_PORT4_PCS_SEL_PCS0_SGMIIPLUS;
+				port_mux_ctrl.bf.pcs0_ch0_sel = CPPE_PCS0_CHANNEL0_SEL_SGMIIPLUS;
+				port_mux_ctrl.bf.pcs0_ch4_sel = CPPE_PCS0_CHANNEL4_SEL_PORT5_CLOCK;
 			} else if (mode == PORT_WRAPPER_PSGMII) {
-				if (fdtdec_get_int(gd->fdt_blob, nodeoff, "malibu2port_phy", 0))
+				if (fdtdec_get_int(gd->fdt_blob, nodeoff, "malibu2port_phy", 0)) {
 					port_mux_ctrl.bf.port3_pcs_sel = CPPE_PORT3_PCS_SEL_PCS0_CHANNEL4;
-				else
+					port_mux_ctrl.bf.port4_pcs_sel = CPPE_PORT4_PCS_SEL_PCS0_CHANNEL3;
+					port_mux_ctrl.bf.pcs0_ch4_sel = CPPE_PCS0_CHANNEL4_SEL_PORT3_CLOCK;
+				} else {
 					port_mux_ctrl.bf.port3_pcs_sel = CPPE_PORT3_PCS_SEL_PCS0_CHANNEL2;
-				port_mux_ctrl.bf.port4_pcs_sel = CPPE_PORT4_PCS_SEL_PCS0_CHANNEL3;
+					port_mux_ctrl.bf.port4_pcs_sel = CPPE_PORT4_PCS_SEL_PCS0_CHANNEL3;
+					port_mux_ctrl.bf.pcs0_ch0_sel = CPPE_PCS0_CHANNEL0_SEL_PSGMII;
+					port_mux_ctrl.bf.pcs0_ch4_sel = CPPE_PCS0_CHANNEL4_SEL_PORT5_CLOCK;
+				}
 			}
 			break;
 		case 5:
-			if (mode == PORT_WRAPPER_SGMII_PLUS)
+			if (mode == PORT_WRAPPER_SGMII_PLUS || mode == PORT_WRAPPER_SGMII0_RGMII4)
 				port_mux_ctrl.bf.port5_pcs_sel = CPPE_PORT5_PCS_SEL_PCS1_CHANNEL0;
 			else if (mode == PORT_WRAPPER_PSGMII)
 				port_mux_ctrl.bf.port5_pcs_sel = CPPE_PORT5_PCS_SEL_PCS0_CHANNEL4;
@@ -1193,7 +1216,6 @@ void ipq6018_ppe_interface_mode_init(void)
 	ppe_uniphy_mode_set(PPE_UNIPHY_INSTANCE0, mode0);
 	ppe_uniphy_mode_set(PPE_UNIPHY_INSTANCE1, mode1);
 
-	ppe_port_mux_mac_type_set(3, mode0);
 	ppe_port_mux_mac_type_set(4, mode0);
 	ppe_port_mux_mac_type_set(5, mode1);
 }
@@ -1283,7 +1305,7 @@ void ipq6018_ppe_provision_init(void)
 	ipq6018_ppe_reg_write(0x060038, 0xc0);
 
 #ifdef CONFIG_IPQ6018_BRIDGED_MODE
-	ipq6018_vsi_setup(2, 0x7f);
+	ipq6018_vsi_setup(2, 0x3f);
 #else
 	ipq6018_vsi_setup(2, 0x03);
 	ipq6018_vsi_setup(3, 0x05);
@@ -1296,7 +1318,7 @@ void ipq6018_ppe_provision_init(void)
 		ipq6018_ppe_reg_write(IPQ6018_PPE_STP_BASE + (0x4 * i), 0x3);
 
 	ipq6018_ppe_interface_mode_init();
-	/* Port 0-5 enable */
+	/* Port 0-4 enable */
 	for (i = 0; i < 5; i++) {
 		ipq6018_gmac_port_enable(i);
 		ppe_port_bridge_txmac_set(i + 1, 1);
