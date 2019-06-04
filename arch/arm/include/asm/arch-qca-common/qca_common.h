@@ -96,9 +96,6 @@ extern int dump_entries_n;
 extern struct dumpinfo_t dumpinfo_s[];
 extern int dump_entries_s;
 
-#define MSM_SDC1_BASE		0x7824000
-#define MSM_SDC1_MCI_HC_MODE	0x7824078
-#define MSM_SDC1_SDHCI_BASE		0x7824900
 #define MMC_IDENTIFY_MODE	0
 #define MMC_DATA_TRANSFER_MODE	1
 #define MMC_DATA_TRANSFER_SDHCI_MODE 2
