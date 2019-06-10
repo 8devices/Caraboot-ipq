@@ -240,7 +240,7 @@ __weak int switch_ce_channel_buf(unsigned int channel_id)
 }
 
 #ifdef CONFIG_IPQ_ELF_AUTH
-static void parse_elf_image_phdr(image_info *img_info, unsigned int addr)
+static int parse_elf_image_phdr(image_info *img_info, unsigned int addr)
 {
 	Elf32_Ehdr *ehdr; /* Elf header structure pointer */
 	Elf32_Phdr *phdr; /* Program header structure pointer */
@@ -248,6 +248,16 @@ static void parse_elf_image_phdr(image_info *img_info, unsigned int addr)
 
 	ehdr = (Elf32_Ehdr *)addr;
 	phdr = (Elf32_Phdr *)(addr + ehdr->e_phoff);
+
+	if (!IS_ELF(*ehdr)) {
+		printf("It is not a elf image \n");
+		return -EINVAL;
+	}
+
+	if (ehdr->e_type != ET_EXEC) {
+		printf("Not a valid elf image\n");
+		return -EINVAL;
+	}
 
 	/* Load each program header */
 	for (i = 0; i < NO_OF_PROGRAM_HDRS; ++i) {
@@ -257,13 +267,12 @@ static void parse_elf_image_phdr(image_info *img_info, unsigned int addr)
 			img_info->img_offset = phdr->p_offset;
 			img_info->img_load_addr = phdr->p_paddr;
 			img_info->img_size =  phdr->p_filesz;
-			break;
+			return 0;
 		}
 		++phdr;
 	}
 
-	printf("Parsing phdr EP 0x%p \n",ehdr->e_entry);
-	return;
+	return -EINVAL;
 }
 #endif
 
@@ -382,7 +391,8 @@ static int authenticate_rootfs_elf(unsigned int rootfs_hdr)
 	rootfs_img_info.addr = rootfs_hdr;
 	rootfs_img_info.type = SEC_AUTH_SW_ID;
 
-	parse_elf_image_phdr(&img_info, rootfs_hdr);
+	if (parse_elf_image_phdr(&img_info, rootfs_hdr))
+		return CMD_RET_FAILURE;
 
 	/* copy rootfs from the boot device */
 	copy_rootfs(img_info.img_load_addr, img_info.img_size);
@@ -470,7 +480,9 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 		if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
 			return CMD_RET_FAILURE;
 
-		parse_elf_image_phdr(&img_info, request);
+		if (parse_elf_image_phdr(&img_info, request))
+			return CMD_RET_FAILURE;
+
 		request = img_info.img_load_addr - img_info.img_offset;
 #endif
 		snprintf(runcmd, sizeof(runcmd),
@@ -512,7 +524,9 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 			if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
 				return CMD_RET_FAILURE;
 
-			parse_elf_image_phdr(&img_info, request);
+			if (parse_elf_image_phdr(&img_info, request))
+				return CMD_RET_FAILURE;
+
 			request = img_info.img_load_addr - img_info.img_offset;
 #endif
 			snprintf(runcmd, sizeof(runcmd), "mmc read 0x%x 0x%X 0x%X",
@@ -546,7 +560,9 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 		if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
 			return CMD_RET_FAILURE;
 
-		parse_elf_image_phdr(&img_info, request);
+		if (parse_elf_image_phdr(&img_info, request))
+			return CMD_RET_FAILURE;
+
 		request = img_info.img_load_addr - img_info.img_offset;
 #endif
 		snprintf(runcmd, sizeof(runcmd),
