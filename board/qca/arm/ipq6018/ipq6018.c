@@ -33,6 +33,7 @@
 DECLARE_GLOBAL_DATA_PTR;
 struct sdhci_host mmc_host;
 extern int ipq6018_edma_init(void *cfg);
+extern int ipq_spi_init(u16);
 
 const char *rsvd_node = "/reserved-memory";
 const char *del_node[] = {"uboot",
@@ -214,7 +215,7 @@ void reset_crashdump(void)
 	return;
 }
 
-void emmc_clock_config()
+void emmc_clock_config(void)
 {
 	/* Enable root clock generator */
 	writel(readl(GCC_SDCC1_APPS_CBCR)|0x1, GCC_SDCC1_APPS_CBCR);
@@ -319,7 +320,7 @@ void board_nand_init(void)
 }
 
 #ifdef CONFIG_PCI_IPQ
-static void pcie_v2_clock_init()
+static void pcie_v2_clock_init(void)
 {
 	/* Enable PCIE CLKS */
 	writel(0x2, GCC_PCIE0_AUX_CMD_RCGR);
@@ -337,7 +338,7 @@ static void pcie_v2_clock_init()
 	writel(0x3, GCC_PCIE0_RCHNG_CMD_RCGR);
 }
 
-static void pcie_v2_clock_deinit()
+static void pcie_v2_clock_deinit(void)
 {
 	writel(0x0, GCC_PCIE0_AUX_CMD_RCGR);
 	writel(0x0, GCC_PCIE0_AXI_CFG_RCGR);
@@ -613,13 +614,13 @@ static void usb_init_phy(int index)
 	void __iomem *boot_clk_ctl, *usb_bcr, *qusb2_phy_bcr;
 
 	if (index == 0) {
-		boot_clk_ctl = GCC_USB_0_BOOT_CLOCK_CTL;
-		usb_bcr = GCC_USB0_BCR;
-		qusb2_phy_bcr = GCC_QUSB2_0_PHY_BCR;
+		boot_clk_ctl = (u32 *)GCC_USB_0_BOOT_CLOCK_CTL;
+		usb_bcr = (u32 *)GCC_USB0_BCR;
+		qusb2_phy_bcr = (u32 *)GCC_QUSB2_0_PHY_BCR;
 	} else if (index == 1) {
-		boot_clk_ctl = GCC_USB_1_BOOT_CLOCK_CTL;
-		usb_bcr = GCC_USB1_BCR;
-		qusb2_phy_bcr = GCC_QUSB2_1_PHY_BCR;
+		boot_clk_ctl = (u32 *)GCC_USB_1_BOOT_CLOCK_CTL;
+		usb_bcr = (u32 *)GCC_USB1_BCR;
+		qusb2_phy_bcr = (u32 *)GCC_QUSB2_1_PHY_BCR;
 	} else {
 		return;
 	}
@@ -651,10 +652,10 @@ static void usb_init_phy(int index)
 	mdelay(10);
 
 	if (index == 0) {
-		usb_init_hsphy(USB30_PHY_1_QUSB2PHY_BASE);
-		usb_init_ssphy(USB30_PHY_1_USB3PHY_AHB2PHY_BASE);
+		usb_init_hsphy((u32 *)USB30_PHY_1_QUSB2PHY_BASE);
+		usb_init_ssphy((u32 *)USB30_PHY_1_USB3PHY_AHB2PHY_BASE);
 	} else {
-		usb_init_hsphy(USB30_PHY_2_QUSB2PHY_BASE);
+		usb_init_hsphy((u32 *)USB30_PHY_2_QUSB2PHY_BASE);
 	}
 }
 

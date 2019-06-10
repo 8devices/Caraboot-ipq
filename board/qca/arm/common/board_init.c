@@ -387,11 +387,11 @@ int board_late_init(void)
 }
 
 #ifdef CONFIG_SMEM_VERSION_C
-int ram_ptable_init_v2()
+int ram_ptable_init_v2(void)
 {
 	struct usable_ram_partition_table rtable;
 	int mx = ARRAY_SIZE(rtable.ram_part_entry);
-	int i, ret;
+	int i;
 
 	if (smem_ram_ptable_init_v2(&rtable) > 0) {
 		gd->ram_size = 0;
