@@ -18,6 +18,8 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+extern int do_dumpqca_minimal_data(const char *offset);
+
 #define MAX_DELAY_STOP_STR 32
 
 #ifndef DEBUG_BOOTKEYS
