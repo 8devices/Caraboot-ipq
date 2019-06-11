@@ -566,7 +566,11 @@ ifdef BUILD_TAG
 KBUILD_CFLAGS += -DBUILD_TAG='"$(BUILD_TAG)"'
 endif
 
-KBUILD_CFLAGS += $(call cc-option,-fno-stack-protector)
+ifdef CONFIG_ARCH_IPQ807x
+KBUILD_CFLAGS += $(call cc-option,-fstack-protector)
+else
+KBUILD_CFLAGS += $(call cc-option, -fno-stack-protector)
+endif
 KBUILD_CFLAGS += $(call cc-option,-fno-delete-null-pointer-checks)
 
 KBUILD_CFLAGS	+= -g

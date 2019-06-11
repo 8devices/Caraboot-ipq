@@ -305,7 +305,9 @@ static inline int print_cpuinfo(void)
 #endif
 int update_flash_size(int flash_size);
 int arch_early_init_r(void);
+extern unsigned long __stack_chk_guard;
 
+void __stack_chk_fail(void);
 /**
  * arch_cpu_init_dm() - init CPU after driver model is available
  *

@@ -35,6 +35,7 @@
 #define ELF_HDR_PLUS_PHDR_SIZE	sizeof(Elf32_Ehdr) + \
 		(NO_OF_PROGRAM_HDRS * sizeof(Elf32_Phdr))
 
+unsigned long __stack_chk_guard = 0x000a0dff;
 static int debug = 0;
 static char mtdids[256];
 DECLARE_GLOBAL_DATA_PTR;
@@ -78,6 +79,10 @@ typedef struct {
 } image_info;
 #endif
 
+void __stack_chk_fail(void)
+{
+	printf("stack-protector: U-boot stack is corrupted.\n");
+}
 /*
  * Set the root device and bootargs for mounting root filesystem.
  */
@@ -87,6 +92,8 @@ static int set_fs_bootargs(int *fs_on_nand)
 	unsigned int active_part = 0;
 	int ret = 0;
 	char boot_args[MAX_BOOT_ARGS_SIZE] = {'\0'};
+
+
 
 #define nand_rootfs "ubi.mtd=" QCA_ROOT_FS_PART_NAME " root=mtd:ubi_rootfs rootfstype=squashfs"
 
