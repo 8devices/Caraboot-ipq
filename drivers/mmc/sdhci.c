@@ -600,6 +600,10 @@ static int sdhci_init(struct mmc *mmc)
 	return 0;
 }
 
+__weak void mmc_iopad_config(struct sdhci_host *host)
+{
+	return;
+}
 
 static const struct mmc_ops sdhci_ops = {
 	.send_cmd	= sdhci_send_command,
