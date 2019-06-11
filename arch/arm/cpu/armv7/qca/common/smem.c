@@ -283,7 +283,7 @@ static void *qcom_smem_get_private(struct smem_partition_header *phdr,
 		if (e->canary != SMEM_PRIVATE_CANARY) {
 		printf("Found invalid canary in\
 				host common partition\n");
-		return -EINVAL;
+		return ERR_PTR(-EINVAL);
 		}
 		if (le16_to_cpu(e->item) == item) {
 			if (size != NULL)
@@ -295,11 +295,10 @@ static void *qcom_smem_get_private(struct smem_partition_header *phdr,
 
 		e = private_entry_next(e);
 	}
-
-	return -ENOENT;
+	return ERR_PTR(-ENOENT);
 }
 
-static int qcom_smem_enumerate_partitions()
+static int qcom_smem_enumerate_partitions(void)
 {
 	struct smem_partition_header *header;
 	struct smem_ptable_entry *entry;
@@ -307,7 +306,8 @@ static int qcom_smem_enumerate_partitions()
 	u32 version, host0, host1;
 	int i;
 
-	ptable = CONFIG_QCA_SMEM_BASE + CONFIG_QCA_SMEM_SIZE - SZ_4K;
+	ptable = (struct smem_private_ptable*) (CONFIG_QCA_SMEM_BASE + \
+					CONFIG_QCA_SMEM_SIZE - SZ_4K);
 	if (memcmp(ptable->magic, SMEM_PTABLE_MAGIC, sizeof(ptable->magic)))
 		return -EINVAL;
 
@@ -338,7 +338,8 @@ static int qcom_smem_enumerate_partitions()
 			return -EINVAL;
 		}
 
-		header = CONFIG_QCA_SMEM_BASE + le32_to_cpu(entry->offset);
+		header = (struct smem_partition_header*) (CONFIG_QCA_SMEM_BASE + \
+							le32_to_cpu(entry->offset));
 		host0 = le16_to_cpu(header->host0);
 		host1 = le16_to_cpu(header->host1);
 
