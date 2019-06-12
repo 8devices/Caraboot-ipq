@@ -223,4 +223,6 @@ void ipq_fdt_fixup_socinfo(void *blob);
 void board_pci_init(int id);
 void board_pcie_clock_init(int id);
 
+void reset_board(void);
+
 #endif /* _IPQ806X_H_ */

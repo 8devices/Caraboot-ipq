@@ -346,6 +346,14 @@ struct usable_ram_partition_table
 };
 #endif
 
+unsigned int __invoke_psci_fn_smc(unsigned int, unsigned int,
+				unsigned int, unsigned int);
+int do_pmic_reset(void);
+void reset_board(void);
+int do_dumpqca_minimal_data(const char *offset);
+int ipq_get_tz_version(char *version_name, int buf_size);
+void ipq_fdt_fixup_socinfo(void *blob);
+
 struct smem_ram_ptn {
 	char name[16];
 	unsigned long long start;
@@ -379,6 +387,7 @@ struct smem_ram_ptable {
 } __attribute__ ((__packed__));
 
 int smem_ram_ptable_init(struct smem_ram_ptable *smem_ram_ptable);
+int smem_ram_ptable_init_v2(struct usable_ram_partition_table *usable_ram_partition_table);
 
 typedef enum {
 	SMEM_SPINLOCK_ARRAY = 7,

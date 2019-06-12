@@ -307,5 +307,6 @@ __weak int ipq_get_tz_version(char *version_name, int buf_size)
 {
 	return 1;
 }
+void reset_board(void);
 
 #endif /* _IPQ807X_H_ */
