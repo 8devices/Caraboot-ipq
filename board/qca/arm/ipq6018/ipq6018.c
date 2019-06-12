@@ -174,7 +174,7 @@ void qca_serial_init(struct ipq_serial_platdata *plat)
 int do_pmic_reset()
 {
 	struct udevice *bus, *dev;
-	int bus_no=0;
+	int bus_no = 1;
 	int ret;
 	uchar byte = CONFIG_IPQ6018_PMIC_RESET_VAL;
 
