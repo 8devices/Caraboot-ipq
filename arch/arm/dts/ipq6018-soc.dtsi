@@ -255,11 +255,11 @@
 
 		};
 	};
-	i2c1: i2c@78b7000 {
+	i2c1: i2c@78ba000 {
 		compatible = "qcom,qup-i2c";
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x78b7000 0x600>;
+		reg = <0x78ba000 0x600>;
 		clock-frequency  = <400000>;
 
 		i2c_gpio {
