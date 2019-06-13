@@ -867,6 +867,8 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 			strncpy(bb_miiphy_buses[i].name, gmac_cfg->phy_name,
 						sizeof(bb_miiphy_buses[i].name));
 			miiphy_register(bb_miiphy_buses[i].name, bb_miiphy_read, bb_miiphy_write);
+			miiphy_write(bb_miiphy_buses[i].name, ipq_gmac_macs[i]->phy_address,
+					PHY_CONTROL_REG, BMCR_RESET | AUTO_NEG_ENABLE);
 		}
 
 		eth_register(dev[i]);
