@@ -772,25 +772,18 @@ void board_pci_deinit()
 #ifdef CONFIG_USB_XHCI_IPQ
 void board_usb_deinit(int id)
 {
-	void __iomem *boot_clk_ctl, *usb_bcr, *qusb2_phy_bcr;
-	void __iomem *usb_phy_bcr, *usb_gen_cfg, *usb_guctl, *phy_base;
+	void __iomem *usb_phy_bcr, *usb_bcr, *qusb2_phy_bcr, *phy_base;
 
 	if (id == 0) {
-		boot_clk_ctl = (u32 *)GCC_USB_0_BOOT_CLOCK_CTL;
 		usb_bcr = (u32 *)GCC_USB0_BCR;
 		qusb2_phy_bcr = (u32 *)GCC_QUSB2_0_PHY_BCR;
 		usb_phy_bcr = (u32 *)GCC_USB0_PHY_BCR;
-		usb_gen_cfg = (u32 *)USB30_1_GENERAL_CFG;
-		usb_guctl = (u32 *)USB30_1_GUCTL;
 		phy_base = (u32 *)USB30_PHY_1_QUSB2PHY_BASE;
 	}
 	else if (id == 1) {
-		boot_clk_ctl = (u32 *)GCC_USB_1_BOOT_CLOCK_CTL;
 		usb_bcr = (u32 *)GCC_USB1_BCR;
 		qusb2_phy_bcr = (u32 *)GCC_QUSB2_1_PHY_BCR;
 		usb_phy_bcr = (u32 *)GCC_USB1_PHY_BCR;
-		usb_gen_cfg = (u32 *)USB30_2_GENERAL_CFG;
-		usb_guctl = (u32 *)USB30_2_GUCTL;
 		phy_base = (u32 *)USB30_PHY_2_QUSB2PHY_BASE;
 	}
 	else {
@@ -967,7 +960,7 @@ static void usb_init_ssphy(int index)
 static void usb_init_phy(int index)
 {
 	void __iomem *boot_clk_ctl, *usb_bcr, *qusb2_phy_bcr;
-	void __iomem *usb_phy_bcr, *usb3_phy_bcr, *usb_gen_cfg, *usb_guctl, *phy_base;
+	void __iomem *usb_phy_bcr, *usb3_phy_bcr, *usb_guctl, *phy_base;
 
 	if (index == 0) {
 		boot_clk_ctl = (u32 *)GCC_USB_0_BOOT_CLOCK_CTL;
@@ -975,7 +968,6 @@ static void usb_init_phy(int index)
 		qusb2_phy_bcr = (u32 *)GCC_QUSB2_0_PHY_BCR;
 		usb_phy_bcr = (u32 *)GCC_USB0_PHY_BCR;
 		usb3_phy_bcr = (u32 *)GCC_USB3PHY_0_PHY_BCR;
-		usb_gen_cfg = (u32 *)USB30_1_GENERAL_CFG;
 		usb_guctl = (u32 *)USB30_1_GUCTL;
 		phy_base = (u32 *)USB30_PHY_1_QUSB2PHY_BASE;
 	}
@@ -985,7 +977,6 @@ static void usb_init_phy(int index)
 		qusb2_phy_bcr = (u32 *)GCC_QUSB2_1_PHY_BCR;
 		usb_phy_bcr = (u32 *)GCC_USB1_PHY_BCR;
 		usb3_phy_bcr = (u32 *)GCC_USB3PHY_1_PHY_BCR;
-		usb_gen_cfg = (u32 *)USB30_2_GENERAL_CFG;
 		usb_guctl = (u32 *)USB30_2_GUCTL;
 		phy_base = (u32 *)USB30_PHY_2_QUSB2PHY_BASE;
 	}
@@ -1355,7 +1346,7 @@ void fdt_low_memory_fixup(void *blob)
 
 void fdt_fixup_set_dload_warm_reset(void *blob)
 {
-	int nodeoff, ret, node;
+	int nodeoff, ret;
 	const char *dload_node = {"/soc/qca,scm_restart_reason"};
 	uint32_t setval = 1;
 
@@ -1376,7 +1367,7 @@ void fdt_fixup_set_dload_warm_reset(void *blob)
 
 void fdt_fixup_set_qce_fixed_key(void *blob)
 {
-	int node_off, ret, node;
+	int node_off, ret;
 	const char *qce_node = {"/soc/crypto@8e3a000"};
 
 	node_off = fdt_path_offset(blob, qce_node);
