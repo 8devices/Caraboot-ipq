@@ -321,6 +321,6 @@ typedef struct {
 #define CONFIG_FACTORY_IMG_LOAD_ADDR   "0x84000000"
 
 
-#define CONFIG_CARABOOT_RELEASE "v4.3"
+#define CONFIG_CARABOOT_RELEASE "v4.4-dev"
 
 #endif /* _IPQCDP_H */
