@@ -74,7 +74,7 @@ struct dumpinfo_t dumpinfo_s[] = {
 	{ "UTCM.BIN", 0x08600658, 0x00030000, 0, 1, 0x2000 },
 };
 int dump_entries_s = ARRAY_SIZE(dumpinfo_s);
-u32 *tz_wonce = (u32 *)CONFIG_IPQ6018_TZ_WONCE_3_ADDR;
+u32 *tz_wonce = (u32 *)CONFIG_IPQ6018_TZ_WONCE_4_ADDR;
 
 
 void uart2_configure_mux(void)
