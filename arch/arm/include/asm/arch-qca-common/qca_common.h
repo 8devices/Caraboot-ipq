@@ -16,6 +16,10 @@
 #include <asm/u-boot.h>
 #include <asm/arch-qca-common/smem.h>
 
+#ifdef CONFIG_ARCH_IPQ6018
+#include <asm/arch-ipq6018/clk.h>
+#endif
+
 #ifdef CONFIG_ARCH_IPQ807x
 #include <asm/arch-ipq807x/clk.h>
 #endif

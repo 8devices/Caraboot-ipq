@@ -135,8 +135,6 @@ static void ppe_uniphy_qsgmii_mode_set(uint32_t uniphy_index)
 
 static void ppe_uniphy_sgmii_mode_set(uint32_t uniphy_index, uint32_t channel)
 {
-	uint32_t reg_value;
-
 	writel(UNIPHY_MISC2_REG_SGMII_MODE, PPE_UNIPHY_BASE +
 		(uniphy_index * PPE_UNIPHY_REG_INC) + UNIPHY_MISC2_REG_OFFSET);
 	writel(UNIPHY_PLL_RESET_REG_VALUE, PPE_UNIPHY_BASE +
@@ -180,8 +178,6 @@ static void ppe_uniphy_sgmii_mode_set(uint32_t uniphy_index, uint32_t channel)
 
 static void ppe_uniphy_sgmii_plus_mode_set(uint32_t uniphy_index)
 {
-	uint32_t reg_value;
-
 	writel(UNIPHY_MISC2_REG_SGMII_PLUS_MODE, PPE_UNIPHY_BASE +
 		(uniphy_index * PPE_UNIPHY_REG_INC) + UNIPHY_MISC2_REG_OFFSET);
 	writel(UNIPHY_PLL_RESET_REG_VALUE, PPE_UNIPHY_BASE +
