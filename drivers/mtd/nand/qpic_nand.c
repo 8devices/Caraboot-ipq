@@ -40,6 +40,9 @@
 #include <dm.h>
 
 DECLARE_GLOBAL_DATA_PTR;
+#ifdef READ_ONFI_PAGE_PARA
+struct nand_onfi_para_page onfi_para;
+#endif
 
 typedef unsigned long addr_t;
 
@@ -861,6 +864,11 @@ qpic_nand_onfi_probe(struct mtd_info *mtd)
 		printf("ONFI Read param page failed\n");
 		goto qpic_nand_onfi_probe_err;
 	}
+
+#ifdef READ_ONFI_PAGE_PARA
+	memmove(onfi_para.buffer, buffer, ONFI_READ_PARAM_PAGE_BUFFER_SIZE);
+	onfi_para.size = ONFI_READ_PARAM_PAGE_BUFFER_SIZE;
+#endif
 
 	/* Write back vld and cmd and unlock the pipe. */
 	qpic_nand_onfi_probe_cleanup(vld, dev_cmd1);
@@ -2593,3 +2601,386 @@ err_reg:
 err_buf:
 	return;
 }
+
+#ifdef READ_ONFI_PAGE_PARA
+void Read_onfi_ParameterPage_DataStructure(unsigned char *ParPage, int size)
+{
+	unsigned int i, j;
+	unsigned int com_var = 0x00000000;
+
+	/* extract ONFI page signature */
+	com_var |= ParPage[i];
+	com_var <<= 8;
+	com_var |= ParPage[i+1];
+	com_var <<= 8;
+	com_var |= ParPage[i+2];
+	com_var <<= 8;
+	com_var |= ParPage[i+3];
+	printf("ONFI \'O'\, \'N'\, \'F'\, \'I'\ parameter page signature: 0x%08x\n",com_var);
+
+	/* Extract ONFI version number */
+	i += 4;
+	com_var = 0x0;
+	com_var |= ParPage[i++];
+	com_var <<= 8;
+	com_var |= ParPage[i++];
+	/* swap bytes*/
+	com_var = ((com_var << 8) & (0xff00)) | ((com_var >> 8) & (0x00ff));
+	if (com_var & (1 << 1))
+		printf("Revision number : 0x%04x and ONFI 1.0 complaint\n", com_var);
+	else if (com_var & (1 << 2))
+		printf("Revision number : 0x%04x and ONFI 2.0 complaint\n", com_var);
+	else if (com_var & (1 << 3))
+		printf("Revision number : 0x%04x and ONFI 2.1 complaint\n", com_var);
+	else if (com_var & (1 << 4))
+		printf("Revision number : 0x%04x and ONFI 2.2 complaint\n", com_var);
+	else if (com_var & (1 << 5))
+		printf("Revision number : 0x%04x and ONFI 2.3 complaint\n", com_var);
+	else
+		printf("Unsupported ONFI version:0x%04x\n",com_var);
+
+	/* extract Features supported by this card */
+	com_var = 0x0;
+	com_var |= ParPage[i++];
+	com_var <<= 8;
+	com_var |= ParPage[i++];
+	/*swap bytes */
+	com_var = ((com_var << 8) & (0xff00)) | ((com_var >> 8) & (0x00ff));
+	printf("Features supported : 0x%04x\n",com_var);
+	if (com_var & (1 << 0))
+		printf("	supports 16-bit data bus width.\n");
+	if (com_var & (1 << 1))
+		printf("	supports multiple LUN operations.\n");
+	if (com_var & (1 << 2))
+		printf("	supports non-sequential page programming.\n");
+	if (com_var & (1 << 3))
+		printf("	supports interleaved operations.\n");
+	if (com_var & (1 << 4))
+		printf("	supports odd to even page Copyback.\n");
+
+	/* Extarct Optional command supported */
+	com_var = 0x0;
+	com_var |= ParPage[i++];
+	com_var <<= 8;
+	com_var |= ParPage[i++];
+	/*swap bytes */
+	com_var = ((com_var << 8) & (0xff00)) | ((com_var >> 8) & (0x00ff));
+	printf("Optional command supported:0x%04x\n",com_var);
+	if (com_var & (1 << 0))
+		printf("	supports Page Cache Program command.\n");
+	if (com_var & (1 << 1))
+		printf("	supports Read Cache commands.\n");
+	if (com_var & (1 << 2))
+		printf("	supports Get Features and Set Features.\n");
+	if (com_var & (1 << 3))
+		printf("	supports Read Status Enhanced.\n");
+	if (com_var & (1 << 4))
+		printf("	supports Copyback.\n");
+	if (com_var & (1 << 5))
+		printf("	supports Read Unique ID.\n");
+
+	/* Bytes 10-31 reserved */
+	i += 22;
+	/* extract Manufacturer information block */
+	/* Extact Device manufacturer
+	 * 6 space character 0x20 */
+	unsigned char dev_manf[22] = {'\0'};
+	memcpy(dev_manf, ParPage + i, 12);
+	printf("Device manufacturer:");
+	for(j = 0; j < 12; j++)
+		printf("%c",dev_manf[j]);
+	printf("\n");
+
+	i += 12;
+
+	/* extract device model */
+	memset(dev_manf, '\0', 22);
+	memcpy(dev_manf, ParPage + i, 20);
+	printf("Device model:");
+	for (j = 0; j < 20; j++)
+		printf("%c",dev_manf[j]);
+	printf("\n");
+	i += 20;
+
+	/* Extract JEDEC manufacturer ID */
+	com_var = 0x0;
+	com_var = ParPage[i++];
+	printf("JEDEC manufacturer ID:0x%02x\n",com_var);
+
+	/* Extract Date code */
+	com_var = 0x0;
+	com_var |= ParPage[i++];
+	com_var <<= 8;
+	com_var |= ParPage[i++];
+	printf("Date code:0x%04x\n",com_var);
+
+	/*67-79 bytes are reserved */
+	i += 13;
+
+	/* Extract memory organization block */
+	/* Extract number of data bytes per page */
+	com_var = 0x0;
+	com_var |= ParPage[i++];
+	com_var <<= 8;
+	com_var |= ParPage[i++];
+	com_var <<= 8;
+	com_var |= ParPage[i++];
+	com_var <<= 8;
+	com_var |= ParPage[i++];
+	/* reverse byte on int
+	 * 0x00 08 00 00
+	 * 0x00 00 08 00*/
+	com_var = ((com_var >> 24) & 0xff) | ((com_var << 8) & 0xff0000) |
+		((com_var >> 8) & 0xff00) | ((com_var << 24) & 0xff000000);
+	printf("Number of data bytes per page:0x%08x, %d bytes, %dKiB\n",com_var,com_var,com_var/1024);
+
+	/* Extract Number of spare bytes per page */
+	com_var = 0x0;
+	com_var |= ParPage[i++];
+	com_var <<= 8;
+	com_var |= ParPage[i++];
+	/* swap bytes */
+	com_var = ((com_var << 8) & (0xff00)) | ((com_var >> 8) & (0x00ff));
+	printf("Number of spare bytes per page:0x%04x, %d bytes\n", com_var,com_var);
+
+	/* extract Number of data bytes per partial page */
+	com_var = 0x0;
+	com_var |= ParPage[i++];
+	com_var <<= 8;
+	com_var |= ParPage[i++];
+	com_var <<= 8;
+	com_var |= ParPage[i++];
+	com_var <<= 8;
+	com_var |= ParPage[i++];
+	/*reverse bytes */
+	com_var = ((com_var >> 24) & 0xff) | ((com_var << 8) & 0xff0000) |
+		((com_var >> 8) & 0xff00) | ((com_var << 24) & 0xff000000);
+	printf("Number of data bytes per partial page:0x%08x, %d bytes\n",com_var,com_var);
+
+	/* extarct Number of spare bytes per partial page*/
+	com_var = 0x0;
+	com_var |= ParPage[i++];
+	com_var <<= 8;
+	com_var |= ParPage[i++];
+	/* swap bytes */
+	com_var = ((com_var << 8) & (0xff00)) | ((com_var >> 8) & (0x00ff));
+	printf("Number of spare bytes per partial page:0x%02x, %d bytes\n",com_var,com_var);
+
+	/* Extract Number of pages per block */
+	com_var = 0x0;
+	com_var |= ParPage[i++];
+	com_var <<= 8;
+	com_var |= ParPage[i++];
+	com_var <<= 8;
+	com_var |= ParPage[i++];
+	com_var <<= 8;
+	com_var |= ParPage[i++];
+	/*reverse bytes */
+	com_var = ((com_var >> 24) & 0xff) | ((com_var << 8) & 0xff0000) |
+		((com_var >> 8) & 0xff00) | ((com_var << 24) & 0xff000000);
+	printf("Number of pages per block:0x%08x, %d bytes\n",com_var,com_var);
+
+	/* Extract Number of blocks per unit */
+	com_var = 0x0;
+	com_var |= ParPage[i++];
+	com_var <<= 8;
+	com_var |= ParPage[i++];
+	com_var <<= 8;
+	com_var |= ParPage[i++];
+	com_var <<= 8;
+	com_var |= ParPage[i++];
+	/*reverse bytes */
+	com_var = ((com_var >> 24) & 0xff) | ((com_var << 8) & 0xff0000) |
+		((com_var >> 8) & 0xff00) | ((com_var << 24) & 0xff000000);
+	printf("Number of blocks per unit:0x%08x, %d bytes\n",com_var,com_var);
+
+	/* Extarct Number of logical units*/
+	com_var = 0x0;
+	com_var |= ParPage[i++];
+	printf("Number of logical units:0x%02x\n",com_var);
+
+	/* Extarct Number of address cycles */
+	com_var = 0x0;
+	com_var |= ParPage[i++];
+	printf("Number of address cycles:0x%02x\n",com_var);
+	printf("	Row address cycles:%d\n",(com_var & 0x0000000f));
+	printf("	Column address cycles:%d\n",(com_var >> 4) & 0x0000000f);
+	/* Extarct Number of bits per cell*/
+	com_var = 0x0;
+	com_var |= ParPage[i++];
+	printf("Number of bits per cell:0x%02x\n",com_var);
+
+	/* Extract Bad blocks maximum per unit*/
+	com_var = 0x0;
+	com_var |= ParPage[i++];
+	com_var <<= 8;
+	com_var |= ParPage[i++];
+	com_var = ((com_var << 8) & (0xff00)) | ((com_var >> 8) & (0x00ff));
+	printf("Bad blocks maximum per unit:0x%04x, %d\n",com_var,com_var);
+
+	/* Extract Block endurance */
+	com_var = 0x0;
+	com_var |= ParPage[i++];
+	com_var <<= 8;
+	com_var |= ParPage[i++];
+	com_var = ((com_var << 8) & (0xff00)) | ((com_var >> 8) & (0x00ff));
+	printf("Block endurance:0x%04x\n",com_var);
+
+	/* Extract Guaranteed valid blocks at beginning of target*/
+	com_var = 0x0;
+	com_var |= ParPage[i++];
+	printf("Guaranteed valid blocks at beginning of target:0x%02x\n",com_var);
+
+	/* Extract Block endurance for guaranteed valid blocks*/
+	com_var = 0x0;
+	com_var |= ParPage[i++];
+	com_var <<= 8;
+	com_var |= ParPage[i++];
+	com_var = ((com_var << 8) & (0xff00)) | ((com_var >> 8) & (0x00ff));
+	printf("Block endurance for guaranteed valid blocks:0x%04x\n",com_var);
+
+	/*Extract Number of programs per page */
+	com_var = 0x0;
+	com_var |= ParPage[i++];
+	printf("Number of programs per page:0x%02x\n",com_var);
+
+	/*Extract Partial programming attributes*/
+	com_var = 0x0;
+	com_var |= ParPage[i++];
+	printf("Partial programming attributes:0x%02x\n",com_var);
+	if (com_var & (1 << 0))
+		printf("	partial page programming has constraints.\n");
+	if (com_var & (1 << 4))
+		printf("	partial page layout is partial page data followed by partial page spare.\n");
+
+	/* Extract Number of bits ECC correctability*/
+	com_var = 0x0;
+	com_var |= ParPage[i++];
+	printf("Number of bits ECC correctability:0x%02x\n",com_var);
+
+	/* Extract Number of interleaved address bits*/
+	com_var = 0x0;
+	com_var |= ParPage[i++];
+	printf("Number of interleaved address bits:0x%02x\n",com_var);
+
+	/* Extract Interleaved operation attributes*/
+	com_var = 0x0;
+	com_var |= ParPage[i++];
+	printf("Interleaved operation attributes:0x%02x\n",com_var);
+	if (com_var & (1 << 1))
+		printf("	no block address restrictions.\n");
+	if (com_var & (1 << 2))
+		printf("	program cache supported.\n");
+
+	/* 115-127 reserved */
+	i += 13;
+	/* Extract Electrical parameter block*/
+	/*Extract I/O pin capacitance*/
+	com_var = 0x0;
+	com_var |= ParPage[i++];
+	printf("I/O pin capacitance:0x%02x\n",com_var);
+
+	/*Extract Timing mode support*/
+	com_var = 0x0;
+	com_var |= ParPage[i++];
+	com_var <<= 8;
+	com_var |= ParPage[i++];
+	com_var = ((com_var << 8) & (0xff00)) | ((com_var >> 8) & (0x00ff));
+	printf("Timing mode support:0x%04x\n",com_var);
+	if (com_var & (1 << 0))
+		printf("	supports timing mode 0, shall be 1\n");
+	if (com_var & (1 << 1))
+		printf("	supports timing mode 1\n");
+	if (com_var & (1 << 2))
+		printf("	supports timing mode 2\n");
+	if (com_var & (1 << 3))
+		printf("	supports timing mode 3\n");
+	if (com_var & (1 << 4))
+		printf("	supports timing mode 4\n");
+	if (com_var & (1 << 5))
+		printf("	supports timing mode 5\n");
+
+	/*Extarct Program cache timing mode support*/
+	com_var = 0x0;
+	com_var |= ParPage[i++];
+	com_var <<= 8;
+	com_var |= ParPage[i++];
+	com_var = ((com_var << 8) & (0xff00)) | ((com_var >> 8) & (0x00ff));
+	printf("Program cache timing mode support:0x%04x\n",com_var);
+	if (com_var & (1 << 0))
+		printf("	supports timing mode 0\n");
+	if (com_var & (1 << 1))
+		printf("	supports timing mode 1\n");
+	if (com_var & (1 << 2))
+		printf("	supports timing mode 2\n");
+	if (com_var & (1 << 3))
+		printf("	supports timing mode 3\n");
+	if (com_var & (1 << 4))
+		printf("	supports timing mode 4\n");
+	if (com_var & (1 << 5))
+		printf("	supports timing mode 5\n");
+
+	/*Extract tPROG (MAX) page program time*/
+	com_var = 0x0;
+	com_var |= ParPage[i++];
+	com_var <<= 8;
+	com_var |= ParPage[i++];
+	com_var = ((com_var << 8) & (0xff00)) | ((com_var >> 8) & (0x00ff));
+	printf("tPROG Maximum page program time:0x%04x, %d us\n",com_var,com_var);
+
+	/*Extract tBERS Maximum block erase time*/
+	com_var = 0x0;
+	com_var |= ParPage[i++];
+	com_var <<= 8;
+	com_var |= ParPage[i++];
+	com_var = ((com_var << 8) & (0xff00)) | ((com_var >> 8) & (0x00ff));
+	printf("tBERS Maximum block erase time:0x%04x, %d us\n",com_var,com_var);
+
+	/* Extract tR Maximum page read time*/
+	com_var = 0x0;
+	com_var |= ParPage[i++];
+	com_var <<= 8;
+	com_var |= ParPage[i++];
+	com_var = ((com_var << 8) & (0xff00)) | ((com_var >> 8) & (0x00ff));
+	printf("tR Maximum page read time:0x%04x, %d us\n",com_var,com_var);
+
+	/* Extract tCCS Minimum change column setup time*/
+	com_var = 0x0;
+	com_var |= ParPage[i++];
+	com_var <<= 8;
+	com_var |= ParPage[i++];
+	com_var = ((com_var << 8) & (0xff00)) | ((com_var >> 8) & (0x00ff));
+	printf("tCCS Minimum change column setup time:0x%04x, %d ns\n",com_var,com_var);
+
+	/* 141-163 reserved */
+	i += 23;
+
+	/* Extract Vendor block */
+	/* Extract Vendor specific Revision number*/
+	com_var = 0x0;
+	com_var |= ParPage[i++];
+	com_var <<= 8;
+	com_var |= ParPage[i++];
+	com_var = ((com_var << 8) & (0xff00)) | ((com_var >> 8) & (0x00ff));
+	printf("Vendor specific Revision number:0x%04x\n",com_var);
+
+	/* Extract Vendor specific
+	 * 166 - 253 bytes
+	 */
+	printf("Bytes 166-253 are Vendor specific.\n");
+	i += 88;
+
+	/* Extract Integrity CRC */
+	com_var = 0x0;
+	com_var |= ParPage[i++];
+	com_var <<= 8;
+	com_var |= ParPage[i++];
+	com_var = ((com_var << 8) & (0xff00)) | ((com_var >> 8) & (0x00ff));
+	printf("Integrity CRC:0x%04x\n",com_var);
+
+	/*256-511 bytes are vale of bytes 0-255
+	 *512-767 bytes are value of bytes 0-255*/
+	printf("256-511 bytes are value of bytes 0-255\n");
+	printf("512-767 bytes are value of bytes 0-255\n");
+}
+#endif
