@@ -471,7 +471,8 @@ static void usb_clock_init(int id)
 		writel(0xcff1, GCC_USB0_MASTER_CBCR);
 		writel(1, GCC_SNOC_BUS_TIMEOUT2_AHB_CBCR);
 		writel(1, GCC_USB0_SLEEP_CBCR);
-		writel(0x210b, GCC_USB0_MOCK_UTMI_CFG_RCGR);
+		//gcc_usb0_mock_utmi_clk is set to 24 MHz
+		writel(0x1, GCC_USB0_MOCK_UTMI_CFG_RCGR);
 		writel(0x1, GCC_USB0_MOCK_UTMI_M);
 		writel(0xf7, GCC_USB0_MOCK_UTMI_N);
 		writel(0xf6, GCC_USB0_MOCK_UTMI_D);
@@ -484,7 +485,8 @@ static void usb_clock_init(int id)
 		writel(0x222004, GCC_USB1_GDSCR);
 		writel(0xcff1, GCC_USB1_MASTER_CBCR);
 		writel(1, GCC_USB1_SLEEP_CBCR);
-		writel(0x210b, GCC_USB1_MOCK_UTMI_CFG_RCGR);
+		//gcc_usb1_mock_utmi_clk is set to 24 MHz
+		writel(0x1, GCC_USB1_MOCK_UTMI_CFG_RCGR);
 		writel(0x1, GCC_USB1_MOCK_UTMI_M);
 		writel(0xf7, GCC_USB1_MOCK_UTMI_N);
 		writel(0xf6, GCC_USB1_MOCK_UTMI_D);
@@ -644,7 +646,14 @@ static void usb_init_phy(int index)
 		clrbits_le32(GCC_USB3PHY_0_PHY_BCR, 0x1);
 		clrbits_le32(GCC_USB0_PHY_BCR, 0x1);
 		/* Config user control register */
-		writel(0x0c80c010, USB30_1_GUCTL);
+		writel(0x0a40c010, USB30_1_GUCTL);
+		writel(0x0a87f0a0, USB30_1_FLADJ);
+	} else if (index == 1) {
+		/* Config user control register */
+		writel(0x0a40c010, GUCTL);
+		writel(0x0a87f0a0, FLADJ);
+	} else {
+		return;
 	}
 
 	/* GCC_QUSB2_0_PHY_BCR */
