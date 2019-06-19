@@ -469,3 +469,8 @@ __weak void clear_l2cache_err(void)
 {
 	return;
 }
+
+__weak int smem_read_cpu_count()
+{
+	return -1;
+}
