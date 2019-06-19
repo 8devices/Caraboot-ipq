@@ -265,13 +265,13 @@ static int qca_wdt_extract_crashdump_data(
 				(unsigned char *)&tlv_info,
 				cur_size);
 			if (!ret_val) {
-				crashdump_data->log_buf = (uint32_t *)tlv_info.start;
-				crashdump_data->log_buf_len = *(uint32_t *)tlv_info.size;
+				crashdump_data->log_buf =(unsigned char *)(uintptr_t)tlv_info.start;
+				crashdump_data->log_buf_len = *(uint32_t *)(uintptr_t)tlv_info.size;
 		         }
 		}else if (!ret_val && cur_type == QCA_WDT_LOG_DUMP_TYPE_LEVEL1_PT){
 			ret_val = qca_wdt_scm_extract_tlv_data(scm_tlv_msg,(unsigned char *)&tlv_info,cur_size);
 			if (!ret_val) {
-				crashdump_data->pt_start = (uint32_t *)tlv_info.start;
+				crashdump_data->pt_start =(unsigned char *)(uintptr_t)tlv_info.start;
 				crashdump_data->pt_len = tlv_info.size;
 			}
 		}
@@ -284,22 +284,22 @@ uint32_t dump_minimal(struct dumpinfo_t *dumpinfo, int indx) {
 	if (g_crashdump_data.pt_start &&
 		!strncmp(dumpinfo[indx].name,
 			"PT.BIN", strlen("PT.BIN"))) {
-		dumpinfo[indx].start = g_crashdump_data.pt_start;
+		dumpinfo[indx].start =(uintptr_t) g_crashdump_data.pt_start;
 		dumpinfo[indx].size = g_crashdump_data.pt_len;
 	} else if (g_crashdump_data.log_buf &&
 		!strncmp(dumpinfo[indx].name,
 		"DMESG.BIN", strlen("DMESG.BIN"))) {
-		dumpinfo[indx].start = g_crashdump_data.log_buf;
+		dumpinfo[indx].start =(uintptr_t) g_crashdump_data.log_buf;
 		dumpinfo[indx].size = g_crashdump_data.log_buf_len;
 	} else if (!strncmp(dumpinfo[indx].name,
 		"UNAME", strlen("UNAME"))) {
-		dumpinfo[indx].start = g_crashdump_data.uname;
+		dumpinfo[indx].start =(uintptr_t) g_crashdump_data.uname;
 		dumpinfo[indx].size =
 		g_crashdump_data.uname_length;
 	} else if (!strncmp(dumpinfo[indx].name,
 		"CPU_INFO", strlen("CPU_INFO"))) {
 		dumpinfo[indx].start =
-		g_crashdump_data.cpu_context;
+		(uintptr_t)g_crashdump_data.cpu_context;
 		dumpinfo[indx].size =
 		CONFIG_CPU_CONTEXT_DUMP_SIZE;
 	}
@@ -328,15 +328,15 @@ static int dump_wlan_segments(struct dumpinfo_t *dumpinfo, int indx)
 						cur_type == QCA_WDT_LOG_DUMP_TYPE_WLAN_MOD_INFO )) {
 			ret_val = qca_wdt_scm_extract_tlv_data(scm_tlv_msg,
 				(unsigned char *)&tlv_info,cur_size);
-			memaddr = (uint32_t *)tlv_info.start;
+			memaddr = tlv_info.start;
 
 			if (cur_type == QCA_WDT_LOG_DUMP_TYPE_WLAN_MOD_INFO) {
 				snprintf(wlan_segment_name,	sizeof(wlan_segment_name),
 							 "MODULE_INFO.txt");
-				wlan_tlv_size = *(uint32_t *) tlv_info.size;
+				wlan_tlv_size = *(uint32_t *)(uintptr_t)tlv_info.size;
 			} else {
 				snprintf(wlan_segment_name,
-						 sizeof(wlan_segment_name), "%lx.BIN", memaddr);
+						 sizeof(wlan_segment_name), "%lx.BIN",(long unsigned int)memaddr);
 				 wlan_tlv_size = tlv_info.size;
 			}
 
@@ -361,7 +361,6 @@ static int do_dumpqca_data(unsigned int dump_level)
 	char buf = 1;
 	struct dumpinfo_t *dumpinfo = dumpinfo_n;
 	int dump_entries = dump_entries_n;
-	int dynamic_enum_count;
 	char wlan_segment_name[32];
 	char *usb_dump = NULL;
 
@@ -509,7 +508,7 @@ static int do_dumpqca_data(unsigned int dump_level)
 				memaddr = dump_minimal(dumpinfo, indx);
 				if (dumpinfo[indx].size && memaddr) {
 					if(dumpinfo[indx].dump_level == MINIMAL_DUMP){
-						snprintf(wlan_segment_name, sizeof(wlan_segment_name), "%lx.BIN", memaddr);
+						snprintf(wlan_segment_name, sizeof(wlan_segment_name), "%lx.BIN",(long unsigned int)memaddr);
 						ret = dump_to_dst (dumpinfo[indx].is_aligned_access, memaddr, dumpinfo[indx].size, wlan_segment_name);
 						if (ret == CMD_RET_FAILURE)
 							goto stop_dump;
