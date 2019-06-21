@@ -105,6 +105,13 @@
 #define CONFIG_IPQ_NO_MACS		6
 #define CONFIG_ENV_IS_IN_SPI_FLASH	1
 #define CONFIG_ENV_SECT_SIZE		(64 * 1024)
+
+#define CONFIG_SMP_CMD_SUPPORT
+
+#ifdef CONFIG_SMP_CMD_SUPPORT
+#define NR_CPUS				4
+#endif
+
 /*
  * IPQ_TFTP_MIN_ADDR: Starting address of Linux HLOS region.
  * CONFIG_TZ_END_ADDR: Ending address of Trust Zone/SMEM(for ipq6018)
