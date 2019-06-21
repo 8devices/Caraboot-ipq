@@ -696,3 +696,15 @@ int bring_sec_core_up(unsigned int cpuid, unsigned int entry, unsigned int arg)
 
 	return 0;
 }
+
+int smem_read_cpu_count()
+{
+	uint32_t core_no;
+
+	if (!smem_read_alloc_entry(SMEM_NUM_CPUINFO, &core_no,
+			sizeof(uint32_t))) {
+		if (core_no != 4)
+			return core_no;
+	}
+	return -1;
+}
