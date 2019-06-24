@@ -246,6 +246,14 @@ void mmc_iopad_config(struct sdhci_host *host)
 	writel(val, host->ioaddr + SDHCI_VENDOR_IOPAD);
 }
 
+void sdhci_bus_pwr_off(struct sdhci_host *host)
+{
+	u32 val;
+
+	val = sdhci_readb(host, SDHCI_HOST_CONTROL);
+	sdhci_writeb(host,(val & (~SDHCI_POWER_ON)), SDHCI_POWER_CONTROL);
+}
+
 void emmc_clock_disable(void)
 {
 	/* Clear divider */
