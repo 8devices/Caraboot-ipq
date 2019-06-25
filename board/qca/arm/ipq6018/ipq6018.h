@@ -213,6 +213,19 @@
 #ifdef CONFIG_SMEM_VERSION_C
 #define RAM_PART_NAME_LENGTH 16
 
+#define SECONDARY_CORE_STACKSZ (8 * 1024)
+#define CPU_POWER_DOWN (1 << 16)
+
+#define ARM_PSCI_TZ_FN_BASE		0x84000000
+#define ARM_PSCI_TZ_FN(n)		(ARM_PSCI_TZ_FN_BASE + (n))
+
+#define ARM_PSCI_TZ_FN_CPU_OFF		ARM_PSCI_TZ_FN(2)
+#define ARM_PSCI_TZ_FN_CPU_ON		ARM_PSCI_TZ_FN(3)
+#define ARM_PSCI_TZ_FN_AFFINITY_INFO	ARM_PSCI_TZ_FN(4)
+
+unsigned int __invoke_psci_fn_smc(unsigned int, unsigned int,
+					 unsigned int, unsigned int);
+
 /**
  * Number of RAM partition entries which are usable by APPS.
  */
