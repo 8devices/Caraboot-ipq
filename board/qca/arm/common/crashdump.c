@@ -51,6 +51,7 @@ DECLARE_GLOBAL_DATA_PTR;
 static qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 /* USB device id and part index used by usbdump */
 static int usb_dev_indx, usb_dev_part;
+int crashdump_tlv_count=0;
 
 enum {
     /*Basic DDR segments */
@@ -61,6 +62,7 @@ enum {
 	/* Module structures are in highmem zone*/
 	QCA_WDT_LOG_DUMP_TYPE_WLAN_MOD,
 	QCA_WDT_LOG_DUMP_TYPE_WLAN_MOD_INFO,
+	QCA_WDT_LOG_DUMP_TYPE_EMPTY,
 };
 /* This will be used for parsing the TLV data */
 struct qca_wdt_scm_tlv_msg {
@@ -260,6 +262,7 @@ static int qca_wdt_extract_crashdump_data(
 			crashdump_data->uname_length = cur_size;
 			ret_val = qca_wdt_scm_extract_tlv_data(scm_tlv_msg,
 					crashdump_data->uname, cur_size);
+			crashdump_tlv_count++;
 		}else if (!ret_val && cur_type == QCA_WDT_LOG_DUMP_TYPE_DMESG){
 			ret_val = qca_wdt_scm_extract_tlv_data(scm_tlv_msg,
 				(unsigned char *)&tlv_info,
@@ -268,12 +271,14 @@ static int qca_wdt_extract_crashdump_data(
 				crashdump_data->log_buf =(unsigned char *)(uintptr_t)tlv_info.start;
 				crashdump_data->log_buf_len = *(uint32_t *)(uintptr_t)tlv_info.size;
 		         }
+			crashdump_tlv_count++;
 		}else if (!ret_val && cur_type == QCA_WDT_LOG_DUMP_TYPE_LEVEL1_PT){
 			ret_val = qca_wdt_scm_extract_tlv_data(scm_tlv_msg,(unsigned char *)&tlv_info,cur_size);
 			if (!ret_val) {
 				crashdump_data->pt_start =(unsigned char *)(uintptr_t)tlv_info.start;
 				crashdump_data->pt_len = tlv_info.size;
 			}
+			crashdump_tlv_count++;
 		}
 	}
 	return ret_val;
@@ -312,7 +317,7 @@ static int dump_wlan_segments(struct dumpinfo_t *dumpinfo, int indx)
 	struct qca_wdt_scm_tlv_msg *scm_tlv_msg = &tlv_msg;
 	unsigned char cur_type = QCA_WDT_LOG_DUMP_TYPE_WLAN_MOD;
 	unsigned int cur_size;
-	int ret_val;
+	int ret_val,tlv_size;
 	struct st_tlv_info tlv_info;
 	uint32_t wlan_tlv_size;
 	char wlan_segment_name[32];
@@ -324,6 +329,20 @@ static int dump_wlan_segments(struct dumpinfo_t *dumpinfo, int indx)
 	do {
 		ret_val = qca_wdt_scm_extract_tlv_info(scm_tlv_msg,
 			&cur_type, &cur_size);
+
+		/* Each Dump segment is represented by a TLV tuple comprising of
+		three TLVs representing the type,size and physical addresses of
+		the data segments and corresponding PMD and PTE entries.
+		QCA_WDT_LOG_DUMP_TYPE_EMPTY type indicates that the TLV tuple has
+		been invalidated. When type QCA_WDT_LOG_DUMP_TYPE_EMPTY is encountered,
+		we skip over the TLV touple by moving the current massage buffer pointer
+		ahead by three TLVs */
+
+		if(cur_type == QCA_WDT_LOG_DUMP_TYPE_EMPTY) {
+			tlv_size = (cur_size + QCA_WDT_SCM_TLV_TYPE_LEN_SIZE);
+			scm_tlv_msg->cur_msg_buffer_pos += (3 * tlv_size);
+		}
+
 		if (!ret_val && ( cur_type == QCA_WDT_LOG_DUMP_TYPE_WLAN_MOD ||
 						cur_type == QCA_WDT_LOG_DUMP_TYPE_WLAN_MOD_INFO )) {
 			ret_val = qca_wdt_scm_extract_tlv_data(scm_tlv_msg,
@@ -342,11 +361,14 @@ static int dump_wlan_segments(struct dumpinfo_t *dumpinfo, int indx)
 
 			ret_val = dump_to_dst (dumpinfo[indx].is_aligned_access,memaddr,
 						wlan_tlv_size, wlan_segment_name);
+			crashdump_tlv_count++;
 			udelay(10000); /* give some delay for server */
 			if (ret_val == CMD_RET_FAILURE)
 				return CMD_RET_FAILURE;
 		}
 	}while (cur_type != QCA_WDT_LOG_DUMP_TYPE_INVALID);
+
+	printf("\nMinidump: Dumped %d TLVs\n",crashdump_tlv_count);
 	return CMD_RET_SUCCESS;
 };
 
