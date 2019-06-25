@@ -571,6 +571,9 @@ KBUILD_CFLAGS += $(call cc-option,-fstack-protector)
 else
 KBUILD_CFLAGS += $(call cc-option, -fno-stack-protector)
 endif
+ifdef CONFIG_ARCH_IPQ6018
+KBUILD_CFLAGS += $(call cc-option,-fstack-protector)
+endif
 KBUILD_CFLAGS += $(call cc-option,-fno-delete-null-pointer-checks)
 
 #FIXME: Added to avoid the warning from sysupgrade-helper
