@@ -506,24 +506,24 @@ static int do_dumpqca_data(unsigned int dump_level)
 		{
 			if (dumpinfo[indx].dump_level == MINIMAL_DUMP )
 				memaddr = dump_minimal(dumpinfo, indx);
-				if (dumpinfo[indx].size && memaddr) {
-					if(dumpinfo[indx].dump_level == MINIMAL_DUMP){
-						snprintf(wlan_segment_name, sizeof(wlan_segment_name), "%lx.BIN",(long unsigned int)memaddr);
-						ret = dump_to_dst (dumpinfo[indx].is_aligned_access, memaddr, dumpinfo[indx].size, wlan_segment_name);
-						if (ret == CMD_RET_FAILURE)
-							goto stop_dump;
-					}
-					else {
-						ret = dump_to_dst (dumpinfo[indx].is_aligned_access, memaddr, dumpinfo[indx].size, dumpinfo[indx].name);
-						if (ret == CMD_RET_FAILURE)
-							goto stop_dump;
-					}
-				}
-				else {
-					ret = dump_wlan_segments(dumpinfo, indx);
+			if (dumpinfo[indx].size && memaddr) {
+				if(dumpinfo[indx].dump_level == MINIMAL_DUMP){
+					snprintf(wlan_segment_name, sizeof(wlan_segment_name), "%lx.BIN",(long unsigned int)memaddr);
+					ret = dump_to_dst (dumpinfo[indx].is_aligned_access, memaddr, dumpinfo[indx].size, wlan_segment_name);
 					if (ret == CMD_RET_FAILURE)
 						goto stop_dump;
 				}
+				else {
+					ret = dump_to_dst (dumpinfo[indx].is_aligned_access, memaddr, dumpinfo[indx].size, dumpinfo[indx].name);
+					if (ret == CMD_RET_FAILURE)
+						goto stop_dump;
+				}
+			}
+			else {
+				ret = dump_wlan_segments(dumpinfo, indx);
+				if (ret == CMD_RET_FAILURE)
+					goto stop_dump;
+			}
 		}
 	}
 

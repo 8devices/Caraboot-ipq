@@ -375,10 +375,10 @@ void autoboot_command(const char *s)
 		s = getenv("dump_to_flash");
 		if (!s)
 			s = getenv("dump_minimal");
-			if (s) {
-				do_dumpqca_minimal_data(s);	/* write core dump data to flash */
-				run_command("reset", 0);
-			}
+		if (s) {
+			do_dumpqca_minimal_data(s);	/* write core dump data to flash */
+			run_command("reset", 0);
+		}
 		else
 			dump_func(FULL_DUMP);
 		return;

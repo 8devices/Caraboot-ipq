@@ -121,8 +121,9 @@ static int do_flash(cmd_tbl_t *cmdtp, int flag, int argc,
 char * const argv[])
 {
 	int flash_cmd = 0;
-	uint32_t offset, part_size, file_size, adj_size;
+	uint32_t offset, part_size, adj_size;
 	uint32_t load_addr = 0;
+	uint32_t file_size = 0;
 	uint32_t size_block, start_block, file_size_cpy;
 	char *part_name = NULL, *filesize, *loadaddr;
 	int flash_type, ret, retn;
