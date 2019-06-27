@@ -1231,3 +1231,37 @@ int bring_sec_core_up(unsigned int cpuid, unsigned int entry, unsigned int arg)
 	printf("Enabled CPU%d via psci successfully!\n", cpuid);
 	return 0;
 }
+
+unsigned int get_dts_machid(unsigned int machid)
+{
+	switch (machid)
+	{
+		case MACH_TYPE_IPQ6018_AP_CP01_C2:
+			return MACH_TYPE_IPQ6018_AP_CP01_C1;
+		default:
+			return machid;
+	}
+}
+
+void ipq_uboot_fdt_fixup(void)
+{
+	int ret, len;
+	const char *config = "config@cp01-c2";
+	len = fdt_totalsize(gd->fdt_blob) + strlen(config) + 1;
+
+	if (gd->bd->bi_arch_number == MACH_TYPE_IPQ6018_AP_CP01_C2)
+	{
+		/*
+		 * Open in place with a new length.
+		 */
+		ret = fdt_open_into(gd->fdt_blob, (void *)gd->fdt_blob, len);
+		if (ret)
+			 printf("uboot-fdt-fixup: Cannot expand FDT: %s\n", fdt_strerror(ret));
+
+		ret = fdt_setprop((void *)gd->fdt_blob, 0, "config_name",
+				config, (strlen(config)+1));
+		if (ret)
+			printf("uboot-fdt-fixup: unable to set config_name(%d)\n", ret);
+	}
+	return;
+}
