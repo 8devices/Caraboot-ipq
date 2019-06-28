@@ -496,6 +496,10 @@ __weak void fdt_fixup_cpr(void *blob)
 	return;
 }
 
+__weak void fdt_fixup_cpus_node(void * blob)
+{
+	return;
+}
 __weak void fdt_fixup_set_dload_warm_reset(void *blob)
 {
 	return;
@@ -601,6 +605,7 @@ int ft_board_setup(void *blob, bd_t *bd)
 	fdt_fixup_auto_restart(blob);
 	fdt_fixup_sd_ldo_gpios_toggle(blob);
 	fdt_fixup_cpr(blob);
+	fdt_fixup_cpus_node(blob);
 	fdt_low_memory_fixup(blob);
 	s = getenv("dload_warm_reset");
 	if (s)
