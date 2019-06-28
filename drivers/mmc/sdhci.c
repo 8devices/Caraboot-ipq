@@ -21,10 +21,18 @@ void *aligned_buffer;
 
 #define CACHE_LINE_SIZE	(CONFIG_SYS_CACHELINE_SIZE)
 
+__weak void sdhci_bus_pwr_off(struct sdhci_host *host)
+{
+	return;
+}
+
 static void sdhci_reset(struct sdhci_host *host, u8 mask)
 {
 	unsigned long timeout;
 
+	if (mask & SDHCI_RESET_ALL) {
+		sdhci_bus_pwr_off(host);
+	}
 	/* Wait max 100 ms */
 	timeout = 100;
 	sdhci_writeb(host, mask, SDHCI_SOFTWARE_RESET);
