@@ -1592,9 +1592,10 @@ int ipq6018_edma_hw_init(struct ipq6018_edma_hw *ehw)
 	 * 4 bytes
 	 */
 	desc_index = ehw->rxdesc_ring_start;
+	reg = IPQ6018_EDMA_QID2RID_TABLE_MEM(0);
 	data = 0;
 	data |= (desc_index & 0xF);
-	ipq6018_edma_reg_write(IPQ6018_EDMA_QID2RID_TABLE_MEM(0), data);
+	ipq6018_edma_reg_write(reg, data);
 	pr_debug("Configure QID2RID reg:0x%x to 0x%x\n", reg, data);
 
 	/*
