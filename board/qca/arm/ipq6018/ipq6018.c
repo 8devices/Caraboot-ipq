@@ -1201,6 +1201,28 @@ void ipq_fdt_fixup_socinfo(void *blob)
 
 void fdt_fixup_auto_restart(void *blob)
 {
+	int nodeoff, ret;
+	const char *node = "/soc/q6v5_wcss@CD00000";
+	const char *paniconwcssfatal;
+
+	paniconwcssfatal = getenv("paniconwcssfatal");
+
+	if (!paniconwcssfatal)
+		return;
+
+	if (strncmp(paniconwcssfatal, "1", sizeof("1"))) {
+		printf("fixup_auto_restart: invalid variable 'paniconwcssfatal'");
+	} else {
+		nodeoff = fdt_path_offset(blob, node);
+		if (nodeoff < 0) {
+			printf("fixup_auto_restart: unable to find node '%s'\n", node);
+			return;
+		}
+		ret = fdt_delprop(blob, nodeoff, "qca,auto-restart");
+
+		if (ret)
+			printf("fixup_auto_restart: cannot delete property");
+	}
 	return;
 }
 
