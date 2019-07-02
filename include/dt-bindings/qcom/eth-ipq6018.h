@@ -16,11 +16,13 @@
 
 /* ESS Switch Mac Modes */
 #define PORT_WRAPPER_PSGMII 0x0
+#define PORT_WRAPPER_USXGMII 0x2
 #define PORT_WRAPPER_SGMII_PLUS 0x6
+#define PORT_WRAPPER_10GBASE_R 0x7
 #define UNUSED 0xFF
 
 /* ETH PHY Types */
 #define MALIBU_PHY_TYPE 0x1
 #define QCA8081_PHY_TYPE 0x2
-
+#define AQ_PHY_TYPE 0x3
 #endif
