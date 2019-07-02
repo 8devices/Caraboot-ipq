@@ -967,11 +967,13 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 				break;
 			case FAL_SPEED_100:
 				mac_speed = 0x1;
-				if (i == aquantia_port && i == 4)
+				if (i == aquantia_port) {
 					speed_clock1 = 0x309;
-				else
+					speed_clock2 = 0x4;
+				} else {
 					speed_clock1 = 0x109;
-				speed_clock2 = 0x0;
+					speed_clock2 = 0x0;
+				}
 				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
 						priv->mac_unit, i, lstatus[status], speed,
 						dp[duplex]);
@@ -985,12 +987,9 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 				break;
 			case FAL_SPEED_1000:
 				mac_speed = 0x2;
-				if (i == aquantia_port) {
-					if (i == 4)
-						speed_clock1 = 0x304;
-					else
-						speed_clock1 = 0x104;
-				} else
+				if (i == aquantia_port)
+					speed_clock1 = 0x304;
+				else
 					speed_clock1 = 0x101;
 				speed_clock2 = 0x0;
 				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
@@ -1005,6 +1004,11 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 				}
 				break;
 			case FAL_SPEED_2500:
+				if (i == aquantia_port) {
+					mac_speed = 0x4;
+					speed_clock1 = 0x307;
+					speed_clock2 = 0x0;
+				}
 				if (phy_node >= 0) {
 					if (phy_info[i]->phy_type == QCA8081_PHY_TYPE) {
 						mac_speed = 0x2;
@@ -1014,23 +1018,7 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 						else if  (i == 3)
 							speed_clock1 = 0x101;
 						speed_clock2 = 0x0;
-					} else if (phy_info[i]->phy_type == AQ_PHY_TYPE) {
-						mac_speed = 0x4;
-						if (i == 4) {
-							speed_clock1 = 0x301;
-							speed_clock2 = 0x3;
-						} else if (i == 3) {
-							speed_clock1 = 0x107;
-							speed_clock2 = 0x0;
-						}
 					}
-				} else {
-					mac_speed = 0x4;
-					if (i == 4)
-						speed_clock1 = 0x307;
-					else
-						speed_clock1 = 0x107;
-					speed_clock2 = 0x0;
 				}
 				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
 						priv->mac_unit, i, lstatus[status], speed,
@@ -1038,10 +1026,7 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 				break;
 			case FAL_SPEED_5000:
 				mac_speed = 0x5;
-				if (i == 4)
-					speed_clock1 = 0x303;
-				else
-					speed_clock1 = 0x103;
+				speed_clock1 = 0x303;
 				speed_clock2 = 0x0;
 				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
 						priv->mac_unit, i, lstatus[status], speed,
@@ -1049,10 +1034,7 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 				break;
 			case FAL_SPEED_10000:
 				mac_speed = 0x3;
-				if (i == 4)
-					speed_clock1 = 0x301;
-				else
-					speed_clock1 = 0x101;
+				speed_clock1 = 0x301;
 				speed_clock2 = 0x0;
 				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
 						priv->mac_unit, i, lstatus[status], speed,
@@ -1684,6 +1666,9 @@ int ipq6018_edma_init(void *edma_board_cfg)
 	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
 	if (node >= 0)
 		port_8033 = fdtdec_get_uint(gd->fdt_blob, node, "8033_port", -1);
+
+	if (node >= 0)
+		aquantia_port = fdtdec_get_uint(gd->fdt_blob, node, "aquantia_port", -1);
 
 	phy_node = fdt_path_offset(gd->fdt_blob, "/ess-switch/port_phyinfo");
 	if (phy_node >= 0)
