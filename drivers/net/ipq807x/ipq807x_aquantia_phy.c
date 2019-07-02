@@ -222,6 +222,7 @@ int ipq_board_fw_download(unsigned int phy_addr)
 	uint32_t start;         /* block number */
 	uint32_t size;          /* no. of blocks */
 	qca_part_entry_t	ethphyfw;
+	unsigned int *ethphyfw_load_addr = NULL;
 	struct { char *name; qca_part_entry_t *part; } entries[] = {
 		{ "0:ETHPHYFW", &ethphyfw },
 	};
@@ -254,56 +255,90 @@ int ipq_board_fw_download(unsigned int phy_addr)
 		qca_set_part_entry(entries[i].name, sfi, entries[i].part, start, size);
 	}
 
-	if  (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
+	if ((sfi->flash_type == SMEM_BOOT_NAND_FLASH) ||
+	    (sfi->flash_type == SMEM_BOOT_SPI_FLASH)) {
+		ethphyfw_load_addr = (uint *)malloc(ethphyfw.size);
+		if (ethphyfw_load_addr == NULL) {
+			printf("ETHPHYFW Loading failed\n");
+			return -1;
+		} else {
+			memset(ethphyfw_load_addr, 0, ethphyfw.size);
+		}
+	}
+
+	if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
 		/*
 		 * Kernel is in a separate partition
 		 */
 		snprintf(runcmd, sizeof(runcmd),
 			 /* NOR is treated as psuedo NAND */
-			 "nand read 0x%x 0x%llx 0x%llx && ",
-			 CONFIG_SYS_LOAD_ADDR, ethphyfw.offset, ethphyfw.size);
+			 "nand read 0x%p 0x%llx 0x%llx && ",
+			 ethphyfw_load_addr, ethphyfw.offset, ethphyfw.size);
 
 		if (debug)
 			printf("%s", runcmd);
 
-		if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
+		if (run_command(runcmd, 0) != CMD_RET_SUCCESS) {
+			free(ethphyfw_load_addr);
 			return CMD_RET_FAILURE;
+		}
 	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
 		snprintf(runcmd, sizeof(runcmd),
-			 "sf probe && "
-			 "sf read 0x%x 0x%llx 0x%llx && ",
-			 CONFIG_SYS_LOAD_ADDR, ethphyfw.offset, ethphyfw.size);
+			 "sf probe && " "sf read 0x%p 0x%llx 0x%llx && ",
+			 ethphyfw_load_addr, ethphyfw.offset, ethphyfw.size);
 
 		if (debug)
 			printf("%s", runcmd);
 
-		if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
+		if (run_command(runcmd, 0) != CMD_RET_SUCCESS) {
+			free(ethphyfw_load_addr);
 			return CMD_RET_FAILURE;
+		}
 #ifdef CONFIG_QCA_MMC
 	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH ) {
 		blk_dev = mmc_get_dev(host->dev_num);
 		 ret = get_partition_info_efi_by_name(blk_dev,
 						"0:ETHPHYFW", &disk_info);
+
+		ethphyfw_load_addr = (uint *)malloc(((uint)disk_info.size) *
+						    ((uint)disk_info.blksz));
+		if (ethphyfw_load_addr == NULL) {
+			printf("ETHPHYFW Loading failed\n");
+			return -1;
+		} else {
+			memset(ethphyfw_load_addr, 0,
+			       (((uint)disk_info.size) *
+				((uint)disk_info.blksz)));
+		}
+
 		if (ret == 0) {
-			snprintf(runcmd, sizeof(runcmd), "mmc read 0x%x 0x%X 0x%X",
-				 CONFIG_SYS_LOAD_ADDR,
+			snprintf(runcmd, sizeof(runcmd),
+				 "mmc read 0x%p 0x%X 0x%X",
+				 ethphyfw_load_addr,
 				 (uint)disk_info.start, (uint)disk_info.size);
 
-			if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
+			if (run_command(runcmd, 0) != CMD_RET_SUCCESS) {
+				free(ethphyfw_load_addr);
 				return CMD_RET_FAILURE;
+			}
 		}
 #endif
 	}
 
-	fwimg_header = (mbn_header_t *)CONFIG_SYS_LOAD_ADDR;
+	fwimg_header = (mbn_header_t *)(ethphyfw_load_addr);
 
-	if( fwimg_header->image_type == 0x13 && fwimg_header->header_vsn_num == 0x3) {
-		program_ethphy_fw(phy_addr, (uint32_t )(CONFIG_SYS_LOAD_ADDR + sizeof(mbn_header_t)),
-			(uint32_t )(fwimg_header->image_size));
-	}else {
+	if (fwimg_header->image_type == 0x13 &&
+	    fwimg_header->header_vsn_num == 0x3) {
+		program_ethphy_fw(phy_addr,
+				  (uint32_t)(((uint32_t)ethphyfw_load_addr)
+					     + sizeof(mbn_header_t)),
+				  (uint32_t)(fwimg_header->image_size));
+	} else {
 		printf("bad magic on ETHPHYFW partition\n");
+		free(ethphyfw_load_addr);
 		return -1;
 	}
+	free(ethphyfw_load_addr);
 	return 0;
 }
 
