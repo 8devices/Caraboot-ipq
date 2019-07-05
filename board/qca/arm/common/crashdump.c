@@ -47,6 +47,7 @@
 #define CONFIG_SYS_MMC_CRASHDUMP_DEV	0
 #endif
 
+#define CONFIG_TZ_SIZE			0x400000
 DECLARE_GLOBAL_DATA_PTR;
 static qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 /* USB device id and part index used by usbdump */
@@ -495,7 +496,7 @@ static int do_dumpqca_data(unsigned int dump_level)
 				     "EBICS_S1", strlen("EBICS_S1")))
 				dumpinfo[indx].size = gd->ram_size
 						      - dumpinfo[indx - 1].size
-						      - 0x400000;
+						      - CONFIG_TZ_SIZE;
 
 			if (usb_dump) {
 				ret = dump_to_dst (dumpinfo[indx].is_aligned_access, memaddr, dumpinfo[indx].size, dumpinfo[indx].name);
