@@ -403,7 +403,8 @@ static int do_dumpqca_data(unsigned int dump_level)
 #if defined(CONFIG_USB_STORAGE) && defined(CONFIG_FS_FAT)
 		static block_dev_desc_t *stor_dev;
 		disk_partition_t info;
-		int dev_indx, part_indx, max_dev_avail = 0, part = -1;
+		int dev_indx, max_dev_avail = 0;
+		int part_indx = 0, part = -1;
 		int fat_fs = 0;
 		char dev_str[3]; //dev_str = dev:part
 
@@ -427,10 +428,6 @@ static int do_dumpqca_data(unsigned int dump_level)
 
 				snprintf(dev_str, sizeof(dev_str)+1, "%d:%d", dev_indx, part_indx);
 				part = get_device_and_partition("usb", dev_str, &stor_dev, &info, 1);
-				if (part < 0) {
-					printf("No valid partition available for device %d\n", dev_indx);
-					break;
-				}
 
 				if (fat_set_blk_dev(stor_dev, &info) == 0) {
 					fat_fs = 1;
@@ -439,6 +436,9 @@ static int do_dumpqca_data(unsigned int dump_level)
 					break;
 				}
 			}
+
+			if (part < 0)
+				printf("No valid partition available for device %d\n", dev_indx);
 		}
 
 		if (fat_fs == 1)
