@@ -358,7 +358,7 @@ KBUILD_CPPFLAGS := -D__KERNEL__ -D__UBOOT__
 
 KBUILD_CFLAGS   := -Wall -Wstrict-prototypes \
 		   -Wno-format-security \
-		   -fno-builtin -ffreestanding
+		   -fno-builtin -ffreestanding -Werror
 KBUILD_AFLAGS   := -D__ASSEMBLY__
 
 # Read UBOOTRELEASE from include/config/uboot.release (if it exists)
@@ -576,20 +576,6 @@ KBUILD_CFLAGS += $(call cc-option,-fstack-protector)
 endif
 KBUILD_CFLAGS += $(call cc-option,-fno-delete-null-pointer-checks)
 
-#FIXME: Added to avoid the warning from sysupgrade-helper
-#To be modified once the config is fixed
-ifdef CONFIG_ARCH_IPQ807x
-KBUILD_CFLAGS += -Werror
-endif
-ifdef CONFIG_ARCH_IPQ40xx
-KBUILD_CFLAGS += -Werror
-endif
-ifdef CONFIG_ARCH_IPQ806x
-KBUILD_CFLAGS += -Werror
-endif
-ifdef CONFIG_ARCH_IPQ6018
-KBUILD_CFLAGS += -Werror
-endif
 KBUILD_CFLAGS	+= -g
 # $(KBUILD_AFLAGS) sets -g, which causes gcc to pass a suitable -g<format>
 # option to the assembler.
