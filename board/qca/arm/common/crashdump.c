@@ -179,7 +179,7 @@ static int dump_to_dst (int is_aligned_access, uint32_t memaddr, uint32_t size, 
 	}
 
 	if (usb_dump)
-		snprintf(runcmd, sizeof(runcmd), "fatwrite usb %d:%d 0x%x %s 0x%x",
+		snprintf(runcmd, sizeof(runcmd), "fatwrite usb %x:%x 0x%x %s 0x%x",
 					usb_dev_indx, usb_dev_part, memaddr, name, size);
 	else {
 		char *dumpdir;
@@ -406,7 +406,7 @@ static int do_dumpqca_data(unsigned int dump_level)
 		int dev_indx, max_dev_avail = 0;
 		int part_indx = 0, part = -1;
 		int fat_fs = 0;
-		char dev_str[3]; //dev_str = dev:part
+		char dev_str[5]; /* dev:part */
 
 		if(run_command("usb start", 0) != CMD_RET_SUCCESS) {
 			printf("USB enumeration failed\n");
@@ -426,7 +426,7 @@ static int do_dumpqca_data(unsigned int dump_level)
 			// get valid partition
 			for(part_indx = 1; part_indx <= MAX_SEARCH_PARTITIONS; part_indx++) {
 
-				snprintf(dev_str, sizeof(dev_str)+1, "%d:%d", dev_indx, part_indx);
+				snprintf(dev_str, sizeof(dev_str)+1, "%x:%x", dev_indx, part_indx);
 				part = get_device_and_partition("usb", dev_str, &stor_dev, &info, 1);
 
 				if (fat_set_blk_dev(stor_dev, &info) == 0) {
