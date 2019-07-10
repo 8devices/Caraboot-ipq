@@ -260,13 +260,13 @@ static int qca_wdt_extract_crashdump_data(
 		struct qca_wdt_crashdump_data *crashdump_data)
 {
 	unsigned char cur_type = QCA_WDT_LOG_DUMP_TYPE_INVALID;
-	unsigned int cur_size;
-	int ret_val;
+	unsigned int cur_size = 0;
+	int ret_val = 0;
 	struct st_tlv_info tlv_info;
-	int static_enum_count;
+	int static_enum_count = 0;
+	int tlv_size = 0;
 
-	for (static_enum_count = QCA_WDT_LOG_DUMP_TYPE_INVALID; static_enum_count
-			< QCA_WDT_LOG_DUMP_TYPE_WLAN_MOD ; static_enum_count++ ) {
+	while (static_enum_count < 3) {
 		ret_val = qca_wdt_scm_extract_tlv_info(scm_tlv_msg,
 			&cur_type, &cur_size);
 		if (!ret_val && cur_type == QCA_WDT_LOG_DUMP_TYPE_UNAME ){
@@ -274,6 +274,7 @@ static int qca_wdt_extract_crashdump_data(
 			ret_val = qca_wdt_scm_extract_tlv_data(scm_tlv_msg,
 					crashdump_data->uname, cur_size);
 			crashdump_tlv_count++;
+			static_enum_count++;
 		}else if (!ret_val && cur_type == QCA_WDT_LOG_DUMP_TYPE_DMESG){
 			ret_val = qca_wdt_scm_extract_tlv_data(scm_tlv_msg,
 				(unsigned char *)&tlv_info,
@@ -283,6 +284,7 @@ static int qca_wdt_extract_crashdump_data(
 				crashdump_data->log_buf_len = *(uint32_t *)(uintptr_t)tlv_info.size;
 		         }
 			crashdump_tlv_count++;
+			static_enum_count++;
 		}else if (!ret_val && cur_type == QCA_WDT_LOG_DUMP_TYPE_LEVEL1_PT){
 			ret_val = qca_wdt_scm_extract_tlv_data(scm_tlv_msg,(unsigned char *)&tlv_info,cur_size);
 			if (!ret_val) {
@@ -290,6 +292,11 @@ static int qca_wdt_extract_crashdump_data(
 				crashdump_data->pt_len = tlv_info.size;
 			}
 			crashdump_tlv_count++;
+			static_enum_count++;
+		}
+		else if(!ret_val && cur_type == QCA_WDT_LOG_DUMP_TYPE_WLAN_MOD) {
+			tlv_size = (cur_size + QCA_WDT_SCM_TLV_TYPE_LEN_SIZE);
+			scm_tlv_msg->cur_msg_buffer_pos += tlv_size;
 		}
 	}
 	return ret_val;
@@ -327,15 +334,19 @@ static int dump_wlan_segments(struct dumpinfo_t *dumpinfo, int indx)
 	uint32_t memaddr;
 	struct qca_wdt_scm_tlv_msg *scm_tlv_msg = &tlv_msg;
 	unsigned char cur_type = QCA_WDT_LOG_DUMP_TYPE_WLAN_MOD;
-	unsigned int cur_size;
-	int ret_val,tlv_size;
+	unsigned int cur_size = 0;
+	int ret_val = 0;
+	int tlv_size = 0;
 	struct st_tlv_info tlv_info;
 	uint32_t wlan_tlv_size;
+
 	char wlan_segment_name[32];
 
 	if(strncmp(dumpinfo[indx].name, "WLAN_MOD" ,strlen("WLAN_MOD"))) {
 		return CMD_RET_FAILURE;
 	}
+
+	scm_tlv_msg->cur_msg_buffer_pos = scm_tlv_msg->msg_buffer;
 
 	do {
 		ret_val = qca_wdt_scm_extract_tlv_info(scm_tlv_msg,
@@ -376,7 +387,10 @@ static int dump_wlan_segments(struct dumpinfo_t *dumpinfo, int indx)
 			udelay(10000); /* give some delay for server */
 			if (ret_val == CMD_RET_FAILURE)
 				return CMD_RET_FAILURE;
-		}
+		} else {
+            tlv_size = (cur_size + QCA_WDT_SCM_TLV_TYPE_LEN_SIZE);
+            scm_tlv_msg->cur_msg_buffer_pos += tlv_size;
+        }
 	}while (cur_type != QCA_WDT_LOG_DUMP_TYPE_INVALID);
 
 	printf("\nMinidump: Dumped %d TLVs\n",crashdump_tlv_count);
