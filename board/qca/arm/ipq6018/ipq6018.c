@@ -1137,6 +1137,13 @@ void qti_scm_pshold(void)
 void reset_cpu(unsigned long a)
 {
 	reset_crashdump();
+	psci_sys_reset();
+	while(1);
+}
+
+void reset_board(void)
+{
+	reset_crashdump();
 	if(*tz_wonce == 0) {	/*COLD REBOOT*/
 		if(do_pmic_reset())
 			printf("PMIC Reset failed, please do power cycle\n");
@@ -1145,11 +1152,6 @@ void reset_cpu(unsigned long a)
 		psci_sys_reset();
 	}
 	while(1);
-}
-
-void reset_board(void)
-{
-	run_command("reset", 0);
 }
 
 void ipq_fdt_fixup_socinfo(void *blob)
