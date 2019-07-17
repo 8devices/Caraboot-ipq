@@ -28,31 +28,39 @@ Build:
 make toolchain
 ```
 ----
-2) Build Caraboot (u-boot)
+2) Build Caraboot (U-Boot)
 
 ```
 cd ..
 git clone https://github.com/8devices/Caraboot-ipq.git
 cd Caraboot-ipq/
 git checkout 8dev/jalapeno
-./build.sh
+./build.sh BOARD_NAME  #valid BOARD_NAMEs: jalapeno, habanero
 ```
 
 If your toolchain is located elsewhere, you can build like this:
 ```
-CROSS_COMPILE=/your_toolchain_dir/buildroot/output/host/usr/bin/arm-linux- ./build.sh
+CROSS_COMPILE=/your_toolchain_dir/buildroot/output/host/usr/bin/arm-linux- ./build.sh BOARD_NAME
 ```
 
 
-The bootloader binary will be saved to ```u-boot-jalapeno.elf``` file. Use this file to upgrade bootloader on Jalapeno board.
+The bootloader binary will be saved to ```u-boot-jalapeno.elf``` or ```u-boot-habanero.elf```. Use this file to upgrade bootloader on your board.
 
 ----
 3) Upgrade
 
 Make sure that you can reach your TFTP server over ethernet conncetion. Set `ipaddr` and `serverip` environment variables according to you network setup.
 Use these commands to upgrade from u-boot shell:
+Jalapeno:
 ```
 tftpboot 84000000 u-boot-jalapeno.elf
+sf probe
+sf erase 0xf0000 +0x80000
+sf write 0x84000000 0xf0000 ${filesize}
+```
+Habanero:
+```
+tftpboot 84000000 u-boot-habanero.elf
 sf probe
 sf erase 0xf0000 +0x80000
 sf write 0x84000000 0xf0000 ${filesize}
