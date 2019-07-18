@@ -162,8 +162,18 @@ static int dump_to_dst (int is_aligned_access, uint32_t memaddr, uint32_t size, 
 {
 	char runcmd[128];
 	char *usb_dump = NULL;
+	ulong is_usb_dump = 0;
+	int ret = 0;
 
 	usb_dump = getenv("dump_to_usb");
+	if (usb_dump) {
+		ret = str2long(usb_dump, &is_usb_dump);
+		if (!ret) {
+			printf("\nError: Failed to decode dump_to_usb value\n");
+			return -EINVAL;
+		}
+	}
+
 	if (is_aligned_access) {
 		if (IPQ_TEMP_DUMP_ADDR) {
 			snprintf(runcmd, sizeof(runcmd), "cp.l 0x%x 0x%x 0x%x", memaddr,
@@ -178,7 +188,7 @@ static int dump_to_dst (int is_aligned_access, uint32_t memaddr, uint32_t size, 
 		}
 	}
 
-	if (usb_dump)
+	if (is_usb_dump == 1)
 		snprintf(runcmd, sizeof(runcmd), "fatwrite usb %x:%x 0x%x %s 0x%x",
 					usb_dev_indx, usb_dev_part, memaddr, name, size);
 	else {
@@ -386,9 +396,18 @@ static int do_dumpqca_data(unsigned int dump_level)
 	int dump_entries = dump_entries_n;
 	char wlan_segment_name[32];
 	char *usb_dump = NULL;
+	ulong is_usb_dump = 0;
 
 	usb_dump = getenv("dump_to_usb");
-	if (!usb_dump) {
+	if (usb_dump) {
+		ret = str2long(usb_dump, &is_usb_dump);
+		if (!ret) {
+			printf("\nError: Failed to decode dump_to_usb value\n");
+			return -EINVAL;
+		}
+	}
+
+	if (is_usb_dump != 1) {
 		char *serverip = NULL;
 		/* dump to root of TFTP server if none specified */
 		serverip = getenv("serverip");
@@ -498,7 +517,7 @@ static int do_dumpqca_data(unsigned int dump_level)
 						      - dumpinfo[indx - 1].size
 						      - CONFIG_TZ_SIZE;
 
-			if (usb_dump) {
+			if (is_usb_dump == 1) {
 				ret = dump_to_dst (dumpinfo[indx].is_aligned_access, memaddr, dumpinfo[indx].size, dumpinfo[indx].name);
 				if (ret == CMD_RET_FAILURE) {
 					goto stop_dump;
@@ -552,7 +571,7 @@ static int do_dumpqca_data(unsigned int dump_level)
 
 stop_dump:
 #if defined(CONFIG_USB_STORAGE) && defined(CONFIG_FS_FAT)
-	if (usb_dump)
+	if (is_usb_dump == 1)
 		run_command("usb stop", 0);
 #endif
 	return ret;
