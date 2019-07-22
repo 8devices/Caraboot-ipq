@@ -349,20 +349,41 @@ void board_nand_init(void)
 #ifdef CONFIG_PCI_IPQ
 static void pcie_v2_clock_init(void)
 {
-	/* Enable PCIE CLKS */
-	writel(0x2, GCC_PCIE0_AUX_CMD_RCGR);
-	writel(0x107, GCC_PCIE0_AXI_CFG_RCGR);
-	writel(0x1, GCC_PCIE0_AXI_CMD_RCGR);
+	int cfg;
+
+
+	/* Configure pcie0_aux_clk_src */
+	cfg = (GCC_PCIE0_AUX_CFG_RCGR_SRC_SEL | GCC_PCIE0_AUX_CFG_RCGR_SRC_DIV);
+	writel(cfg, GCC_PCIE0_AUX_CFG_RCGR);
+	writel(CMD_UPDATE, GCC_PCIE0_AUX_CMD_RCGR);
 	mdelay(100);
-	writel(0x2, GCC_PCIE0_AXI_CMD_RCGR);
-	writel(0x20000001, GCC_PCIE0_AHB_CBCR);
-	writel(0x4FF1, GCC_PCIE0_AXI_M_CBCR);
-	writel(0x20004FF1, GCC_PCIE0_AXI_S_CBCR);
-	writel(0x1, GCC_PCIE0_AUX_CBCR);
-	writel(0x80004FF1, GCC_PCIE0_PIPE_CBCR);
-	writel(0x1, GCC_PCIE0_AXI_S_BRIDGE_CBCR);
-	writel(0x10F, GCC_PCIE0_RCHNG_CFG_RCGR);
-	writel(0x3, GCC_PCIE0_RCHNG_CMD_RCGR);
+	writel(ROOT_EN, GCC_PCIE0_AUX_CMD_RCGR);
+
+	/* Configure pcie0_axi_clk_src */
+	cfg = (GCC_PCIE0_AXI_CFG_RCGR_SRC_SEL | GCC_PCIE0_AXI_CFG_RCGR_SRC_DIV);
+	writel(cfg, GCC_PCIE0_AXI_CFG_RCGR);
+	writel(CMD_UPDATE, GCC_PCIE0_AXI_CMD_RCGR);
+	mdelay(100);
+	writel(ROOT_EN, GCC_PCIE0_AXI_CMD_RCGR);
+
+	/* Configure CBCRs */
+	writel(CLK_ENABLE, GCC_SYS_NOC_PCIE0_AXI_CBCR);
+	writel(CLK_ENABLE, GCC_PCIE0_AHB_CBCR);
+	writel(CLK_ENABLE, GCC_PCIE0_AXI_M_CBCR);
+	writel(CLK_ENABLE, GCC_PCIE0_AXI_S_CBCR);
+	writel(CLK_ENABLE, GCC_PCIE0_AUX_CBCR);
+	writel(PIPE_CLK_ENABLE, GCC_PCIE0_PIPE_CBCR);
+	writel(CLK_ENABLE, GCC_PCIE0_AXI_S_BRIDGE_CBCR);
+
+	/* Configure pcie0_rchng_clk_src */
+	cfg = (GCC_PCIE0_RCHNG_CFG_RCGR_SRC_SEL
+			| GCC_PCIE0_RCHNG_CFG_RCGR_SRC_DIV);
+	writel(cfg, GCC_PCIE0_RCHNG_CFG_RCGR);
+	writel(CMD_UPDATE, GCC_PCIE0_RCHNG_CMD_RCGR);
+	mdelay(100);
+	writel(ROOT_EN, GCC_PCIE0_RCHNG_CMD_RCGR);
+
+
 }
 
 static void pcie_v2_clock_deinit(void)
@@ -371,7 +392,7 @@ static void pcie_v2_clock_deinit(void)
 	writel(0x0, GCC_PCIE0_AXI_CFG_RCGR);
 	writel(0x0, GCC_PCIE0_AXI_CMD_RCGR);
 	mdelay(100);
-	writel(0x0, GCC_SYS_NOC_PCIE0_AXI_CLK);
+	writel(0x0, GCC_SYS_NOC_PCIE0_AXI_CBCR);
 	writel(0x0, GCC_PCIE0_AHB_CBCR);
 	writel(0x0, GCC_PCIE0_AXI_M_CBCR);
 	writel(0x0, GCC_PCIE0_AXI_S_CBCR);
