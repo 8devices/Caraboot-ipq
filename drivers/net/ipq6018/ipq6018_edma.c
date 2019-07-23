@@ -888,6 +888,7 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 	int sfp_port = -1;
 	int phy_node = -1;
 	int ret_sgmii_mode;
+	int sfp_mode, sgmii_fiber = 0;
 
 	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
 	if (node >= 0)
@@ -909,8 +910,24 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 
 		if (i == sfp_port) {
 			status = phy_status_get_from_ppe(i);
-			speed = FAL_SPEED_10000;
 			duplex = FAL_FULL_DUPLEX;
+			sfp_mode = fdtdec_get_uint(gd->fdt_blob, node, "switch_mac_mode1", -1);
+			if (sfp_mode < 0) {
+				printf("\nError: switch_mac_mode1 not specified in dts");
+				return sfp_mode;
+			}
+			if (sfp_mode == PORT_WRAPPER_SGMII_FIBER) {
+				sgmii_fiber = 1;
+			} else if (sfp_mode == PORT_WRAPPER_10GBASE_R) {
+				sgmii_fiber = 0;
+			} else {
+				printf("\nError: wrong mode specified for SFP Port");
+				return sfp_mode;
+			}
+			if (sgmii_fiber)
+				speed = FAL_SPEED_1000;
+			else
+				speed = FAL_SPEED_10000;
 		} else {
 			if (!priv->ops[i]) {
 				printf ("Phy ops not mapped\n");
@@ -989,6 +1006,8 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 				mac_speed = 0x2;
 				if (i == aquantia_port)
 					speed_clock1 = 0x304;
+				else if (i == sfp_port)
+					speed_clock1 = 0x301;
 				else
 					speed_clock1 = 0x101;
 				speed_clock2 = 0x0;
@@ -1048,15 +1067,14 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 		if (phy_node >= 0) {
 			if (phy_info[i]->phy_type == QCA8081_PHY_TYPE) {
 				ret_sgmii_mode = get_sgmii_mode(i);
+				ppe_port_bridge_txmac_set(i + 1, 1);
 				if (ret_sgmii_mode == 1) {
-					ppe_port_bridge_txmac_set(i + 1, 1);
 					if (i == 4)
 						ppe_uniphy_mode_set(0x1, PORT_WRAPPER_SGMII0_RGMII4);
 					else if (i == 3)
 						ppe_uniphy_mode_set(0x0, PORT_WRAPPER_SGMII0_RGMII4);
 
 				} else if (ret_sgmii_mode == 0) {
-					ppe_port_bridge_txmac_set(i + 1, 1);
 					if (i == 4)
 						ppe_uniphy_mode_set(0x1, PORT_WRAPPER_SGMII_PLUS);
 					else if (i == 3)
@@ -1067,8 +1085,16 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 		ipq6018_speed_clock_set(i, speed_clock1, speed_clock2);
 		if (i == aquantia_port)
 			ipq6018_uxsgmii_speed_set(i, mac_speed, duplex, status);
-		else if (i == sfp_port)
-			ipq6018_10g_r_speed_set(i, status);
+		else if (i == sfp_port) {
+			if (sgmii_fiber) {
+				ppe_port_bridge_txmac_set(i + 1, 1);
+				ppe_uniphy_mode_set(0x1, PORT_WRAPPER_SGMII_FIBER);
+				ppe_port_mux_mac_type_set(5, PORT_WRAPPER_SGMII_FIBER);
+				ipq6018_pqsgmii_speed_set(i, mac_speed, status);
+			} else {
+				ipq6018_10g_r_speed_set(i, status);
+			}
+		}
 		else
 			ipq6018_pqsgmii_speed_set(i, mac_speed, status);
 	}

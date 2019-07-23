@@ -96,6 +96,7 @@ enum port_wrapper_cfg {
 	PORT_WRAPPER_QSGMII,
 	PORT_WRAPPER_SGMII_PLUS,
 	PORT_WRAPPER_10GBASE_R,
+	PORT_WRAPPER_SGMII_FIBER,
 };
 
 enum phy_mode {

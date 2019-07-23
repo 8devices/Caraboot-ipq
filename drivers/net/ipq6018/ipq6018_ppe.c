@@ -232,8 +232,6 @@ void ipq6018_pqsgmii_speed_set(int port, int speed, int status)
 	ipq6018_ppe_reg_write(IPQ6018_PPE_MAC_ENABLE + (0x200 * port), 0x73);
 }
 
-
-
 void ppe_xgmac_speed_set(uint32_t uniphy_index, int speed)
 {
 	uint32_t reg_value = 0;
@@ -1115,12 +1113,12 @@ static void ppe_port_mux_set(int port_id, int port_type, int mode)
 	switch (port_id) {
 		case 3:
 		case 4:
-			if (mode == PORT_WRAPPER_SGMII_PLUS) {
+			if (mode == PORT_WRAPPER_SGMII_PLUS || mode == PORT_WRAPPER_SGMII0_RGMII4) {
 				port_mux_ctrl.bf.port3_pcs_sel = CPPE_PORT3_PCS_SEL_PCS0_CHANNEL2;
 				port_mux_ctrl.bf.port4_pcs_sel = CPPE_PORT4_PCS_SEL_PCS0_SGMIIPLUS;
 				port_mux_ctrl.bf.pcs0_ch0_sel = CPPE_PCS0_CHANNEL0_SEL_SGMIIPLUS;
 				port_mux_ctrl.bf.pcs0_ch4_sel = CPPE_PCS0_CHANNEL4_SEL_PORT5_CLOCK;
-			} else if (mode == PORT_WRAPPER_PSGMII) {
+			} else if (mode == PORT_WRAPPER_PSGMII || mode == PORT_WRAPPER_QSGMII) {
 				if (fdtdec_get_int(gd->fdt_blob, nodeoff, "malibu2port_phy", 0)) {
 					port_mux_ctrl.bf.port3_pcs_sel = CPPE_PORT3_PCS_SEL_PCS0_CHANNEL4;
 					port_mux_ctrl.bf.port4_pcs_sel = CPPE_PORT4_PCS_SEL_PCS0_CHANNEL3;
@@ -1134,7 +1132,8 @@ static void ppe_port_mux_set(int port_id, int port_type, int mode)
 			}
 			break;
 		case 5:
-			if (mode == PORT_WRAPPER_SGMII_PLUS || mode == PORT_WRAPPER_SGMII0_RGMII4) {
+			if (mode == PORT_WRAPPER_SGMII_PLUS || mode == PORT_WRAPPER_SGMII0_RGMII4 ||
+			    mode == PORT_WRAPPER_SGMII_FIBER) {
 				port_mux_ctrl.bf.port5_pcs_sel = CPPE_PORT5_PCS_SEL_PCS1_CHANNEL0;
 				port_mux_ctrl.bf.port5_gmac_sel = CPPE_PORT5_GMAC_SEL_GMAC;
 			} else if (mode == PORT_WRAPPER_PSGMII) {
@@ -1152,24 +1151,19 @@ static void ppe_port_mux_set(int port_id, int port_type, int mode)
 	ipq6018_ppe_reg_write(IPQ6018_PORT_MUX_CTRL,  port_mux_ctrl.val);
 }
 
-static void ppe_port_mux_mac_type_set(int port_id, int mode)
+void ppe_port_mux_mac_type_set(int port_id, int mode)
 {
 	uint32_t port_type;
 
 	switch(mode)
 	{
 		case PORT_WRAPPER_PSGMII:
-			port_type = PORT_GMAC_TYPE;
-			break;
 		case PORT_WRAPPER_SGMII0_RGMII4:
-			port_type = PORT_GMAC_TYPE;
-			break;
 		case PORT_WRAPPER_SGMII_PLUS:
+		case PORT_WRAPPER_SGMII_FIBER:
 			port_type = PORT_GMAC_TYPE;
 			break;
 		case PORT_WRAPPER_USXGMII:
-			port_type = PORT_XGMAC_TYPE;
-			break;
 		case PORT_WRAPPER_10GBASE_R:
 			port_type = PORT_XGMAC_TYPE;
 			break;
