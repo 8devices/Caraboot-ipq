@@ -1006,6 +1006,12 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 
 		if (status == 0)
 			linkup++;
+		else {
+			printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
+				priv->mac_unit, i, lstatus[status], speed,
+				dp[duplex]);
+			continue;
+		}
 
 		switch (speed) {
 			case FAL_SPEED_10:
