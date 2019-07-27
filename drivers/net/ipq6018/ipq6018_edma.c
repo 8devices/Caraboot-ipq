@@ -926,7 +926,8 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 	int i;
 	u8 status;
 	struct phy_ops *phy_get_ops;
-	fal_port_speed_t speed;
+	static fal_port_speed_t old_speed[IPQ6018_PHY_MAX] = {[0 ... IPQ6018_PHY_MAX-1] = FAL_SPEED_BUTT};
+	static fal_port_speed_t curr_speed[IPQ6018_PHY_MAX];
 	fal_port_duplex_t duplex;
 	char *lstatus[] = {"up", "Down"};
 	char *dp[] = {"Half", "Full"};
@@ -966,11 +967,12 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 			}
 			if (sfp_mode == PORT_WRAPPER_SGMII_FIBER) {
 				sgmii_fiber = 1;
-				speed = FAL_SPEED_1000;
+				curr_speed[i] = FAL_SPEED_1000;
 			} else if (sfp_mode == PORT_WRAPPER_10GBASE_R) {
 				sgmii_fiber = 0;
-				speed = FAL_SPEED_10000;
+				curr_speed[i] = FAL_SPEED_10000;
 			} else {
+
 				printf("\nError: wrong mode specified for SFP Port");
 				return sfp_mode;
 			}
@@ -1000,20 +1002,28 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 					phy_addr = i;
 			}
 			status = phy_get_ops->phy_get_link_status(priv->mac_unit, phy_addr);
-			phy_get_ops->phy_get_speed(priv->mac_unit, phy_addr, &speed);
+			phy_get_ops->phy_get_speed(priv->mac_unit, phy_addr, &curr_speed[i]);
 			phy_get_ops->phy_get_duplex(priv->mac_unit, phy_addr, &duplex);
 		}
 
-		if (status == 0)
+		if (status == 0) {
 			linkup++;
-		else {
+			if (old_speed[i] == curr_speed[i]) {
+				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
+					priv->mac_unit, i, lstatus[status], curr_speed[i],
+					dp[duplex]);
+				continue;
+			} else {
+				old_speed[i] = curr_speed[i];
+			}
+		} else {
 			printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
-				priv->mac_unit, i, lstatus[status], speed,
+				priv->mac_unit, i, lstatus[status], curr_speed[i],
 				dp[duplex]);
 			continue;
 		}
 
-		switch (speed) {
+		switch (curr_speed[i]) {
 			case FAL_SPEED_10:
 				mac_speed = 0x0;
 				if (i == aquantia_port) {
@@ -1024,7 +1034,7 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 				speed_clock1 = 0x109;
 				speed_clock2 = 0x9;
 				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
-						priv->mac_unit, i, lstatus[status], speed,
+						priv->mac_unit, i, lstatus[status], curr_speed[i],
 						dp[duplex]);
 				if (phy_node >= 0) {
 					if (phy_info[i]->phy_type == QCA8081_PHY_TYPE) {
@@ -1044,7 +1054,7 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 					speed_clock2 = 0x0;
 				}
 				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
-						priv->mac_unit, i, lstatus[status], speed,
+						priv->mac_unit, i, lstatus[status], curr_speed[i],
 						dp[duplex]);
 				if (phy_node >= 0) {
 					if (phy_info[i]->phy_type == QCA8081_PHY_TYPE) {
@@ -1064,7 +1074,7 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 					speed_clock1 = 0x101;
 				speed_clock2 = 0x0;
 				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
-						priv->mac_unit, i, lstatus[status], speed,
+						priv->mac_unit, i, lstatus[status], curr_speed[i],
 						dp[duplex]);
 				if (phy_node >= 0) {
 					if (phy_info[i]->phy_type == QCA8081_PHY_TYPE) {
@@ -1092,7 +1102,7 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 					}
 				}
 				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
-						priv->mac_unit, i, lstatus[status], speed,
+						priv->mac_unit, i, lstatus[status], curr_speed[i],
 						dp[duplex]);
 				break;
 			case FAL_SPEED_5000:
@@ -1100,7 +1110,7 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 				speed_clock1 = 0x303;
 				speed_clock2 = 0x0;
 				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
-						priv->mac_unit, i, lstatus[status], speed,
+						priv->mac_unit, i, lstatus[status], curr_speed[i],
 						dp[duplex]);
 				break;
 			case FAL_SPEED_10000:
@@ -1108,7 +1118,7 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 				speed_clock1 = 0x301;
 				speed_clock2 = 0x0;
 				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
-						priv->mac_unit, i, lstatus[status], speed,
+						priv->mac_unit, i, lstatus[status], curr_speed[i],
 						dp[duplex]);
 				break;
 			default:
