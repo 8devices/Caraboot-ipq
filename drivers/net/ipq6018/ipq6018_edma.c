@@ -1083,6 +1083,9 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 			}
 		}
 		ipq6018_speed_clock_set(i, speed_clock1, speed_clock2);
+
+		ipq6018_port_mac_clock_reset(i);
+
 		if (i == aquantia_port)
 			ipq6018_uxsgmii_speed_set(i, mac_speed, duplex, status);
 		else if (i == sfp_port) {

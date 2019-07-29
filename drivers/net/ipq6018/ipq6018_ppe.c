@@ -170,6 +170,40 @@ static void ipq6018_gmac_port_enable(int port)
 	ipq6018_ppe_reg_write(IPQ6018_PPE_MAC_MIB_CTL + (0x200 * port), 0x1);
 }
 
+/*
+ * ipq6018_port_mac_clock_reset()
+ */
+void ipq6018_port_mac_clock_reset(int port)
+{
+	switch(port) {
+		case 0:
+			writel(NSS_PORT1_ASSERT, GCC_NSS_PPE_RESET);
+			mdelay(150);
+			writel(PPE_DEASSERT, GCC_NSS_PPE_RESET);
+			break;
+		case 1:
+			writel(NSS_PORT2_ASSERT, GCC_NSS_PPE_RESET);
+			mdelay(150);
+			writel(PPE_DEASSERT, GCC_NSS_PPE_RESET);
+			break;
+		case 2:
+			writel(NSS_PORT3_ASSERT, GCC_NSS_PPE_RESET);
+			mdelay(150);
+			writel(PPE_DEASSERT, GCC_NSS_PPE_RESET);
+			break;
+		case 3:
+			writel(NSS_PORT4_ASSERT, GCC_NSS_PPE_RESET);
+			mdelay(150);
+			writel(PPE_DEASSERT, GCC_NSS_PPE_RESET);
+			break;
+		case 4:
+			writel(NSS_PORT5_ASSERT, GCC_NSS_PPE_RESET);
+			mdelay(150);
+			writel(PPE_DEASSERT, GCC_NSS_PPE_RESET);
+			break;
+	}
+}
+
 void ipq6018_speed_clock_set(int port, int speed_clock1, int speed_clock2)
 {
 	int i;
@@ -1303,7 +1337,7 @@ void ipq6018_ppe_provision_init(void)
 		ipq6018_ppe_reg_write(IPQ6018_PPE_STP_BASE + (0x4 * i), 0x3);
 
 	ipq6018_ppe_interface_mode_init();
-	/* Port 0-4 enable */
+	/* Port 0-4 disable */
 	for (i = 0; i < 5; i++) {
 		ipq6018_gmac_port_enable(i);
 		ppe_port_bridge_txmac_set(i + 1, 1);

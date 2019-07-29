@@ -1086,6 +1086,7 @@ void eth_clock_enable(void)
 	writel(PPE_ASSERT, GCC_NSS_PPE_RESET);
 	mdelay(500);
 	writel(PPE_DEASSERT, GCC_NSS_PPE_RESET);
+	mdelay(100);
 
 	/* set function select as mdio */
 	set_function_select_as_mdc_mdio();
