@@ -1494,6 +1494,17 @@ static void ipq6018_edma_configure_rings(struct ipq6018_edma_hw *ehw)
 	pr_info("%s: successfull\n", __func__);
 }
 
+/*
+ * ipq6018_edma_hw_reset()
+ *	EDMA hw reset
+ */
+void ipq6018_edma_hw_reset(void)
+{
+	writel(GCC_EDMA_HW_RESET_ASSERT, GCC_NSS_PPE_RESET);
+	udelay(100);
+	writel(GCC_EDMA_HW_RESET_DEASSERT, GCC_NSS_PPE_RESET);
+	udelay(100);
+}
 
 /*
  * ipq6018_edma_hw_init()
@@ -1522,7 +1533,19 @@ int ipq6018_edma_hw_init(struct ipq6018_edma_hw *ehw)
 	ehw->misc_intr_mask = 0;
 	ehw->rx_payload_offset = IPQ6018_EDMA_RX_PREHDR_SIZE;
 
+	/*
+	 * Reset EDMA
+	 */
+	ipq6018_edma_hw_reset();
+
+	/*
+	 * Disable interrupts
+	 */
 	ipq6018_edma_disable_intr(ehw);
+
+	/*
+	 * Disable rings
+	 */
 	ipq6018_edma_disable_rings(ehw);
 
 	ret = ipq6018_edma_init_rings(ehw);
