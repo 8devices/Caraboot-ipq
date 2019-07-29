@@ -126,7 +126,7 @@ int ipq6018_edma_alloc_rx_buffer(struct ipq6018_edma_hw *ehw,
 	reg_data = ipq6018_edma_reg_read(IPQ6018_EDMA_REG_RXFILL_PROD_IDX(
 					rxfill_ring->id));
 
-	next = reg_data & IPQ6018_EDMA_RXFILL_PROD_IDX_MASK;
+	next = reg_data & IPQ6018_EDMA_RXFILL_PROD_IDX_MASK & (rxfill_ring->count - 1);
 
 	/*
 	 * Read RXFILL ring consumer index
@@ -564,9 +564,11 @@ static int ipq6018_eth_recv(struct eth_device *dev)
 	struct ipq6018_eth_dev *priv = dev->priv;
 	struct ipq6018_edma_common_info *c_info = priv->c_info;
 	struct ipq6018_edma_rxdesc_ring *rxdesc_ring;
+	struct ipq6018_edma_txcmpl_ring *txcmpl_ring;
+	struct ipq6018_edma_rxfill_ring *rxfill_ring;
 	struct ipq6018_edma_hw *ehw = &c_info->hw;
 	volatile u32 reg_data;
-	u32 rxdesc_intr_status = 0;
+	u32 rxdesc_intr_status = 0, txcmpl_intr_status = 0, rxfill_intr_status = 0;
 	int i;
 
 	/*
@@ -589,7 +591,56 @@ static int ipq6018_eth_recv(struct eth_device *dev)
 					IPQ6018_EDMA_MASK_INT_DISABLE);
 	}
 
-	ipq6018_edma_rx_complete(c_info);
+	/*
+	 * Read TxCmpl intr status
+	 */
+	for (i = 0; i < ehw->txcmpl_rings; i++) {
+		txcmpl_ring = &ehw->txcmpl_ring[i];
+
+		reg_data = ipq6018_edma_reg_read(
+				IPQ6018_EDMA_REG_TX_INT_STAT(
+					txcmpl_ring->id));
+		txcmpl_intr_status |= reg_data &
+				IPQ6018_EDMA_TXCMPL_RING_INT_STATUS_MASK;
+
+		/*
+		 * Disable TxCmpl intr
+		 */
+		ipq6018_edma_reg_write(IPQ6018_EDMA_REG_TX_INT_MASK(
+					txcmpl_ring->id),
+					IPQ6018_EDMA_MASK_INT_DISABLE);
+	}
+
+	/*
+	 * Read RxFill intr status
+	 */
+	for (i = 0; i < ehw->rxfill_rings; i++) {
+		rxfill_ring = &ehw->rxfill_ring[i];
+
+		reg_data = ipq6018_edma_reg_read(
+				IPQ6018_EDMA_REG_RXFILL_INT_STAT(
+					rxfill_ring->id));
+		rxfill_intr_status |= reg_data &
+				IPQ6018_EDMA_RXFILL_RING_INT_STATUS_MASK;
+
+		/*
+		 * Disable RxFill intr
+		 */
+		ipq6018_edma_reg_write(IPQ6018_EDMA_REG_RXFILL_INT_MASK(
+					rxfill_ring->id),
+					IPQ6018_EDMA_MASK_INT_DISABLE);
+	}
+
+	if ((rxdesc_intr_status != 0) || (txcmpl_intr_status != 0) ||
+	    (rxfill_intr_status != 0)) {
+		for (i = 0; i < ehw->rxdesc_rings; i++) {
+			rxdesc_ring = &ehw->rxdesc_ring[i];
+			ipq6018_edma_reg_write(IPQ6018_EDMA_REG_RXDESC_INT_MASK(
+						rxdesc_ring->id),
+						IPQ6018_EDMA_MASK_INT_DISABLE);
+		}
+		ipq6018_edma_rx_complete(c_info);
+	}
 
 	return 0;
 }
