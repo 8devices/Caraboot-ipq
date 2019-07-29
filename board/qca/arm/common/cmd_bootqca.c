@@ -415,35 +415,6 @@ static int authenticate_rootfs_elf(unsigned int rootfs_hdr)
 #endif
 #endif
 
-static int set_num_cpus(void)
-{
-	char *arg;
-	char *p;
-	char bootarg_buf[50];
-	int numcpus;
-
-	numcpus =  smem_read_cpu_count();
-
-	if (numcpus != -1) { /* QCN3018 */
-		/* check if nosmp is set in bootargs */
-		arg = getenv("bootargs");
-		if (arg) {
-			p = strstr(arg, "nosmp");
-			if (p) {
-				if ((p[strlen("nosmp")] == ' ')
-					|| (p[strlen("nosmp")] == '\0'))
-					if ((p == arg) || (*(p - 1) == ' '))
-						return 0;
-			}
-		}
-		snprintf(bootarg_buf, sizeof(bootarg_buf),
-				"setenv bootargs ${booargs} maxcpus=%d\n",
-				numcpus);
-
-		return run_command(bootarg_buf, 0);
-	}
-	return 0;
-}
 
 static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
@@ -464,9 +435,6 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 
 	if (argc == 2 && strncmp(argv[1], "debug", 5) == 0)
 		debug = 1;
-
-	if ((ret = set_num_cpus()))
-		return ret;
 
 	if ((ret = set_fs_bootargs(&ipq_fs_on_nand)))
 		return ret;
@@ -714,9 +682,6 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 
 	if (argc == 2 && strncmp(argv[1], "debug", 5) == 0)
 		debug = 1;
-
-	if ((ret = set_num_cpus()))
-		return ret;
 
 	if ((ret = set_fs_bootargs(&ipq_fs_on_nand)))
 		return ret;

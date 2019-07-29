@@ -708,3 +708,53 @@ int smem_read_cpu_count()
 	}
 	return -1;
 }
+
+void fdt_fixup_cpus_node(void *blob)
+{
+	int numcpus;
+	int nodeoff;
+
+	numcpus =  smem_read_cpu_count();
+
+	if (numcpus == 2)
+	{
+		nodeoff = fdt_path_offset(blob, "/cpus/cpu@2");
+
+		if (nodeoff >= 0)
+			fdt_del_node((void *)blob, nodeoff);
+		else
+			printf("fixup_cpus_node: can't disable cpu2\n");
+
+		nodeoff = fdt_path_offset(blob, "/cpus/cpu@3");
+
+		if (nodeoff >= 0)
+			fdt_del_node((void *)blob, nodeoff);
+		else
+			printf("fixup_cpus_node: can't disable cpu3\n");
+	}
+
+	else if (numcpus == 1)
+	{
+		nodeoff = fdt_path_offset(blob, "/cpus/cpu@1");
+
+		if (nodeoff >= 0)
+			fdt_del_node((void *)blob, nodeoff);
+		else
+			printf("fixup_cpus_node: can't disable cpu1\n");
+
+		nodeoff = fdt_path_offset(blob, "/cpus/cpu@2");
+
+		if (nodeoff >= 0)
+			fdt_del_node((void *)blob, nodeoff);
+		else
+			printf("fixup_cpus_node: can't disable cpu2\n");
+
+		nodeoff = fdt_path_offset(blob, "/cpus/cpu@3");
+
+		if (nodeoff >= 0)
+			fdt_del_node((void *)blob, nodeoff);
+		else
+			printf("fixup_cpus_node: can't disable cpu3\n");
+	}
+	return;
+}
