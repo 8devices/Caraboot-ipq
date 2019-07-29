@@ -936,7 +936,7 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 	int sfp_port = -1;
 	int phy_node = -1;
 	int ret_sgmii_mode;
-	int sfp_mode, sgmii_fiber = 0;
+	int sfp_mode, sgmii_fiber = -1;
 
 	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
 	if (node >= 0)
@@ -966,16 +966,14 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 			}
 			if (sfp_mode == PORT_WRAPPER_SGMII_FIBER) {
 				sgmii_fiber = 1;
+				speed = FAL_SPEED_1000;
 			} else if (sfp_mode == PORT_WRAPPER_10GBASE_R) {
 				sgmii_fiber = 0;
+				speed = FAL_SPEED_10000;
 			} else {
 				printf("\nError: wrong mode specified for SFP Port");
 				return sfp_mode;
 			}
-			if (sgmii_fiber)
-				speed = FAL_SPEED_1000;
-			else
-				speed = FAL_SPEED_10000;
 		} else {
 			if (!priv->ops[i]) {
 				printf ("Phy ops not mapped\n");
@@ -1130,22 +1128,26 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 				}
 			}
 		}
+
+		if (i == sfp_port) {
+			if (sgmii_fiber) {
+				ppe_port_bridge_txmac_set(i + 1, 1);
+				ppe_uniphy_mode_set(0x1, PORT_WRAPPER_SGMII_FIBER);
+				ppe_port_mux_mac_type_set(i + 1, PORT_WRAPPER_SGMII_FIBER);
+			} else {
+				ppe_uniphy_mode_set(0x1, PORT_WRAPPER_10GBASE_R);
+				ppe_port_mux_mac_type_set(i + 1, PORT_WRAPPER_10GBASE_R);
+			}
+		}
+
 		ipq6018_speed_clock_set(i, speed_clock1, speed_clock2);
 
 		ipq6018_port_mac_clock_reset(i);
 
 		if (i == aquantia_port)
 			ipq6018_uxsgmii_speed_set(i, mac_speed, duplex, status);
-		else if (i == sfp_port) {
-			if (sgmii_fiber) {
-				ppe_port_bridge_txmac_set(i + 1, 1);
-				ppe_uniphy_mode_set(0x1, PORT_WRAPPER_SGMII_FIBER);
-				ppe_port_mux_mac_type_set(5, PORT_WRAPPER_SGMII_FIBER);
-				ipq6018_pqsgmii_speed_set(i, mac_speed, status);
-			} else {
-				ipq6018_10g_r_speed_set(i, status);
-			}
-		}
+		else if (i == sfp_port && sgmii_fiber == 0)
+			ipq6018_10g_r_speed_set(i, status);
 		else
 			ipq6018_pqsgmii_speed_set(i, mac_speed, status);
 	}
