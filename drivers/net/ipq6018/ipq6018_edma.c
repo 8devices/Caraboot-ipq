@@ -59,7 +59,6 @@ extern void ipq_qca8075_phy_map_ops(struct phy_ops **ops);
 extern int ipq_qca8075_phy_init(struct phy_ops **ops);
 extern void qca8075_phy_interface_set_mode(uint32_t phy_id,
 		uint32_t mode);
-extern int ipq_qca8033_phy_init(struct phy_ops **ops, u32 phy_id);
 extern int ipq_qca8081_phy_init(struct phy_ops **ops, u32 phy_id);
 extern int ipq_qca_aquantia_phy_init(struct phy_ops **ops, u32 phy_id);
 extern int ipq_board_fw_download(unsigned int phy_addr);
@@ -933,15 +932,13 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 	char *dp[] = {"Half", "Full"};
 	int linkup=0;
 	int mac_speed = 0, speed_clock1 = 0, speed_clock2 = 0;
-	int phy_addr, port_8033 = -1, node, aquantia_port = -1;
+	int phy_addr, node, aquantia_port = -1;
 	int sfp_port = -1;
 	int phy_node = -1;
 	int ret_sgmii_mode;
 	int sfp_mode, sgmii_fiber = -1;
 
 	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
-	if (node >= 0)
-		port_8033 = fdtdec_get_uint(gd->fdt_blob, node, "8033_port", -1);
 
 	if (node >= 0)
 		aquantia_port = fdtdec_get_uint(gd->fdt_blob, node, "aquantia_port", -1);
@@ -993,10 +990,7 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 			if (phy_node >= 0) {
 				phy_addr = phy_info[i]->phy_address;
 			} else {
-
-				if (i == port_8033)
-					phy_addr = QCA8033_PHY_ADDR;
-				else if (i == aquantia_port)
+				if (i == aquantia_port)
 					phy_addr = AQU_PHY_ADDR;
 				else
 					phy_addr = i;
@@ -1690,12 +1684,10 @@ int ipq6018_edma_init(void *edma_board_cfg)
 	int ret = -1;
 	ipq6018_edma_board_cfg_t ledma_cfg, *edma_cfg;
 	static int sw_init_done = 0;
-	int port_8033 = -1, node, phy_addr, aquantia_port = -1;
+	int node, phy_addr, aquantia_port = -1;
 	int mode, phy_node = -1;
 
 	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
-	if (node >= 0)
-		port_8033 = fdtdec_get_uint(gd->fdt_blob, node, "8033_port", -1);
 
 	if (node >= 0)
 		aquantia_port = fdtdec_get_uint(gd->fdt_blob, node, "aquantia_port", -1);
@@ -1793,9 +1785,7 @@ int ipq6018_edma_init(void *edma_board_cfg)
 			if (phy_node >= 0) {
 				phy_addr = phy_info[phy_id]->phy_address;
 			} else {
-				if (phy_id == port_8033)
-					phy_addr = QCA8033_PHY_ADDR;
-				else if (phy_id == aquantia_port)
+				if (phy_id == aquantia_port)
 					phy_addr = AQU_PHY_ADDR;
 				else
 					phy_addr = phy_id;
@@ -1827,11 +1817,6 @@ int ipq6018_edma_init(void *edma_board_cfg)
 					else if ( mode == PORT_WRAPPER_QSGMII)
 						qca8075_phy_interface_set_mode(0x0, 0x4);
 					break;
-#ifdef CONFIG_QCA8033_PHY
-				case QCA8033_PHY:
-					ipq_qca8033_phy_init(&ipq6018_edma_dev[i]->ops[phy_id], phy_addr);
-					break;
-#endif
 #ifdef CONFIG_QCA8081_PHY
 				case QCA8081_PHY:
 				case QCA8081_1_1_PHY:
