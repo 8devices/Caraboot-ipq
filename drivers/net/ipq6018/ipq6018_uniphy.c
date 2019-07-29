@@ -93,28 +93,21 @@ static void ppe_gcc_uniphy_soft_reset(uint32_t uniphy_index)
 
 	reg_value = readl(GCC_UNIPHY0_MISC + (uniphy_index * GCC_UNIPHY_REG_INC));
 
-	reg_value |= GCC_UNIPHY_PSGMII_SOFT_RESET;
+	if (uniphy_index == 0)
+		reg_value |= GCC_UNIPHY_PSGMII_SOFT_RESET;
+	else
+		reg_value |= GCC_UNIPHY_SGMII_SOFT_RESET;
+
 	writel(reg_value, GCC_UNIPHY0_MISC + (uniphy_index * GCC_UNIPHY_REG_INC));
 
 	udelay(500);
 
-	reg_value &= ~GCC_UNIPHY_PSGMII_SOFT_RESET;
+	if (uniphy_index == 0)
+		reg_value &= ~GCC_UNIPHY_PSGMII_SOFT_RESET;
+	else
+		reg_value &= ~GCC_UNIPHY_SGMII_SOFT_RESET;
+
 	writel(reg_value, GCC_UNIPHY0_MISC + (uniphy_index * GCC_UNIPHY_REG_INC));
-}
-
-static void ppe_gcc_uniphy_sgmii_soft_reset(uint32_t uniphy_index)
-{
-	uint32_t reg_value;
-
-	reg_value = readl(GCC_UNIPHY0_MISC + (uniphy_index * GCC_UNIPHY_REG_INC));
-
-	reg_value |= GCC_UNIPHY_SGMII_SOFT_RESET;
-	writel(reg_value, GCC_UNIPHY0_MISC + (uniphy_index * GCC_UNIPHY_REG_INC));
-	mdelay(100);
-
-	reg_value &= ~GCC_UNIPHY_SGMII_SOFT_RESET;
-	writel(reg_value, GCC_UNIPHY0_MISC + (uniphy_index * GCC_UNIPHY_REG_INC));
-	mdelay(100);
 }
 
 static void ppe_uniphy_psgmii_mode_set(uint32_t uniphy_index)
@@ -183,7 +176,7 @@ static void ppe_uniphy_sgmii_mode_set(uint32_t uniphy_index, uint32_t mode)
 			break;
 	}
 
-	ppe_gcc_uniphy_sgmii_soft_reset(uniphy_index);
+	ppe_gcc_uniphy_soft_reset(uniphy_index);
 
 	if (uniphy_index == 0) {
 		writel(0x1, GCC_UNIPHY0_PORT4_RX_CBCR);
