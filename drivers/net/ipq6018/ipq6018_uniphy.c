@@ -77,10 +77,12 @@ static void ppe_gcc_uniphy_xpcs_reset(uint32_t uniphy_index, bool enable)
 {
 	uint32_t reg_value;
 
+	reg_value = readl(GCC_UNIPHY0_MISC + (uniphy_index * GCC_UNIPHY_REG_INC));
+
 	if(enable)
-		reg_value = GCC_UNIPHY_USXGMII_XPCS_RESET;
+		reg_value |= GCC_UNIPHY_USXGMII_XPCS_RESET;
 	else
-		reg_value = GCC_UNIPHY_USXGMII_XPCS_RELEASE_RESET;
+		reg_value &= ~GCC_UNIPHY_USXGMII_XPCS_RESET;
 
 	writel(reg_value, GCC_UNIPHY0_MISC + (uniphy_index * GCC_UNIPHY_REG_INC));
 }
