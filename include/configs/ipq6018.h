@@ -150,7 +150,6 @@ extern loff_t board_env_size;
 /*
  * USB Support
  */
-#define CONFIG_USB_XHCI_IPQ
 #ifdef CONFIG_USB_XHCI_IPQ
 #define CONFIG_USB_XHCI
 #define CONFIG_USB_XHCI_DWC3
@@ -160,7 +159,6 @@ extern loff_t board_env_size;
 #define CONFIG_USB_MAX_CONTROLLER_COUNT         2
 #endif
 
-#define CONFIG_PCI_IPQ
 #define PCI_MAX_DEVICES	1
 #ifdef CONFIG_PCI_IPQ
 #define CONFIG_PCI
@@ -310,7 +308,6 @@ extern loff_t board_env_size;
 #define CONFIG_IPQ6018_TZ_WONCE_4_ADDR		0x193d010
 
 #define CONFIG_IPQ6018_EDMA		1
-#define CONFIG_IPQ6018_QCA_AQUANTIA_PHY	1
 #define CONFIG_IPQ6018_BRIDGED_MODE	1
 #define CONFIG_NET_RETRY_COUNT		5
 #define CONFIG_SYS_RX_ETH_BUFFER	16
