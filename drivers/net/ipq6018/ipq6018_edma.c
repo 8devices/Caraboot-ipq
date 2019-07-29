@@ -1289,66 +1289,6 @@ static int ipq6018_edma_init_rings(struct ipq6018_edma_hw *ehw)
 }
 
 /*
- * ipq6018_edma_configure_rx_threshold()
- *	Configure Rx threshold parameters
- */
-static void ipq6018_edma_configure_rx_threshold(void)
-{
-	uint32_t rxq_fc_thre, rxq_ctrl;
-
-	rxq_fc_thre = (IPQ6018_EDMA_RXFILL_FIFO_XOFF_THRE &
-			IPQ6018_EDMA_RXFILL_FIFO_XOFF_THRE_MASK)
-			<< IPQ6018_EDMA_RXFILL_FIFO_XOFF_THRE_SHIFT;
-
-	rxq_fc_thre |= (IPQ6018_EDMA_RXFILL_FIFO_XOFF_THRE &
-			IPQ6018_EDMA_DESC_FIFO_XOFF_THRE_MASK)
-			<< IPQ6018_EDMA_DESC_FIFO_XOFF_THRE_SHIFT;
-
-	ipq6018_edma_reg_write(IPQ6018_EDMA_REG_RXQ_FC_THRE, rxq_fc_thre);
-
-	rxq_ctrl = (IPQ6018_EDMA_RXFILL_PF_THRE &
-			 IPQ6018_EDMA_RXFILL_PF_THRE_MASK) <<
-			 IPQ6018_EDMA_RXFILL_PF_THRE_SHIFT;
-
-	rxq_ctrl |= (IPQ6018_EDMA_RXDESC_WB_THRE &
-			 IPQ6018_EDMA_RXDESC_WB_THRE_MASK) <<
-			 IPQ6018_EDMA_RXDESC_WB_THRE_SHIFT;
-
-	rxq_ctrl |= (IPQ6018_EDMA_RXDESC_WB_TIMER &
-			 IPQ6018_EDMA_RXDESC_WB_TIMER_MASK) <<
-			 IPQ6018_EDMA_RXDESC_WB_TIMER_SHIFT;
-
-	ipq6018_edma_reg_write(IPQ6018_EDMA_REG_RXQ_CTRL, rxq_ctrl);
-}
-
-/*
- * ipq6018_edma_configure_tx_threshold()
- *	Configure global Tx threshold parameters
- */
-static void ipq6018_edma_configure_tx_threshold(void)
-{
-	uint32_t txq_ctrl;
-
-	txq_ctrl = (IPQ6018_EDMA_TXDESC_PF_THRE &
-			 IPQ6018_EDMA_TXDESC_PF_THRE_MASK) <<
-			 IPQ6018_EDMA_TXDESC_PF_THRE_SHIFT;
-
-	txq_ctrl |= (IPQ6018_EDMA_TXCMPL_WB_THRE &
-			 IPQ6018_EDMA_TXCMPL_WB_THRE_MASK) <<
-			 IPQ6018_EDMA_TXCMPL_WB_THRE_SHIFT;
-
-	txq_ctrl |= (IPQ6018_EDMA_TXDESC_PKT_SRAM_THRE &
-			 IPQ6018_EDMA_TXDESC_PKT_SRAM_THRE_MASK) <<
-			 IPQ6018_EDMA_TXDESC_PKT_SRAM_THRE_SHIFT;
-
-	txq_ctrl |= (IPQ6018_EDMA_TXCMPL_WB_TIMER &
-			 IPQ6018_EDMA_TXCMPL_WB_TIMER_MASK) <<
-			 IPQ6018_EDMA_TXCMPL_WB_TIMER_SHIFT;
-
-	ipq6018_edma_reg_write(IPQ6018_EDMA_REG_TXQ_CTRL, txq_ctrl);
-}
-
-/*
  * ipq6018_edma_configure_txdesc_ring()
  *	Configure one TxDesc ring
  */
@@ -1608,12 +1548,6 @@ int ipq6018_edma_hw_init(struct ipq6018_edma_hw *ehw)
 	data |= (desc_index & 0xF);
 	ipq6018_edma_reg_write(reg, data);
 	pr_debug("Configure QID2RID reg:0x%x to 0x%x\n", reg, data);
-
-	/*
-	 * Configure Tx/Rx queue threshold parameters
-	 */
-	ipq6018_edma_configure_tx_threshold();
-	ipq6018_edma_configure_rx_threshold();
 
 	/*
 	 * Set RXDESC2FILL_MAP_xx reg.
