@@ -290,8 +290,6 @@ static inline void ipq6018_free_mem(void *ptr)
 		free(ptr);
 }
 
-//extern struct ipq6018_edma_hw ipq6018_edma_hw;
-
 uint32_t ipq6018_edma_reg_read(uint32_t reg_off);
 void ipq6018_edma_reg_write(uint32_t reg_off, uint32_t val);
 

@@ -872,10 +872,7 @@ static int get_sgmii_mode(int port_id)
 static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 {
 	struct ipq6018_eth_dev *priv = eth_dev->priv;
-	struct ipq6018_edma_common_info *c_info = priv->c_info;
-	struct ipq6018_edma_hw *ehw = &c_info->hw;
 	int i;
-	uint32_t data;
 	u8 status;
 	struct phy_ops *phy_get_ops;
 	fal_port_speed_t speed;
@@ -1107,48 +1104,6 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 		return -1;
 	}
 
-	/*
-	 * Alloc Rx buffers
-	 */
-	ipq6018_edma_alloc_rx_buffer(ehw, ehw->rxfill_ring);
-
-	/*
-	 * Set DMA request priority
-	 */
-	ipq6018_edma_reg_write(IPQ6018_EDMA_REG_DMAR_CTRL,
-		(1 & IPQ6018_EDMA_DMAR_REQ_PRI_MASK) <<
-		IPQ6018_EDMA_DMAR_REQ_PRI_SHIFT);
-
-	/*
-	 * Enable EDMA
-	 */
-	ipq6018_edma_reg_write(IPQ6018_EDMA_REG_PORT_CTRL,
-				 IPQ6018_EDMA_PORT_CTRL_EN);
-
-	/*
-	 * Enable Rx rings
-	 */
-	for (i = ehw->rxdesc_ring_start; i < ehw->rxdesc_ring_end; i++) {
-		data = ipq6018_edma_reg_read(IPQ6018_EDMA_REG_RXDESC_CTRL(i));
-		data |= IPQ6018_EDMA_RXDESC_RX_EN;
-		ipq6018_edma_reg_write(IPQ6018_EDMA_REG_RXDESC_CTRL(i), data);
-	}
-
-	for (i = ehw->rxfill_ring_start; i < ehw->rxfill_ring_end; i++) {
-		data = ipq6018_edma_reg_read(IPQ6018_EDMA_REG_RXFILL_RING_EN(i));
-		data |= IPQ6018_EDMA_RXFILL_RING_EN;
-		ipq6018_edma_reg_write(IPQ6018_EDMA_REG_RXFILL_RING_EN(i), data);
-	}
-
-	/*
-	 * Enable Tx rings
-	 */
-	for (i = ehw->txdesc_ring_start; i < ehw->txdesc_ring_end; i++) {
-		data = ipq6018_edma_reg_read(IPQ6018_EDMA_REG_TXDESC_CTRL(i));
-		data |= IPQ6018_EDMA_TXDESC_TX_EN;
-		ipq6018_edma_reg_write(IPQ6018_EDMA_REG_TXDESC_CTRL(i), data);
-	}
-
 	pr_info("%s: done\n", __func__);
 
 	return 0;
@@ -1161,17 +1116,6 @@ static int ipq6018_edma_wr_macaddr(struct eth_device *dev)
 
 static void ipq6018_eth_halt(struct eth_device *dev)
 {
-	struct ipq6018_eth_dev *priv = dev->priv;
-	struct ipq6018_edma_common_info *c_info = priv->c_info;
-	struct ipq6018_edma_hw *ehw = &c_info->hw;
-
-	ipq6018_edma_disable_intr(ehw);
-	ipq6018_edma_disable_rings(ehw);
-
-	/*
-	 * Disable EDMA
-	 */
-	ipq6018_edma_reg_write(IPQ6018_EDMA_REG_PORT_CTRL, IPQ6018_EDMA_DISABLE);
 	pr_info("%s: done\n", __func__);
 }
 
@@ -1581,6 +1525,36 @@ int ipq6018_edma_hw_init(struct ipq6018_edma_hw *ehw)
 	reg = IPQ6018_EDMA_REG_RXDESC2FILL_MAP_1;
 	pr_debug("EDMA_REG_RXDESC2FILL_MAP_1: 0x%x\n",
 		 ipq6018_edma_reg_read(reg));
+
+	/*
+	 * Enable EDMA
+	 */
+	ipq6018_edma_reg_write(IPQ6018_EDMA_REG_PORT_CTRL,
+				 IPQ6018_EDMA_PORT_CTRL_EN);
+
+	/*
+	 * Enable Rx rings
+	 */
+	for (i = ehw->rxdesc_ring_start; i < ehw->rxdesc_ring_end; i++) {
+		data = ipq6018_edma_reg_read(IPQ6018_EDMA_REG_RXDESC_CTRL(i));
+		data |= IPQ6018_EDMA_RXDESC_RX_EN;
+		ipq6018_edma_reg_write(IPQ6018_EDMA_REG_RXDESC_CTRL(i), data);
+	}
+
+	for (i = ehw->rxfill_ring_start; i < ehw->rxfill_ring_end; i++) {
+		data = ipq6018_edma_reg_read(IPQ6018_EDMA_REG_RXFILL_RING_EN(i));
+		data |= IPQ6018_EDMA_RXFILL_RING_EN;
+		ipq6018_edma_reg_write(IPQ6018_EDMA_REG_RXFILL_RING_EN(i), data);
+	}
+
+	/*
+	 * Enable Tx rings
+	 */
+	for (i = ehw->txdesc_ring_start; i < ehw->txdesc_ring_end; i++) {
+		data = ipq6018_edma_reg_read(IPQ6018_EDMA_REG_TXDESC_CTRL(i));
+		data |= IPQ6018_EDMA_TXDESC_TX_EN;
+		ipq6018_edma_reg_write(IPQ6018_EDMA_REG_TXDESC_CTRL(i), data);
+	}
 
 	/*
 	 * Enable MISC interrupt
