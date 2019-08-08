@@ -350,6 +350,7 @@ extern const char *rsvd_node;
 extern const char *del_node[];
 extern const add_node_t add_fdt_node[];
 
+void reset_crashdump(void);
 int ipq_board_usb_init(void);
 
 #define MSM_SDC1_BASE           0x7800000
