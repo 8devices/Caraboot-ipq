@@ -25,7 +25,6 @@
 		uart2 = "/serial@78B0000";
 		i2c0 = "/i2c@78b6000";
 		pci0 = "/pci@20000000";
-		pci1 = "/pci@10000000";
 		mmc = "/sdhci@07824000";
 	};
 	ess-switch {
