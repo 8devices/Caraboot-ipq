@@ -373,7 +373,7 @@ static int dump_wlan_segments(struct dumpinfo_t *dumpinfo, int indx)
 
 			if (cur_type == QCA_WDT_LOG_DUMP_TYPE_WLAN_MOD_INFO) {
 				snprintf(wlan_segment_name,	sizeof(wlan_segment_name),
-							 "MODULE_INFO.txt");
+							 "MOD_INFO.txt");
 				wlan_tlv_size = *(uint32_t *)(uintptr_t)tlv_info.size;
 			} else {
 				snprintf(wlan_segment_name,

@@ -806,21 +806,25 @@ static void fill_dentry(fsdata *mydata, dir_entry *dentptr,
 static int check_overflow(fsdata *mydata, __u32 clustnum, loff_t size)
 {
 	__u32 startsect, sect_num, offset;
+	__u32 total_clusters = 0;
 
-	if (clustnum > 0) {
-		startsect = mydata->data_begin +
-				clustnum * mydata->clust_size;
-	} else {
+	total_clusters = ((total_sector - mydata->rootdir_sect -
+				mydata->rootdir_size) /
+				mydata->clust_size) - 3;
+
+	/* the last sectors could be orphaned and not belong to any cluster */
+	if (clustnum >= total_clusters) {
+		return -1;
+	} else if (!clustnum) {
 		startsect = mydata->rootdir_sect;
+		sect_num = div_u64_rem(size, mydata->sect_size, &offset);
+
+		if (offset != 0)
+			sect_num++;
+		if (startsect + sect_num > total_sector)
+			return -1;
 	}
 
-	sect_num = div_u64_rem(size, mydata->sect_size, &offset);
-
-	if (offset != 0)
-		sect_num++;
-
-	if (startsect + sect_num > total_sector)
-		return -1;
 	return 0;
 }
 
@@ -1003,8 +1007,9 @@ static int do_fat_write(const char *filename, void *buffer, loff_t size,
 	if (mydata->fatsize == 32) {
 		mydata->data_begin = mydata->rootdir_sect -
 					(mydata->clust_size * 2);
+		mydata->rootdir_size = 0;
 	} else {
-		int rootdir_size;
+		__u16 rootdir_size;
 
 		rootdir_size = ((bs.dir_entries[1]  * (int)256 +
 				 bs.dir_entries[0]) *
@@ -1013,6 +1018,7 @@ static int do_fat_write(const char *filename, void *buffer, loff_t size,
 		mydata->data_begin = mydata->rootdir_sect +
 					rootdir_size -
 					(mydata->clust_size * 2);
+		mydata->rootdir_size = rootdir_size;
 	}
 
 	mydata->fatbufnum = -1;
