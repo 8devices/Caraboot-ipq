@@ -138,7 +138,9 @@ char * const argv[])
 	layout = "default";
 	retn = CMD_RET_FAILURE;
 
+#ifdef CONFIG_QCA_MMC
 	block_dev_desc_t *blk_dev;
+#endif
 	disk_partition_t disk_info = {0};
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 	nand_info_t *nand = &nand_info[CONFIG_NAND_FLASH_INFO_IDX];
@@ -204,6 +206,7 @@ char * const argv[])
 			layout = "sbl";
 #endif
 
+#ifdef CONFIG_QCA_MMC
 	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
 
 		blk_dev = mmc_get_dev(mmc_host.dev_num);
@@ -218,6 +221,7 @@ char * const argv[])
 			part_size = (ulong)disk_info.size;
 		}
 
+#endif
 	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
 
 		if (get_which_flash_param(part_name)) {
@@ -242,7 +246,8 @@ char * const argv[])
 				part_size = (ulong) IPQ_NAND_ROOTFS_SIZE;
 			}
 
-		}else if ((smem_getpart(part_name, &start_block, &size_block)
+#ifdef CONFIG_QCA_MMC
+		} else if ((smem_getpart(part_name, &start_block, &size_block)
 				== -ENOENT) && (sfi->rootfs.offset == 0xBAD0FF5E)){
 
 			/* NOR + EMMC */
@@ -259,6 +264,7 @@ char * const argv[])
 				offset = (ulong)disk_info.start;
 				part_size = (ulong)disk_info.size;
 			}
+#endif
 		} else {
 
 			ret = smem_getpart(part_name, &start_block,
