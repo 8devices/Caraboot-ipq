@@ -97,11 +97,13 @@ struct crashdump_flash_nand_cxt {
        unsigned char temp_data[MAX_NAND_PAGE_SIZE];
 };
 
+#ifdef CONFIG_QCA_SPI
 /* Context for SPI NOR Flash memory */
 struct crashdump_flash_spi_cxt {
        loff_t start_crashdump_offset;
        loff_t cur_crashdump_offset;
 };
+#endif
 
 #ifdef CONFIG_QCA_MMC
 /* Context for EMMC Flash memory */
@@ -115,9 +117,11 @@ struct crashdump_flash_emmc_cxt {
 #endif
 
 
-static struct spi_flash *crashdump_spi_flash;
 static struct crashdump_flash_nand_cxt crashdump_nand_cnxt;
+#ifdef CONFIG_QCA_SPI
+static struct spi_flash *crashdump_spi_flash;
 static struct crashdump_flash_spi_cxt crashdump_flash_spi_cnxt;
+#endif
 #ifdef CONFIG_QCA_MMC
 static struct mmc *mmc;
 static struct crashdump_flash_emmc_cxt crashdump_emmc_cnxt;
@@ -797,6 +801,7 @@ int crashdump_nand_flash_write_data(void *cnxt,
 	return 0;
 }
 
+#ifdef CONFIG_QCA_SPI
 /* Init function for SPI NOR flash writing. It erases the required sectors */
 int init_crashdump_spi_flash_write(void *cnxt,
 			loff_t offset,
@@ -846,6 +851,7 @@ int deinit_crashdump_spi_flash_write(void *cnxt)
 {
 	return 0;
 }
+#endif
 
 #ifdef CONFIG_QCA_MMC
 /* Init function for EMMC. It initialzes the EMMC */
