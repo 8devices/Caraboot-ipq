@@ -361,6 +361,11 @@ __weak int apps_iscrashed(void)
 	return 0;
 }
 
+__weak int apps_iscrashed_crashdump_disabled(void)
+{
+	return 0;
+}
+
 void autoboot_command(const char *s)
 {
 	debug("### main_loop: bootcmd=\"%s\"\n", s ? s : "<UNDEFINED>");
@@ -391,6 +396,11 @@ void autoboot_command(const char *s)
 		return;
 	}
 #endif
+
+	if (apps_iscrashed_crashdump_disabled()) {
+		printf("Crashdump disabled, resetting the board..\n");
+		reset_board();
+	}
 
 	if (stored_bootdelay != -1 && s && !abortboot(stored_bootdelay)) {
 #if defined(CONFIG_AUTOBOOT_KEYED) && !defined(CONFIG_AUTOBOOT_KEYED_CTRLC)

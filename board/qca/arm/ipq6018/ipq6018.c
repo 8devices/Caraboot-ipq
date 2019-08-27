@@ -30,6 +30,7 @@
 #include <command.h>
 
 #define DLOAD_MAGIC_COOKIE	0x10
+#define DLOAD_DISABLED		0x40
 DECLARE_GLOBAL_DATA_PTR;
 struct sdhci_host mmc_host;
 extern int ipq6018_edma_init(void *cfg);
@@ -773,6 +774,16 @@ void disable_caches(void)
 __weak int ipq_get_tz_version(char *version_name, int buf_size)
 {
 	return 1;
+}
+
+int apps_iscrashed_crashdump_disabled(void)
+{
+	u32 *dmagic = (u32 *)CONFIG_IPQ6018_DMAGIC_ADDR;
+
+	if (*dmagic == DLOAD_DISABLED)
+		return 1;
+
+	return 0;
 }
 
 int apps_iscrashed(void)
