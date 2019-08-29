@@ -500,6 +500,12 @@ __weak void fdt_fixup_cpus_node(void * blob)
 {
 	return;
 }
+
+__weak void fdt_fixup_set_dload_dis(void *blob)
+{
+	return;
+}
+
 __weak void fdt_fixup_set_dload_warm_reset(void *blob)
 {
 	return;
@@ -615,6 +621,9 @@ int ft_board_setup(void *blob, bd_t *bd)
 	s = getenv("dload_warm_reset");
 	if (s)
 		fdt_fixup_set_dload_warm_reset(blob);
+	s = getenv("dload_dis");
+	if (s)
+		fdt_fixup_set_dload_dis(blob);
 	s = getenv("qce_fixed_key");
 	if (s)
 		fdt_fixup_set_qce_fixed_key(blob);
