@@ -225,6 +225,7 @@ void reset_crashdump(void)
 	return;
 }
 
+#ifdef CONFIG_QCA_MMC
 void emmc_clock_config(void)
 {
 	/* Enable root clock generator */
@@ -316,6 +317,13 @@ int board_mmc_init(bd_t *bis)
 
 	return ret;
 }
+#else
+int board_mmc_init(bd_t *bis)
+{
+	return 0;
+}
+#endif
+
 void board_nand_init(void)
 {
 #ifdef CONFIG_QCA_SPI
@@ -780,6 +788,7 @@ int apps_iscrashed(void)
 /**
  * Set the uuid in bootargs variable for mounting rootfilesystem
  */
+#ifdef CONFIG_QCA_MMC
 int set_uuid_bootargs(char *boot_args, char *part_name, int buflen, bool gpt_flag)
 {
 	int ret, len;
@@ -826,6 +835,12 @@ int set_uuid_bootargs(char *boot_args, char *part_name, int buflen, bool gpt_fla
 
 	return 0;
 }
+#else
+int set_uuid_bootargs(char *boot_args, char *part_name, int buflen, bool gpt_flag)
+{
+	return 0;
+}
+#endif
 
 int get_aquantia_gpio(void)
 {
