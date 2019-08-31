@@ -25,6 +25,32 @@
 		usb0 = "/xhci@8a00000";
 		usb1 = "/xhci@7000000";
 		i2c1 = "/i2c@78ba000";
+		i2c0 = "/i2c@78b7000";
+	};
+	i2c0: i2c@78b7000 {
+		compatible = "qcom,qup-i2c";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x78b7000 0x600>;
+		clock-frequency  = <400000>;
+
+		i2c_gpio {
+			gpio1 {
+				gpio = <42>;
+				func = <2>;
+				pull = <GPIO_PULL_UP>;
+				drvstr = <GPIO_8MA>;
+				oe = <GPIO_OE_ENABLE>;
+			};
+
+			gpio2 {
+				gpio = <43>;
+				func = <2>;
+				pull = <GPIO_PULL_UP>;
+				drvstr = <GPIO_8MA>;
+				oe = <GPIO_OE_ENABLE>;
+			};
+		};
 	};
 	ess-switch {
 		switch_mac_mode = <PORT_WRAPPER_PSGMII>;
