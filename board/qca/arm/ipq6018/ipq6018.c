@@ -1308,3 +1308,23 @@ void ipq_uboot_fdt_fixup(void)
 	}
 	return;
 }
+
+void fdt_fixup_set_qca_cold_reboot_enable(void *blob)
+{
+	int nodeoff, ret;
+	const char *dload_node = {"/soc/qca,scm_restart_reason"};
+	uint32_t setval = 1;
+
+	nodeoff = fdt_path_offset(blob, dload_node);
+	if (nodeoff < 0) {
+		printf("fixup_set_dload: unable to find node '%s'\n",
+		       dload_node);
+		return;
+	}
+
+	ret = fdt_setprop_u32(blob, nodeoff, "qca,coldreboot-enabled", setval);
+	if (ret)
+		printf("fixup_set_dload: 'qca,coldreboot-enabled' not set");
+
+	return;
+}
