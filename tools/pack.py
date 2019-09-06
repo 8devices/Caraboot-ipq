@@ -1463,6 +1463,7 @@ class Pack(object):
     def __process_board_flash(self, ftype, images, root):
 	global SRC_DIR
 	global ARCH_NAME
+	global MODE
 
         try:
             if ftype == "tiny-nor":
@@ -1483,6 +1484,46 @@ class Pack(object):
                 part_info = root.find(".//data[@type='" + "NORPLUSNAND_PARAMETER']")
             else:
                 part_info = root.find(".//data[@type='" + ftype.upper() + "_PARAMETER']")
+
+	    if ARCH_NAME == "ipq6018":
+		if MODE == "64":
+                    MODE_APPEND = "_64"
+                else:
+                    MODE_APPEND = ""
+
+                if ftype in ["nand-audio", "nand-audio-4k"]:
+                    UBINIZE_CFG_NAME = ARCH_NAME + "-ubinize" + MODE_APPEND + "-audio.cfg"
+                else:
+                    UBINIZE_CFG_NAME = ARCH_NAME + "-ubinize" + MODE_APPEND + ".cfg"
+
+                f1 = open(SRC_DIR + "/" + ARCH_NAME + "/flash_partition/" + UBINIZE_CFG_NAME, 'r')
+                UBINIZE_CFG_NAME = SRC_DIR + "/" + ARCH_NAME + "/flash_partition/tmp-" + UBINIZE_CFG_NAME
+                f2 = open(UBINIZE_CFG_NAME, 'w')
+                for line in f1:
+                    f2.write(line.replace('image=', "image=" + SRC_DIR + "/"))
+                f1.close()
+                f2.close()
+
+                if ftype in ["nand-4k", "nand-audio-4k", "norplusnand-4k"]:
+                    UBI_IMG_NAME = "openwrt-ipq-ipq60xx" + MODE_APPEND + "-ubi-root-m4096-p256KiB.img"
+                    cmd = './ubinize -m 4096 -p 256KiB -o root.ubi %s' % (UBINIZE_CFG_NAME)
+                    ret = subprocess.call(cmd, shell=True)
+                    if ret != 0:
+                         error("ubinization got failed")
+                    cmd = 'dd if=root.ubi of=%s bs=4k conv=sync' % (SRC_DIR + "/" + UBI_IMG_NAME)
+                    ret = subprocess.call(cmd, shell=True)
+                    if ret != 0:
+                         error("ubi image copy operation failed")
+                elif ftype in ["nand", "nand-audio", "norplusnand"]:
+                    UBI_IMG_NAME = "openwrt-ipq-ipq60xx" + MODE_APPEND +"-ubi-root.img"
+                    cmd = './ubinize -m 2048 -p 128KiB -o root.ubi %s' % (UBINIZE_CFG_NAME)
+                    ret = subprocess.call(cmd, shell=True)
+                    if ret != 0:
+                         error("ubinization got failed")
+                    cmd = 'dd if=root.ubi of=%s bs=2k conv=sync' % (SRC_DIR + "/" + UBI_IMG_NAME)
+                    ret = subprocess.call(cmd, shell=True)
+                    if ret != 0:
+                         error("ubi image copy operation failed")
 
             part_file = SRC_DIR + "/" + ARCH_NAME + "/flash_partition/" + ftype + "-partition.xml"
             part_xml = ET.parse(part_file)
