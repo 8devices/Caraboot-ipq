@@ -232,6 +232,16 @@
 #define ARM_PSCI_TZ_FN_CPU_ON		ARM_PSCI_TZ_FN(3)
 #define ARM_PSCI_TZ_FN_AFFINITY_INFO	ARM_PSCI_TZ_FN(4)
 
+/*CMN BLOCK REG*/
+#define PLL_REFERENCE_CLOCK		0x0009B784
+#define PLL_POWER_ON_AND_RESET		0x0009B780
+
+/*0x8218 - 50M 0x8017 - 48M(default)*/
+#define PLL_REF_CLKSEL_50M		0x8218
+
+#define ANA_EN_SW_RSTN_DIS		0xBF
+#define ANA_EN_SW_RSTN_EN		0xFF
+
 unsigned int __invoke_psci_fn_smc(unsigned int, unsigned int,
 					 unsigned int, unsigned int);
 
