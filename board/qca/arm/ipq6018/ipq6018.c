@@ -1150,10 +1150,27 @@ void qti_scm_pshold(void)
 		writel(0, GCNT_PSHOLD);
 }
 
+static void atf_reset(void)
+{
+	if(*tz_wonce == 0 ) {	/*COLD REBOOT*/
+		if(do_pmic_reset())
+			printf("PMIC Reset failed, please do power cycle\n");
+	}
+	else {		/*WARM REBOOT*/
+		psci_sys_reset();
+	}
+	while(1);
+}
+
 void reset_cpu(unsigned long a)
 {
 	reset_crashdump();
-	psci_sys_reset();
+
+	if(getenv("atf"))
+		atf_reset();
+	else
+		psci_sys_reset();
+
 	while(1);
 }
 
