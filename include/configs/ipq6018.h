@@ -360,5 +360,6 @@ extern loff_t board_env_size;
 #define CONFIG_CMD_RUN
 #define CONFIG_ARMV7_PSCI
 #define CONFIG_IPQ_ELF_AUTH
+#define IPQ_UBI_VOL_WRITE_SUPPORT
 
 #endif /* _IPQ6018_H */

@@ -22,6 +22,7 @@
 #include <nand.h>
 #include <mmc.h>
 #include <sdhci.h>
+#include <ubi_uboot.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 #ifndef CONFIG_SDHCI_SUPPORT
@@ -117,6 +118,62 @@ static int fl_erase(int flash_type, uint32_t offset, uint32_t part_size,
 	return CMD_RET_SUCCESS;
 }
 
+#ifdef IPQ_UBI_VOL_WRITE_SUPPORT
+int ubi_vol_present(char* ubi_vol_name)
+{
+	int i;
+	int j=0;
+	struct ubi_device *ubi;
+	struct ubi_volume *vol;
+
+	if (ubi_set_rootfs_part())
+		return 0;
+
+	ubi = ubi_devices[0];
+	for (i = 0; ubi && i < (ubi->vtbl_slots + 1); i++) {
+		vol = ubi->volumes[i];
+		if (!vol)
+			continue;	/* Empty record */
+		if (vol->name_len <= UBI_VOL_NAME_MAX &&
+		    strnlen(vol->name, vol->name_len + 1) == vol->name_len) {
+			j++;
+			if (!strncmp(ubi_vol_name, vol->name,
+						UBI_VOL_NAME_MAX)) {
+				return 1;
+			}
+		}
+
+		if (j == ubi->vol_count - UBI_INT_VOL_COUNT)
+			break;
+	}
+
+	printf("volume or partition %s not found\n", ubi_vol_name);
+	return 0;
+}
+
+int write_ubi_vol(char* ubi_vol_name, uint32_t load_addr, uint32_t file_size)
+{
+	char runcmd[256];
+
+	if (!strncmp(ubi_vol_name, "ubi_rootfs", UBI_VOL_NAME_MAX)) {
+		snprintf(runcmd, sizeof(runcmd),
+			"ubi remove rootfs_data &&"
+			"ubi remove %s &&"
+			"ubi create %s 0x%x &&"
+			"ubi write 0x%x %s 0x%x &&"
+			"ubi create rootfs_data",
+			 ubi_vol_name, ubi_vol_name, file_size,
+			 load_addr, ubi_vol_name, file_size);
+	} else {
+		snprintf(runcmd, sizeof(runcmd),
+			"ubi write 0x%x %s 0x%x ",
+			 load_addr, ubi_vol_name, file_size);
+	}
+
+	return run_command(runcmd, 0);
+}
+#endif
+
 static int do_flash(cmd_tbl_t *cmdtp, int flag, int argc,
 char * const argv[])
 {
@@ -185,8 +242,14 @@ char * const argv[])
 	if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
 
 		ret = smem_getpart(part_name, &start_block, &size_block);
-		if (ret)
+		if (ret) {
+#ifdef IPQ_UBI_VOL_WRITE_SUPPORT
+			if (ubi_vol_present(part_name))
+				return write_ubi_vol(part_name, load_addr,
+								file_size);
+#endif
 			return retn;
+		}
 
 		offset = sfi->flash_block_size * start_block;
 		part_size = sfi->flash_block_size * size_block;
@@ -269,8 +332,14 @@ char * const argv[])
 
 			ret = smem_getpart(part_name, &start_block,
 							&size_block);
-			if (ret)
+			if (ret) {
+#ifdef IPQ_UBI_VOL_WRITE_SUPPORT
+				if (ubi_vol_present(part_name))
+					return write_ubi_vol(part_name,
+						load_addr, file_size);
+#endif
 				return retn;
+			}
 
 			offset = sfi->flash_block_size * start_block;
 			part_size = sfi->flash_block_size * size_block;
