@@ -424,7 +424,20 @@ void aquantia_phy_reset_init_done(void)
 		gpio_set_value(aquantia_gpio, 0x1);
 	}
 }
-
+void check_uniphy_ext_ref_clk(void)
+{
+	int node;
+	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
+	if (node >= 0) {
+		if(fdtdec_get_bool(gd->fdt_blob, node, "uniphy_ext_ref_clk")){
+			printf("External ref clk setting found... \n");
+			writel(PLL_REF_CLKSEL_50M, PLL_REFERENCE_CLOCK); /*0x8218 - 50M 0x8017 - 48M(default)*/
+			writel(ANA_EN_SW_RSTN_DIS, PLL_POWER_ON_AND_RESET);	/*give reset*/
+			mdelay(1);
+			writel(ANA_EN_SW_RSTN_EN, PLL_POWER_ON_AND_RESET);
+		}
+	}
+}
 void eth_clock_enable(void)
 {
 	int tlmm_base = 0x1025000;
@@ -481,6 +494,9 @@ void eth_clock_enable(void)
 	 * ethernet clk rcgr block init -- end
 	 * these clk init will be moved to sbl later
 	 */
+
+	/*this is for ext oscillator clk for ref clk-*/
+	check_uniphy_ext_ref_clk();
 
 	/* bring phy out of reset */
 	writel(7, tlmm_base + 0x1f000);

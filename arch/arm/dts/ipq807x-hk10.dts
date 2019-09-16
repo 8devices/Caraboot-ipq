@@ -31,6 +31,7 @@
 		switch_mac_mode2 = <0x6>;
 		napa_gpio = <25 44>;
 		napa_gpio_cnt = <2>;
+		uniphy_ext_ref_clk;
 		port_phyinfo {
 			port@0 {
 				phy_address = <0>;
