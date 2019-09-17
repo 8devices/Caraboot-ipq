@@ -39,6 +39,8 @@
 
 #ifndef USE_HOSTCC
 
+extern void board_usb_deinit(int id);
+
 DECLARE_GLOBAL_DATA_PTR;
 
 static const void *boot_get_kernel(cmd_tbl_t *cmdtp, int flag, int argc,
@@ -601,6 +603,9 @@ int do_bootm_states(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 	boot_os_fn *boot_fn;
 	ulong iflag = 0;
 	int ret = 0, need_boot_fn;
+#ifdef CONFIG_USB_XHCI_IPQ
+	unsigned int i;
+#endif
 
 	images->state |= states;
 
@@ -702,9 +707,18 @@ int do_bootm_states(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 	}
 
 	/* Now run the OS! We hope this doesn't return */
-	if (!ret && (states & BOOTM_STATE_OS_GO))
+	if (!ret && (states & BOOTM_STATE_OS_GO)) {
+		board_pci_deinit();
+
+#ifdef CONFIG_USB_XHCI_IPQ
+		usb_stop();
+	        for (i=0; i<CONFIG_USB_MAX_CONTROLLER_COUNT; i++) {
+			board_usb_deinit(i);
+	        }
+#endif
 		ret = boot_selected_os(argc, argv, BOOTM_STATE_OS_GO,
 				images, boot_fn);
+	}
 
 	/* Deal with any fallout */
 err:
