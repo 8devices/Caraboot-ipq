@@ -296,7 +296,7 @@ extern loff_t board_env_size;
 #define CLEAR_MAGIC				0x0
 #define SCM_CMD_TZ_CONFIG_HW_FOR_RAM_DUMP_ID	0x9
 #define SCM_CMD_TZ_FORCE_DLOAD_ID		0x10
-#define SCM_CMD_TZ_PSHOLD			0x15
+#define SCM_CMD_TZ_PSHOLD			0x16
 #define BOOT_VERSION				0
 #define TZ_VERSION				1
 #define RPM_VERSION				3
