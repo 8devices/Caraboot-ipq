@@ -1373,3 +1373,33 @@ void fdt_fixup_set_qca_cold_reboot_enable(void *blob)
 
 	return;
 }
+
+void fdt_fixup_del_qca_secure_prop(void *blob)
+{
+	int nodeoff, ret;
+	char *node;
+
+	node = "/soc/q6v5_wcss@CD00000";
+	nodeoff = fdt_path_offset(blob, node);
+	if (nodeoff < 0) {
+		printf("fixup_del_qca_secure: unable to find node '%s'\n",node);
+		return;
+	}
+
+	ret = fdt_delprop(blob, nodeoff, "qca,secure");
+	if (ret)
+		printf("fixup_del_qca_secure:cannot delete property in '%s'\n",node);
+
+	node = "/soc/q6v6_adsp@AB00000";
+	nodeoff = fdt_path_offset(blob, node);
+	if (nodeoff < 0) {
+		printf("fixup_del_qca_secure: unable to find node '%s'\n",node);
+		return;
+	}
+
+	ret = fdt_delprop(blob, nodeoff, "qca,secure");
+	if (ret)
+		printf("fixup_del_qca_secure:cannot delete property in '%s'\n",node);
+
+	return;
+}
