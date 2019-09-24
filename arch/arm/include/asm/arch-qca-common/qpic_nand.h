@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2008, Google Inc.
  * All rights reserved.
- * Copyright (c) 2009-2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2009-2019 The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,7 +30,8 @@
 #ifndef __QPIC_NAND_H
 #define __QPIC_NAND_H
 
-#if defined(CONFIG_IPQ40XX) || defined(CONFIG_IPQ_RUMI) || defined(CONFIG_IPQ6018)
+#if defined(CONFIG_IPQ40XX) || defined(CONFIG_IPQ_RUMI) \
+	|| defined(CONFIG_IPQ6018) || defined(CONFIG_IPQ5018)
 #define QPIC_EBI2ND_BASE		(0x079b0000)
 #else
 #error "QPIC NAND not supported"

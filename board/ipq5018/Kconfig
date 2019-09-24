@@ -1,0 +1,16 @@
+if ARCH_IPQ5018
+
+config SYS_CPU
+       default "ipq5018"
+
+config SYS_BOARD
+       default "ipq5018"
+
+config SYS_VENDOR
+       default "qca/arm"
+
+config SYS_CONFIG_NAME
+       default "ipq5018"
+
+endif
+
