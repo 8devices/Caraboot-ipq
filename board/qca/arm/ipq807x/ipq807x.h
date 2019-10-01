@@ -310,6 +310,8 @@ void reset_crashdump(void);
 void board_pci_init(int id);
 __weak void board_pcie_clock_init(int id) {}
 #endif
+void qgic_init(void);
+void handle_noc_err(void);
 void ipq_fdt_fixup_socinfo(void *blob);
 int ipq_board_usb_init(void);
 unsigned smem_read_alloc_entry(smem_mem_type_t type, void *buf, int len);

@@ -595,6 +595,7 @@ static void fixup_silent_linux(void)
  *	then the intent is to boot an OS, so this function will not return
  *	unless the image type is standalone.
  */
+void handle_noc_err(void);
 int do_bootm_states(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 		    int states, bootm_headers_t *images, int boot_progress)
 {
@@ -603,6 +604,8 @@ int do_bootm_states(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 	int ret = 0, need_boot_fn;
 
 	images->state |= states;
+
+	handle_noc_err();
 
 	/*
 	 * Work through the states and see how far we get. We stop on
