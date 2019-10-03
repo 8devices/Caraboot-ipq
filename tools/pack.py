@@ -1485,7 +1485,7 @@ class Pack(object):
             else:
                 part_info = root.find(".//data[@type='" + ftype.upper() + "_PARAMETER']")
 
-	    if ARCH_NAME == "ipq6018":
+	    if ARCH_NAME == "ipq6018" or ARCH_NAME == "ipq5018":
 		if MODE == "64":
                     MODE_APPEND = "_64"
                 else:
@@ -1505,7 +1505,11 @@ class Pack(object):
                 f2.close()
 
                 if ftype in ["nand-4k", "nand-audio-4k", "norplusnand-4k"]:
-                    UBI_IMG_NAME = "openwrt-ipq-ipq60xx" + MODE_APPEND + "-ubi-root-m4096-p256KiB.img"
+                    if ARCH_NAME == "ipq6018":
+                        UBI_IMG_NAME = "openwrt-ipq-ipq60xx" + MODE_APPEND + "-ubi-root-m4096-p256KiB.img"
+                    if ARCH_NAME == "ipq5018":
+                        UBI_IMG_NAME = "openwrt-ipq-ipq50xx" + MODE_APPEND + "-ubi-root-m4096-p256KiB.img"
+
                     cmd = '%s -m 4096 -p 256KiB -o root.ubi %s' % ((SRC_DIR + "/ubinize") ,UBINIZE_CFG_NAME)
                     ret = subprocess.call(cmd, shell=True)
                     if ret != 0:
@@ -1515,7 +1519,11 @@ class Pack(object):
                     if ret != 0:
                          error("ubi image copy operation failed")
                 elif ftype in ["nand", "nand-audio", "norplusnand"]:
-                    UBI_IMG_NAME = "openwrt-ipq-ipq60xx" + MODE_APPEND +"-ubi-root.img"
+                    if ARCH_NAME == "ipq6018":
+                        UBI_IMG_NAME = "openwrt-ipq-ipq60xx" + MODE_APPEND +"-ubi-root.img"
+                    if ARCH_NAME == "ipq5018":
+                        UBI_IMG_NAME = "openwrt-ipq-ipq50xx" + MODE_APPEND +"-ubi-root.img"
+
                     cmd = '%s -m 2048 -p 128KiB -o root.ubi %s' % ((SRC_DIR + "/ubinize") ,UBINIZE_CFG_NAME)
                     ret = subprocess.call(cmd, shell=True)
                     if ret != 0:
