@@ -1656,14 +1656,14 @@ class ArgParser(object):
 #Verify Arguments passed by user
 
 # Verify arch type
-	    if ARCH_NAME not in ["ipq40xx", "ipq806x", "ipq807x", "ipq807x_64", "ipq6018", "ipq6018_64"]:
+	    if ARCH_NAME not in ["ipq40xx", "ipq806x", "ipq807x", "ipq807x_64", "ipq6018", "ipq6018_64", "ipq5018", "ipq5018_64"]:
 		raise UsageError("Invalid arch type '%s'" % arch)
 
-	    if ARCH_NAME == "ipq807x":
+	    if ARCH_NAME == "ipq807x" or ARCH_NAME == "ipq5018":
 		MODE = "32"
-	    elif ARCH_NAME == "ipq807x_64":
+	    elif ARCH_NAME == "ipq807x_64" or ARCH_NAME == "ipq5018_64":
 		MODE = "64"
-		ARCH_NAME = "ipq807x"
+		ARCH_NAME = ARCH_NAME[:-3]
 
 	    if ARCH_NAME == "ipq6018":
 		MODE = "32"
@@ -1701,7 +1701,7 @@ class ArgParser(object):
 	print "python pack_hk.py [options] [Value] ..."
 	print
         print "options:"
-        print "  --arch \tARCH_TYPE [ipq40xx/ipq806x/ipq807x/ipq807x_64/ipq6018/ipq6018_64]"
+        print "  --arch \tARCH_TYPE [ipq40xx/ipq806x/ipq807x/ipq807x_64/ipq6018/ipq6018_64/ipq5018/ipq5018_64]"
 	print
 	print "  --fltype \tFlash Type [nor/tiny-nor/nand/emmc/norplusnand/norplusemmc]"
         print " \t\tMultiple flashtypes can be passed by a comma separated string"
