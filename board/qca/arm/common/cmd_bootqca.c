@@ -43,7 +43,6 @@ static qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 int ipq_fs_on_nand ;
 extern int nand_env_device;
 extern qca_mmc mmc_host;
-extern void board_usb_deinit(int id);
 
 #ifdef CONFIG_QCA_MMC
 static qca_mmc *host = &mmc_host;
@@ -426,9 +425,6 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 	disk_partition_t disk_info;
 	unsigned int active_part = 0;
 #endif
-#ifdef CONFIG_USB_XHCI_IPQ
-	int i;
-#endif
 #ifdef CONFIG_IPQ_ELF_AUTH
 	image_info img_info;
 #endif
@@ -637,14 +633,6 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 
 	dcache_enable();
 
-	board_pci_deinit();
-#ifdef CONFIG_USB_XHCI_IPQ
-	usb_stop();
-        for (i=0; i<CONFIG_USB_MAX_CONTROLLER_COUNT; i++) {
-		board_usb_deinit(i);
-        }
-#endif
-
 	ret = config_select(request, runcmd, sizeof(runcmd));
 
 	if (debug)
@@ -675,9 +663,6 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 	block_dev_desc_t *blk_dev;
 	disk_partition_t disk_info;
 	unsigned int active_part = 0;
-#endif
-#ifdef CONFIG_USB_XHCI_IPQ
-	int i;
 #endif
 
 	if (argc == 2 && strncmp(argv[1], "debug", 5) == 0)
@@ -779,15 +764,6 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 	}
 
 	dcache_enable();
-
-	board_pci_deinit();
-
-#ifdef CONFIG_USB_XHCI_IPQ
-	usb_stop();
-        for (i=0; i<CONFIG_USB_MAX_CONTROLLER_COUNT; i++) {
-		board_usb_deinit(i);
-        }
-#endif
 
 	setenv("mtdids", mtdids);
 
