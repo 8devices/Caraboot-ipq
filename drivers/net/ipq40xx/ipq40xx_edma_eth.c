@@ -227,7 +227,7 @@ static void ipq40xx_edma_configure_rx(
 	/*
 	 * Set RX remove vlan bit
 	 */
-	rxq_ctrl_data |= EDMA_RXQ_CTRL_RMV_VLAN;
+	//rxq_ctrl_data |= EDMA_RXQ_CTRL_RMV_VLAN;
 	ipq40xx_edma_write_reg(EDMA_REG_RXQ_CTRL, rxq_ctrl_data);
 }
 
