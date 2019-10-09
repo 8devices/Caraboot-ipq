@@ -290,8 +290,17 @@ void reset_crashdump(void)
 	return;
 }
 
+void qpic_clk_enbale(void)
+{
+	writel(QPIC_CBCR_VAL, GCC_QPIC_CBCR_ADDR);
+	writel(0x1, GCC_QPIC_AHB_CBCR_ADDR);
+	writel(0x1, GCC_QPIC_IO_MACRO_CBCR);
+}
+
 void board_nand_init(void)
 {
+	qpic_nand_init();
+
 #ifdef CONFIG_QCA_SPI
 	int gpio_node;
 	gpio_node = fdt_path_offset(gd->fdt_blob, "/spi/spi_gpio");

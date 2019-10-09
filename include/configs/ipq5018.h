@@ -130,6 +130,10 @@ extern loff_t board_env_size;
 #define CONFIG_SYS_NAND_SELF_INIT
 #define CONFIG_SYS_NAND_ONFI_DETECTION
 
+/* QSPI Flash configs
+ */
+#define CONFIG_QPIC_SERIAL
+
 /*
 * SPI Flash Configs
 */

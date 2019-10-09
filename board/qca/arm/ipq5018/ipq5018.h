@@ -35,6 +35,15 @@
 #define GCC_SDCC1_AHB_CBCR		0x0184201C
 #define GCC_SDCC1_MISC			0x01842020
 
+/*
+ * GCC-QPIC Registers
+ */
+#define GCC_QPIC_IO_MACRO_CBCR          0x0185701C
+#define GCC_QPIC_CBCR_ADDR		0x01857020
+#define GCC_QPIC_AHB_CBCR_ADDR		0x01857024
+#define GCC_QPIC_SLEEP_CBCR		0x01857028
+#define QPIC_CBCR_VAL			0x80004FF1
+
 /* UART 1 */
 #define GCC_BLSP1_UART1_BCR               0x01802038
 #define GCC_BLSP1_UART1_APPS_CBCR         0x0180203C
@@ -118,6 +127,7 @@ struct smem_ram_ptable {
 int smem_ram_ptable_init(struct smem_ram_ptable *smem_ram_ptable);
 void reset_crashdump(void);
 void reset_board(void);
+void qpic_clk_enbale(void);
 
 typedef enum {
 	SMEM_SPINLOCK_ARRAY = 7,
