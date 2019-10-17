@@ -30,7 +30,6 @@
 #define CONFIG_SYS_BOOTM_LEN			0x1000000
 
 #define CONFIG_ENV_SIZE_MAX			(256 << 10) /* 256 KB */
-#define CONFIG_ENV_IS_NOWHERE			1
 
 /*
  *Size of malloc() pool
@@ -129,7 +128,28 @@ extern loff_t board_env_size;
 #define CONFIG_SYS_NAND_SELF_INIT
 #define CONFIG_SYS_NAND_ONFI_DETECTION
 
+/*
+* SPI Flash Configs
+*/
+#define CONFIG_QCA_SPI
+#define CONFIG_SPI_FLASH
+#define CONFIG_CMD_SF
+#define CONFIG_SPI_FLASH_STMICRO
+#define CONFIG_SPI_FLASH_WINBOND
+#define CONFIG_SPI_FLASH_MACRONIX
+#define CONFIG_SPI_FLASH_GIGADEVICE
+#define CONFIG_SPI_FLASH_SPANSION
+#define CONFIG_SF_DEFAULT_BUS			0
+#define CONFIG_SF_DEFAULT_CS			0
+#define CONFIG_SF_DEFAULT_MODE			SPI_MODE_0
+#define CONFIG_SF_DEFAULT_SPEED			(48 * 1000 * 1000)
+#define CONFIG_SPI_FLASH_BAR			1
+#define CONFIG_SPI_FLASH_USE_4K_SECTORS
+#define CONFIG_IPQ_4B_ADDR_SWITCH_REQD
 
+#define CONFIG_QUP_SPI_USE_DMA			0
+#define CONFIG_EFI_PARTITION
+#define CONFIG_QCA_BAM				1
 /*
 * Expose SPI driver as a pseudo NAND driver to make use
 * of U-Boot's MTD framework.
@@ -147,7 +167,6 @@ extern loff_t board_env_size;
 #define CONFIG_SPI_FLASH_INFO_IDX		CONFIG_IPQ_SPI_NOR_INFO_IDX
 
 #define QCA_SPI_NOR_DEVICE			"spi0.0"
-#define CONFIG_QUP_SPI_USE_DMA			1
 
 /*
 * U-Boot Env Configs
