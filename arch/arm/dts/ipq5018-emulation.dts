@@ -14,11 +14,11 @@
 /dts-v1/;
 #include "ipq5018-soc.dtsi"
 / {
-        model ="QCA, IPQ5018-EMULATION";
-        compatible = "qca,ipq5018", "qca,ipq5018-emulation";
-        machid = <0x08010000>;
+	model ="QCA, IPQ5018-EMULATION";
+	compatible = "qca,ipq5018", "qca,ipq5018-emulation";
+	machid = <0x08010000>;
 
-        aliases {
-                console = "/serial@78AF000";
-        };
+	aliases {
+		console = "/serial@78AF000";
+	};
 };

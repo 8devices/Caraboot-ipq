@@ -59,33 +59,34 @@
 
 #define KERNEL_AUTH_CMD                   0x13
 #define SCM_CMD_SEC_AUTH		       0x1F
+
 struct smem_ram_ptn {
 	char name[16];
 	unsigned long long start;
 	unsigned long long size;
 
-       /* RAM Partition attribute: READ_ONLY, READWRITE etc.  */
-       unsigned attr;
+	/* RAM Partition attribute: READ_ONLY, READWRITE etc.  */
+	unsigned attr;
 
-       /* RAM Partition category: EBI0, EBI1, IRAM, IMEM */
-       unsigned category;
+	/* RAM Partition category: EBI0, EBI1, IRAM, IMEM */
+	unsigned category;
 
-       /* RAM Partition domain: APPS, MODEM, APPS & MODEM (SHARED) etc. */
-       unsigned domain;
+	/* RAM Partition domain: APPS, MODEM, APPS & MODEM (SHARED) etc. */
+	unsigned domain;
 
-       /* RAM Partition type: system, bootloader, appsboot, apps etc. */
-       unsigned type;
+	/* RAM Partition type: system, bootloader, appsboot, apps etc. */
+	unsigned type;
 
-       /* reserved for future expansion without changing version number */
-       unsigned reserved2, reserved3, reserved4, reserved5;
+	/* reserved for future expansion without changing version number */
+	unsigned reserved2, reserved3, reserved4, reserved5;
 } __attribute__ ((__packed__));
 
 __weak void aquantia_phy_reset_init_done(void) {}
 __weak void aquantia_phy_reset_init(void) {}
 
 struct smem_ram_ptable {
-	#define _SMEM_RAM_PTABLE_MAGIC_1       0x9DA5E0A8
-	#define _SMEM_RAM_PTABLE_MAGIC_2       0xAF9EC4E2
+	#define _SMEM_RAM_PTABLE_MAGIC_1	0x9DA5E0A8
+	#define _SMEM_RAM_PTABLE_MAGIC_2	0xAF9EC4E2
 	unsigned magic[2];
 	unsigned version;
 	unsigned reserved1;
@@ -99,24 +100,24 @@ void reset_crashdump(void);
 void reset_board(void);
 
 typedef enum {
-       SMEM_SPINLOCK_ARRAY = 7,
-       SMEM_AARM_PARTITION_TABLE = 9,
-       SMEM_HW_SW_BUILD_ID = 137,
-       SMEM_USABLE_RAM_PARTITION_TABLE = 402,
-       SMEM_POWER_ON_STATUS_INFO = 403,
-       SMEM_MACHID_INFO_LOCATION = 425,
-       SMEM_IMAGE_VERSION_TABLE = 469,
-       SMEM_BOOT_FLASH_TYPE = 498,
-       SMEM_BOOT_FLASH_INDEX = 499,
-       SMEM_BOOT_FLASH_CHIP_SELECT = 500,
-       SMEM_BOOT_FLASH_BLOCK_SIZE = 501,
-       SMEM_BOOT_FLASH_DENSITY = 502,
-       SMEM_BOOT_DUALPARTINFO = 503,
-       SMEM_PARTITION_TABLE_OFFSET = 504,
-       SMEM_SPI_FLASH_ADDR_LEN = 505,
-       SMEM_FIRST_VALID_TYPE = SMEM_SPINLOCK_ARRAY,
-       SMEM_LAST_VALID_TYPE = SMEM_SPI_FLASH_ADDR_LEN,
-       SMEM_MAX_SIZE = SMEM_SPI_FLASH_ADDR_LEN + 1,
+	SMEM_SPINLOCK_ARRAY = 7,
+	SMEM_AARM_PARTITION_TABLE = 9,
+	SMEM_HW_SW_BUILD_ID = 137,
+	SMEM_USABLE_RAM_PARTITION_TABLE = 402,
+	SMEM_POWER_ON_STATUS_INFO = 403,
+	SMEM_MACHID_INFO_LOCATION = 425,
+	SMEM_IMAGE_VERSION_TABLE = 469,
+	SMEM_BOOT_FLASH_TYPE = 498,
+	SMEM_BOOT_FLASH_INDEX = 499,
+	SMEM_BOOT_FLASH_CHIP_SELECT = 500,
+	SMEM_BOOT_FLASH_BLOCK_SIZE = 501,
+	SMEM_BOOT_FLASH_DENSITY = 502,
+	SMEM_BOOT_DUALPARTINFO = 503,
+	SMEM_PARTITION_TABLE_OFFSET = 504,
+	SMEM_SPI_FLASH_ADDR_LEN = 505,
+	SMEM_FIRST_VALID_TYPE = SMEM_SPINLOCK_ARRAY,
+	SMEM_LAST_VALID_TYPE = SMEM_SPI_FLASH_ADDR_LEN,
+	SMEM_MAX_SIZE = SMEM_SPI_FLASH_ADDR_LEN + 1,
 } smem_mem_type_t;
 
 #endif /* _IPQ5018_CDP_H_ */

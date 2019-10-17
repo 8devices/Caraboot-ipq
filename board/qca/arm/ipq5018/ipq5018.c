@@ -49,9 +49,9 @@ void uart1_configure_mux(void)
 void uart1_set_rate_mnd(unsigned int m,
 		unsigned int n, unsigned int two_d)
 {
-       writel(m, GCC_BLSP1_UART1_APPS_M);
-       writel(NOT_N_MINUS_M(n, m), GCC_BLSP1_UART1_APPS_N);
-       writel(NOT_2D(two_d), GCC_BLSP1_UART1_APPS_D);
+	writel(m, GCC_BLSP1_UART1_APPS_M);
+	writel(NOT_N_MINUS_M(n, m), GCC_BLSP1_UART1_APPS_N);
+	writel(NOT_2D(two_d), GCC_BLSP1_UART1_APPS_D);
 }
 
 int uart1_trigger_update(void)
@@ -81,11 +81,11 @@ void reset_board(void)
 
 void uart1_toggle_clock(void)
 {
-       unsigned long cbcr_val;
+	unsigned long cbcr_val;
 
-       cbcr_val = readl(GCC_BLSP1_UART1_APPS_CBCR);
-       cbcr_val |= UART1_CBCR_CLK_ENABLE;
-       writel(cbcr_val, GCC_BLSP1_UART1_APPS_CBCR);
+	cbcr_val = readl(GCC_BLSP1_UART1_APPS_CBCR);
+	cbcr_val |= UART1_CBCR_CLK_ENABLE;
+	writel(cbcr_val, GCC_BLSP1_UART1_APPS_CBCR);
 }
 
 void uart1_clock_config(unsigned int m,
@@ -104,28 +104,28 @@ void qca_serial_init(struct ipq_serial_platdata *plat)
 	writel(1, GCC_BLSP1_UART1_APPS_CBCR);
 	node = fdt_path_offset(gd->fdt_blob, "/serial@78AF000/serial_gpio");
 	if (node < 0) {
-               printf("Could not find serial_gpio node\n");
-               return;
-       }
+		printf("Could not find serial_gpio node\n");
+		return;
+	}
 
-       if (plat->port_id == 1) {
-	       uart1_node = fdt_path_offset(gd->fdt_blob, "uart1");
-	       if (uart1_node < 0) {
-		       printf("Could not find uart1 node\n");
-		       return;
-	       }
-	       node = fdt_subnode_offset(gd->fdt_blob,
-			       uart1_node, "serial_gpio");
-	       uart1_clock_config(plat->m_value, plat->n_value, plat->d_value);
-	       writel(1, GCC_BLSP1_UART1_APPS_CBCR);
-       }
+	if (plat->port_id == 1) {
+		uart1_node = fdt_path_offset(gd->fdt_blob, "uart1");
+		if (uart1_node < 0) {
+			printf("Could not find uart1 node\n");
+			return;
+		}
+	node = fdt_subnode_offset(gd->fdt_blob,
+				uart1_node, "serial_gpio");
+	uart1_clock_config(plat->m_value, plat->n_value, plat->d_value);
+	writel(1, GCC_BLSP1_UART1_APPS_CBCR);
+	}
 
-       qca_gpio_init(node);
+	qca_gpio_init(node);
 }
 
 void reset_crashdump(void)
 {
-       return;
+	return;
 }
 
 void board_nand_init(void)
