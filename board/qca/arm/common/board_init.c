@@ -107,6 +107,8 @@ int board_init(void)
         report_l2err(l2esr);
 #endif
 
+	qgic_init();
+
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 
 	gd->bd->bi_boot_params = QCA_BOOT_PARAMS_ADDR;

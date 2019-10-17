@@ -28,6 +28,36 @@
 #include <linux/linkage.h>
 #include <sdhci.h>
 
+#define MSM_GIC_DIST_BASE	0x0B000000
+#define MSM_GIC_CPU_BASE	0x0B002000
+
+#define GIC_CPU_REG(off)	(MSM_GIC_CPU_BASE  + (off))
+#define GIC_DIST_REG(off)	(MSM_GIC_DIST_BASE + (off))
+
+#define GIC_CPU_CTRL		GIC_CPU_REG(0x00)
+#define GIC_CPU_PRIMASK		GIC_CPU_REG(0x04)
+#define GIC_CPU_BINPOINT	GIC_CPU_REG(0x08)
+#define GIC_CPU_INTACK		GIC_CPU_REG(0x0c)
+#define GIC_CPU_EOI		GIC_CPU_REG(0x10)
+#define GIC_CPU_RUNNINGPRI	GIC_CPU_REG(0x14)
+#define GIC_CPU_HIGHPRI		GIC_CPU_REG(0x18)
+
+#define GIC_DIST_CTRL		GIC_DIST_REG(0x000)
+#define GIC_DIST_CTR		GIC_DIST_REG(0x004)
+#define GIC_DIST_ENABLE_SET	GIC_DIST_REG(0x100)
+#define GIC_DIST_ENABLE_CLEAR	GIC_DIST_REG(0x180)
+#define GIC_DIST_PENDING_SET	GIC_DIST_REG(0x200)
+#define GIC_DIST_PENDING_CLEAR	GIC_DIST_REG(0x280)
+#define GIC_DIST_ACTIVE_BIT	GIC_DIST_REG(0x300)
+#define GIC_DIST_PRI		GIC_DIST_REG(0x400)
+#define GIC_DIST_TARGET		GIC_DIST_REG(0x800)
+#define GIC_DIST_CONFIG		GIC_DIST_REG(0xc00)
+#define GIC_DIST_SOFTINT	GIC_DIST_REG(0xf00)
+
+#define REG_VAL_NOC_ERR		0x100000
+#define NOC_ERR_STATUS_REG	0xb000220
+#define NOC_ERR_CLR_REG		0xb0002a0
+
 #define DLOAD_MAGIC_COOKIE	0x10
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -1554,4 +1584,80 @@ void set_platform_specific_default_env(void)
 void sdi_disable(void)
 {
 	qca_scm_sdi();
+}
+
+void handle_noc_err(void)
+{
+	uint32_t noc_err_pending = 0;
+	noc_err_pending = readl(NOC_ERR_STATUS_REG);
+
+	printf("NOC Error detected, restarting");
+	if ((noc_err_pending & REG_VAL_NOC_ERR) == REG_VAL_NOC_ERR) {
+		writel(REG_VAL_NOC_ERR, NOC_ERR_CLR_REG);
+		run_command("reset", 0);
+	}
+}
+
+/* Intialize distributor */
+static void qgic_dist_init(void)
+{
+	uint32_t i;
+	uint32_t num_irq = 0;
+	uint32_t cpumask = 1;
+
+	cpumask |= cpumask << 8;
+	cpumask |= cpumask << 16;
+
+	/* Disabling GIC */
+	writel(0, GIC_DIST_CTRL);
+
+	/*
+	 * Find out how many interrupts are supported.
+	 */
+	num_irq = readl(GIC_DIST_CTR) & 0x1f;
+	num_irq = (num_irq + 1) * 32;
+
+	/* Set each interrupt line to use N-N software model
+	 * and edge sensitive, active high
+	 */
+	for (i = 32; i < num_irq; i += 16)
+		writel(0xffffffff, GIC_DIST_CONFIG + i * 4 / 16);
+
+	writel(0xffffffff, GIC_DIST_CONFIG + 4);
+
+	/* Set up interrupts for this CPU */
+	for (i = 32; i < num_irq; i += 4)
+		writel(cpumask, GIC_DIST_TARGET + i * 4 / 4);
+
+	/* Set priority of all interrupts */
+
+	/*
+	 * In bootloader we dont care about priority so
+	 * setting up equal priorities for all
+	 */
+	for (i = 0; i < num_irq; i += 4)
+		writel(0xa0a0a0a0, GIC_DIST_PRI + i * 4 / 4);
+
+	/* Disabling interrupts */
+	for (i = 0; i < num_irq; i += 32)
+		writel(0xffffffff, GIC_DIST_ENABLE_CLEAR + i * 4 / 32);
+
+	writel(0x0000ffff, GIC_DIST_ENABLE_SET);
+
+	/*Enabling GIC */
+	writel(1, GIC_DIST_CTRL);
+}
+
+/* Intialize cpu specific controller */
+static void qgic_cpu_init(void)
+{
+	writel(0xf0, GIC_CPU_PRIMASK);
+	writel(1, GIC_CPU_CTRL);
+}
+
+/* Initialize QGIC. Called from platform specific init code */
+void qgic_init(void)
+{
+	qgic_dist_init();
+	qgic_cpu_init();
 }
