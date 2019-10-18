@@ -16,11 +16,11 @@
 
 / {
 
-        serial@78AF000 {
-                compatible = "qca,ipq-uartdm";
-                reg = <0x78af000 0x200>;
-                id = <2>;
-                bit_rate = <0xff>;
+	serial@78AF000 {
+		compatible = "qca,ipq-uartdm";
+		reg = <0x78af000 0x200>;
+		id = <2>;
+		bit_rate = <0xff>;
 		status = "ok";
 		serial_gpio {
 			gpio1 {
@@ -33,7 +33,6 @@
 				sr_en = <GPIO_SR_DISABLE>;
 				pu_res =<GPIO_PULL_RES0>;
 				pu = <1>;
-
 			};
 			gpio2 {
 				gpio = <21>;
@@ -47,14 +46,22 @@
 				pu = <1>;
 			};
 		};
-        };
+	};
 
-        timer {
-                gcnt_base = <0x4a1000>;
-                gcnt_cntcv_lo = <0x4a2000>;
-                gcnt_cntcv_hi = <0x4a2004>;
-                gpt_freq_hz = <48000000>;
-                timer_load_val = <0x00FFFFFF 0xFFFFFFFF>;
-        };
+	timer {
+		gcnt_base = <0x4a1000>;
+		gcnt_cntcv_lo = <0x4a2000>;
+		gcnt_cntcv_hi = <0x4a2004>;
+		gpt_freq_hz = <48000000>;
+		timer_load_val = <0x00FFFFFF 0xFFFFFFFF>;
+	};
+
+	spi {
+		status = "ok";
+		compatible = "qcom,spi-qup-v2.7.0";
+		wr_pipe_0 = <12>;
+		rd_pipe_0 = <13>;
+		spi_gpio {};
+	};
 
 };
