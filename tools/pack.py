@@ -1485,7 +1485,7 @@ class Pack(object):
             else:
                 part_info = root.find(".//data[@type='" + ftype.upper() + "_PARAMETER']")
 
-	    if ARCH_NAME == "ipq6018":
+	    if ARCH_NAME == "ipq6018" or ARCH_NAME == "ipq5018":
 		if MODE == "64":
                     MODE_APPEND = "_64"
                 else:
@@ -1505,7 +1505,11 @@ class Pack(object):
                 f2.close()
 
                 if ftype in ["nand-4k", "nand-audio-4k", "norplusnand-4k"]:
-                    UBI_IMG_NAME = "openwrt-ipq-ipq60xx" + MODE_APPEND + "-ubi-root-m4096-p256KiB.img"
+                    if ARCH_NAME == "ipq6018":
+                        UBI_IMG_NAME = "openwrt-ipq-ipq60xx" + MODE_APPEND + "-ubi-root-m4096-p256KiB.img"
+                    if ARCH_NAME == "ipq5018":
+                        UBI_IMG_NAME = "openwrt-ipq-ipq50xx" + MODE_APPEND + "-ubi-root-m4096-p256KiB.img"
+
                     cmd = '%s -m 4096 -p 256KiB -o root.ubi %s' % ((SRC_DIR + "/ubinize") ,UBINIZE_CFG_NAME)
                     ret = subprocess.call(cmd, shell=True)
                     if ret != 0:
@@ -1515,7 +1519,11 @@ class Pack(object):
                     if ret != 0:
                          error("ubi image copy operation failed")
                 elif ftype in ["nand", "nand-audio", "norplusnand"]:
-                    UBI_IMG_NAME = "openwrt-ipq-ipq60xx" + MODE_APPEND +"-ubi-root.img"
+                    if ARCH_NAME == "ipq6018":
+                        UBI_IMG_NAME = "openwrt-ipq-ipq60xx" + MODE_APPEND +"-ubi-root.img"
+                    if ARCH_NAME == "ipq5018":
+                        UBI_IMG_NAME = "openwrt-ipq-ipq50xx" + MODE_APPEND +"-ubi-root.img"
+
                     cmd = '%s -m 2048 -p 128KiB -o root.ubi %s' % ((SRC_DIR + "/ubinize") ,UBINIZE_CFG_NAME)
                     ret = subprocess.call(cmd, shell=True)
                     if ret != 0:
@@ -1656,14 +1664,14 @@ class ArgParser(object):
 #Verify Arguments passed by user
 
 # Verify arch type
-	    if ARCH_NAME not in ["ipq40xx", "ipq806x", "ipq807x", "ipq807x_64", "ipq6018", "ipq6018_64"]:
+	    if ARCH_NAME not in ["ipq40xx", "ipq806x", "ipq807x", "ipq807x_64", "ipq6018", "ipq6018_64", "ipq5018", "ipq5018_64"]:
 		raise UsageError("Invalid arch type '%s'" % arch)
 
-	    if ARCH_NAME == "ipq807x":
+	    if ARCH_NAME == "ipq807x" or ARCH_NAME == "ipq5018":
 		MODE = "32"
-	    elif ARCH_NAME == "ipq807x_64":
+	    elif ARCH_NAME == "ipq807x_64" or ARCH_NAME == "ipq5018_64":
 		MODE = "64"
-		ARCH_NAME = "ipq807x"
+		ARCH_NAME = ARCH_NAME[:-3]
 
 	    if ARCH_NAME == "ipq6018":
 		MODE = "32"
@@ -1701,7 +1709,7 @@ class ArgParser(object):
 	print "python pack_hk.py [options] [Value] ..."
 	print
         print "options:"
-        print "  --arch \tARCH_TYPE [ipq40xx/ipq806x/ipq807x/ipq807x_64/ipq6018/ipq6018_64]"
+        print "  --arch \tARCH_TYPE [ipq40xx/ipq806x/ipq807x/ipq807x_64/ipq6018/ipq6018_64/ipq5018/ipq5018_64]"
 	print
 	print "  --fltype \tFlash Type [nor/tiny-nor/nand/emmc/norplusnand/norplusemmc]"
         print " \t\tMultiple flashtypes can be passed by a comma separated string"
