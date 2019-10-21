@@ -83,6 +83,9 @@ struct smem_ram_ptn {
 
 __weak void aquantia_phy_reset_init_done(void) {}
 __weak void aquantia_phy_reset_init(void) {}
+__weak void qgic_init(void) {}
+__weak void handle_noc_err(void) {}
+__weak void board_pcie_clock_init(int id) {}
 
 struct smem_ram_ptable {
 	#define _SMEM_RAM_PTABLE_MAGIC_1	0x9DA5E0A8
