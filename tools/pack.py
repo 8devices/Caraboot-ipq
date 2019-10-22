@@ -1878,9 +1878,6 @@ def main():
     if "nand" in parser.flash_type.split(","):
         if root.find(".//data[@type='NAND_PARAMETER']/entry") != None:
             parser.flash_type = parser.flash_type + ",nand-4k"
-        # Add nand-audio flash type, if arch is ipq6018
-            if ARCH_NAME == "ipq6018":
-                parser.flash_type = parser.flash_type + ",nand-audio,nand-audio-4k"
 
 # Add norplusnand-4k flash type, if norplusnand flash type is specified
     if "norplusnand" in parser.flash_type.split(","):
