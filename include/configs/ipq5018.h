@@ -148,7 +148,7 @@ extern loff_t board_env_size;
 #define CONFIG_SPI_FLASH_USE_4K_SECTORS
 #define CONFIG_IPQ_4B_ADDR_SWITCH_REQD
 
-#define CONFIG_QUP_SPI_USE_DMA			0
+#define CONFIG_QUP_SPI_USE_DMA			1
 #define CONFIG_EFI_PARTITION
 #define CONFIG_QCA_BAM				1
 /*
