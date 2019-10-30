@@ -174,6 +174,11 @@ extern loff_t board_env_size;
 */
 #define CONFIG_OF_LIBFDT			1
 
+/* MTEST */
+#define CONFIG_CMD_MEMTEST
+#define CONFIG_SYS_MEMTEST_START		CONFIG_SYS_SDRAM_BASE + 0x1300000
+#define CONFIG_SYS_MEMTEST_END			CONFIG_SYS_MEMTEST_START + 0x100
+
 /* NSS firmware loaded using bootm */
 #define CONFIG_BOOTCOMMAND			"bootm"
 #define CONFIG_BOOTARGS				"console=ttyMSM0,115200n8"
