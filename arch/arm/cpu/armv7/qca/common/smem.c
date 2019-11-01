@@ -984,6 +984,7 @@ int ubi_set_rootfs_part(void)
 	uint32_t size_block, start_block;
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 	char runcmd[256];
+	int i;
 
 	if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
 		ret = smem_getpart(QCA_ROOT_FS_PART_NAME,
@@ -1004,6 +1005,16 @@ int ubi_set_rootfs_part(void)
 	if (!part_size)
 		return -ENOENT;
 
+	if (ubi) {
+		for (i = 0; i < ubi->vtbl_slots; i++) {
+			if (ubi->volumes[i]) {
+				kfree(ubi->volumes[i]->eba_tbl);
+				kfree(ubi->volumes[i]);
+				ubi->volumes[i] = NULL;
+			}
+		}
+	}
+
 	snprintf(runcmd, sizeof(runcmd),
 		 "nand device %d && "
 		 "setenv mtdids nand%d=nand%d && "
@@ -1016,6 +1027,11 @@ int ubi_set_rootfs_part(void)
 
 	if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
 		return CMD_RET_FAILURE;
+
+	if (ubi) {
+		kfree(ubi);
+		ubi = NULL;
+	}
 
 	ubi = ubi_devices[0];
 	return 0;
