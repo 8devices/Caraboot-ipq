@@ -24,13 +24,14 @@
 		console = "/serial@78B3000";
 		uart2 = "/serial@78B0000";
 		pci0 = "/pci@20000000";
+		pci1 = "/pci@10000000";
 	};
 	ess-switch {
 		switch_mac_mode = <0x0>;
-		switch_mac_mode1 = <0x6>;
+		switch_mac_mode1 = <0x2>;
 		switch_mac_mode2 = <0x6>;
-		napa_gpio = <25 44>;
-		napa_gpio_cnt = <2>;
+		aquantia_port = <4>;
+		aquantia_gpio = <44>;
 		uniphy_ext_ref_clk;
 		port_phyinfo {
 			port@0 {
@@ -50,12 +51,8 @@
 				phy_type = <1>;
 			};
 			port@4 {
-				phy_address = <24>;
-				phy_type = <2>;
-			};
-			port@5 {
-				phy_address = <28>;
-				phy_type = <2>;
+				phy_address = <7>;
+				phy_type = <3>;
 			};
 		};
 	};
