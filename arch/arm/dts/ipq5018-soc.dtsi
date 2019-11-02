@@ -52,15 +52,15 @@
 		gcnt_base = <0x4a1000>;
 		gcnt_cntcv_lo = <0x4a2000>;
 		gcnt_cntcv_hi = <0x4a2004>;
-		gpt_freq_hz = <48000000>;
+		gpt_freq_hz = <24000000>;
 		timer_load_val = <0x00FFFFFF 0xFFFFFFFF>;
 	};
 
 	spi {
 		status = "ok";
 		compatible = "qcom,spi-qup-v2.7.0";
-		wr_pipe_0 = <12>;
-		rd_pipe_0 = <13>;
+		wr_pipe_0 = <4>;
+		rd_pipe_0 = <5>;
 		spi_gpio {};
 	};
 
