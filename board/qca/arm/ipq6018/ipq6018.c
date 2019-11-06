@@ -508,38 +508,80 @@ void board_usb_deinit(int id)
 
 static void usb_clock_init(int id)
 {
+	int cfg;
+
 	if (id == 0) {
-		writel(0x222004, GCC_USB0_GDSCR);
-		writel(0, GCC_SYS_NOC_USB0_AXI_CBCR);
-		writel(0, GCC_SNOC_BUS_TIMEOUT2_AHB_CBCR);
-		writel(0x10b, GCC_USB0_MASTER_CFG_RCGR);
-		writel(0x1, GCC_USB0_MASTER_CMD_RCGR);
-		writel(1, GCC_SYS_NOC_USB0_AXI_CBCR);
-		writel(0xcff1, GCC_USB0_MASTER_CBCR);
-		writel(1, GCC_SNOC_BUS_TIMEOUT2_AHB_CBCR);
-		writel(1, GCC_USB0_SLEEP_CBCR);
-		//gcc_usb0_mock_utmi_clk is set to 24 MHz
-		writel(0x1, GCC_USB0_MOCK_UTMI_CFG_RCGR);
-		writel(0x1, GCC_USB0_MOCK_UTMI_M);
-		writel(0xf7, GCC_USB0_MOCK_UTMI_N);
-		writel(0xf6, GCC_USB0_MOCK_UTMI_D);
-		writel(0x3, GCC_USB0_MOCK_UTMI_CMD_RCGR);
-		writel(1, GCC_USB0_MOCK_UTMI_CBCR);
-		writel(0x8001, GCC_USB0_PHY_CFG_AHB_CBCR);
-		writel(1, GCC_USB0_AUX_CBCR);
-		writel(1, GCC_USB0_PIPE_CBCR);
+		cfg = readl(GCC_USB0_GDSCR) | SW_OVERRIDE_ENABLE;
+		cfg &= ~(SW_COLLAPSE_ENABLE);
+		writel(cfg, GCC_USB0_GDSCR);
+
+		/* Configure usb0_master_clk_src */
+		cfg = (GCC_USB0_MASTER_CFG_RCGR_SRC_SEL |
+			GCC_USB0_MASTER_CFG_RCGR_SRC_DIV);
+		writel(cfg, GCC_USB0_MASTER_CFG_RCGR);
+		writel(CMD_UPDATE, GCC_USB0_MASTER_CMD_RCGR);
+		mdelay(100);
+		writel(ROOT_EN, GCC_USB0_MASTER_CMD_RCGR);
+
+		/* Configure usb0_mock_utmi_clk_src */
+		cfg = (GCC_USB_MOCK_UTMI_SRC_SEL |
+			GCC_USB_MOCK_UTMI_SRC_DIV);
+		writel(cfg, GCC_USB0_MOCK_UTMI_CFG_RCGR);
+		writel(UTMI_M, GCC_USB0_MOCK_UTMI_M);
+		writel(UTMI_N, GCC_USB0_MOCK_UTMI_N);
+		writel(UTMI_D, GCC_USB0_MOCK_UTMI_D);
+		writel(CMD_UPDATE, GCC_USB0_MOCK_UTMI_CMD_RCGR);
+		mdelay(100);
+		writel(ROOT_EN, GCC_USB0_MOCK_UTMI_CMD_RCGR);
+
+		/* Configure usb0_aux_clk_src */
+		cfg = (GCC_USB0_AUX_CFG_SRC_SEL |
+			GCC_USB0_AUX_CFG_SRC_DIV);
+		writel(cfg, GCC_USB0_AUX_CFG_RCGR);
+		writel(AUX_M, GCC_USB0_AUX_M);
+		writel(AUX_N, GCC_USB0_AUX_N);
+		writel(AUX_D, GCC_USB0_AUX_D);
+		writel(CMD_UPDATE, GCC_USB0_AUX_CMD_RCGR);
+		mdelay(100);
+		writel(ROOT_EN, GCC_USB0_AUX_CMD_RCGR);
+
+		/* Configure CBCRs */
+		writel(CLK_DISABLE, GCC_SYS_NOC_USB0_AXI_CBCR);
+		writel(CLK_DISABLE, GCC_SNOC_BUS_TIMEOUT2_AHB_CBCR);
+		writel(CLK_ENABLE, GCC_SYS_NOC_USB0_AXI_CBCR);
+		writel((readl(GCC_USB0_MASTER_CBCR) | CLK_ENABLE),
+						GCC_USB0_MASTER_CBCR);
+		writel(CLK_ENABLE, GCC_SNOC_BUS_TIMEOUT2_AHB_CBCR);
+		writel(CLK_ENABLE, GCC_USB0_SLEEP_CBCR);
+		writel(CLK_ENABLE, GCC_USB0_MOCK_UTMI_CBCR);
+		writel((CLK_ENABLE | NOC_HANDSHAKE_FSM_EN),
+						GCC_USB0_PHY_CFG_AHB_CBCR);
+		writel(CLK_ENABLE, GCC_USB0_AUX_CBCR);
+		writel(CLK_ENABLE, GCC_USB0_PIPE_CBCR);
+
 	} else if (id == 1) {
-		writel(0x222004, GCC_USB1_GDSCR);
-		writel(0xcff1, GCC_USB1_MASTER_CBCR);
-		writel(1, GCC_USB1_SLEEP_CBCR);
-		//gcc_usb1_mock_utmi_clk is set to 24 MHz
-		writel(0x1, GCC_USB1_MOCK_UTMI_CFG_RCGR);
-		writel(0x1, GCC_USB1_MOCK_UTMI_M);
-		writel(0xf7, GCC_USB1_MOCK_UTMI_N);
-		writel(0xf6, GCC_USB1_MOCK_UTMI_D);
-		writel(0x3, GCC_USB1_MOCK_UTMI_CMD_RCGR);
-		writel(1, GCC_USB1_MOCK_UTMI_CBCR);
-		writel(0x8001, GCC_USB1_PHY_CFG_AHB_CBCR);
+		cfg = readl(GCC_USB1_GDSCR) | SW_OVERRIDE_ENABLE;
+		cfg &= ~(SW_COLLAPSE_ENABLE);
+		writel(cfg, GCC_USB1_GDSCR);
+
+		/* Configure usb1_mock_utmi_clk_src */
+		cfg = (GCC_USB_MOCK_UTMI_SRC_SEL |
+			GCC_USB_MOCK_UTMI_SRC_DIV);
+		writel(cfg, GCC_USB1_MOCK_UTMI_CFG_RCGR);
+		writel(UTMI_M, GCC_USB1_MOCK_UTMI_M);
+		writel(UTMI_N, GCC_USB1_MOCK_UTMI_N);
+		writel(UTMI_D, GCC_USB1_MOCK_UTMI_D);
+		writel(CMD_UPDATE, GCC_USB1_MOCK_UTMI_CMD_RCGR);
+		mdelay(100);
+		writel(ROOT_EN, GCC_USB1_MOCK_UTMI_CMD_RCGR);
+
+		/* Configure CBCRs */
+		writel(readl(GCC_USB1_MASTER_CBCR) | CLK_ENABLE,
+						GCC_USB1_MASTER_CBCR);
+		writel(CLK_ENABLE, GCC_USB1_SLEEP_CBCR);
+		writel(CLK_ENABLE, GCC_USB1_MOCK_UTMI_CBCR);
+		writel((CLK_ENABLE | NOC_HANDSHAKE_FSM_EN),
+					GCC_USB1_PHY_CFG_AHB_CBCR);
 	}
 }
 
