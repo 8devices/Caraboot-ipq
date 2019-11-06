@@ -712,43 +712,68 @@ int ipq_board_usb_init(void)
 }
 #endif
 
-void ipq_fdt_fixup_usb_device_mode(void *blob)
+static int __fixup_usb_device_mode(void *blob)
 {
-	int nodeoff, ret, node;
+	int nodeoff, ret;
 	const char *usb_dr_mode = "peripheral"; /* Supported mode */
 	const char *usb_max_speed = "high-speed";/* Supported speed */
-	const char *usb_node[] = {"/soc/usb3@8A00000/dwc3@8A00000"};
+	const char *usb_node = "/soc/usb3@8A00000/dwc3@8A00000";
+
+	nodeoff = fdt_path_offset(blob, usb_node);
+	if (nodeoff < 0) {
+		printf("%s: unable to find node '%s'\n", __func__, usb_node);
+		return nodeoff;
+	}
+
+	ret = fdt_setprop(blob, nodeoff, "dr_mode", usb_dr_mode,
+			  (strlen(usb_dr_mode) + 1));
+	if (ret) {
+		printf("%s: 'dr_mode' cannot be set", __func__);
+		return ret;
+	}
+
+	/* if mode is peripheral restricting to high-speed */
+	ret = fdt_setprop(blob, nodeoff, "maximum-speed", usb_max_speed,
+			  (strlen(usb_max_speed) + 1));
+	if (ret) {
+		printf("%s: 'maximum-speed' cannot be set", __func__);
+		return ret;
+	}
+
+	return 0;
+}
+
+static void fdt_fixup_diag_gadget(void *blob)
+{
+	int node, ret;
+	const char *compatible = "qcom,gadget-diag";
+
+	if (!__fixup_usb_device_mode(blob)) {
+		node = fdt_node_offset_by_compatible(blob, 0, compatible);
+		if (node < 0) {
+			printf("%s: cannot find '%s'\n", __func__, compatible);
+			return;
+		}
+		ret = fdt_setprop_string(blob, node, "status", "ok");
+		if (ret)
+			printf("%s: cannot enable gadget diag\n", __func__);
+	}
+}
+
+void ipq_fdt_fixup_usb_device_mode(void *blob)
+{
 	const char *usb_cfg;
 
 	usb_cfg = getenv("usb_mode");
 	if (!usb_cfg)
 		return;
 
-	if (strcmp(usb_cfg, usb_dr_mode)) {
-		printf("fixup_usb: usb_mode can be either 'peripheral' or not set\n");
-		return;
-	}
-
-	for (node = 0; node < ARRAY_SIZE(usb_node); node++) {
-		nodeoff = fdt_path_offset(blob, usb_node[node]);
-		if (nodeoff < 0) {
-			printf("fixup_usb: unable to find node '%s'\n",
-			       usb_node[node]);
-			return;
-		}
-		ret = fdt_setprop(blob, nodeoff, "dr_mode",
-				  usb_dr_mode,
-				  (strlen(usb_dr_mode) + 1));
-		if (ret)
-			printf("fixup_usb: 'dr_mode' cannot be set");
-
-		/* if mode is peripheral restricting to high-speed */
-		ret = fdt_setprop(blob, nodeoff, "maximum-speed",
-				  usb_max_speed,
-				  (strlen(usb_max_speed) + 1));
-		if (ret)
-			printf("fixup_usb: 'maximum-speed' cannot be set");
-	}
+	if (!strncmp(usb_cfg, "peripheral", sizeof("peripheral")))
+		__fixup_usb_device_mode(blob);
+	else if (!strncmp(usb_cfg, "diag_gadget", sizeof("diag_gadget")))
+		fdt_fixup_diag_gadget(blob);
+	else
+		printf("%s: invalid param for usb_mode\n", __func__);
 }
 
 void fdt_fixup_set_dload_dis(void *blob)
