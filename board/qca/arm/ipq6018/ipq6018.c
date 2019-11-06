@@ -229,24 +229,23 @@ void reset_crashdump(void)
 #ifdef CONFIG_QCA_MMC
 void emmc_clock_config(void)
 {
-	/* Enable root clock generator */
-	writel(readl(GCC_SDCC1_APPS_CBCR)|0x1, GCC_SDCC1_APPS_CBCR);
-	/* Add 10us delay for CLK_OFF to get cleared */
+	int cfg;
+
+	/* Configure sdcc1_apps_clk_src */
+	cfg = (GCC_SDCC1_APPS_CFG_RCGR_SRC_SEL
+			| GCC_SDCC1_APPS_CFG_RCGR_SRC_DIV);
+	writel(cfg, GCC_SDCC1_APPS_CFG_RCGR);
+	writel(SDCC1_M_VAL, GCC_SDCC1_APPS_M);
+	writel(SDCC1_N_VAL, GCC_SDCC1_APPS_N);
+	writel(SDCC1_D_VAL, GCC_SDCC1_APPS_D);
+	writel(CMD_UPDATE, GCC_SDCC1_APPS_CMD_RCGR);
+	mdelay(100);
+	writel(ROOT_EN, GCC_SDCC1_APPS_CMD_RCGR);
+
+	/* Configure CBCRs */
+	writel(readl(GCC_SDCC1_APPS_CBCR) | CLK_ENABLE, GCC_SDCC1_APPS_CBCR);
 	udelay(10);
-	writel(readl(GCC_SDCC1_AHB_CBCR)|0x1, GCC_SDCC1_AHB_CBCR);
-	/* PLL0 - 192Mhz */
-	writel(0x20B, GCC_SDCC1_APPS_CFG_RCGR);
-	/* Delay for clock operation complete */
-	udelay(10);
-	writel(0x1, GCC_SDCC1_APPS_M);
-	writel(0xFC, GCC_SDCC1_APPS_N);
-	writel(0xFD, GCC_SDCC1_APPS_D);
-	/* Delay for clock operation complete */
-	udelay(10);
-	/* Update APPS_CMD_RCGR to reflect source selection */
-	writel(readl(GCC_SDCC1_APPS_CMD_RCGR)|0x1, GCC_SDCC1_APPS_CMD_RCGR);
-	/* Add 10us delay for clock update to complete */
-	udelay(10);
+	writel(readl(GCC_SDCC1_AHB_CBCR) | CLK_ENABLE, GCC_SDCC1_AHB_CBCR);
 }
 
 void mmc_iopad_config(struct sdhci_host *host)
