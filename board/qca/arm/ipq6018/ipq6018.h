@@ -253,7 +253,6 @@
 #define GCC_PCIE0_AXI_CFG_RCGR_SRC_DIV	(7 << 0)
 #define CMD_UPDATE			0x1
 #define ROOT_EN				0x2
-#define CLK_ENABLE			(0x1 << 0)
 #define PIPE_CLK_ENABLE			0x4FF1
 #define CLK_DISABLE			0x0
 #define NOC_HANDSHAKE_FSM_EN		(1 << 15)
