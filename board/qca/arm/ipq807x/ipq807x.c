@@ -210,14 +210,6 @@ void qca_serial_init(struct ipq_serial_platdata *plat)
 {
 	int node, uart2_node;
 
-	writel(1, GCC_BLSP1_UART1_APPS_CBCR);
-
-	node = fdt_path_offset(gd->fdt_blob, "/serial@78B3000/serial_gpio");
-	if (node < 0) {
-		printf("Could not find serial_gpio node\n");
-		return;
-	}
-
 	if (plat->port_id == 1) {
 		uart2_node = fdt_path_offset(gd->fdt_blob, "uart2");
 		if (uart2_node < 0) {
@@ -228,8 +220,8 @@ void qca_serial_init(struct ipq_serial_platdata *plat)
 				uart2_node, "serial_gpio");
 		uart2_clock_config(plat->m_value, plat->n_value, plat->d_value);
 		writel(1, GCC_BLSP1_UART2_APPS_CBCR);
+		qca_gpio_init(node);
 	}
-	qca_gpio_init(node);
 }
 
 unsigned long timer_read_counter(void)

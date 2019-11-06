@@ -21,21 +21,6 @@
 		reg = <0x78B3000 0x200>;
 		id = <4>;
 		bit_rate = <0xee>;
-		serial_gpio {
-			gpio1 {
-				gpio = <23>;
-				func = <2>;
-				pull = <GPIO_PULL_DOWN>;
-				oe = <GPIO_OE_ENABLE>;
-			};
-
-			gpio2 {
-				gpio = <24>;
-				func = <2>;
-				pull = <GPIO_NO_PULL>;
-				oe = <GPIO_OE_ENABLE>;
-			};
-		};
 	};
 
 	serial@78B0000 {
