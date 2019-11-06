@@ -264,6 +264,13 @@
 #define GCC_PCIE0_PHY_PIPE_MISC_SRC_SEL	(0x1 << 8)
 #define GCC_PCIE0_PHY_PIPE_MISC		0x187501C
 
+#define GCC_BLSP1_QUP1_SPI_APPS_CFG_RCGR		0x1802028
+#define GCC_BLSP1_QUP1_SPI_APPS_CFG_RCGR_SRC_SEL	(1 << 8)
+#define GCC_BLSP1_QUP1_SPI_APPS_CFG_RCGR_SRC_DIV	(0x1F << 0)
+
+#define GCC_BLSP1_QUP1_SPI_APPS_CMD_RCGR		0x1802024
+#define GCC_BLSP1_QUP1_SPI_APPS_CBCR			0x1802004
+
 #define set_mdelay_clearbits_le32(addr, value, delay)	\
 	 setbits_le32(addr, value);			\
 	 mdelay(delay);					\
