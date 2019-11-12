@@ -1207,6 +1207,7 @@ void reset_board(void)
 	reset_crashdump();
 
 	puts ("resetting ...\n");
+	mdelay(100);
 
 	if(*tz_wonce == 0) {	/*COLD REBOOT*/
 		if(do_pmic_reset())
