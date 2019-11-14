@@ -19,6 +19,11 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+#ifdef CONFIG_IPQ_FDT_FIXUP
+#define FDT_EDIT "fdtedit"
+/* Buffer size to hold numbers from 0-99 + 1 NULL character */
+#define NUM_BUF_SIZE 3
+#endif
 /*
  * Don't have this as a '.bss' variable. The '.bss' and '.rel.dyn'
  * sections seem to overlap.
@@ -481,6 +486,91 @@ static int ipq40xx_patch_eth_params(void *blob, unsigned long gmac_no)
 	return 0;
 }
 
+#ifdef CONFIG_IPQ_FDT_FIXUP
+void parse_fdt_fixup(char* buf, void *blob)
+{
+	int nodeoff, value, ret;
+	char *node, *property, *node_value;
+	bool str = true;
+
+	node = strsep(&buf, "%");
+	property = strsep(&buf, "%");
+	node_value = strsep(&buf, "%");
+
+	debug("node: %s, property: %s, node_value: %s\n",
+			node, property, node_value);
+
+	if (node_value && node_value[0] != '?') {
+		str = false;
+		value = simple_strtoul(node_value, NULL, 10);
+	} else {
+		node_value++;
+	}
+
+	nodeoff = fdt_path_offset(blob, node);
+	if (nodeoff < 0) {
+		printf("%s: unable to find node '%s'\n",
+				__func__, node);
+		return;
+	}
+
+	if (!strncmp(property, "delete", strlen("delete"))) {
+		ret = fdt_delprop(blob, nodeoff, node_value);
+		if (ret) {
+			printf("%s: unable to delete %s\n",
+					__func__, node_value);
+			return;
+		}
+	} else if (!str) {
+		ret = fdt_setprop_u32(blob, nodeoff, property,
+				value);
+		if (ret) {
+			printf("%s: failed to set prop %s\n",
+					__func__, property);
+			return;
+		}
+	} else {
+		ret = fdt_setprop(blob, nodeoff, property,
+				node_value,
+				(strlen(node_value) + 1));
+		if (ret) {
+			printf("%s: failed to set prop %s\n",
+					__func__, property);
+			return;
+		}
+	}
+}
+
+void ipq_fdt_fixup(void *blob)
+{
+	int i, fdteditnum;
+	char buf[sizeof(FDT_EDIT) + NUM_BUF_SIZE], num[NUM_BUF_SIZE];
+	char *s;
+
+	/* fdteditnum - defines the number of envs to parse
+	 * starting from 0. eg: fdtedit0, fdtedit1, and so on.
+	 */
+	s = getenv("fdteditnum");
+	if (s)
+		fdteditnum = simple_strtoul(s, NULL, 10);
+	else
+		return;
+
+	printf("%s: fixup fdtedits\n", __func__);
+
+	for (i = 0; i <= fdteditnum; i++) {
+		/* Generate env names fdtedit0, fdtedit1,..fdteditn */
+		strlcpy(buf, FDT_EDIT, sizeof(buf));
+		snprintf(num, sizeof(num), "%d", i);
+		strlcat(buf, num, sizeof(buf));
+
+		s = getenv(buf);
+		if (s)
+			parse_fdt_fixup(s, blob);
+	}
+}
+#endif
+
 __weak void fdt_fixup_sd_ldo_gpios_toggle(void *blob)
 {
 	return;
@@ -616,6 +706,9 @@ int ft_board_setup(void *blob, bd_t *bd)
 			ipq40xx_patch_eth_params(blob, gmac_no);
 	}
 	dcache_disable();
+#ifdef CONFIG_IPQ_FDT_FIXUP
+	ipq_fdt_fixup(blob);
+#endif
 	fdt_fixup_ethernet(blob);
 	ipq_fdt_fixup_usb_device_mode(blob);
 	fdt_fixup_auto_restart(blob);
