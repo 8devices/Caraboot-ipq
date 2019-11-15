@@ -31,7 +31,6 @@
 		switch_mac_mode2 = <0x6>;
 		aquantia_port = <4>;
 		aquantia_gpio = <44>;
-		uniphy_ext_ref_clk;
 		port_phyinfo {
 			port@0 {
 				phy_address = <0>;
