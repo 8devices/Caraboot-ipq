@@ -174,6 +174,8 @@ extern loff_t board_env_size;
 * U-Boot Env Configs
 */
 #define CONFIG_OF_LIBFDT			1
+#define CONFIG_SYS_HUSH_PARSER
+#define CONFIG_CMD_XIMG
 
 /* MTEST */
 #define CONFIG_CMD_MEMTEST
