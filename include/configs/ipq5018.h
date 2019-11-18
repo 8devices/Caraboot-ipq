@@ -183,7 +183,7 @@ extern loff_t board_env_size;
 #define CONFIG_SYS_MEMTEST_END			CONFIG_SYS_MEMTEST_START + 0x100
 
 /* NSS firmware loaded using bootm */
-#define CONFIG_BOOTCOMMAND			"bootm"
+#define CONFIG_BOOTCOMMAND			"bootipq"
 #define CONFIG_BOOTARGS				"console=ttyMSM0,115200n8"
 #define QCA_ROOT_FS_PART_NAME			"rootfs"
 
