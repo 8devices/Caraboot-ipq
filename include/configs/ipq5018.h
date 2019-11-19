@@ -29,7 +29,7 @@
 #define CONFIG_NR_DRAM_BANKS			1
 #define CONFIG_SKIP_LOWLEVEL_INIT
 
-#define CONFIG_SYS_BOOTM_LEN			0x1000000
+#define CONFIG_SYS_BOOTM_LEN			0x4000000
 
 #define CONFIG_ENV_SIZE_MAX			(256 << 10) /* 256 KB */
 
@@ -174,6 +174,8 @@ extern loff_t board_env_size;
 * U-Boot Env Configs
 */
 #define CONFIG_OF_LIBFDT			1
+#define CONFIG_SYS_HUSH_PARSER
+#define CONFIG_CMD_XIMG
 
 /* MTEST */
 #define CONFIG_CMD_MEMTEST
@@ -181,7 +183,7 @@ extern loff_t board_env_size;
 #define CONFIG_SYS_MEMTEST_END			CONFIG_SYS_MEMTEST_START + 0x100
 
 /* NSS firmware loaded using bootm */
-#define CONFIG_BOOTCOMMAND			"bootm"
+#define CONFIG_BOOTCOMMAND			"bootipq"
 #define CONFIG_BOOTARGS				"console=ttyMSM0,115200n8"
 #define QCA_ROOT_FS_PART_NAME			"rootfs"
 

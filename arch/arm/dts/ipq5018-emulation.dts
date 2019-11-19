@@ -21,4 +21,9 @@
 	aliases {
 		console = "/serial@78AF000";
 	};
+
+	timer {
+		gpt_freq_hz = <240000>;
+	};
+
 };
