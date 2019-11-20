@@ -20,9 +20,14 @@
 #include <asm/arch-qca-common/qpic_nand.h>
 #include <asm/arch-qca-common/gpio.h>
 #include <asm/arch-qca-common/uart.h>
+#include <asm/arch-qca-common/scm.h>
+#include <asm/arch-qca-common/iomap.h>
 #include <ipq5018.h>
+#include <mmc.h>
+#include <sdhci.h>
 
 DECLARE_GLOBAL_DATA_PTR;
+struct sdhci_host mmc_host;
 extern int ipq_spi_init(u16);
 
 void uart1_configure_mux(void)
@@ -124,6 +129,162 @@ void qca_serial_init(struct ipq_serial_platdata *plat)
 	qca_gpio_init(node);
 }
 
+/*
+ * Set the uuid in bootargs variable for mounting rootfilesystem
+ */
+#ifdef CONFIG_QCA_MMC
+int set_uuid_bootargs(char *boot_args, char *part_name, int buflen, bool gpt_flag)
+{
+	int ret, len;
+	block_dev_desc_t *blk_dev;
+	disk_partition_t disk_info;
+
+	blk_dev = mmc_get_dev(mmc_host.dev_num);
+	if (!blk_dev) {
+		printf("Invalid block device name\n");
+		return -EINVAL;
+	}
+
+	if (buflen <= 0 || buflen > MAX_BOOT_ARGS_SIZE)
+		return -EINVAL;
+
+#ifdef CONFIG_PARTITION_UUIDS
+	ret = get_partition_info_efi_by_name(blk_dev,
+			part_name, &disk_info);
+	if (ret) {
+		printf("bootipq: unsupported partition name %s\n",part_name);
+		return -EINVAL;
+	}
+	if ((len = strlcpy(boot_args, "root=PARTUUID=", buflen)) >= buflen)
+		return -EINVAL;
+#else
+	if ((len = strlcpy(boot_args, "rootfsname=", buflen)) >= buflen)
+		return -EINVAL;
+#endif
+	boot_args += len;
+	buflen -= len;
+
+#ifdef CONFIG_PARTITION_UUIDS
+	if ((len = strlcpy(boot_args, disk_info.uuid, buflen)) >= buflen)
+		return -EINVAL;
+#else
+	if ((len = strlcpy(boot_args, part_name, buflen)) >= buflen)
+		return -EINVAL;
+#endif
+	boot_args += len;
+	buflen -= len;
+
+	if (gpt_flag && strlcpy(boot_args, " gpt", buflen) >= buflen)
+		return -EINVAL;
+
+	return 0;
+}
+#else
+int set_uuid_bootargs(char *boot_args, char *part_name, int buflen, bool gpt_flag)
+{
+	return 0;
+}
+#endif
+
+#ifdef CONFIG_QCA_MMC
+void emmc_clock_config(void)
+{
+	/* Enable root clock generator */
+	writel(readl(GCC_SDCC1_APPS_CBCR)|0x1, GCC_SDCC1_APPS_CBCR);
+	/* Add 10us delay for CLK_OFF to get cleared */
+	udelay(10);
+	writel(readl(GCC_SDCC1_AHB_CBCR)|0x1, GCC_SDCC1_AHB_CBCR);
+	/* PLL0 - 192Mhz */
+	writel(0x20B, GCC_SDCC1_APPS_CFG_RCGR);
+	/* Delay for clock operation complete */
+	udelay(10);
+	writel(0x1, GCC_SDCC1_APPS_M);
+	writel(0xFC, GCC_SDCC1_APPS_N);
+	writel(0xFD, GCC_SDCC1_APPS_D);
+	/* Delay for clock operation complete */
+	udelay(10);
+	/* Update APPS_CMD_RCGR to reflect source selection */
+	writel(readl(GCC_SDCC1_APPS_CMD_RCGR)|0x1, GCC_SDCC1_APPS_CMD_RCGR);
+	/* Add 10us delay for clock update to complete */
+	udelay(10);
+}
+
+void mmc_iopad_config(struct sdhci_host *host)
+{
+	u32 val;
+	val = sdhci_readb(host, SDHCI_VENDOR_IOPAD);
+	/*set bit 15 & 16*/
+	val |= 0x18000;
+	writel(val, host->ioaddr + SDHCI_VENDOR_IOPAD);
+}
+
+void sdhci_bus_pwr_off(struct sdhci_host *host)
+{
+	u32 val;
+
+	val = sdhci_readb(host, SDHCI_HOST_CONTROL);
+	sdhci_writeb(host,(val & (~SDHCI_POWER_ON)), SDHCI_POWER_CONTROL);
+}
+
+void emmc_clock_disable(void)
+{
+	/* Clear divider */
+	writel(0x0, GCC_SDCC1_MISC);
+}
+
+void board_mmc_deinit(void)
+{
+	emmc_clock_disable();
+}
+
+void emmc_clock_reset(void)
+{
+	writel(0x1, GCC_SDCC1_BCR);
+	udelay(10);
+	writel(0x0, GCC_SDCC1_BCR);
+}
+
+int board_mmc_init(bd_t *bis)
+{
+	int node;
+	int ret = 0;
+	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
+
+	node = fdt_path_offset(gd->fdt_blob, "mmc");
+	if (node < 0) {
+		printf("sdhci: Node Not found, skipping initialization\n");
+		return -1;
+	}
+
+	mmc_host.ioaddr = (void *)MSM_SDC1_SDHCI_BASE;
+	mmc_host.voltages = MMC_VDD_165_195;
+	mmc_host.version = SDHCI_SPEC_300;
+	mmc_host.cfg.part_type = PART_TYPE_EFI;
+	mmc_host.quirks = SDHCI_QUIRK_BROKEN_VOLTAGE;
+
+	emmc_clock_disable();
+	emmc_clock_reset();
+	udelay(10);
+	emmc_clock_config();
+
+	if (add_sdhci(&mmc_host, 200000000, 400000)) {
+		printf("add_sdhci fail!\n");
+		return -1;
+	}
+
+	if (!ret && sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
+		ret = board_mmc_env_init(mmc_host);
+	}
+
+	return ret;
+}
+#else
+int board_mmc_init(bd_t *bis)
+{
+	return 0;
+}
+#endif
+
 void reset_crashdump(void)
 {
 	return;
@@ -159,13 +320,6 @@ void disable_caches(void)
 {
 	icache_disable();
 	dcache_disable();
-}
-/**
- * * Set the uuid in bootargs variable for mounting rootfilesystem
- */
-int set_uuid_bootargs(char *boot_args, char *part_name, int buflen, bool gpt_flag)
-{
-	return 0;
 }
 
 unsigned long timer_read_counter(void)

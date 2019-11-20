@@ -18,6 +18,23 @@
 #include <asm/u-boot.h>
 #include <asm/arch-qca-common/qca_common.h>
 
+#define MSM_SDC1_BASE			0x7800000
+#define MSM_SDC1_SDHCI_BASE		0x7804000
+
+/*
+ * GCC-SDCC Registers
+ */
+
+#define GCC_SDCC1_BCR			0x01842000
+#define GCC_SDCC1_APPS_CMD_RCGR		0x01842004
+#define GCC_SDCC1_APPS_CFG_RCGR		0x01842008
+#define GCC_SDCC1_APPS_M		0x0184200C
+#define GCC_SDCC1_APPS_N		0x01842010
+#define GCC_SDCC1_APPS_D		0x01842014
+#define GCC_SDCC1_APPS_CBCR		0x01842018
+#define GCC_SDCC1_AHB_CBCR		0x0184201C
+#define GCC_SDCC1_MISC			0x01842020
+
 /* UART 1 */
 #define GCC_BLSP1_UART1_BCR               0x01802038
 #define GCC_BLSP1_UART1_APPS_CBCR         0x0180203C
