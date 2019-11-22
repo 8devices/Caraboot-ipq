@@ -138,6 +138,52 @@ struct dumpinfo_t dumpinfo_s[] = {
 };
 int dump_entries_s = ARRAY_SIZE(dumpinfo_s);
 
+gpio_func_data_t spi_nor_gpio[] = {
+	{
+		.gpio = 38,
+		.func = 3,
+		.pull = 3,
+		.oe = 0,
+		.vm = 1,
+		.od_en = 0,
+		.pu_res = 2,
+	},
+	{
+		.gpio = 39,
+		.func = 3,
+		.pull = 3,
+		.oe = 0,
+		.vm = 1,
+		.od_en = 0,
+		.pu_res = 2,
+	},
+	{
+		.gpio = 40,
+		.func = 2,
+		.pull = 3,
+		.oe = 0,
+		.vm = 1,
+		.od_en = 0,
+		.pu_res = 2,
+	},
+	{
+		.gpio = 41,
+		.func = 2,
+		.pull = 3,
+		.oe = 0,
+		.vm = 1,
+		.od_en = 0,
+		.pu_res = 2,
+	},
+};
+
+board_ipq807x_param_t gboard_param = {
+	.spi_nor_cfg = {
+		.gpio = spi_nor_gpio,
+		.gpio_count = ARRAY_SIZE(spi_nor_gpio),
+	},
+};
+
 void uart2_configure_mux(void)
 {
 	unsigned long cfg_rcgr;
@@ -597,6 +643,7 @@ void board_nand_init(void)
 {
 #ifdef CONFIG_QCA_SPI
 	int gpio_node;
+	int i;
 #endif
 
 	qpic_nand_init();
@@ -605,8 +652,14 @@ void board_nand_init(void)
 	gpio_node = fdt_path_offset(gd->fdt_blob, "/spi/spi_gpio");
 	if (gpio_node >= 0) {
 		qca_gpio_init(gpio_node);
-		ipq_spi_init(CONFIG_IPQ_SPI_NOR_INFO_IDX);
+	} else {
+		/* Setting default values */
+		for (i = 0; i < gboard_param.spi_nor_cfg.gpio_count; i++)
+			gpio_tlmm_config(&gboard_param.spi_nor_cfg.gpio[i]);
 	}
+
+	ipq_spi_init(CONFIG_IPQ_SPI_NOR_INFO_IDX);
+
 #endif
 }
 
