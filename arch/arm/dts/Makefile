@@ -36,7 +36,8 @@ dtb-$(CONFIG_ARCH_IPQ807x) += ipq807x-hk01.dtb \
 	ipq807x-hk01-c2.dtb \
 	ipq807x-hk01-c3.dtb \
 	ipq807x-hk01-c4.dtb \
-	ipq807x-hk01-c5.dtb
+	ipq807x-hk01-c5.dtb \
+	ipq807x-hk10-c2.dtb
 
 dtb-$(CONFIG_ARCH_IPQ806x) += ipq806x-ap148.dtb \
 	ipq806x-ap160.dtb \
