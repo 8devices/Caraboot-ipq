@@ -198,6 +198,7 @@ int board_eth_init(bd_t *bis)
 	switch (gd->bd->bi_arch_number) {
 	case MACH_TYPE_IPQ40XX_AP_DK01_1_S1:
 	case MACH_TYPE_IPQ40XX_AP_DK01_1_C2:
+	case MACH_TYPE_IPQ40XX_AP_DK05_1_C1:
 		/* 8075 out of reset */
 		mdelay(1);
 		gpio_set_value(62, 1);
@@ -577,6 +578,8 @@ unsigned int get_dts_machid(unsigned int machid)
 	{
 		case MACH_TYPE_IPQ40XX_AP_DK04_1_C6:
 			return MACH_TYPE_IPQ40XX_AP_DK04_1_C1;
+		case MACH_TYPE_IPQ40XX_AP_DK05_1_C1:
+			return MACH_TYPE_IPQ40XX_AP_DK01_1_C2;
 		default:
 			return machid;
 	}
@@ -758,3 +761,27 @@ void fdt_fixup_cpus_node(void *blob)
 	}
 	return;
 }
+
+void ipq_uboot_fdt_fixup(void)
+{
+	int ret, len;
+	const char *config = "config@ap.dk05.1-c1";
+	len = fdt_totalsize(gd->fdt_blob) + strlen(config) + 1;
+
+	if (gd->bd->bi_arch_number == MACH_TYPE_IPQ40XX_AP_DK05_1_C1)
+	{
+		/*
+		 * Open in place with a new length.
+		 */
+		ret = fdt_open_into(gd->fdt_blob, (void *)gd->fdt_blob, len);
+		if (ret)
+			 debug("uboot-fdt-fixup: Cannot expand FDT: %s\n", fdt_strerror(ret));
+
+		ret = fdt_setprop((void *)gd->fdt_blob, 0, "config_name",
+				config, (strlen(config)+1));
+		if (ret)
+			debug("uboot-fdt-fixup: unable to set config_name(%d)\n", ret);
+	}
+	return;
+}
+
