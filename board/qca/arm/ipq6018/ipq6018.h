@@ -359,8 +359,9 @@ int ipq_board_usb_init(void);
 
 void board_pci_init(int id);
 __weak void board_pcie_clock_init(int id) {}
+#endif
+
 __weak void qgic_init(void) {}
 __weak void handle_noc_err(void) {}
-#endif
 
 #endif /* _IPQ6018_CDP_H_ */
