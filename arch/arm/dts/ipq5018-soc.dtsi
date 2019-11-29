@@ -26,24 +26,22 @@
 			gpio1 {
 				gpio = <20>;
 				func = <1>;
-				pull = <GPIO_NO_PULL>;
+				pull = <GPIO_PULL_DOWN>;
 				oe = <GPIO_OE_DISABLE>;
 				drvstr = <GPIO_2MA>;
 				od_en = <GPIO_OD_DISABLE>;
 				sr_en = <GPIO_SR_DISABLE>;
 				pu_res =<GPIO_PULL_RES0>;
-				pu = <1>;
 			};
 			gpio2 {
 				gpio = <21>;
 				func = <1>;
-				pull = <GPIO_NO_PULL>;
+				pull = <GPIO_PULL_DOWN>;
 				oe = <GPIO_OE_DISABLE>;
 				drvstr = <GPIO_2MA>;
 				od_en = <GPIO_OD_DISABLE>;
 				sr_en = <GPIO_SR_DISABLE>;
 				pu_res =<GPIO_PULL_RES0>;
-				pu = <1>;
 			};
 		};
 	};
