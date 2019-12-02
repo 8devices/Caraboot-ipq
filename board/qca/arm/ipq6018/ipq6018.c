@@ -712,52 +712,16 @@ int ipq_board_usb_init(void)
 }
 #endif
 
-static int __fixup_usb_device_mode(void *blob)
+static void __fixup_usb_device_mode(void *blob)
 {
-	int nodeoff, ret;
-	const char *usb_dr_mode = "peripheral"; /* Supported mode */
-	const char *usb_max_speed = "high-speed";/* Supported speed */
-	const char *usb_node = "/soc/usb3@8A00000/dwc3@8A00000";
-
-	nodeoff = fdt_path_offset(blob, usb_node);
-	if (nodeoff < 0) {
-		printf("%s: unable to find node '%s'\n", __func__, usb_node);
-		return nodeoff;
-	}
-
-	ret = fdt_setprop(blob, nodeoff, "dr_mode", usb_dr_mode,
-			  (strlen(usb_dr_mode) + 1));
-	if (ret) {
-		printf("%s: 'dr_mode' cannot be set", __func__);
-		return ret;
-	}
-
-	/* if mode is peripheral restricting to high-speed */
-	ret = fdt_setprop(blob, nodeoff, "maximum-speed", usb_max_speed,
-			  (strlen(usb_max_speed) + 1));
-	if (ret) {
-		printf("%s: 'maximum-speed' cannot be set", __func__);
-		return ret;
-	}
-
-	return 0;
+	parse_fdt_fixup("/soc/usb3@8A00000/dwc3@8A00000%dr_mode%?peripheral", blob);
+	parse_fdt_fixup("/soc/usb3@8A00000/dwc3@8A00000%maximum-speed%?high-speed", blob);
 }
 
 static void fdt_fixup_diag_gadget(void *blob)
 {
-	int node, ret;
-	const char *compatible = "qcom,gadget-diag";
-
-	if (!__fixup_usb_device_mode(blob)) {
-		node = fdt_node_offset_by_compatible(blob, 0, compatible);
-		if (node < 0) {
-			printf("%s: cannot find '%s'\n", __func__, compatible);
-			return;
-		}
-		ret = fdt_setprop_string(blob, node, "status", "ok");
-		if (ret)
-			printf("%s: cannot enable gadget diag\n", __func__);
-	}
+	__fixup_usb_device_mode(blob);
+	parse_fdt_fixup("/soc/qcom,gadget_diag@0%status%?ok", blob);
 }
 
 void ipq_fdt_fixup_usb_device_mode(void *blob)
@@ -778,19 +742,7 @@ void ipq_fdt_fixup_usb_device_mode(void *blob)
 
 void fdt_fixup_set_dload_dis(void *blob)
 {
-	int nodeoff, ret;
-	const char *dload_node = {"/soc/qca,scm_restart_reason"};
-	uint32_t setval = 1;
-
-	nodeoff = fdt_path_offset(blob, dload_node);
-	if (nodeoff < 0) {
-		printf("fixup_set_dload: unable to find node '%s'\n",
-		       dload_node);
-		return;
-	}
-	ret = fdt_setprop_u32(blob, nodeoff, "dload_status", setval);
-	if (ret)
-		printf("fixup_set_dload: 'dload_status' not set");
+	parse_fdt_fixup("/soc/qca,scm_restart_reason%dload_status%1", blob);
 }
 
 void enable_caches(void)
@@ -1293,8 +1245,6 @@ void ipq_fdt_fixup_socinfo(void *blob)
 
 void fdt_fixup_auto_restart(void *blob)
 {
-	int nodeoff, ret;
-	const char *node = "/soc/q6v5_wcss@CD00000";
 	const char *paniconwcssfatal;
 
 	paniconwcssfatal = getenv("paniconwcssfatal");
@@ -1305,15 +1255,7 @@ void fdt_fixup_auto_restart(void *blob)
 	if (strncmp(paniconwcssfatal, "1", sizeof("1"))) {
 		printf("fixup_auto_restart: invalid variable 'paniconwcssfatal'");
 	} else {
-		nodeoff = fdt_path_offset(blob, node);
-		if (nodeoff < 0) {
-			printf("fixup_auto_restart: unable to find node '%s'\n", node);
-			return;
-		}
-		ret = fdt_delprop(blob, nodeoff, "qca,auto-restart");
-
-		if (ret)
-			printf("fixup_auto_restart: cannot delete property");
+		parse_fdt_fixup("/soc/q6v5_wcss@CD00000%delete%?qca,auto-restart", blob);
 	}
 	return;
 }
@@ -1382,50 +1324,11 @@ void ipq_uboot_fdt_fixup(void)
 
 void fdt_fixup_set_qca_cold_reboot_enable(void *blob)
 {
-	int nodeoff, ret;
-	const char *dload_node = {"/soc/qca,scm_restart_reason"};
-	uint32_t setval = 1;
-
-	nodeoff = fdt_path_offset(blob, dload_node);
-	if (nodeoff < 0) {
-		printf("fixup_set_dload: unable to find node '%s'\n",
-		       dload_node);
-		return;
-	}
-
-	ret = fdt_setprop_u32(blob, nodeoff, "qca,coldreboot-enabled", setval);
-	if (ret)
-		printf("fixup_set_dload: 'qca,coldreboot-enabled' not set");
-
-	return;
+	parse_fdt_fixup("/soc/qca,scm_restart_reason%qca,coldreboot-enabled%1", blob);
 }
 
 void fdt_fixup_del_qca_secure_prop(void *blob)
 {
-	int nodeoff, ret;
-	char *node;
-
-	node = "/soc/q6v5_wcss@CD00000";
-	nodeoff = fdt_path_offset(blob, node);
-	if (nodeoff < 0) {
-		printf("fixup_del_qca_secure: unable to find node '%s'\n",node);
-		return;
-	}
-
-	ret = fdt_delprop(blob, nodeoff, "qca,secure");
-	if (ret)
-		printf("fixup_del_qca_secure:cannot delete property in '%s'\n",node);
-
-	node = "/soc/q6v6_adsp@AB00000";
-	nodeoff = fdt_path_offset(blob, node);
-	if (nodeoff < 0) {
-		printf("fixup_del_qca_secure: unable to find node '%s'\n",node);
-		return;
-	}
-
-	ret = fdt_delprop(blob, nodeoff, "qca,secure");
-	if (ret)
-		printf("fixup_del_qca_secure:cannot delete property in '%s'\n",node);
-
-	return;
+	parse_fdt_fixup("/soc/q6v5_wcss@CD00000%delete%?qca,secure", blob);
+	parse_fdt_fixup("/soc/q6v6_adsp@AB00000%delete%?qca,secure", blob);
 }
