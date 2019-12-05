@@ -188,10 +188,115 @@ gpio_func_data_t spi_nor_gpio[] = {
 	},
 };
 
+gpio_func_data_t qpic_nand_gpio[] = {
+	{
+		.gpio = 1,
+		.func = 1,
+		.pull = 3,
+		.drvstr = 3,
+		.oe = 0,
+	},
+	{
+		.gpio = 3,
+		.func = 1,
+		.pull = 3,
+		.drvstr = 3,
+		.oe = 0,
+	},
+	{
+		.gpio = 4,
+		.func = 1,
+		.pull = 3,
+		.drvstr = 3,
+		.oe = 0,
+	},
+	{
+		.gpio = 5,
+		.func = 1,
+		.pull = 3,
+		.drvstr = 3,
+		.oe = 0,
+	},
+	{
+		.gpio = 6,
+		.func = 1,
+		.pull = 3,
+		.drvstr = 3,
+		.oe = 0,
+	},
+	{
+		.gpio = 7,
+		.func = 1,
+		.pull = 3,
+		.drvstr = 3,
+		.oe = 0,
+	},
+	{
+		.gpio = 8,
+		.func = 1,
+		.pull = 3,
+		.drvstr = 3,
+		.oe = 0,
+	},
+	{
+		.gpio = 10,
+		.func = 1,
+		.pull = 3,
+		.drvstr = 3,
+		.oe = 0,
+	},
+	{
+		.gpio = 11,
+		.func = 1,
+		.pull = 3,
+		.drvstr = 3,
+		.oe = 0,
+	},
+	{
+		.gpio = 12,
+		.func = 1,
+		.pull = 3,
+		.drvstr = 3,
+		.oe = 0,
+	},
+	{
+		.gpio = 13,
+		.func = 1,
+		.pull = 3,
+		.drvstr = 3,
+		.oe = 0,
+	},
+	{
+		.gpio = 14,
+		.func = 1,
+		.pull = 3,
+		.drvstr = 3,
+		.oe = 0,
+	},
+	{
+		.gpio = 15,
+		.func = 1,
+		.pull = 3,
+		.drvstr = 3,
+		.oe = 0,
+	},
+	{
+		.gpio = 17,
+		.func = 1,
+		.pull = 3,
+		.drvstr = 3,
+		.oe = 0,
+	},
+};
+
 board_ipq807x_param_t gboard_param = {
 	.spi_nor_cfg = {
 		.gpio = spi_nor_gpio,
 		.gpio_count = ARRAY_SIZE(spi_nor_gpio),
+	},
+	.qpic_nand_cfg = {
+		.gpio = qpic_nand_gpio,
+		.gpio_count = ARRAY_SIZE(qpic_nand_gpio),
 	},
 };
 
@@ -656,6 +761,9 @@ void board_nand_init(void)
 	int gpio_node;
 	int i;
 #endif
+
+	for (i = 0; i < gboard_param.qpic_nand_cfg.gpio_count; i++)
+		gpio_tlmm_config(&gboard_param.qpic_nand_cfg.gpio[i]);
 
 	qpic_nand_init();
 
