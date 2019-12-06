@@ -122,6 +122,9 @@
 #define CONFIG_TZ_END_ADDR		0x4AA00000
 #define CONFIG_SYS_SDRAM_END	((long long)CONFIG_SYS_SDRAM_BASE + gd->ram_size)
 
+#define CONFIG_QCA_UBOOT_OFFSET		0xA100000
+#define CONFIG_UBOOT_END_ADDR		0x4A500000
+
 #ifndef __ASSEMBLY__
 #include <compiler.h>
 extern loff_t board_env_offset;
