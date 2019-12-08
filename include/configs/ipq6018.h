@@ -362,5 +362,6 @@ extern loff_t board_env_size;
 #define CONFIG_IPQ_ELF_AUTH
 #define IPQ_UBI_VOL_WRITE_SUPPORT
 #define CONFIG_IPQ_TZT
+#define CONFIG_IPQ_FDT_FIXUP
 
 #endif /* _IPQ6018_H */
