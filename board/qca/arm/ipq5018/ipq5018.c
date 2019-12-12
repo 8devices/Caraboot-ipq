@@ -26,6 +26,7 @@
 #include <mmc.h>
 #include <sdhci.h>
 
+#define DLOAD_MAGIC_COOKIE	0x10
 DECLARE_GLOBAL_DATA_PTR;
 struct sdhci_host mmc_host;
 extern int ipq_spi_init(u16);
@@ -287,7 +288,38 @@ int board_mmc_init(bd_t *bis)
 
 void reset_crashdump(void)
 {
+	unsigned int ret = 0;
+	qca_scm_sdi();
+	ret = qca_scm_dload(CLEAR_MAGIC);
+	if (ret)
+		printf ("Error in reseting the Magic cookie\n");
 	return;
+}
+
+void psci_sys_reset(void)
+{
+	__invoke_psci_fn_smc(0x84000009, 0, 0, 0);
+}
+
+void qti_scm_pshold(void)
+{
+	int ret;
+
+	ret = scm_call(SCM_SVC_BOOT, SCM_CMD_TZ_PSHOLD, NULL, 0, NULL, 0);
+
+	if (ret != 0)
+		writel(0, GCNT_PSHOLD);
+}
+
+void reset_cpu(unsigned long a)
+{
+	reset_crashdump();
+	if (is_scm_armv8()) {
+		psci_sys_reset();
+	} else {
+		qti_scm_pshold();
+	}
+	while(1);
 }
 
 void board_nand_init(void)
@@ -327,7 +359,3 @@ unsigned long timer_read_counter(void)
 	return 0;
 }
 
-void reset_cpu(unsigned long a)
-{
-	while(1);
-}
