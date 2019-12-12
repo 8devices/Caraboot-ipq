@@ -532,7 +532,7 @@ static int do_dumpqca_data(unsigned int dump_level)
 					comp_addr = memaddr;
 				}
 				if (!strncmp(dumpinfo[indx].name, "EBICS_S2", strlen("EBICS_S2"))) {
-					dumpinfo[indx].size = gd->ram_size - (CONFIG_TZ_END_ADDR - CONFIG_SYS_SDRAM_BASE);
+					dumpinfo[indx].size = gd->ram_size - (dumpinfo[indx].start - CONFIG_SYS_SDRAM_BASE);
 					comp_addr = memaddr;
 				}
 				if (!strncmp(dumpinfo[indx].name, "EBICS1", strlen("EBICS1"))) {
