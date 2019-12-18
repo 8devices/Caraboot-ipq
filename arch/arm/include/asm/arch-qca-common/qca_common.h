@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2017, 2019 The Linux Foundation. All rights reserved.
 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -15,6 +15,10 @@
 #define ___QCA_COMMON_H_
 #include <asm/u-boot.h>
 #include <asm/arch-qca-common/smem.h>
+
+#ifdef CONFIG_ARCH_IPQ5018
+#include <asm/arch-ipq5018/clk.h>
+#endif
 
 #ifdef CONFIG_ARCH_IPQ6018
 #include <asm/arch-ipq6018/clk.h>

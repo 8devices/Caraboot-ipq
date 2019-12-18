@@ -186,6 +186,16 @@ extern loff_t board_env_size;
 #endif
 
 /*
+* I2C Enable
+*/
+#define CONFIG_IPQ5018_I2C
+
+#ifdef CONFIG_IPQ5018_I2C
+#define CONFIG_SYS_I2C_QUP
+#define CONFIG_CMD_I2C
+#define CONFIG_DM_I2C
+#endif
+/*
 * Expose SPI driver as a pseudo NAND driver to make use
 * of U-Boot's MTD framework.
 */
