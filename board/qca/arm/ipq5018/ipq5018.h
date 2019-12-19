@@ -137,6 +137,12 @@ int smem_ram_ptable_init(struct smem_ram_ptable *smem_ram_ptable);
 void reset_crashdump(void);
 void reset_board(void);
 void qpic_clk_enbale(void);
+int ipq_get_tz_version(char *version_name, int buf_size);
+void ipq_fdt_fixup_socinfo(void *blob);
+
+extern const char *rsvd_node;
+extern const char *del_node[];
+extern const add_node_t add_fdt_node[];
 
 typedef enum {
 	SMEM_SPINLOCK_ARRAY = 7,

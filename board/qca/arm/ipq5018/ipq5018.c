@@ -27,9 +27,61 @@
 #include <sdhci.h>
 
 #define DLOAD_MAGIC_COOKIE	0x10
+#define DLOAD_DISABLED		0x40
 DECLARE_GLOBAL_DATA_PTR;
 struct sdhci_host mmc_host;
 extern int ipq_spi_init(u16);
+
+const char *rsvd_node = "/reserved-memory";
+const char *del_node[] = {"uboot",
+			  "sbl",
+			  NULL};
+const add_node_t add_fdt_node[] = {{}};
+
+struct dumpinfo_t dumpinfo_n[] = {
+	/* TZ stores the DDR physical address at which it stores the
+	 * APSS regs, UTCM copy dump. We will have the TZ IMEM
+	 * IMEM Addr at which the DDR physical address is stored as
+	 * the start
+	 *     --------------------
+         *     |  DDR phy (start) | ----> ------------------------
+         *     --------------------       | APSS regsave (8k)    |
+         *                                ------------------------
+         *                                |                      |
+	 *                                | 	 UTCM copy	 |
+         *                                |        (192k)        |
+	 *                                |                      |
+         *                                ------------------------
+	 */
+	{ "EBICS0.BIN", 0x40000000, 0x10000000, 0 },
+	{ "CODERAM.BIN", 0x00200000, 0x00028000, 0 },
+	{ "DATARAM.BIN", 0x00290000, 0x00014000, 0 },
+	{ "MSGRAM.BIN", 0x00060000, 0x00006000, 1 },
+	{ "IMEM.BIN", 0x08600000, 0x00001000, 0 },
+	{ "NSSUTCM.BIN", 0x08600658, 0x00030000, 0, 1, 0x2000 },
+	{ "UNAME.BIN", 0, 0, 0, 0, 0, MINIMAL_DUMP },
+	{ "CPU_INFO.BIN", 0, 0, 0, 0, 0, MINIMAL_DUMP },
+	{ "DMESG.BIN", 0, 0, 0, 0, 0, MINIMAL_DUMP },
+	{ "PT.BIN", 0, 0, 0, 0, 0, MINIMAL_DUMP },
+	{ "WLAN_MOD.BIN", 0, 0, 0, 0, 0, MINIMAL_DUMP },
+};
+int dump_entries_n = ARRAY_SIZE(dumpinfo_n);
+
+struct dumpinfo_t dumpinfo_s[] = {
+	{ "EBICS_S0.BIN", 0x40000000, 0xA600000, 0 },
+	{ "EBICS_S1.BIN", CONFIG_TZ_END_ADDR, 0x10000000, 0 },
+	{ "DATARAM.BIN", 0x00290000, 0x00014000, 0 },
+	{ "MSGRAM.BIN", 0x00060000, 0x00006000, 1 },
+	{ "IMEM.BIN", 0x08600000, 0x00001000, 0 },
+	{ "NSSUTCM.BIN", 0x08600658, 0x00030000, 0, 1, 0x2000 },
+	{ "UNAME.BIN", 0, 0, 0, 0, 0, MINIMAL_DUMP },
+	{ "CPU_INFO.BIN", 0, 0, 0, 0, 0, MINIMAL_DUMP },
+	{ "DMESG.BIN", 0, 0, 0, 0, 0, MINIMAL_DUMP },
+	{ "PT.BIN", 0, 0, 0, 0, 0, MINIMAL_DUMP },
+	{ "WLAN_MOD.BIN", 0, 0, 0, 0, 0, MINIMAL_DUMP },
+};
+int dump_entries_s = ARRAY_SIZE(dumpinfo_s);
+u32 *tz_wonce = (u32 *)CONFIG_IPQ5018_TZ_WONCE_4_ADDR;
 
 void uart1_configure_mux(void)
 {
@@ -285,6 +337,128 @@ int board_mmc_init(bd_t *bis)
 	return 0;
 }
 #endif
+
+__weak int ipq_get_tz_version(char *version_name, int buf_size)
+{
+	return 1;
+}
+
+int apps_iscrashed_crashdump_disabled(void)
+{
+	u32 *dmagic = (u32 *)CONFIG_IPQ5018_DMAGIC_ADDR;
+
+	if (*dmagic == DLOAD_DISABLED)
+		return 1;
+
+	return 0;
+}
+
+int apps_iscrashed(void)
+{
+	u32 *dmagic = (u32 *)CONFIG_IPQ5018_DMAGIC_ADDR;
+
+	if (*dmagic == DLOAD_MAGIC_COOKIE)
+		return 1;
+
+	return 0;
+}
+
+static void __fixup_usb_device_mode(void *blob)
+{
+	parse_fdt_fixup("/soc/usb3@8A00000/dwc3@8A00000%dr_mode%?peripheral", blob);
+	parse_fdt_fixup("/soc/usb3@8A00000/dwc3@8A00000%maximum-speed%?high-speed", blob);
+}
+
+static void fdt_fixup_diag_gadget(void *blob)
+{
+	__fixup_usb_device_mode(blob);
+	parse_fdt_fixup("/soc/qcom,gadget_diag@0%status%?ok", blob);
+}
+
+void ipq_fdt_fixup_usb_device_mode(void *blob)
+{
+	const char *usb_cfg;
+
+	usb_cfg = getenv("usb_mode");
+	if (!usb_cfg)
+		return;
+
+	if (!strncmp(usb_cfg, "peripheral", sizeof("peripheral")))
+		__fixup_usb_device_mode(blob);
+	else if (!strncmp(usb_cfg, "diag_gadget", sizeof("diag_gadget")))
+		fdt_fixup_diag_gadget(blob);
+	else
+		printf("%s: invalid param for usb_mode\n", __func__);
+}
+
+void fdt_fixup_set_dload_dis(void *blob)
+{
+	parse_fdt_fixup("/soc/qca,scm_restart_reason%dload_status%1", blob);
+}
+
+void ipq_fdt_fixup_socinfo(void *blob)
+{
+	uint32_t cpu_type;
+	uint32_t soc_version, soc_version_major, soc_version_minor;
+	int nodeoff, ret;
+
+	nodeoff = fdt_path_offset(blob, "/");
+
+	if (nodeoff < 0) {
+		printf("ipq: fdt fixup cannot find root node\n");
+		return;
+	}
+
+	ret = ipq_smem_get_socinfo_cpu_type(&cpu_type);
+	if (!ret) {
+		ret = fdt_setprop(blob, nodeoff, "cpu_type",
+				  &cpu_type, sizeof(cpu_type));
+		if (ret)
+			printf("%s: cannot set cpu type %d\n", __func__, ret);
+	} else {
+		printf("%s: cannot get socinfo\n", __func__);
+	}
+
+	ret = ipq_smem_get_socinfo_version((uint32_t *)&soc_version);
+	if (!ret) {
+		soc_version_major = SOCINFO_VERSION_MAJOR(soc_version);
+		soc_version_minor = SOCINFO_VERSION_MINOR(soc_version);
+
+		ret = fdt_setprop(blob, nodeoff, "soc_version_major",
+				  &soc_version_major,
+				  sizeof(soc_version_major));
+		if (ret)
+			printf("%s: cannot set soc_version_major %d\n",
+			       __func__, soc_version_major);
+
+		ret = fdt_setprop(blob, nodeoff, "soc_version_minor",
+				  &soc_version_minor,
+				  sizeof(soc_version_minor));
+		if (ret)
+			printf("%s: cannot set soc_version_minor %d\n",
+			       __func__, soc_version_minor);
+	} else {
+		printf("%s: cannot get soc version\n", __func__);
+	}
+	return;
+}
+
+void fdt_fixup_auto_restart(void *blob)
+{
+	const char *paniconwcssfatal;
+
+	paniconwcssfatal = getenv("paniconwcssfatal");
+
+	if (!paniconwcssfatal)
+		return;
+
+	if (strncmp(paniconwcssfatal, "1", sizeof("1"))) {
+		printf("fixup_auto_restart: invalid variable 'paniconwcssfatal'");
+	} else {
+		parse_fdt_fixup("/soc/q6v5_wcss@CD00000%delete%?qca,auto-restart", blob);
+	}
+	return;
+}
 
 void reset_crashdump(void)
 {
