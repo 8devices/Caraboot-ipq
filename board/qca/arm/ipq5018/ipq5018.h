@@ -17,6 +17,7 @@
 #include <configs/ipq5018.h>
 #include <asm/u-boot.h>
 #include <asm/arch-qca-common/qca_common.h>
+#include "phy.h"
 
 #define MSM_SDC1_BASE			0x7800000
 #define MSM_SDC1_SDHCI_BASE		0x7804000
@@ -95,6 +96,30 @@
 
 unsigned int __invoke_psci_fn_smc(unsigned int, unsigned int,
 					 unsigned int, unsigned int);
+
+typedef struct {
+	uint base;
+	int unit;
+	uint phy_addr;
+	const char phy_name[MDIO_NAME_LEN];
+} ipq_gmac_board_cfg_t;
+
+extern ipq_gmac_board_cfg_t gmac_cfg[];
+
+static inline int gmac_cfg_is_valid(ipq_gmac_board_cfg_t *cfg)
+{
+	/*
+	* 'cfg' is valid if and only if
+	*      unit number is non-negative and less than CONFIG_IPQ_NO_MACS.
+	*/
+	return ((cfg >= &gmac_cfg[0]) &&
+		(cfg < &gmac_cfg[CONFIG_IPQ_NO_MACS]) &&
+			(cfg->unit >= 0) && (cfg->unit < CONFIG_IPQ_NO_MACS));
+}
+
+extern void ipq_gmac_common_init(ipq_gmac_board_cfg_t *cfg);
+extern int ipq_gmac_init(ipq_gmac_board_cfg_t *cfg);
+
 struct smem_ram_ptn {
 	char name[16];
 	unsigned long long start;

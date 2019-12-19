@@ -23,6 +23,7 @@
 		console = "/serial@78AF000";
 		mmc = "/sdhci@7804000";
 		i2c0 = "/i2c@78b6000";
+		gmac_gpio = "/gmac_gpio";
 	};
 
 	mmc: sdhci@7804000 {
@@ -38,4 +39,23 @@
 		gpt_freq_hz = <240000>;
 	};
 
+	gmac_cfg {
+		gmac_count = <2>;
+
+		gmac1_cfg {
+			unit = <0>;
+			base = <0x39C00000>;
+			phy_address = <7>;
+			phy_name = "IPQ MDIO0";
+		};
+
+		gmac2_cfg {
+			unit = <1>;
+			base = <0x39D00000>;
+			phy_address = <1>;
+			phy_name = "IPQ MDIO1";
+		};
+       };
+
+	gmac_gpio{};
 };
