@@ -324,6 +324,7 @@ int board_mmc_init(bd_t *bis)
 }
 #endif
 
+#ifdef CONFIG_QCA_SPI
 static void spi_clock_init(void)
 {
 	int cfg;
@@ -340,6 +341,7 @@ static void spi_clock_init(void)
 	/* Configure CBCR */
 	writel(CLK_ENABLE, GCC_BLSP1_QUP1_SPI_APPS_CBCR);
 }
+#endif
 
 void board_nand_init(void)
 {
