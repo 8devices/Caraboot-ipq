@@ -34,6 +34,11 @@
 #define CONFIG_ENV_SIZE_MAX			(256 << 10) /* 256 KB */
 
 /*
+* PSCI Calls enable
+*/
+#define CONFIG_ARMV7_PSCI
+
+/*
  *Size of malloc() pool
  */
 
