@@ -28,6 +28,11 @@
 		compatible = "qcom,sdhci-msm";
 	};
 
+	nand: nand-controller@79B0000 {
+		status = "ok";
+		nand_gpio {};
+	};
+
 	timer {
 		gpt_freq_hz = <240000>;
 	};
