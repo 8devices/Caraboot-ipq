@@ -630,8 +630,10 @@ static int do_dumpqca_data(unsigned int dump_level)
 
 stop_dump:
 #if defined(CONFIG_USB_STORAGE) && defined(CONFIG_FS_FAT)
-	if (is_usb_dump == 1)
+	if (is_usb_dump == 1) {
 		run_command("usb stop", 0);
+		mdelay(1000);
+	}
 #endif
 	return ret;
 }
