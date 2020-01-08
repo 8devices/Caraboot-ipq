@@ -26,6 +26,15 @@
 #define CONFIG_CMD_CACHE
 #define CONFIG_IPQ_NO_RELOC
 
+#define CONFIG_SYS_VSNPRINTF
+
+/*
+* Enable Early and Late init
+* This config needs for secondary boot and to set BADOFF5E
+*/
+#define CONFIG_BOARD_EARLY_INIT_F
+#define CONFIG_BOARD_LATE_INIT
+
 #define CONFIG_IPQ5018_UART
 #define CONFIG_NR_DRAM_BANKS			1
 #define CONFIG_SKIP_LOWLEVEL_INIT

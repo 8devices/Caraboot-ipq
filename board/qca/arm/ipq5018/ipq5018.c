@@ -588,3 +588,8 @@ int board_eth_init(bd_t *bis)
 	return status;
 }
 
+void set_flash_secondary_type(qca_smem_flash_info_t *smem)
+{
+	return;
+};
+
