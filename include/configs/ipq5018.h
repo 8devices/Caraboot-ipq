@@ -93,7 +93,6 @@
 #define CONFIG_QCA_SMEM_BASE			0x4AB00000
 
 #define CONFIG_IPQ_FDT_HIGH			0x4A400000
-#define CONFIG_IPQ_NO_MACS			6
 #define CONFIG_ENV_IS_IN_SPI_FLASH		1
 #define CONFIG_ENV_SECT_SIZE			(64 * 1024)
 
@@ -195,6 +194,28 @@ extern loff_t board_env_size;
 #define CONFIG_CMD_I2C
 #define CONFIG_DM_I2C
 #endif
+
+/*
+* GMAC Enable
+*/
+
+#define CONFIG_IPQ5018_GMAC
+
+#define CONFIG_NET_RETRY_COUNT			5
+#define CONFIG_SYS_RX_ETH_BUFFER		16
+#define CONFIG_CMD_PING
+#define CONFIG_CMD_DHCP
+#define CONFIG_MII
+#define CONFIG_CMD_MII
+#define CONFIG_IPADDR				192.168.10.10
+#define CONFIG_NETMASK				255.255.255.0
+#define CONFIG_SERVERIP				192.168.10.19
+#define CONFIG_CMD_TFTPPUT
+#define CONFIG_IPQ_MDIO				2
+#define CONFIG_IPQ_ETH_INIT_DEFER
+
+#define CONFIG_IPQ_NO_MACS			2
+
 /*
 * Expose SPI driver as a pseudo NAND driver to make use
 * of U-Boot's MTD framework.

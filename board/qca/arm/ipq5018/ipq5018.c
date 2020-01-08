@@ -16,7 +16,7 @@
 #include <asm/io.h>
 #include <asm/errno.h>
 #include <environment.h>
-
+#include <fdtdec.h>
 #include <asm/arch-qca-common/qpic_nand.h>
 #include <asm/arch-qca-common/gpio.h>
 #include <asm/arch-qca-common/uart.h>
@@ -28,6 +28,9 @@
 
 #define DLOAD_MAGIC_COOKIE	0x10
 #define DLOAD_DISABLED		0x40
+
+ipq_gmac_board_cfg_t gmac_cfg[CONFIG_IPQ_NO_MACS];
+
 DECLARE_GLOBAL_DATA_PTR;
 struct sdhci_host mmc_host;
 extern int ipq_spi_init(u16);
@@ -540,5 +543,48 @@ void disable_caches(void)
 unsigned long timer_read_counter(void)
 {
 	return 0;
+}
+
+int board_eth_init(bd_t *bis)
+{
+	int status;
+	int gmac_gpio_node = 0;
+	int gmac_cfg_node = 0, offset = 0;
+	int loop = 0;
+	int phy_name_len = 0;
+	char *phy_name_ptr = NULL;
+
+	gmac_cfg_node = fdt_path_offset(gd->fdt_blob, "/gmac_cfg");
+	if (gmac_cfg_node >= 0) {
+		for (offset = fdt_first_subnode(gd->fdt_blob, gmac_cfg_node);
+			offset > 0;
+			offset = fdt_next_subnode(gd->fdt_blob, offset) , loop++) {
+
+			gmac_cfg[loop].base = fdtdec_get_uint(gd->fdt_blob,
+					offset, "base", 0);
+
+			gmac_cfg[loop].unit = fdtdec_get_uint(gd->fdt_blob,
+					offset, "unit", 0);
+
+			gmac_cfg[loop].phy_addr = fdtdec_get_uint(gd->fdt_blob,
+					offset, "phy_address", 0);
+
+			phy_name_ptr = (char*)fdt_getprop(gd->fdt_blob, offset,
+					"phy_name", &phy_name_len);
+
+			strlcpy((char *)gmac_cfg[loop].phy_name, phy_name_ptr, phy_name_len);
+                }
+        }
+	gmac_cfg[loop].unit = -1;
+
+	ipq_gmac_common_init(gmac_cfg);
+
+	gmac_gpio_node = fdt_path_offset(gd->fdt_blob, "gmac_gpio");
+	if (gmac_gpio_node) {
+		qca_gpio_init(gmac_gpio_node);
+	}
+	status = ipq_gmac_init(gmac_cfg);
+
+	return status;
 }
 
