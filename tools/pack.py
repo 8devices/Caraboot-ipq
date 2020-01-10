@@ -1800,14 +1800,24 @@ def gen_kernelboot_img(parser):
             rmtree(TMP_DIR)
 	os.makedirs(TMP_DIR)
 
+        if ARCH_NAME == "ipq807x":
+            BOARD_NAME = ARCH_NAME + "-hk01"
+        elif ARCH_NAME == "ipq6018":
+            BOARD_NAME = ARCH_NAME + "-cp02-c1"
+        else:
+            error("Error: Arch not supported")
+
         if MODE == "64":
             KERNEL_IMG_NAME = "openwrt-" + ARCH_NAME + "_" + MODE + "-kernelboot.img"
             BASE_ADDR = "0x41078000"
         else:
             KERNEL_IMG_NAME = "openwrt-" + ARCH_NAME + "-kernelboot.img"
-            BASE_ADDR = "0x41200000"
+            if ARCH_NAME == "ipq807x":
+                BASE_ADDR = "0x41200000"
+            elif ARCH_NAME == "ipq6018":
+                BASE_ADDR = "0x41000000"
 
-        src = parser.images_dname + "/qcom-" + ARCH_NAME + "-hk01.dtb"
+        src = parser.images_dname + "/qcom-" + BOARD_NAME + ".dtb"
         if not os.path.exists(src):
             error("%s file not found" % src)
         copy(src, TMP_DIR)
@@ -1817,7 +1827,7 @@ def gen_kernelboot_img(parser):
 	    error("%s file not found" % src)
         copy(src, TMP_DIR)
 
-        cmd = [SKALES_DIR + "/dtbTool -o " + TMP_DIR + "/qcom-ipq807x-hk01-dt.img " + TMP_DIR]
+        cmd = [SKALES_DIR + "/dtbTool -o " + TMP_DIR + "/qcom-" + BOARD_NAME + "-dt.img " + TMP_DIR]
         ret = subprocess.call(cmd, shell=True)
         if ret != 0:
             print ret
@@ -1831,7 +1841,7 @@ def gen_kernelboot_img(parser):
 
         cmd = [SKALES_DIR + "/mkbootimg",
                 "--kernel=" + TMP_DIR + "/Image.gz",
-                "--dt=" + TMP_DIR + "/qcom-ipq807x-hk01-dt.img",
+                "--dt=" + TMP_DIR + "/qcom-" + BOARD_NAME + "-dt.img",
                 "--cmdline=\'rootfsname=rootfs rootwait nosmp\'",
                 "--output=" + parser.images_dname + "/" + KERNEL_IMG_NAME,
                 "--base=" + BASE_ADDR]
