@@ -68,6 +68,9 @@ int ext4fs_read_file(struct ext2fs_node *node, loff_t pos,
 	if (len > filesize)
 		len = filesize;
 
+	if (blocksize <= 0 || len <= 0)
+		return -1;
+
 	blockcnt = lldiv(((len + pos) + blocksize - 1), blocksize);
 
 	for (i = lldiv(pos, blocksize); i < blockcnt; i++) {
