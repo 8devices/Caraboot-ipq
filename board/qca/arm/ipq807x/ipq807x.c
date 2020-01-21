@@ -1647,8 +1647,8 @@ void handle_noc_err(void)
 	uint32_t noc_err_pending = 0;
 	noc_err_pending = readl(NOC_ERR_STATUS_REG);
 
-	printf("NOC Error detected, restarting");
 	if ((noc_err_pending & REG_VAL_NOC_ERR) == REG_VAL_NOC_ERR) {
+		printf("NOC Error detected, restarting");
 		writel(REG_VAL_NOC_ERR, NOC_ERR_CLR_REG);
 		run_command("reset", 0);
 	}
