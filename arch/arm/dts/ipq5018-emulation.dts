@@ -24,6 +24,7 @@
 		mmc = "/sdhci@7804000";
 		i2c0 = "/i2c@78b6000";
 		gmac_gpio = "/gmac_gpio";
+		usb0 = "/xhci@8a00000";
 	};
 
 	mmc: sdhci@7804000 {
@@ -58,4 +59,9 @@
        };
 
 	gmac_gpio{};
+
+	xhci@8a00000 {
+		qcom,emulation = <1>;
+	};
+
 };
