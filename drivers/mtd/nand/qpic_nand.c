@@ -1378,7 +1378,7 @@ static void qpic_spi_init(struct mtd_info *mtd)
 	uint32_t xfer_start = NAND_XFR_STEPS_V1_5_20;
 	int i;
 
-	/* Enabel QSPI CLK*/
+	/* Enabel QPIC CLK*/
 	qpic_clk_enbale();
 
 	/* Configure the NAND_FLASH_SPI_CFG to load the timer CLK_CNTR_INIT_VAL_VEC
@@ -3194,6 +3194,9 @@ void qpic_nand_init(void)
 	}
 
 #ifdef CONFIG_QPIC_SERIAL
+
+	qpic_spi_init(mtd);
+
 	/* Read the Hardware Version register */
 	hw_ver = readl(NAND_VERSION);
 	/* Only maintain major number */
@@ -3205,8 +3208,6 @@ void qpic_nand_init(void)
 				__func__);
 		return;
 	}
-
-	qpic_spi_init(mtd);
 #ifdef MULTI_PAGE_READ
 	config.pipes.status_pipe = NAND_BAM_STATUS_PIPE;
 	config.pipes.status_pipe_grp = NAND_BAM_STATUS_PIPE_GRP;

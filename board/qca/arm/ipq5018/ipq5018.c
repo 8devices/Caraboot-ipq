@@ -505,6 +505,7 @@ void qpic_clk_enbale(void)
 	writel(QPIC_CBCR_VAL, GCC_QPIC_CBCR_ADDR);
 	writel(0x1, GCC_QPIC_AHB_CBCR_ADDR);
 	writel(0x1, GCC_QPIC_IO_MACRO_CBCR);
+	writel(0x1, GCC_QPIC_CBCR_ADDR);
 }
 
 void board_nand_init(void)
