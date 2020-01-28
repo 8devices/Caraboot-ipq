@@ -19,4 +19,5 @@
 void i2c_clock_config(void);
 #endif
 
+#define CLK_ENABLE	0x1
 #endif /*IPQ5018_CLK_H*/

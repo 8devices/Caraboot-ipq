@@ -140,4 +140,12 @@
 
 		};
 	};
+
+	xhci@8a00000 {
+		compatible = "qca,dwc3-ipq";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0x8a00000 0xe000>;
+	};
+
 };
