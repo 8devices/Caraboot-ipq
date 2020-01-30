@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2017, 2020 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -640,6 +640,7 @@ int ft_board_setup(void *blob, bd_t *bd)
 		{ "qcom,msm-nand", MTD_DEV_TYPE_NAND, 0 },
 		{ "qcom,qcom_nand", MTD_DEV_TYPE_NAND, 0 },
 		{ "qcom,ebi2-nandc-bam-v1.5.0", MTD_DEV_TYPE_NAND, 0 },
+		{ "qcom,ebi2-nandc-bam-v2.1.1", MTD_DEV_TYPE_NAND, 0 },
 		{ "spinand,mt29f", MTD_DEV_TYPE_NAND, 1 },
 		{ "n25q128a11", MTD_DEV_TYPE_NAND,
 				CONFIG_IPQ_SPI_NOR_INFO_IDX },
@@ -652,7 +653,8 @@ int ft_board_setup(void *blob, bd_t *bd)
 #ifndef CONFIG_QCA_APPSBL_DLOAD
 	ipq_fdt_mem_rsvd_fixup(blob);
 #endif
-	if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
+	if (((sfi->flash_type == SMEM_BOOT_NAND_FLASH) ||
+		(sfi->flash_type == SMEM_BOOT_QSPI_NAND_FLASH))) {
 		snprintf(parts_str, sizeof(parts_str), "mtdparts=nand0");
 	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
 		/* Patch NOR block size and density for
@@ -660,7 +662,8 @@ int ft_board_setup(void *blob, bd_t *bd)
 		ipq_fdt_fixup_spi_nor_params(blob);
 		snprintf(parts_str,sizeof(parts_str), "mtdparts=" QCA_SPI_NOR_DEVICE);
 
-		if (sfi->flash_secondary_type == SMEM_BOOT_NAND_FLASH) {
+		if ((sfi->flash_secondary_type == SMEM_BOOT_NAND_FLASH) ||
+			(sfi->flash_secondary_type == SMEM_BOOT_QSPI_NAND_FLASH)) {
 			if(smem_bootconfig_info() == 0)
 				activepart = get_rootfs_active_partition();
 			if (!activepart) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2018, 2020 The Linux Foundation. All rights reserved.
 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -1111,7 +1111,8 @@ static int qca_wdt_write_crashdump_data(
 	* Determine the flash type and initialize function pointer for flash
 	* operations and its context which needs to be passed to these functions
 	*/
-	if (flash_type == SMEM_BOOT_NAND_FLASH) {
+	if (((flash_type == SMEM_BOOT_NAND_FLASH) ||
+		(flash_type == SMEM_BOOT_QSPI_NAND_FLASH))) {
 		crashdump_cnxt = (void *)&crashdump_nand_cnxt;
 		crashdump_flash_write_init = init_crashdump_nand_flash_write;
 		crashdump_flash_write = crashdump_nand_flash_write_data;
@@ -1202,6 +1203,8 @@ int do_dumpqca_minimal_data(const char *offset)
 
 	if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
 		flash_type = SMEM_BOOT_NAND_FLASH;
+	} else if (sfi->flash_type == SMEM_BOOT_QSPI_NAND_FLASH) {
+		flash_type = SMEM_BOOT_QSPI_NAND_FLASH;
 	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
 		flash_type = SMEM_BOOT_SPI_FLASH;
 #ifdef CONFIG_QCA_MMC
