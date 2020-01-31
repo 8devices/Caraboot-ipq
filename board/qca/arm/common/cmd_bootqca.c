@@ -331,6 +331,8 @@ static int copy_rootfs(unsigned int request, uint32_t size)
 		printf("runcmd: %s\n", runcmd);
 	if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
 		return CMD_RET_FAILURE;
+
+	return 0;
 }
 
 #ifndef CONFIG_IPQ_ELF_AUTH
@@ -388,6 +390,7 @@ static int authenticate_rootfs(unsigned int kernel_addr)
 static int authenticate_rootfs_elf(unsigned int rootfs_hdr)
 {
 	int ret;
+	unsigned int request;
 	image_info img_info;
 	struct {
 		unsigned long type;
@@ -395,16 +398,21 @@ static int authenticate_rootfs_elf(unsigned int rootfs_hdr)
 		unsigned long addr;
 	} rootfs_img_info;
 
-	rootfs_img_info.addr = rootfs_hdr;
+	request = CONFIG_ROOTFS_LOAD_ADDR;
+	rootfs_img_info.addr = request;
 	rootfs_img_info.type = SEC_AUTH_SW_ID;
 
 	if (parse_elf_image_phdr(&img_info, rootfs_hdr))
 		return CMD_RET_FAILURE;
 
-	/* copy rootfs from the boot device */
-	copy_rootfs(img_info.img_load_addr, img_info.img_size);
+	memcpy((void*)request, (void*)rootfs_hdr, img_info.img_offset);
 
-	rootfs_img_info.size = img_info.img_offset;
+	request += img_info.img_offset;
+
+	/* copy rootfs from the boot device */
+	copy_rootfs(request, img_info.img_size);
+
+	rootfs_img_info.size = img_info.img_offset + img_info.img_size;
 	ret = qca_scm_secure_authenticate(&rootfs_img_info, sizeof(rootfs_img_info));
 	if (ret)
 		return CMD_RET_FAILURE;
