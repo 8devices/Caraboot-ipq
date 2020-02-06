@@ -434,7 +434,7 @@ static int do_dumpqca_data(unsigned int dump_level)
 	int dump_entries = dump_entries_n;
 	char wlan_segment_name[32], runcmd[128], *s;
 	char *usb_dump = NULL, *compress = NULL;
-	ulong is_usb_dump = 0;
+	ulong is_usb_dump = 0, is_compress = 0;
 
 	usb_dump = getenv("dump_to_usb");
 	if (usb_dump) {
@@ -546,6 +546,13 @@ static int do_dumpqca_data(unsigned int dump_level)
 		{
 			compress = getenv("dump_compressed");
 			if (compress) {
+				ret = str2long(compress, &is_compress);
+				if (!ret) {
+					is_compress = 0;
+				}
+			}
+
+			if (is_compress == 1) {
 				if (!strncmp(dumpinfo[indx].name, "EBICS2", strlen("EBICS2"))) {
 					memaddr = CONFIG_SYS_SDRAM_BASE + (gd->ram_size / 2);
 					dumpinfo[indx].size = gd->ram_size / 2;
@@ -572,7 +579,7 @@ static int do_dumpqca_data(unsigned int dump_level)
 							      - CONFIG_TZ_SIZE;
 			}
 
-			if (compress && (dumpinfo[indx].to_compress == 1)) {
+			if (is_compress == 1 && (dumpinfo[indx].to_compress == 1)) {
 
 				snprintf(runcmd, sizeof(runcmd), "zip 0x%x 0x%x 0x%x", memaddr, dumpinfo[indx].size, comp_addr);
 				if (run_command(runcmd, 0) != CMD_RET_SUCCESS)
@@ -588,13 +595,13 @@ static int do_dumpqca_data(unsigned int dump_level)
 #ifdef CONFIG_IPQ40XX
 			if (buf != 1)
 #endif
-				if ((compress && (dumpinfo[indx].to_compress != 1)) ||
-				    (!compress && (dumpinfo[indx].to_compress == 1))) {
+				if ((is_compress == 1 && (dumpinfo[indx].to_compress != 1)) ||
+				    (is_compress != 1 && (dumpinfo[indx].to_compress == 1))) {
 					continue;
 				}
 
 			printf("\nProcessing %s:\n", dumpinfo[indx].name);
-			if (is_usb_dump == 1 || compress) {
+			if (is_usb_dump == 1 || is_compress == 1) {
 				ret = dump_to_dst (dumpinfo[indx].is_aligned_access, memaddr, dumpinfo[indx].size, dumpinfo[indx].name);
 				if (ret == CMD_RET_FAILURE) {
 					goto stop_dump;
