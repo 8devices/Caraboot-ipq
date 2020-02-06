@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+* Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
 *
 * This program is free software; you can redistribute it and/or modify
 * it under the terms of the GNU General Public License version 2 and
@@ -235,6 +235,48 @@
 	 setbits_le32(addr, value);			\
 	 mdelay(delay);					\
 	 clrbits_le32(addr, value);			\
+/*
+ * PCIE Register
+ */
+#define GCC_SYS_NOC_PCIE0_AXI_CBCR		0x01826048
+#define GCC_SYS_NOC_PCIE1_AXI_CBCR		0x0182604C
+
+#define GCC_PCIE0_BOOT_CLOCK_CTL		0x01875000
+#define GCC_PCIE0_BCR				0x01875004
+#define GCC_PCIE0_AXI_M_CBCR			0x01875008
+#define GCC_PCIE0_AXI_S_CBCR			0x0187500C
+#define GCC_PCIE0_AHB_CBCR			0x01875010
+#define GCC_PCIE0_PHY_PIPE_MISC			0x0187501C
+#define GCC_PCIE0_AUX_CBCR			0x01875014
+#define GCC_PCIE0_PIPE_CBCR			0x01875018
+#define GCC_PCIE0_PHY_PIPE_MISC			0x0187501C
+#define GCC_PCIE0_AUX_CMD_RCGR			0x01875020
+#define GCC_PCIE0_AUX_CFG_RCGR			0x01875024
+#define GCC_PCIE0_PHY_BCR			0x01875038
+#define GCC_PCIE0PHY_PHY_BCR			0x0187503C
+#define GCC_PCIE0_MISC_RESET			0x01875040
+#define GCC_PCIE0_AXI_S_BRIDGE_CBCR		0x01875048
+#define GCC_PCIE0_AXI_CMD_RCGR			0x01875050
+#define GCC_PCIE0_AXI_CFG_RCGR			0x01875054
+#define GCC_PCIE0_LINK_DOWN_BCR			0x018750A8
+
+#define GCC_PCIE1_BOOT_CLOCK_CTL		0x01876000
+#define GCC_PCIE1_BCR				0x01876004
+#define GCC_PCIE1_AXI_M_CBCR			0x01876008
+#define GCC_PCIE1_AXI_S_CBCR			0x0187600C
+#define GCC_PCIE1_AHB_CBCR			0x01876010
+#define GCC_PCIE1_AUX_CBCR			0x01876014
+#define GCC_PCIE1_PIPE_CBCR			0x01876018
+#define GCC_PCIE1_PHY_PIPE_MISC			0x0187601C
+#define GCC_PCIE1_AUX_CMD_RCGR			0x01876020
+#define GCC_PCIE1_AUX_CFG_RCGR			0x01876024
+#define GCC_PCIE1_PHY_BCR			0x01876038
+#define GCC_PCIE1PHY_PHY_BCR			0x0187603C
+#define GCC_PCIE1_MISC_RESET			0x01876040
+#define GCC_PCIE1_LINK_DOWN_BCR			0x01876044
+#define GCC_PCIE1_AXI_S_BRIDGE_CBCR		0x01876048
+#define GCC_PCIE1_AXI_CMD_RCGR			0x01876050
+#define GCC_PCIE1_AXI_CFG_RCGR			0x01876054
 
 #define NOT_2D(two_d)                     (~two_d)
 #define NOT_N_MINUS_M(n,m)                (~(n - m))
@@ -275,6 +317,10 @@ static inline int gmac_cfg_is_valid(ipq_gmac_board_cfg_t *cfg)
 
 extern void ipq_gmac_common_init(ipq_gmac_board_cfg_t *cfg);
 extern int ipq_gmac_init(ipq_gmac_board_cfg_t *cfg);
+
+#ifdef CONFIG_PCI_IPQ
+void board_pci_init(int id);
+#endif
 
 struct smem_ram_ptn {
 	char name[16];

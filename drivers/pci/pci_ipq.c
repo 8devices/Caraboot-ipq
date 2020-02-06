@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014, 2015-2017, 2020 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -606,6 +606,7 @@ static const struct udevice_id pcie_ver_ids[] = {
 	{ .compatible = "qcom,ipq40xx-pcie", .data = PCIE_V1 },
 	{ .compatible = "qcom,ipq807x-pcie", .data = PCIE_V2 },
 	{ .compatible = "qcom,ipq6018-pcie", .data = PCIE_V2 },
+	{ .compatible = "qcom,ipq5018-pcie", .data = PCIE_V2 },
 	{ },
 };
 
@@ -927,7 +928,6 @@ void pcie_linkup(struct ipq_pcie *pcie)
 	writel(val, pcie->pci_dbi.start + PCIE_0_GEN2_CTRL_REG);
 	writel(PCI_TYPE0_BUS_MASTER_EN,
 		pcie->pci_dbi.start + PCIE_0_TYPE0_STATUS_COMMAND_REG_1);
-
 	writel(DBI_RO_WR_EN, pcie->pci_dbi.start + PCIE_0_MISC_CONTROL_1_REG);
 	writel(0x0002FD7F, pcie->pci_dbi.start + 0x84);
 
@@ -963,18 +963,19 @@ void pcie_linkup(struct ipq_pcie *pcie)
 		}
 		udelay(100);
 	}
+
 	if (pcie->is_gen3) {
-		writel(0x20001000, pcie->parf.start + PARF_BLOCK_SLV_AXI_WR_BASE);
-		writel(0x20100000, pcie->parf.start + PARF_BLOCK_SLV_AXI_WR_LIMIT);
-		writel(0x20001000, pcie->parf.start + PARF_BLOCK_SLV_AXI_RD_BASE);
-		writel(0x20100000, pcie->parf.start + PARF_BLOCK_SLV_AXI_RD_LIMIT);
-		writel(0x20000000, pcie->parf.start + PARF_ECAM_BASE);
-		writel(0x20001000, pcie->parf.start + PARF_ECAM_OFFSET_REMOVAL_BASE);
-		writel(0x20200000, pcie->parf.start + PARF_ECAM_OFFSET_REMOVAL_LIMIT);
-		writel(0x20108000, pcie->parf.start + PARF_BLOCK_SLV_AXI_WR_BASE_2);
-		writel(0x20200000, pcie->parf.start + PARF_BLOCK_SLV_AXI_WR_LIMIT_2);
-		writel(0x20108000, pcie->parf.start + PARF_BLOCK_SLV_AXI_RD_BASE_2);
-		writel(0x20200000, pcie->parf.start + PARF_BLOCK_SLV_AXI_RD_LIMIT_2);
+		writel((pcie->pci_dbi.start + 0x1000), pcie->parf.start + PARF_BLOCK_SLV_AXI_WR_BASE);
+		writel((pcie->pci_dbi.start + 0x100000), pcie->parf.start + PARF_BLOCK_SLV_AXI_WR_LIMIT);
+		writel((pcie->pci_dbi.start + 0x1000), pcie->parf.start + PARF_BLOCK_SLV_AXI_RD_BASE);
+		writel((pcie->pci_dbi.start + 0x100000), pcie->parf.start + PARF_BLOCK_SLV_AXI_RD_LIMIT);
+		writel((pcie->pci_dbi.start), pcie->parf.start + PARF_ECAM_BASE);
+		writel((pcie->pci_dbi.start + 0x1000), pcie->parf.start + PARF_ECAM_OFFSET_REMOVAL_BASE);
+		writel((pcie->pci_dbi.start + 0x200000), pcie->parf.start + PARF_ECAM_OFFSET_REMOVAL_LIMIT);
+		writel((pcie->pci_dbi.start + 0x108000), pcie->parf.start + PARF_BLOCK_SLV_AXI_WR_BASE_2);
+		writel((pcie->pci_dbi.start + 0x200000), pcie->parf.start + PARF_BLOCK_SLV_AXI_WR_LIMIT_2);
+		writel((pcie->pci_dbi.start + 0x108000), pcie->parf.start + PARF_BLOCK_SLV_AXI_RD_BASE_2);
+		writel((pcie->pci_dbi.start + 0x200000), pcie->parf.start + PARF_BLOCK_SLV_AXI_RD_LIMIT_2);
 		ipq_pcie_prog_outbound_atu(pcie);
 	} else {
 		ipq_pcie_config_controller(pcie);

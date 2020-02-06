@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -146,6 +146,104 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		reg = <0x8a00000 0xe000>;
+	};
+
+	pci@80000000 {
+		compatible = "qcom,ipq5018-pcie";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0x80000000 0xf1d
+			0x78000 0x3000
+			0x80000F20 0xa8
+			0x80001000 0x1000
+			0x80300000 0xd00000
+			0x80100000 0x100000
+			0x01875004 0x40
+			0x84000 0x1000>;
+		reg-names = "pci_dbi", "parf", "elbi","dm_iatu", "axi_bars",
+				"axi_conf", "pci_rst", "pci_phy";
+		perst_gpio = <27>;
+		gen3 = <1>;
+
+		pci_gpio {
+			gpio1 {
+				gpio = <14>;
+				func = <0>;
+				pull = <GPIO_NO_PULL>;
+				drvstr = <GPIO_2MA>;
+				oe = <GPIO_OE_ENABLE>;
+				od_en = <GPIO_OD_DISABLE>;
+				pu_res = <GPIO_PULL_RES0>;
+			};
+			gpio2 {
+				gpio = <15>;
+				func = <0>;
+				pull = <GPIO_NO_PULL>;
+				drvstr = <GPIO_2MA>;
+				oe = <GPIO_OE_ENABLE>;
+				od_en = <GPIO_OD_DISABLE>;
+				pu_res = <GPIO_PULL_RES0>;
+			};
+			gpio3 {
+				gpio = <16>;
+				func = <0>;
+				pull = <GPIO_NO_PULL>;
+				drvstr = <GPIO_2MA>;
+				oe = <GPIO_OE_DISABLE>;
+				od_en = <GPIO_OD_DISABLE>;
+				pu_res = <GPIO_PULL_RES0>;
+			};
+			gpio4 {
+				gpio = <27>;
+				func = <0>;
+				out = <GPIO_OUT_HIGH>;
+				pull = <GPIO_NO_PULL>;
+				drvstr = <GPIO_2MA>;
+				oe = <GPIO_OE_ENABLE>;
+				od_en = <GPIO_OD_DISABLE>;
+				pu_res = <GPIO_PULL_RES0>;
+			};
+		};
+	};
+
+	pci@a0000000 {
+		compatible = "qcom,ipq5018-pcie";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0xa0000000 0xf1d
+			0x80000 0x3000
+			0xa0000F20 0xa8
+			0xa0001000 0x1000
+			0xa0300000 0xd00000
+			0xa0100000 0x100000
+			0x01875004 0x40
+			0x84000 0x1000>;
+		reg-names = "pci_dbi", "parf", "elbi","dm_iatu", "axi_bars",
+				"axi_conf", "pci_rst", "pci_phy";
+		perst_gpio = <28>;
+		gen3 = <1>;
+
+		pci_gpio {
+			gpio1 {
+				gpio = <17>;
+				func = <0>;
+				pull = <GPIO_NO_PULL>;
+				drvstr = <GPIO_2MA>;
+				oe = <GPIO_OE_ENABLE>;
+				od_en = <GPIO_OD_DISABLE>;
+				pu_res = <GPIO_PULL_RES0>;
+			};
+			gpio2 {
+				gpio = <28>;
+				func = <0>;
+				out = <GPIO_OUT_HIGH>;
+				pull = <GPIO_NO_PULL>;
+				drvstr = <GPIO_2MA>;
+				oe = <GPIO_OE_ENABLE>;
+				od_en = <GPIO_OD_DISABLE>;
+				pu_res = <GPIO_PULL_RES0>;
+			};
+		};
 	};
 
 };
