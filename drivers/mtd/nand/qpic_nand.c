@@ -3144,7 +3144,7 @@ qpic_nand_mtd_params(struct mtd_info *mtd)
 
 static struct nand_chip nand_chip[CONFIG_SYS_MAX_NAND_DEVICE];
 
-void qpic_nand_init(void)
+void qpic_nand_init(qpic_nand_cfg_t *qpic_nand_cfg)
 {
 	struct mtd_info *mtd;
 	const struct udevice_id *of_match = qpic_ver_ids;
@@ -3155,6 +3155,7 @@ void qpic_nand_init(void)
 	unsigned char *buf;
 	struct qpic_nand_init_config config;
 	fdt_addr_t nand_base;
+	int i;
 
 	while (of_match->compatible) {
 		ret = fdt_node_offset_by_compatible(gd->fdt_blob, 0,
@@ -3188,8 +3189,13 @@ void qpic_nand_init(void)
 
 	if (ret >= 0) {
 		qca_gpio_init(ret);
+	} else if (qpic_nand_cfg) {
+		printf("Could not find nand_gpio in dts, using defaults\n");
+		for (i = 0; i < qpic_nand_cfg->gpio_count; i++)
+			gpio_tlmm_config(&qpic_nand_cfg->gpio[i]);
 	} else {
-		printf("Could not find subnode nand_gpio\n");
+		printf("Could not find nand_gpio in dts, no defaults defined\n");
+		return;
 	}
 
 #ifdef CONFIG_QPIC_SERIAL

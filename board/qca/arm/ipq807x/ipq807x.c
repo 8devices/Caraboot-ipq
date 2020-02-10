@@ -289,7 +289,7 @@ gpio_func_data_t qpic_nand_gpio[] = {
 	},
 };
 
-board_ipq807x_param_t gboard_param = {
+board_param_t gboard_param = {
 	.spi_nor_cfg = {
 		.gpio = spi_nor_gpio,
 		.gpio_count = ARRAY_SIZE(spi_nor_gpio),
@@ -762,10 +762,7 @@ void board_nand_init(void)
 	int i;
 #endif
 
-	for (i = 0; i < gboard_param.qpic_nand_cfg.gpio_count; i++)
-		gpio_tlmm_config(&gboard_param.qpic_nand_cfg.gpio[i]);
-
-	qpic_nand_init();
+	qpic_nand_init(&gboard_param.qpic_nand_cfg);
 
 #ifdef CONFIG_QCA_SPI
 	gpio_node = fdt_path_offset(gd->fdt_blob, "/spi/spi_gpio");

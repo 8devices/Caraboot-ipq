@@ -510,7 +510,7 @@ void qpic_clk_enbale(void)
 
 void board_nand_init(void)
 {
-	qpic_nand_init();
+	qpic_nand_init(NULL);
 
 #ifdef CONFIG_QCA_SPI
 	int gpio_node;

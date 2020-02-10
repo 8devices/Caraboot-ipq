@@ -15,6 +15,7 @@
 #define ___QCA_COMMON_H_
 #include <asm/u-boot.h>
 #include <asm/arch-qca-common/smem.h>
+#include <asm/arch-qca-common/gpio.h>
 
 #ifdef CONFIG_ARCH_IPQ5018
 #include <asm/arch-ipq5018/clk.h>
@@ -62,6 +63,23 @@ typedef struct {
 	const char *nodename;
 	u32 val[2];
 } add_node_t;
+
+typedef struct qca_gpio_config gpio_func_data_t;
+
+typedef struct  {
+	gpio_func_data_t *gpio;
+	unsigned int gpio_count;
+}spi_cfg_t;
+
+typedef struct  {
+	gpio_func_data_t *gpio;
+	unsigned int gpio_count;
+}qpic_nand_cfg_t;
+
+typedef struct {
+	spi_cfg_t spi_nor_cfg;
+	qpic_nand_cfg_t qpic_nand_cfg;
+}board_param_t;
 
 int qca_mmc_init(bd_t *, qca_mmc *);
 

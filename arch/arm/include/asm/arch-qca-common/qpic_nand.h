@@ -697,6 +697,6 @@ struct qpic_nand_dev {
 	struct read_stats stats[QPIC_NAND_MAX_CWS_IN_PAGE];
 };
 
-void qpic_nand_init(void);
+void qpic_nand_init(qpic_nand_cfg_t *qpic_nand_cfg);
 
 #endif
