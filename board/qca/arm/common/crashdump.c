@@ -600,8 +600,8 @@ static int do_dumpqca_data(unsigned int dump_level)
 					continue;
 				}
 
-			printf("\nProcessing %s:\n", dumpinfo[indx].name);
 			if (is_usb_dump == 1 || is_compress == 1) {
+				printf("\nProcessing %s:\n", dumpinfo[indx].name);
 				ret = dump_to_dst (dumpinfo[indx].is_aligned_access, memaddr, dumpinfo[indx].size, dumpinfo[indx].name);
 				if (ret == CMD_RET_FAILURE) {
 					goto stop_dump;
@@ -619,6 +619,7 @@ static int do_dumpqca_data(unsigned int dump_level)
 						dumpinfo[indx].size = remaining;
 					}
 
+					printf("\nProcessing %s:\n", dumpinfo[indx].name);
 					ret = dump_to_dst (dumpinfo[indx].is_aligned_access, memaddr, dumpinfo[indx].size, dumpinfo[indx].name);
 					if (ret == CMD_RET_FAILURE)
 						goto stop_dump;
