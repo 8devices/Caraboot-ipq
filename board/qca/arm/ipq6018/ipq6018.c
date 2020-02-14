@@ -371,7 +371,7 @@ void board_nand_init(void)
 	int gpio_node;
 #endif
 
-	qpic_nand_init();
+	qpic_nand_init(NULL);
 
 #ifdef CONFIG_QCA_SPI
 	spi_clock_init();

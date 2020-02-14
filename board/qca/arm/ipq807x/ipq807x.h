@@ -306,23 +306,6 @@ extern const char *rsvd_node;
 extern const char *del_node[];
 extern const add_node_t add_fdt_node[];
 
-typedef struct qca_gpio_config gpio_func_data_t;
-
-typedef struct  {
-	gpio_func_data_t *gpio;
-	unsigned int gpio_count;
-}spi_cfg_t;
-
-typedef struct  {
-	gpio_func_data_t *gpio;
-	unsigned int gpio_count;
-}qpic_nand_cfg_t;
-
-typedef struct {
-	spi_cfg_t spi_nor_cfg;
-	qpic_nand_cfg_t qpic_nand_cfg;
-}board_ipq807x_param_t;
-
 void reset_crashdump(void);
 #ifdef CONFIG_PCI_IPQ
 void board_pci_init(int id);
