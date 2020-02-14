@@ -313,8 +313,14 @@ typedef struct  {
 	unsigned int gpio_count;
 }spi_cfg_t;
 
+typedef struct  {
+	gpio_func_data_t *gpio;
+	unsigned int gpio_count;
+}qpic_nand_cfg_t;
+
 typedef struct {
 	spi_cfg_t spi_nor_cfg;
+	qpic_nand_cfg_t qpic_nand_cfg;
 }board_ipq807x_param_t;
 
 void reset_crashdump(void);

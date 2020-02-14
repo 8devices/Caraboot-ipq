@@ -3190,7 +3190,6 @@ void qpic_nand_init(void)
 		qca_gpio_init(ret);
 	} else {
 		printf("Could not find subnode nand_gpio\n");
-		return;
 	}
 
 #ifdef CONFIG_QPIC_SERIAL
