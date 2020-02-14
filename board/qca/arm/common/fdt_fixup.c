@@ -611,7 +611,7 @@ __weak void fdt_fixup_set_qca_cold_reboot_enable(void *blob)
 	return;
 }
 
-__weak void fdt_fixup_del_qca_secure_prop(void *blob)
+__weak void fdt_fixup_wcss_rproc_for_atf(void *blob)
 {
 	return;
 }
@@ -728,7 +728,7 @@ int ft_board_setup(void *blob, bd_t *bd)
 	s = getenv("atf");
 	if (s) {
 		fdt_fixup_set_qca_cold_reboot_enable(blob);
-		fdt_fixup_del_qca_secure_prop(blob);
+		fdt_fixup_wcss_rproc_for_atf(blob);
 	}
 
 #ifdef CONFIG_QCA_MMC
