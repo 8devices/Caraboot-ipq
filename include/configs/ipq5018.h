@@ -54,6 +54,11 @@
  */
 
 /*
+ * Enable Flashwrite command
+ */
+#define CONFIG_CMD_FLASHWRITE
+
+/*
  * select serial console configuration
 */
 #define CONFIG_CONS_INDEX			1
