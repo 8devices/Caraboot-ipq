@@ -59,6 +59,11 @@
 #define CONFIG_CMD_FLASHWRITE
 
 /*
+ * Enable Env overwrite support
+ */
+#define CONFIG_ENV_OVERWRITE
+
+/*
  * select serial console configuration
 */
 #define CONFIG_CONS_INDEX			1
