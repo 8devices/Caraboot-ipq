@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013, 2015-2017, 2020 The Linux Foundation. All rights reserved.
  *
  * Based on smem.c from lk.
  *
@@ -986,7 +986,8 @@ int ubi_set_rootfs_part(void)
 	char runcmd[256];
 	int i;
 
-	if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
+	if (((sfi->flash_type == SMEM_BOOT_NAND_FLASH) ||
+		(sfi->flash_type == SMEM_BOOT_QSPI_NAND_FLASH))) {
 		ret = smem_getpart(QCA_ROOT_FS_PART_NAME,
 				&start_block, &size_block);
 		if (ret)
