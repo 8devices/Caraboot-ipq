@@ -18,6 +18,7 @@
 #include <generated/asm-offsets.h>
 #endif
 
+#define IPQ5018_EMULATION
 #define CONFIG_IPQ5018
 #undef	CONFIG_QCA_DISABLE_SCM
 #define CONFIG_SPI_FLASH_CYPRESS
@@ -53,9 +54,15 @@
  */
 
 /*
+ * Enable Flashwrite command
+ */
+#define CONFIG_CMD_FLASHWRITE
+
+/*
  * select serial console configuration
 */
 #define CONFIG_CONS_INDEX			1
+#define CONFIG_SYS_DEVICE_NULLDEV
 
 /* allow to overwrite serial and ethaddr */
 #define CONFIG_BAUDRATE				115200
@@ -235,6 +242,16 @@ extern loff_t board_env_size;
 #define CONFIG_USB_STORAGE
 #define CONFIG_SYS_USB_XHCI_MAX_ROOT_PORTS      2
 #define CONFIG_USB_MAX_CONTROLLER_COUNT         1
+#endif
+
+/*
+ * PCIE Enable
+ */
+#define PCI_MAX_DEVICES				1
+#if defined(CONFIG_PCI_IPQ) && !defined(IPQ5018_EMULATION)
+#define CONFIG_PCI
+#define CONFIG_CMD_PCI
+#define CONFIG_PCI_SCAN_SHOW
 #endif
 
 /*

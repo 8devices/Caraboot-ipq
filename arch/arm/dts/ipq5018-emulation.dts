@@ -17,7 +17,7 @@
 	model ="QCA, IPQ5018-EMULATION";
 	compatible = "qca,ipq5018", "qca,ipq5018-emulation";
 	machid = <0x08010000>;
-	config_name = "config@1";
+	config_name = "config@emulation-c2";
 
 	aliases {
 		console = "/serial@78AF000";
@@ -25,6 +25,7 @@
 		i2c0 = "/i2c@78b6000";
 		gmac_gpio = "/gmac_gpio";
 		usb0 = "/xhci@8a00000";
+		pci0 = "/pci@80000000";
 	};
 
 	mmc: sdhci@7804000 {

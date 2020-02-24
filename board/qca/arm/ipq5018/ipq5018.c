@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+* Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
 *
 * This program is free software; you can redistribute it and/or modify
 * it under the terms of the GNU General Public License version 2 and
@@ -839,3 +839,56 @@ int ipq_board_usb_init(void)
 }
 #endif
 
+#ifdef CONFIG_PCI_IPQ
+void board_pci_init(int id)
+{
+	int node, gpio_node;
+	char name[16];
+
+	snprintf(name, sizeof(name), "pci%d", id);
+	node = fdt_path_offset(gd->fdt_blob, name);
+	if (node < 0) {
+		printf("Could not find PCI in device tree\n");
+		return;
+	}
+	gpio_node = fdt_subnode_offset(gd->fdt_blob, node, "pci_gpio");
+	if (gpio_node >= 0)
+		qca_gpio_init(gpio_node);
+
+	return;
+}
+
+void board_pci_deinit()
+{
+	int node, gpio_node, i, err;
+	char name[16];
+	struct fdt_resource parf;
+	struct fdt_resource pci_phy;
+
+	for (i = 0; i < PCI_MAX_DEVICES; i++) {
+		snprintf(name, sizeof(name), "pci%d", i);
+		node = fdt_path_offset(gd->fdt_blob, name);
+		if (node < 0) {
+			printf("Could not find PCI in device tree\n");
+			return;
+		}
+		err = fdt_get_named_resource(gd->fdt_blob, node, "reg", "reg-names", "parf",
+				&parf);
+		writel(0x0, parf.start + 0x358);
+		writel(0x1, parf.start + 0x40);
+		err = fdt_get_named_resource(gd->fdt_blob, node, "reg", "reg-names", "pci_phy",
+				     &pci_phy);
+		if (err < 0)
+			return;
+
+		writel(0x1, pci_phy.start + 800);
+		writel(0x0, pci_phy.start + 804);
+		gpio_node = fdt_subnode_offset(gd->fdt_blob, node, "pci_gpio");
+		if (gpio_node >= 0)
+			qca_gpio_deinit(gpio_node);
+
+	}
+
+	return ;
+}
+#endif
