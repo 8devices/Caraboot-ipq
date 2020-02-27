@@ -65,6 +65,7 @@ dtb-$(CONFIG_ARCH_IPQ40xx) += ipq40xx-dk01-c1.dtb \
 dtb-$(CONFIG_ARCH_IPQ5018) += ipq5018-emulation.dtb
 
 dtb-$(CONFIG_ARCH_IPQ6018) += ipq6018-cp01-c1.dtb \
+			ipq6018-cp01-c3.dtb \
 			ipq6018-cp02-c1.dtb \
 			ipq6018-cp03-c1.dtb \
 			ipq6018-db-cp01.dtb \
