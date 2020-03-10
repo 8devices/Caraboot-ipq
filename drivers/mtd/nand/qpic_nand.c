@@ -118,6 +118,30 @@ static struct qpic_serial_nand_params qpic_serial_nand_tbl[] = {
 struct qpic_serial_nand_params *serial_params;
 #define MICRON_DEVICE_ID	0x152c152c
 #define CMD3_MASK		0xfff0ffff
+/*
+ * An array holding the fixed pattern to compare with
+ * training pattern.
+ */
+static const unsigned int training_block_64[] = {
+	0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F,
+	0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F,
+	0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F,
+	0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F,
+};
+
+static const unsigned int training_block_128[] = {
+	0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F,
+	0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F,
+	0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F,
+	0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F,
+	0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F,
+	0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F,
+	0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F,
+	0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F,
+};
+#define TRAINING_PART_OFFSET	0x100000
+#define MAXIMUM_ALLOCATED_TRAINING_BLOCK	8
+#define TOTAL_NUM_PHASE	7
 #endif
 
 struct cmd_element ce_array[100]
@@ -1129,6 +1153,7 @@ int qpic_spi_nand_config(struct mtd_info *mtd)
 	uint32_t status = 0x0;
 	struct qpic_nand_dev *dev = MTD_QPIC_NAND_DEV(mtd);
 	uint32_t cmd3_val = NAND_FLASH_DEV_CMD3_VAL;
+
 	/* For micron device the READ_CACHE_SEQ command is different than
 	 * Giga device. for Giga 0x31 and for Micron 0x30.
 	 * so based on id update the command configuration register
@@ -1138,6 +1163,7 @@ int qpic_spi_nand_config(struct mtd_info *mtd)
 		cmd3_val = (NAND_FLASH_DEV_CMD3_VAL & CMD3_MASK);
 		writel(cmd3_val, SPI_NAND_DEV_CMD3);
 	}
+
 	/* Get the block protection status*/
 	status = qpic_serial_get_feature(mtd, FLASH_SPI_NAND_BLK_PROCT_ADDR);
 	if (status < 0) {
@@ -1403,6 +1429,14 @@ static void qpic_spi_init(struct mtd_info *mtd)
 {
 	uint32_t xfer_start = NAND_XFR_STEPS_V1_5_20;
 	int i;
+
+	/* set the FB_CLK_BIT of register QPIC_QSPI_MSTR_CONFIG
+	 * to by pass the serial training. if this FB_CLK_BIT
+	 * bit enabled then , we can apply upto maximum 200MHz
+	 * input to IO_MACRO_BLOCK.
+	 */
+	writel((FB_CLK_BIT | readl(NAND_QSPI_MSTR_CONFIG)),
+			NAND_QSPI_MSTR_CONFIG);
 
 	qpic_set_clk_rate(IO_MACRO_CLK_200_MHZ, QPIC_IO_MACRO_CLK,
 			GPLL0_CLK_SRC);
@@ -3915,6 +3949,230 @@ qpic_nand_mtd_params(struct mtd_info *mtd)
 	chip->scan_bbt = qpic_nand_scan_bbt_nop;
 }
 
+#ifdef CONFIG_QSPI_SERIAL_TRAINING
+static void qpic_set_phase(int phase)
+{
+	int spi_flash_cfg_val = 0x0;
+
+	if (phase < 1 || phase > 7) {
+		printf("%s : wrong phase value\n", __func__);
+		return;
+	}
+	/* get the current value of NAND_FLASH_SPI_CFG register */
+	spi_flash_cfg_val = readl(NAND_FLASH_SPI_CFG);
+
+	/* set SPI_LOAD_CLK_CNTR_INIT_EN bit */
+	spi_flash_cfg_val |= SPI_LOAD_CLK_CNTR_INIT_EN;
+	writel(spi_flash_cfg_val, NAND_FLASH_SPI_CFG);
+
+	/* write the phase value for all the line */
+	spi_flash_cfg_val |= ((phase << 16) | (phase << 19) |
+			(phase << 22) | (phase << 25));
+	writel(spi_flash_cfg_val, NAND_FLASH_SPI_CFG);
+
+	/* clear the SPI_LOAD_CLK_CNTR_INIT_EN bit to load the required
+	 * phase value
+	 */
+	spi_flash_cfg_val &= ~SPI_LOAD_CLK_CNTR_INIT_EN;
+	writel(spi_flash_cfg_val, NAND_FLASH_SPI_CFG);
+}
+
+static int qpic_find_most_appropriate_phase(u8 *phase_table, int phase_count)
+{
+	int cnt;
+	int phase = 0x0;
+	u8 phase_ranges[TOTAL_NUM_PHASE] = {1, 2, 3, 4, 5, 6, 7};
+
+	/*currently we are considering continious 3 phase will
+	 * pass and tke the middle one out of passed three phase.
+	 */
+	for (cnt = 0; cnt < phase_count; cnt++) {
+		if (!memcmp(phase_table+cnt, phase_ranges+cnt, 3)) {
+			phase = cnt+1;
+				break;
+		}
+	}
+
+	phase = phase_table[phase];
+	return phase;
+}
+
+static int qpic_execute_serial_training(struct mtd_info *mtd)
+{
+	struct qpic_nand_dev *dev = MTD_QPIC_NAND_DEV(mtd);
+	struct nand_chip *chip = MTD_NAND_CHIP(mtd);
+
+	unsigned int start, training_offset, blk_cnt = 0;
+	unsigned int offset, pageno, curr_freq;
+	int size = sizeof(training_block_64);
+	unsigned int io_macro_freq_tbl[] = {100000000, 200000000, 228000000,
+					266000000, 320000000};
+
+	unsigned char *data_buff, trained_phase[TOTAL_NUM_PHASE];
+	int phase, phase_cnt;
+	int training_seq_cnt = 3;
+	int index = 4, ret, phase_failed=0;
+
+	training_offset = TRAINING_PART_OFFSET;
+	/* write pattern at lower frequency */
+	start = (training_offset >> chip->phys_erase_shift);
+	offset = (start << chip->phys_erase_shift);
+	/* erase the all block */
+	pageno = (offset >> chip->page_shift);
+
+	/* At 50Mhz frequency check the bad blocks, if training
+	 * blocks is not bad then only start training else operate
+	 * at 50Mhz with bypassing software serial traning.
+	 */
+	while (qpic_nand_block_isbad(mtd, offset) != 0) {
+		/* block is bad skip this block and goto next
+		 * block
+		 */
+		training_offset += mtd->erasesize;
+		start = (training_offset >> chip->phys_erase_shift);
+		offset = (start << chip->phys_erase_shift);
+		pageno = (offset >> chip->page_shift);
+		blk_cnt++;
+	}
+
+	if (blk_cnt == MAXIMUM_ALLOCATED_TRAINING_BLOCK) {
+		printf("All training blocks are bad skipping serial training\n");
+		ret = -EIO;
+		goto err;
+	}
+
+	ret = qpic_nand_blk_erase(mtd, pageno);
+	if (ret) {
+		printf("error in erasing training block @%x\n",offset);
+		ret = -EIO;
+		goto err;
+	}
+
+	data_buff = (unsigned char *)malloc(size);
+	if (!data_buff) {
+		printf("Errorn in allocating memory.\n");
+		ret = -ENOMEM;
+		goto err;
+	}
+	memset(data_buff, 0, size);
+	memcpy(data_buff, training_block_64, size);
+
+	/*write training data to flash */
+	ret = NANDC_RESULT_SUCCESS;
+	struct mtd_oob_ops ops;
+
+	/* write this dumy byte in spare area to avoid bam
+	 * transaction error while writing.
+	 */
+	memset(dev->pad_oob, 0xFF, dev->oob_per_page);
+
+	ops.mode = MTD_OPS_AUTO_OOB;
+	ops.len = size;
+	ops.retlen = 0;
+	ops.ooblen = dev->oob_per_page;
+	ops.oobretlen = 0;
+	ops.ooboffs = 0;
+	ops.datbuf = (uint8_t *)data_buff;
+	ops.oobbuf = (uint8_t *)dev->pad_oob;
+
+	/* write should be only once */
+	ret = qpic_nand_write_page(mtd, pageno, NAND_CFG, &ops);
+	if (ret) {
+		printf("Error in writing training data..\n");
+		goto err;
+	}
+	/* After write verify the the data with read @ lower frequency
+	 * after that only start serial tarining @ higher frequency
+	 */
+	memset(data_buff, 0, size);
+	ops.datbuf = (uint8_t *)data_buff;
+
+	ret = qpic_nand_read_page(mtd, pageno, NAND_CFG, &ops);
+	if (ret) {
+		printf("%s : Read training data failed.\n",__func__);
+		goto err;
+	}
+
+	/* compare original data and read data */
+	if (memcmp(data_buff, training_block_64, size)) {
+		printf("Training data read failed @ lower frequency\n");
+		goto err;
+	}
+
+	/* disable feed back clock bit to start serial training */
+	writel((~FB_CLK_BIT & readl(NAND_QSPI_MSTR_CONFIG)),
+			NAND_QSPI_MSTR_CONFIG);
+
+	/* start serial training here */
+	curr_freq = io_macro_freq_tbl[index];
+rettry:
+	phase = 1;
+	phase_cnt = 0;
+
+	/* set frequency, start from higer frequency */
+	qpic_set_clk_rate(curr_freq, QPIC_IO_MACRO_CLK, GPLL0_CLK_SRC);
+
+	do {
+		/* set the phase */
+		qpic_set_phase(phase);
+
+		memset(data_buff, 0, size);
+		ops.datbuf = (uint8_t *)data_buff;
+
+		ret = qpic_nand_read_page(mtd, pageno, NAND_CFG, &ops);
+		if (ret) {
+			printf("%s : Read training data failed.\n",__func__);
+			goto err;
+		}
+		/* compare original data and read data */
+		if (memcmp(data_buff, training_block_64, size)) {
+			/* wrong data read on one of miso line
+			 * change the phase value and try again
+			 */
+			continue;
+			phase_failed++;
+		} else {
+			/* we got good phase update the good phase list
+			 */
+			trained_phase[phase_cnt++] = phase;
+			/*printf("%s : Found good phase %d\n",__func__,phase);*/
+		}
+
+	} while (phase++ <= TOTAL_NUM_PHASE);
+
+	if (phase_cnt) {
+		/* Get the appropriate phase */
+		phase = qpic_find_most_appropriate_phase(trained_phase, phase_cnt);
+		qpic_set_phase(phase);
+	} else {
+		/* lower the the clock frequency
+		 * and try again
+		 */
+		curr_freq = io_macro_freq_tbl[--index];
+		if (--training_seq_cnt)
+			goto rettry;
+
+		/* Training failed */
+		printf("%s : Serial training failed\n",__func__);
+		ret = -EIO;
+		goto free;
+	}
+
+	/* if phase_failed == 7 it means serial traing failed
+	 * on all the phase. so now we have to go via line by line
+	 * i.e first check for MISO_0, with all the phase value i.e
+	 * 1-7 and then MISO_1 and so on.
+	 * NOTE: But this is the worse case , and it this type of senario
+	 * will not come. if it will come then go with this design.
+	 * ======To DO=====
+	 */
+free:
+	free(data_buff);
+err:
+	return ret;
+}
+#endif
+
 static struct nand_chip nand_chip[CONFIG_SYS_MAX_NAND_DEVICE];
 
 void qpic_nand_init(qpic_nand_cfg_t *qpic_nand_cfg)
@@ -4103,6 +4361,24 @@ void qpic_nand_init(qpic_nand_cfg_t *qpic_nand_cfg)
 	dev->tmp_oobbuf = buf;
 	buf += mtd->oobsize;
 
+#ifdef CONFIG_QSPI_SERIAL_TRAINING
+	/* start serial training here */
+	ret = qpic_execute_serial_training(mtd);
+	if (ret) {
+		printf("Error in serial training.\n");
+		printf("switch back to 50MHz with feed back clock bit enabled\n");
+		writel((FB_CLK_BIT | readl(NAND_QSPI_MSTR_CONFIG)),
+			NAND_QSPI_MSTR_CONFIG);
+
+		qpic_set_clk_rate(IO_MACRO_CLK_200_MHZ, QPIC_IO_MACRO_CLK,
+				GPLL0_CLK_SRC);
+
+		writel(0x0, NAND_FLASH_SPI_CFG);
+		writel(SPI_CFG_VAL, NAND_FLASH_SPI_CFG);
+		writel((SPI_CFG_VAL & ~SPI_LOAD_CLK_CNTR_INIT_EN),
+			NAND_FLASH_SPI_CFG);
+	}
+#endif
 	/* Register with MTD subsystem. */
 	ret = nand_register(CONFIG_QPIC_NAND_NAND_INFO_IDX);
 	if (ret < 0) {
