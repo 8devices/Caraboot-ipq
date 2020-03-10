@@ -155,6 +155,7 @@ extern loff_t board_env_size;
 #define CONFIG_CMD_NAND_YAFFS
 #define CONFIG_SYS_NAND_SELF_INIT
 #define CONFIG_SYS_NAND_ONFI_DETECTION
+#define CONFIG_PAGE_SCOPE_MULTI_PAGE_READ
 
 /* QSPI Flash configs
  */

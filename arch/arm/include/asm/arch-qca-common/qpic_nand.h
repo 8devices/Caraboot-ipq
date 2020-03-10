@@ -94,6 +94,7 @@
 #define NAND_EBI2_ECC_BUF_CFG		NAND_REG(0x00F0)
 #define NAND_HW_INFO			NAND_REG(0x00FC)
 #define NAND_FLASH_BUFFER		NAND_REG(0x0100)
+#define NAND_MULTI_PAGE_CMD		NAND_REG(0x0F60)
 #define NAND_FLASH_FEATURES		NAND_REG(0x0F64)
 #define QPIC_NAND_CTRL			NAND_REG(0x0F00)
 #define QPIC_NAND_DEBUG			NAND_REG(0x0F0C)
@@ -155,11 +156,63 @@
 #define QPIC_SPI_TRANSFER_MODE_X4	(3 << 29)
 #define QPIC_SPI_BOOST_MODE		(1 << 11)
 #define QPIC_SPI_NAND_CTRL_VAL		0x341
-#define QPIC_SPI_NAND_AUTO_STATUS_VAL	0x003F003F
+#define QPIC_PAGE_SCOPE_CMD_EN		(1 << 23)
+#define QPIC_MULTIPAGE_CMD_EN		(1 << 22)
+#define QPIC_LAST_PAGE_MASK		(1 << 5)
+/* For all status
+ * #define QPIC_SPI_NAND_AUTO_STATUS_VAL 0x003F003F
+ */
+#define QPIC_SPI_NAND_AUTO_STATUS_VAL	0x000B000B
+#define QPIC_SPI_MAX_CODE_WORD_2K_PAGE	0x4
+#define QPIC_SPI_MAX_STATUS_REG		12
+#define QPIC_AUTO_STATUS_BUFFER_SIZE	(QPIC_SPI_MAX_CODE_WORD_2K_PAGE * \
+					 QPIC_SPI_MAX_STATUS_REG)
 #define QPIC_NAND_FLASH_CMD_WE_VAL	0XB800000F
 #define QPIC_NAND_FLASH_CMD_WD_VAL	0x3800000F
 #define WR_EN				0x1
 #define WR_DIS				0x0
+
+#define PAGE_2KiB_STATUS_BUF_SIZE      48
+#define PAGE_4KiB_STATUS_BUF_SIZE      96
+#define PAGE_8KiB_STATUS_BUF_SIZE      192
+#define PAGE_2KiB                      2048
+#define PAGE_4KiB                      4096
+#define PAGE_8KiB                      8192
+#define MAX_MULTI_PAGE			64
+#define GET_STATUS_BUFF_PARSE_SIZE_PER_PAGE(page_size, parse_size) ({	\
+		switch(page_size) {					\
+			case PAGE_2KiB:					\
+				parse_size = PAGE_2KiB_STATUS_BUF_SIZE;	\
+				break;					\
+			case PAGE_4KiB:					\
+				parse_size = PAGE_4KiB_STATUS_BUF_SIZE;	\
+				break;					\
+			case PAGE_8KiB:					\
+				parse_size = PAGE_8KiB_STATUS_BUF_SIZE;	\
+				break;					\
+			default:					\
+				break;					\
+		}							\
+	})
+
+#define GET_STATUS_BUFF_ALLOC_SIZE(page_size, status_buf_size) ({	\
+		switch(page_size) {                                     \
+			case PAGE_2KiB:                                 \
+			status_buf_size = PAGE_2KiB_STATUS_BUF_SIZE *	\
+						MAX_MULTI_PAGE;		\
+				break;					\
+			case PAGE_4KiB:                                 \
+			status_buf_size = PAGE_4KiB_STATUS_BUF_SIZE *	\
+						MAX_MULTI_PAGE;		\
+				break;					\
+			case PAGE_8KiB:					\
+			status_buf_size = PAGE_8KiB_STATUS_BUF_SIZE *	\
+						MAX_MULTI_PAGE; 	\
+				break;                                  \
+			default:                                        \
+				break;                                  \
+		}                                                       \
+	})
 
 /* According to GigaDevice data sheet Block Protection Register is:
  *  ____________________________________________
@@ -378,6 +431,8 @@
 #define CMD_PIPE_INDEX				2
 #define BAM_STATUS_PIPE_INDEX			3
 
+#define QPIC_AUTO_STATUS_DES_SIZE		12
+
 /* Define BAM pipe lock groups for NANDc*/
 #define P_LOCK_GROUP_0				0
 
@@ -451,7 +506,7 @@
 #define DATA_PRODUCER_PIPE_GRP			0
 #define DATA_CONSUMER_PIPE_GRP			0
 #define CMD_PIPE_GRP				1
-#define NAND_BAM_STATUS_PIPE_GRP		2
+#define NAND_BAM_STATUS_PIPE_GRP		0
 
 /* NANDc EE */
 #define QPIC_NAND_EE				0
@@ -485,9 +540,15 @@
 #define MTD_NAND_CHIP(mtd)			((struct nand_chip *)((mtd)->priv))
 #define MTD_QPIC_NAND_DEV(mtd)			(MTD_NAND_CHIP(mtd)->priv)
 
+#ifdef CONFIG_PAGE_SCOPE_MULTI_PAGE_READ
+#define QPIC_BAM_DATA_FIFO_SIZE			512
+#define QPIC_BAM_CMD_FIFO_SIZE			128
+#define QPIC_BAM_STATUS_FIFO_SIZE		512
+#else
 #define QPIC_BAM_DATA_FIFO_SIZE			64
 #define QPIC_BAM_CMD_FIFO_SIZE			64
 #define QPIC_BAM_STATUS_FIFO_SIZE		64
+#endif
 
 #define QPIC_MAX_ONFI_MODES				4
 #define QPIC_NUM_XFER_STEPS				7
@@ -629,13 +690,13 @@ struct qpic_nand_bam_pipes
 	unsigned read_pipe;
 	unsigned write_pipe;
 	unsigned cmd_pipe;
-#if defined(QPIC_SERIAL) && defined(MULTI_PAGE_READ)
+#ifdef CONFIG_PAGE_SCOPE_MULTI_PAGE_READ
 	unsigned status_pipe;
 #endif
 	uint8_t  read_pipe_grp;
 	uint8_t  write_pipe_grp;
 	uint8_t  cmd_pipe_grp;
-#if defined(QPIC_SERIAL) && defined(MULTI_PAGE_READ)
+#ifdef CONFIG_PAGE_SCOPE_MULTI_PAGE_READ
 	uint8_t status_pipe_grp;
 #endif
 };
@@ -693,6 +754,12 @@ struct qpic_nand_dev {
 	unsigned char *zero_oob;
 	unsigned char *tmp_datbuf;
 	unsigned char *tmp_oobbuf;
+#ifdef CONFIG_PAGE_SCOPE_MULTI_PAGE_READ
+	bool multi_page_copy;
+	uint32_t multi_page_req_len;
+	unsigned char *status_buff;
+	uint32_t status_buf_size;
+#endif
 	uint16_t timing_mode_support;
 	struct read_stats stats[QPIC_NAND_MAX_CWS_IN_PAGE];
 };

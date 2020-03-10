@@ -234,6 +234,32 @@ qpic_nand_read_reg(uint32_t reg_addr,
 	return ret_val;
 }
 
+#ifdef CONFIG_PAGE_SCOPE_MULTI_PAGE_READ
+static void reset_multi_page_cmd_reg(struct cmd_element *cmd_list_ptr, uint8_t flags)
+{
+	bam_add_cmd_element(cmd_list_ptr, NAND_MULTI_PAGE_CMD, (uint32_t)0,
+			CE_WRITE_TYPE);
+
+	/* Enqueue the desc for the above command */
+	bam_add_one_desc(&bam, CMD_PIPE_INDEX, (unsigned char*)cmd_list_ptr,
+			BAM_CE_SIZE,  BAM_DESC_CMD_FLAG | BAM_DESC_INT_FLAG);
+
+	qpic_nand_wait_for_cmd_exec(1);
+}
+
+static void reset_addr_reg(struct cmd_element *cmd_list_ptr, uint8_t flags)
+{
+	bam_add_cmd_element(cmd_list_ptr, NAND_ADDR0, (uint32_t)0,
+			CE_WRITE_TYPE);
+
+	/* Enqueue the desc for the above command */
+	bam_add_one_desc(&bam, CMD_PIPE_INDEX, (unsigned char*)cmd_list_ptr,
+			BAM_CE_SIZE,  BAM_DESC_CMD_FLAG | BAM_DESC_INT_FLAG);
+
+	qpic_nand_wait_for_cmd_exec(1);
+}
+#endif
+
 /* Assume the BAM is in a locked state. */
 void
 qpic_nand_erased_status_reset(struct cmd_element *cmd_list_ptr, uint8_t flags)
@@ -431,7 +457,7 @@ qpic_bam_init(struct qpic_nand_init_config *config)
 	bam.pipe[CMD_PIPE_INDEX].fifo.size = QPIC_BAM_CMD_FIFO_SIZE;
 	bam.pipe[CMD_PIPE_INDEX].fifo.head = qpic_cmd_desc_fifo;
 	bam.pipe[CMD_PIPE_INDEX].lock_grp = config->pipes.cmd_pipe_grp;
-#if defined(CONFIG_QPIC_SERIAL) && defined(MULTI_PAGE_READ)
+#ifdef CONFIG_PAGE_SCOPE_MULTI_PAGE_READ
 	/* Set Status pipe params. */
 	bam.pipe[BAM_STATUS_PIPE_INDEX].pipe_num = config->pipes.status_pipe;
 	/* System consumer */
@@ -498,7 +524,7 @@ qpic_bam_init(struct qpic_nand_init_config *config)
 		bam_ret = NANDC_RESULT_FAILURE;
 		goto qpic_nand_bam_init_error;
 	}
-#if defined(CONFIG_QPIC_SERIAL) && defined(MULTI_PAGE_READ)
+#ifdef CONFIG_PAGE_SCOPE_MULTI_PAGE_READ
 	/* Initialize BAM QPIC status pipe */
 	bam_sys_pipe_init(&bam, BAM_STATUS_PIPE_INDEX);
 
@@ -2261,14 +2287,24 @@ qpic_nand_read_datcopy(struct mtd_info *mtd,
 		return;
 
 	read_datlen = ops->len - ops->retlen;
-
+#ifdef CONFIG_PAGE_SCOPE_MULTI_PAGE_READ
+	if (dev->multi_page_copy) {
+		datlen = (mtd->writesize * dev->multi_page_req_len);
+		dev->multi_page_copy = false;
+	} else if (col == 0 && read_datlen >= mtd->writesize) {
+		datlen = mtd->writesize;
+	} else {
+		datlen = min(read_datlen, mtd->writesize - col);
+		memcpy(ops->datbuf + ops->retlen, dev->pad_dat + col, datlen);
+	}
+#else
 	if (col == 0 && read_datlen >= mtd->writesize) {
 		datlen = mtd->writesize;
 	} else {
 		datlen = min(read_datlen, mtd->writesize - col);
 		memcpy(ops->datbuf + ops->retlen, dev->pad_dat + col, datlen);
 	}
-
+#endif
 	ops->retlen += datlen;
 }
 
@@ -2663,10 +2699,733 @@ qpic_nand_read_page_error:
 	return nand_ret;
 }
 
+#ifdef CONFIG_PAGE_SCOPE_MULTI_PAGE_READ
+static int qpic_nand_multi_page_read(struct mtd_info *mtd, uint32_t page,
+		enum nand_cfg_value cfg_mode, struct mtd_oob_ops *ops,
+		uint32_t num_pages)
+{
+	struct qpic_nand_dev *dev = MTD_QPIC_NAND_DEV(mtd);
+	struct cfg_params params;
+	struct cmd_element *cmd_list_ptr = ce_array;
+	struct cmd_element *cmd_list_ptr_start = ce_array;
+	struct read_stats *stats = dev->stats;
+	uint32_t auto_status = QPIC_SPI_NAND_AUTO_STATUS_VAL;
+	unsigned char *buffer, *ops_datbuf = ops->datbuf;
+	unsigned char *spareaddr, *ops_oobbuf = ops->oobbuf;
+	unsigned char *buffer_st, *spareaddr_st;
+	unsigned char *auto_status_buffer = NULL;
+	unsigned char *tmp_status_buffer = NULL;
+	uint16_t data_bytes;
+	uint16_t ud_bytes_in_last_cw;
+	uint16_t oob_bytes;
+	uint32_t addr_loc_0, addr_loc_1, addr_loc_last, ecc;
+	uint32_t num_data_desc = 0;
+	uint32_t num_status_desc = 0;
+	uint32_t i, j;
+	uint8_t flags = 0;
+	int nand_ret = NANDC_RESULT_SUCCESS;
+	unsigned int max_bitflips = 0, uncorrectable_err_cws = 0;
+
+	params.addr0 = page << 16;
+	params.addr1 = (page >> 16) & 0xff;
+
+	memset(dev->status_buff, 0, dev->status_buf_size);
+	auto_status_buffer = dev->status_buff;
+	tmp_status_buffer = dev->status_buff;
+
+	dev->multi_page_copy = true;
+
+#ifdef CONFIG_QPIC_SERIAL
+	params.cmd = (QPIC_SPI_WP_SET | QPIC_SPI_HOLD_SET);
+	if (dev->quad_mode)
+		params.cmd |= QPIC_SPI_TRANSFER_MODE_X4;
+	else
+		params.cmd |= QPIC_SPI_TRANSFER_MODE_X1;
+#endif
+	if (cfg_mode == NAND_CFG_RAW) {
+		params.cfg0 = dev->cfg0_raw;
+		params.cfg1 = dev->cfg1_raw;
+		params.cmd |= (NAND_CMD_PAGE_READ | QPIC_MULTIPAGE_CMD_EN);
+		ecc = 0x1; /* Disable ECC */
+
+		data_bytes =  dev->cw_size;
+		oob_bytes = mtd->oobsize;
+		ud_bytes_in_last_cw = (dev->cw_size - mtd->oobsize);
+	} else {
+		params.cfg0 = dev->cfg0;
+		params.cfg1 = dev->cfg1;
+		params.cmd |= (NAND_CMD_PAGE_READ_ALL | QPIC_MULTIPAGE_CMD_EN);
+
+		ecc = (dev->ecc_bch_cfg);
+		data_bytes = DATA_BYTES_IN_IMG_PER_CW;
+		ud_bytes_in_last_cw = USER_DATA_BYTES_PER_CW -
+				(((dev->cws_per_page) - 1) << 2);
+		oob_bytes = DATA_BYTES_IN_IMG_PER_CW - ud_bytes_in_last_cw;
+	}
+
+	params.exec = 1;
+
+	addr_loc_0 = NAND_RD_LOC_OFFSET(0);
+	addr_loc_0 |= NAND_RD_LOC_SIZE(data_bytes);;
+	addr_loc_0 |= NAND_RD_LOC_LAST_BIT(1);
+
+	addr_loc_1 = NAND_RD_LOC_OFFSET(ud_bytes_in_last_cw);
+	addr_loc_1 |= NAND_RD_LOC_SIZE(oob_bytes);
+	addr_loc_1 |= NAND_RD_LOC_LAST_BIT(1);
+
+	addr_loc_last = NAND_RD_LOC_OFFSET(0);
+	addr_loc_last |= NAND_RD_LOC_SIZE(ud_bytes_in_last_cw);
+	addr_loc_last |= NAND_RD_LOC_LAST_BIT(0);
+
+	/* reset address reg before executing for
+	 * next multi page read
+	 */
+	reset_addr_reg(ce_array, 0);
+
+	/* reset multi_page_cmd_reg */
+	reset_multi_page_cmd_reg(ce_array, 0);
+
+	/* Reset and Configure erased CW/page detection controller */
+	qpic_nand_erased_status_reset(ce_array, BAM_DESC_LOCK_FLAG);
+
+	if (ops->datbuf == NULL) {
+		buffer = dev->pad_dat;
+	} else {
+		buffer = ops->datbuf;
+	}
+
+	if (ops->oobbuf == NULL) {
+		spareaddr = dev->pad_oob;
+	} else {
+		spareaddr = ops->oobbuf;
+	}
+
+	buffer_st = buffer;
+	spareaddr_st = spareaddr;
+
+	cmd_list_ptr = qpic_nand_add_addr_n_cfg_ce(&params, cmd_list_ptr);
+	bam_add_cmd_element(cmd_list_ptr, NAND_DEV0_ECC_CFG, (uint32_t)ecc,
+			CE_WRITE_TYPE);
+	cmd_list_ptr++;
+	bam_add_cmd_element(cmd_list_ptr, NAND_AUTO_STATUS_EN, (uint32_t)auto_status,
+			CE_WRITE_TYPE);
+	cmd_list_ptr++;
+	bam_add_cmd_element(cmd_list_ptr, NAND_MULTI_PAGE_CMD, (uint32_t)num_pages - 1,
+			CE_WRITE_TYPE);
+	cmd_list_ptr++;
+	/* Enqueue the desc for the above commands */
+	bam_add_one_desc(&bam, CMD_PIPE_INDEX, (unsigned char*)cmd_list_ptr_start,
+			((uint32_t)cmd_list_ptr - (uint32_t)cmd_list_ptr_start),
+			BAM_DESC_CMD_FLAG);
+
+	bam_sys_gen_event(&bam, CMD_PIPE_INDEX, 1);
+
+	/* Queue up the command and data descriptors for all the requested page
+	 * and do a single bam transfer at the end.*/
+	for (j = 0; j < num_pages; j++) {
+
+		for (i = 0; i < (dev->cws_per_page); i++) {
+			num_data_desc = 0;
+			num_status_desc = 0;
+
+			if (i == (dev->cws_per_page) - 1) {
+
+				if ( j == num_pages - 1) {
+					flags = BAM_DESC_INT_FLAG;
+				} else {
+					flags = 0;
+				}
+				/* Add Data desc */
+				bam_add_one_desc(&bam, DATA_PRODUCER_PIPE_INDEX,
+					 (unsigned char *)((addr_t)(buffer)),
+					 ud_bytes_in_last_cw,
+					 0);
+				num_data_desc++;
+
+				bam_add_one_desc(&bam,
+					 DATA_PRODUCER_PIPE_INDEX,
+					 (unsigned char *)((addr_t)(spareaddr)),
+					 oob_bytes,
+					 flags);
+				num_data_desc++;
+
+				/* add data descriptor to read status */
+				bam_add_one_desc(&bam,
+					 BAM_STATUS_PIPE_INDEX,
+					 (unsigned char *)(addr_t)
+					 (auto_status_buffer),
+					 QPIC_AUTO_STATUS_DES_SIZE,
+					 flags);
+				num_status_desc++;
+
+				bam_sys_gen_event(&bam, DATA_PRODUCER_PIPE_INDEX,
+					  num_data_desc);
+
+				bam_sys_gen_event(&bam, BAM_STATUS_PIPE_INDEX,
+					  num_status_desc);
+			} else {
+				/* Add Data desc */
+				bam_add_one_desc(&bam,
+					 DATA_PRODUCER_PIPE_INDEX,
+					 (unsigned char *)((addr_t)buffer),
+					 data_bytes,
+					 0);
+				num_data_desc++;
+
+				/* add data descriptor to read status */
+				bam_add_one_desc(&bam,
+					 BAM_STATUS_PIPE_INDEX,
+					 (unsigned char *)(addr_t)
+					 (auto_status_buffer),
+					 QPIC_AUTO_STATUS_DES_SIZE,
+					 0);
+				num_status_desc++;
+
+				bam_sys_gen_event(&bam, DATA_PRODUCER_PIPE_INDEX,
+					  num_data_desc);
+
+				bam_sys_gen_event(&bam, BAM_STATUS_PIPE_INDEX,
+					  num_status_desc);
+			}
+
+			if (ops->datbuf != NULL) {
+				if (i == (dev->cws_per_page - 1)) {
+					buffer += ud_bytes_in_last_cw;
+					ops->datbuf += ud_bytes_in_last_cw;
+					ops->retlen += ud_bytes_in_last_cw;
+				} else {
+					buffer = ops->datbuf + data_bytes;
+					ops->datbuf += data_bytes;
+					ops->retlen += data_bytes;
+				}
+			}
+			else {
+				if (i == (dev->cws_per_page - 1)) {
+					buffer += ud_bytes_in_last_cw;
+				} else {
+					buffer += data_bytes;
+				}
+			}
+			if ((i == (dev->cws_per_page) - 1)) {
+				if (ops->oobbuf != NULL) {
+					spareaddr += oob_bytes;
+					ops->oobretlen += oob_bytes;
+					ops->oobbuf += oob_bytes;
+				} else
+					spareaddr += oob_bytes;
+			}
+
+			auto_status_buffer += QPIC_AUTO_STATUS_DES_SIZE;
+		}
+	}
+
+	cmd_list_ptr = cmd_list_ptr_start;
+
+	bam_add_cmd_element(cmd_list_ptr, NAND_READ_LOCATION_n(0), (uint32_t)addr_loc_0,
+			CE_WRITE_TYPE);
+	cmd_list_ptr++;
+
+	bam_add_cmd_element(cmd_list_ptr, NAND_READ_LOCATION_LAST_CW_n(0),
+		(uint32_t)addr_loc_last, CE_WRITE_TYPE);
+	cmd_list_ptr++;
+
+	/*To read only spare bytes 80 0r 16*/
+	bam_add_cmd_element(cmd_list_ptr, NAND_READ_LOCATION_LAST_CW_n(1),
+		(uint32_t)addr_loc_1, CE_WRITE_TYPE);
+	cmd_list_ptr++;
+
+	bam_add_cmd_element(cmd_list_ptr, NAND_FLASH_CMD, (uint32_t)params.cmd,
+		CE_WRITE_TYPE);
+	cmd_list_ptr++;
+	bam_add_cmd_element(cmd_list_ptr, NAND_EXEC_CMD, (uint32_t)params.exec,
+		CE_WRITE_TYPE);
+	cmd_list_ptr++;
+
+	/* Enqueue the desc for the above commands */
+	bam_add_one_desc(&bam, CMD_PIPE_INDEX, (unsigned char*)cmd_list_ptr_start,
+		((uint32_t)cmd_list_ptr - (uint32_t)cmd_list_ptr_start),
+			BAM_DESC_CMD_FLAG | BAM_DESC_NWD_FLAG);
+
+	/* Notify BAM HW about the newly added descriptors */
+	bam_sys_gen_event(&bam, CMD_PIPE_INDEX, 1);
+
+	qpic_nand_wait_for_data(DATA_PRODUCER_PIPE_INDEX);
+	qpic_nand_wait_for_data(BAM_STATUS_PIPE_INDEX);
+
+#if !defined(CONFIG_SYS_DCACHE_OFF)
+	flush_dcache_range((unsigned long)dev->status_buff,
+			   (unsigned long)dev->status_buff +
+			   dev->status_buf_size);
+	flush_dcache_range((unsigned long)buffer_st,
+			   (unsigned long)buffer);
+	flush_dcache_range((unsigned long)spareaddr_st,
+			   (unsigned long)spareaddr);
+#endif
+	/* Update the auto status structure */
+	for (j =0; j < num_pages; j++) {
+
+		for (i = 0; i < (dev->cws_per_page); i++) {
+
+			memscpy(&stats[i].flash_sts, 4, tmp_status_buffer, 4);
+			memscpy(&stats[i].buffer_sts, 4, tmp_status_buffer + 4, 4);
+			memscpy(&stats[i].erased_cw_sts, 4, tmp_status_buffer + 8, 4);
+
+			/* Check status */
+			if (cfg_mode == NAND_CFG_RAW)
+				nand_ret = qpic_nand_check_status(mtd, stats[i].flash_sts);
+			else
+				nand_ret = qpic_nand_check_read_status(mtd, &stats[i]);
+
+			if (nand_ret < 0) {
+				if (nand_ret == -EBADMSG) {
+					uncorrectable_err_cws |= BIT(i);
+						continue;
+				}
+
+				goto qpic_nand_read_page_error;
+			}
+
+			max_bitflips = max_t(unsigned int, max_bitflips, nand_ret);
+			tmp_status_buffer += QPIC_SPI_MAX_STATUS_REG;
+		}
+
+		if (uncorrectable_err_cws) {
+			nand_ret = qpic_nand_check_erased_page(mtd, page, (ops_datbuf + (j * mtd->writesize)),
+						       ops_oobbuf + j * 64,
+						       uncorrectable_err_cws,
+						       &max_bitflips);
+			if (nand_ret < 0)
+				goto qpic_nand_read_page_error;
+		}
+	}
+
+	return max_bitflips;
+
+qpic_nand_read_page_error:
+
+	printf("NAND page read failed. page: %x status %x\n",
+	       page, nand_ret);
+
+	return nand_ret;
+}
+
+static int qpic_nand_page_scope_read(struct mtd_info *mtd, uint32_t page,
+		enum nand_cfg_value cfg_mode, struct mtd_oob_ops *ops)
+{
+	struct qpic_nand_dev *dev = MTD_QPIC_NAND_DEV(mtd);
+	struct cfg_params params;
+	struct cmd_element *cmd_list_ptr = ce_array;
+	struct cmd_element *cmd_list_ptr_start = ce_array;
+	struct read_stats *stats = dev->stats;
+	uint32_t auto_status = QPIC_SPI_NAND_AUTO_STATUS_VAL;
+	unsigned char *buffer, *ops_datbuf = ops->datbuf;
+	unsigned char *spareaddr, *ops_oobbuf = ops->oobbuf;
+	unsigned char *buffer_st, *spareaddr_st;
+	unsigned char *auto_status_buffer = NULL;
+	uint16_t data_bytes;
+	uint16_t ud_bytes_in_last_cw;
+	uint16_t oob_bytes;
+	uint32_t addr_loc_0, addr_loc_1, ecc;
+	uint32_t num_cmd_desc = 0;
+	uint32_t num_data_desc = 0;
+	uint32_t num_status_desc = 0;
+	uint32_t i;
+	uint32_t parse_size = 0x0;
+	uint8_t flags = 0;
+	int nand_ret = NANDC_RESULT_SUCCESS;
+	unsigned int max_bitflips = 0, uncorrectable_err_cws = 0;
+
+	params.addr0 = page << 16;
+	params.addr1 = (page >> 16) & 0xff;
+
+	memset(dev->status_buff, 0, dev->status_buf_size);
+	auto_status_buffer = dev->status_buff;
+
+#ifdef CONFIG_QPIC_SERIAL
+	params.cmd = (QPIC_SPI_WP_SET | QPIC_SPI_HOLD_SET);
+	if (dev->quad_mode)
+		params.cmd |= QPIC_SPI_TRANSFER_MODE_X4;
+	else
+		params.cmd |= QPIC_SPI_TRANSFER_MODE_X1;
+#endif
+	if (cfg_mode == NAND_CFG_RAW) {
+		params.cfg0 = dev->cfg0_raw;
+		params.cfg1 = dev->cfg1_raw;
+		params.cmd |= (NAND_CMD_PAGE_READ | QPIC_PAGE_SCOPE_CMD_EN);
+		ecc = 0x1; /* Disable ECC */
+
+		data_bytes =  dev->cw_size;
+		oob_bytes = mtd->oobsize;
+		ud_bytes_in_last_cw = (dev->cw_size - mtd->oobsize);
+	} else {
+		params.cfg0 = dev->cfg0;
+		params.cfg1 = dev->cfg1;
+		params.cmd |= (NAND_CMD_PAGE_READ_ALL | QPIC_PAGE_SCOPE_CMD_EN);
+
+		ecc = (dev->ecc_bch_cfg);
+		data_bytes = DATA_BYTES_IN_IMG_PER_CW;
+		ud_bytes_in_last_cw = USER_DATA_BYTES_PER_CW -
+				(((dev->cws_per_page) - 1) << 2);
+		oob_bytes = DATA_BYTES_IN_IMG_PER_CW - ud_bytes_in_last_cw;
+	}
+
+	params.exec = 1;
+
+	addr_loc_0 = NAND_RD_LOC_OFFSET(0);
+	addr_loc_0 |= NAND_RD_LOC_SIZE(data_bytes);;
+	addr_loc_0 |= NAND_RD_LOC_LAST_BIT(1);
+
+	addr_loc_1 = NAND_RD_LOC_OFFSET(ud_bytes_in_last_cw);
+	addr_loc_1 |= NAND_RD_LOC_SIZE(oob_bytes);
+	addr_loc_1 |= NAND_RD_LOC_LAST_BIT(1);
+
+	/* Reset and Configure erased CW/page detection controller */
+	qpic_nand_erased_status_reset(ce_array, BAM_DESC_LOCK_FLAG);
+
+	if (ops->datbuf == NULL) {
+		buffer = dev->pad_dat;
+	} else {
+		buffer = ops->datbuf;
+	}
+
+	if (ops->oobbuf == NULL) {
+		spareaddr = dev->pad_oob;
+	} else {
+		spareaddr = ops->oobbuf;
+	}
+
+	buffer_st = buffer;
+	spareaddr_st = spareaddr;
+
+	/* Queue up the command and data descriptors for all the codewords in a page
+	 * and do a single bam transfer at the end.*/
+	for (i = 0; i < (dev->cws_per_page); i++) {
+		num_cmd_desc = 0;
+		num_data_desc = 0;
+		num_status_desc = 0;
+		if (i == 0) {
+			cmd_list_ptr = qpic_nand_add_addr_n_cfg_ce(&params, cmd_list_ptr);
+
+			bam_add_cmd_element(cmd_list_ptr, NAND_DEV0_ECC_CFG,(uint32_t)ecc,
+					    CE_WRITE_TYPE);
+			cmd_list_ptr++;
+
+			bam_add_cmd_element(cmd_list_ptr, NAND_AUTO_STATUS_EN,(uint32_t)auto_status,
+					CE_WRITE_TYPE);
+			cmd_list_ptr++;
+
+			bam_add_cmd_element(cmd_list_ptr, NAND_FLASH_CMD, (uint32_t)params.cmd,
+					CE_WRITE_TYPE);
+			cmd_list_ptr++;
+		} else
+			cmd_list_ptr_start = cmd_list_ptr;
+
+		if (i == (dev->cws_per_page) - 1) {
+			/* Write addr loc 1 only for the last CW. */
+			addr_loc_0 = NAND_RD_LOC_OFFSET(0);
+			addr_loc_0 |= NAND_RD_LOC_SIZE(ud_bytes_in_last_cw);
+			addr_loc_0 |= NAND_RD_LOC_LAST_BIT(0);
+
+			 /*To read only spare bytes 80 0r 16*/
+			bam_add_cmd_element(cmd_list_ptr, NAND_READ_LOCATION_LAST_CW_n(1),
+					   (uint32_t)addr_loc_1, CE_WRITE_TYPE);
+
+			cmd_list_ptr++;
+
+			/* Add Data desc */
+			bam_add_one_desc(&bam, DATA_PRODUCER_PIPE_INDEX,
+					 (unsigned char *)((addr_t)(buffer)),
+					 ud_bytes_in_last_cw,
+					 0);
+			num_data_desc++;
+
+			bam_add_one_desc(&bam,
+					 DATA_PRODUCER_PIPE_INDEX,
+					 (unsigned char *)((addr_t)(spareaddr)),
+					 oob_bytes,
+					 BAM_DESC_INT_FLAG);
+			num_data_desc++;
+
+			/* add data descriptor to read status */
+			bam_add_one_desc(&bam,
+					 BAM_STATUS_PIPE_INDEX,
+					 (unsigned char *)((addr_t)(auto_status_buffer +
+							 i * QPIC_SPI_MAX_STATUS_REG)),
+					 QPIC_AUTO_STATUS_DES_SIZE,
+					 BAM_DESC_INT_FLAG);
+			num_status_desc++;
+
+			bam_sys_gen_event(&bam, DATA_PRODUCER_PIPE_INDEX,
+					  num_data_desc);
+
+			bam_sys_gen_event(&bam, BAM_STATUS_PIPE_INDEX,
+					  num_status_desc);
+		} else {
+			/* Add Data desc */
+			bam_add_one_desc(&bam,
+					 DATA_PRODUCER_PIPE_INDEX,
+					 (unsigned char *)((addr_t)buffer),
+					 data_bytes,
+					 0);
+			num_data_desc++;
+
+			/* add data descriptor to read status */
+			bam_add_one_desc(&bam,
+					 BAM_STATUS_PIPE_INDEX,
+					 (unsigned char *)((addr_t)(auto_status_buffer +
+							 i * QPIC_SPI_MAX_STATUS_REG)),
+					 QPIC_AUTO_STATUS_DES_SIZE,
+					 0);
+			num_status_desc++;
+
+			bam_sys_gen_event(&bam, DATA_PRODUCER_PIPE_INDEX,
+					  num_data_desc);
+
+			bam_sys_gen_event(&bam, BAM_STATUS_PIPE_INDEX,
+					  num_status_desc);
+		}
+
+		if (i == (dev->cws_per_page) - 1) {
+			bam_add_cmd_element(cmd_list_ptr,
+					NAND_READ_LOCATION_LAST_CW_n(0),
+					(uint32_t)addr_loc_0,
+					CE_WRITE_TYPE);
+			cmd_list_ptr++;
+
+			bam_add_cmd_element(cmd_list_ptr, NAND_EXEC_CMD,
+					(uint32_t)params.exec, CE_WRITE_TYPE);
+			cmd_list_ptr++;
+		} else {
+			bam_add_cmd_element(cmd_list_ptr,
+				    NAND_READ_LOCATION_n(0),
+				    (uint32_t)addr_loc_0,
+				    CE_WRITE_TYPE);
+			cmd_list_ptr++;
+		}
+
+		if (i == (dev->cws_per_page) - 1) {
+			flags = BAM_DESC_CMD_FLAG | BAM_DESC_NWD_FLAG;
+		} else
+			flags = BAM_DESC_CMD_FLAG;
+
+		/* Enqueue the desc for the above commands */
+		bam_add_one_desc(&bam,
+				 CMD_PIPE_INDEX,
+				 (unsigned char*)cmd_list_ptr_start,
+				 ((uint32_t)cmd_list_ptr -
+				 (uint32_t)cmd_list_ptr_start),
+				 flags);
+		num_cmd_desc++;
+
+		if (ops->datbuf != NULL) {
+			if (i == (dev->cws_per_page - 1)) {
+				buffer += ud_bytes_in_last_cw;
+				ops->datbuf += ud_bytes_in_last_cw;
+				ops->retlen += ud_bytes_in_last_cw;
+			} else {
+				buffer = ops->datbuf + data_bytes;
+				ops->datbuf += data_bytes;
+				ops->retlen += data_bytes;
+			}
+		}
+		else {
+			if (i == (dev->cws_per_page - 1)) {
+				buffer += ud_bytes_in_last_cw;
+			} else {
+				buffer += data_bytes;
+			}
+		}
+		if ((i == (dev->cws_per_page) - 1)) {
+			if (ops->oobbuf != NULL) {
+				spareaddr += oob_bytes;
+				ops->oobretlen += oob_bytes;
+				ops->oobbuf += oob_bytes;
+			} else
+				spareaddr += oob_bytes;
+		}
+		/* Notify BAM HW about the newly added descriptors */
+		bam_sys_gen_event(&bam, CMD_PIPE_INDEX, num_cmd_desc);
+	}
+
+	qpic_nand_wait_for_data(BAM_STATUS_PIPE_INDEX);
+	qpic_nand_wait_for_data(DATA_PRODUCER_PIPE_INDEX);
+
+	GET_STATUS_BUFF_PARSE_SIZE_PER_PAGE(mtd->writesize, parse_size);
+#if !defined(CONFIG_SYS_DCACHE_OFF)
+
+	flush_dcache_range((unsigned long)dev->status_buff,
+			   (unsigned long)dev->status_buff + parse_size);
+	flush_dcache_range((unsigned long)buffer_st,
+			   (unsigned long)buffer);
+	flush_dcache_range((unsigned long)spareaddr_st,
+			   (unsigned long)spareaddr);
+#endif
+	/* Update the auto status structure */
+	for (i = 0; i < (dev->cws_per_page); i++) {
+		memscpy(&stats[i].flash_sts, 4, (dev->status_buff +
+			i * QPIC_SPI_MAX_STATUS_REG),
+				sizeof(int));
+		memscpy(&stats[i].buffer_sts, 4, (dev->status_buff +
+			i * QPIC_SPI_MAX_STATUS_REG) + 4,
+				sizeof(int));
+		memscpy(&stats[i].erased_cw_sts, 4, (dev->status_buff +
+			i * QPIC_SPI_MAX_STATUS_REG) + 8,
+				sizeof(int));
+	}
+
+	/* Check status */
+	for (i = 0; i < (dev->cws_per_page) ; i ++) {
+		if (cfg_mode == NAND_CFG_RAW)
+			nand_ret = qpic_nand_check_status(mtd,
+							  stats[i].flash_sts);
+		else
+			nand_ret = qpic_nand_check_read_status(mtd, &stats[i]);
+
+		if (nand_ret < 0) {
+			if (nand_ret == -EBADMSG) {
+				uncorrectable_err_cws |= BIT(i);
+				continue;
+			}
+
+			goto qpic_nand_read_page_error;
+		}
+
+		max_bitflips = max_t(unsigned int, max_bitflips, nand_ret);
+	}
+
+	if (uncorrectable_err_cws) {
+		nand_ret = qpic_nand_check_erased_page(mtd, page, ops_datbuf,
+						       ops_oobbuf,
+						       uncorrectable_err_cws,
+						       &max_bitflips);
+		if (nand_ret < 0)
+			goto qpic_nand_read_page_error;
+	}
+
+	return max_bitflips;
+
+qpic_nand_read_page_error:
+	printf("NAND page read failed. page: %x status %x\n",
+	       page, nand_ret);
+	return nand_ret;
+}
+
+static int qpic_alloc_status_buff(struct qpic_nand_dev *dev,
+		struct mtd_info *mtd)
+{
+	GET_STATUS_BUFF_ALLOC_SIZE(mtd->writesize,
+			dev->status_buf_size);
+	dev->status_buff = (unsigned char *)malloc(dev->status_buf_size);
+	if (!dev->status_buff)
+		return -ENOMEM;
+
+	memset(dev->status_buff, 0, dev->status_buf_size);
+
+	return 0;
+}
+
+static int qpic_nand_read_page_scope_multi_page(struct mtd_info *mtd,
+		loff_t to, struct mtd_oob_ops *ops)
+{
+	uint32_t i = 0, ret = 0;
+	struct qpic_nand_dev *dev = MTD_QPIC_NAND_DEV(mtd);
+	struct nand_chip *chip = MTD_NAND_CHIP(mtd);
+	uint32_t start_page;
+	uint32_t num_pages, req_pages = 0x0;
+	uint32_t col;
+	enum nand_cfg_value cfg_mode;
+	unsigned int max_bitflips = 0;
+	unsigned int ecc_failures = mtd->ecc_stats.failed;
+
+	/* We don't support MTD_OOB_PLACE as of yet. */
+	if (ops->mode == MTD_OPS_PLACE_OOB)
+		return -ENOSYS;
+
+	/* Check for reads past end of device */
+	if (ops->datbuf && (to + ops->len) > mtd->size)
+		return -EINVAL;
+
+	if (ops->ooboffs != 0)
+		return -EINVAL;
+
+	if(ops->mode == MTD_OPS_RAW) {
+		cfg_mode = NAND_CFG_RAW;
+		dev->oob_per_page = mtd->oobsize;
+	} else {
+		cfg_mode = NAND_CFG;
+		dev->oob_per_page = mtd->oobavail;
+	}
+
+	start_page = ((to >> chip->page_shift));
+	num_pages = qpic_get_read_page_count(mtd, ops, to);
+
+	while (1) {
+
+		if (num_pages > MAX_MULTI_PAGE) {
+
+			req_pages = MAX_MULTI_PAGE;
+
+		} else if (num_pages > 1 && num_pages <= MAX_MULTI_PAGE) {
+
+			req_pages = num_pages;
+
+		} else if (num_pages == 1) {
+
+			req_pages = num_pages;
+		}
+
+		struct mtd_oob_ops page_ops;
+
+		col = i == 0 ? to & (mtd->writesize - 1) : 0;
+		page_ops.mode = ops->mode;
+		page_ops.len = mtd->writesize * req_pages;
+		page_ops.ooblen = dev->oob_per_page;
+		page_ops.datbuf = qpic_nand_read_datbuf(mtd, ops, col);
+		page_ops.oobbuf = qpic_nand_read_oobbuf(mtd, ops);
+		page_ops.retlen = 0;
+		page_ops.oobretlen = 0;
+		dev->multi_page_req_len = req_pages;
+
+		if (num_pages > 1)
+			ret = qpic_nand_multi_page_read(mtd, start_page,
+					cfg_mode, &page_ops, req_pages);
+		else
+			ret = qpic_nand_page_scope_read(mtd, start_page,
+					cfg_mode, &page_ops);
+
+		if (ret < 0) {
+			printf("%s: reading page %d failed with %d err\n",
+			      __func__, start_page, ret);
+			return ret;
+		}
+
+		max_bitflips = max_t(unsigned int, max_bitflips, ret);
+		qpic_nand_read_datcopy(mtd, ops, col);
+		qpic_nand_read_oobcopy(mtd, ops);
+
+		num_pages -= req_pages;
+		i++;
+
+		if (!num_pages)
+			break;
+
+		start_page += req_pages;
+	}
+
+	if (ecc_failures != mtd->ecc_stats.failed) {
+		printf("%s: ecc failure while reading from %llx\n",
+		       __func__, to);
+		return -EBADMSG;
+	}
+
+	return max_bitflips;
+}
+#endif
+
 static int qpic_nand_read_oob(struct mtd_info *mtd, loff_t to,
                                     struct mtd_oob_ops *ops)
 {
-	unsigned i = 0, ret = 0;
+	uint32_t i = 0, ret = 0;
 	struct qpic_nand_dev *dev = MTD_QPIC_NAND_DEV(mtd);
 	struct nand_chip *chip = MTD_NAND_CHIP(mtd);
 	uint32_t start_page;
@@ -2719,13 +3478,14 @@ static int qpic_nand_read_oob(struct mtd_info *mtd, loff_t to,
 
 		if (ret < 0) {
 			printf("%s: reading page %d failed with %d err\n",
-			       __func__, start_page + i, ret);
+			      __func__, start_page + i, ret);
 			return ret;
 		}
 
 		max_bitflips = max_t(unsigned int, max_bitflips, ret);
 		qpic_nand_read_datcopy(mtd, ops, col);
 		qpic_nand_read_oobcopy(mtd, ops);
+
 	}
 
 	if (ecc_failures != mtd->ecc_stats.failed) {
@@ -2764,8 +3524,18 @@ static int qpic_nand_read(struct mtd_info *mtd, loff_t from, size_t len,
 	ops.ooboffs = 0;
 	ops.datbuf = (uint8_t *)buf;
 	ops.oobbuf = NULL;
-
+#ifdef CONFIG_PAGE_SCOPE_MULTI_PAGE_READ
+	if (hw_ver >= QCA_QPIC_V2_1_1) {
+		ret = qpic_nand_read_page_scope_multi_page(mtd, from,
+				&ops);
+	} else {
+		printf("QPIC controller not support page scope and multi page read.\n");
+		return -EIO;
+	}
+#else
 	ret = qpic_nand_read_oob(mtd, from, &ops);
+#endif
+
 	*retlen = ops.retlen;
 
 	return ret;
@@ -3213,7 +3983,8 @@ void qpic_nand_init(qpic_nand_cfg_t *qpic_nand_cfg)
 				__func__);
 		return;
 	}
-#ifdef MULTI_PAGE_READ
+
+#ifdef CONFIG_PAGE_SCOPE_MULTI_PAGE_READ
 	config.pipes.status_pipe = NAND_BAM_STATUS_PIPE;
 	config.pipes.status_pipe_grp = NAND_BAM_STATUS_PIPE_GRP;
 #endif
@@ -3267,11 +4038,36 @@ void qpic_nand_init(qpic_nand_cfg_t *qpic_nand_cfg)
 	dev = MTD_QPIC_NAND_DEV(mtd);
 	qpic_nand_mtd_params(mtd);
 
+#ifdef CONFIG_PAGE_SCOPE_MULTI_PAGE_READ
+	/* allocate memory for status buffer. we are doing
+	 * this here because we do not know the device page
+	 * siz ein advance if nand flash is parallel nand and ONFI
+	 * complaint. so status buffer size will vary based on page size
+	 * e.g if page size is 2KiB then status buffer size for one page
+	 * will be 48-bytes similary for 4KiB page , status buffer size
+	 * will be 96-bytes for one page and so on.
+	 * QPIC controller support max page isze is 8 KiB now so maximum
+	 * status buffer size for one page will be 192-bytes. for multi page
+	 * read the status buffer size will be multiple of maximum pages supported
+	 * in multipage.
+	 */
+	ret = qpic_alloc_status_buff(dev, mtd);
+	if (ret) {
+		printf("Error in allocating status buffer\n");
+		return;
+	}
+#endif
+
 	/*
 	 * allocate buffer for dev->pad_dat, dev->pad_oob, dev->zero_page,
 	 * dev->zero_oob, dev->tmp_datbuf, dev->tmp_oobbuf
+	 *
 	 */
+#ifdef CONFIG_PAGE_SCOPE_MULTI_PAGE_READ
+	alloc_size = 3 * (mtd->writesize + (mtd->oobsize * MAX_MULTI_PAGE));
+#else
 	alloc_size = 3 * (mtd->writesize + mtd->oobsize);
+#endif
 
 	dev->buffers = malloc(alloc_size);
 	if (dev->buffers == NULL) {
@@ -3284,7 +4080,11 @@ void qpic_nand_init(qpic_nand_cfg_t *qpic_nand_cfg)
 	dev->pad_dat = buf;
 	buf += mtd->writesize;
 	dev->pad_oob = buf;
+#ifdef CONFIG_PAGE_SCOPE_MULTI_PAGE_READ
+	buf += mtd->oobsize * MAX_MULTI_PAGE;
+#else
 	buf += mtd->oobsize;
+#endif
 
 	dev->zero_page = buf;
 	buf += mtd->writesize;
