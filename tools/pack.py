@@ -1842,7 +1842,7 @@ def gen_kernelboot_img(parser):
         cmd = [SKALES_DIR + "/mkbootimg",
                 "--kernel=" + TMP_DIR + "/Image.gz",
                 "--dt=" + TMP_DIR + "/qcom-" + BOARD_NAME + "-dt.img",
-                "--cmdline=\'rootfsname=rootfs rootwait nosmp\'",
+                "--cmdline=\'rootfsname=rootfs rootwait\'",
                 "--output=" + parser.images_dname + "/" + KERNEL_IMG_NAME,
                 "--base=" + BASE_ADDR]
         ret = subprocess.call(cmd)
