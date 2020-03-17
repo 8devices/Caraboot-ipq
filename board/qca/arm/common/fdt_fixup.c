@@ -641,6 +641,7 @@ int ft_board_setup(void *blob, bd_t *bd)
 		{ "qcom,qcom_nand", MTD_DEV_TYPE_NAND, 0 },
 		{ "qcom,ebi2-nandc-bam-v1.5.0", MTD_DEV_TYPE_NAND, 0 },
 		{ "qcom,ebi2-nandc-bam-v2.1.1", MTD_DEV_TYPE_NAND, 0 },
+		{ "qcom,ipq8074-nand", MTD_DEV_TYPE_NAND, 0 },
 		{ "spinand,mt29f", MTD_DEV_TYPE_NAND, 1 },
 		{ "n25q128a11", MTD_DEV_TYPE_NAND,
 				CONFIG_IPQ_SPI_NOR_INFO_IDX },
