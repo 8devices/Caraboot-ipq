@@ -1398,6 +1398,8 @@ unsigned int get_dts_machid(unsigned int machid)
 	{
 		case MACH_TYPE_IPQ6018_AP_CP01_C2:
 			return MACH_TYPE_IPQ6018_AP_CP01_C1;
+		case MACH_TYPE_IPQ6018_AP_CP01_C4:
+			return MACH_TYPE_IPQ6018_AP_CP01_C1;
 		default:
 			return machid;
 	}
@@ -1406,14 +1408,25 @@ unsigned int get_dts_machid(unsigned int machid)
 void ipq_uboot_fdt_fixup(void)
 {
 	int ret, len;
-	const char *config = "config@cp01-c2";
-	len = fdt_totalsize(gd->fdt_blob) + strlen(config) + 1;
+	char *config = NULL;
 
-	if (gd->bd->bi_arch_number == MACH_TYPE_IPQ6018_AP_CP01_C2)
+	switch (gd->bd->bi_arch_number)
 	{
+		case MACH_TYPE_IPQ6018_AP_CP01_C2:
+			config = "config@cp01-c2";
+			break;
+		case MACH_TYPE_IPQ6018_AP_CP01_C4:
+			config = "config@cp01-c4";
+			break;
+	}
+
+	if (config != NULL)
+	{
+		len = fdt_totalsize(gd->fdt_blob) + strlen(config) + 1;
+
 		/*
 		 * Open in place with a new length.
-		 */
+		*/
 		ret = fdt_open_into(gd->fdt_blob, (void *)gd->fdt_blob, len);
 		if (ret)
 			 printf("uboot-fdt-fixup: Cannot expand FDT: %s\n", fdt_strerror(ret));
