@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+* Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
 *
 * This program is free software; you can redistribute it and/or modify
 * it under the terms of the GNU General Public License version 2 and
@@ -50,8 +50,10 @@
 #define CONFIG_ARMV7_PSCI
 
 /*
- *Size of malloc() pool
+ * Block Device & Disk  Partition Config
  */
+#define HAVE_BLOCK_DEVICE
+#define CONFIG_DOS_PARTITION
 
 /*
  * Enable Flashwrite command
