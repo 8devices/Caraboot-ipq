@@ -356,4 +356,14 @@ extern loff_t board_env_size;
 * size is configured to 64 */
 #define CONFIG_SYS_CACHELINE_SIZE		64
 
+/*
+ * Tz Xpu test ccommand
+ */
+#define CONFIG_IPQ_TZT
+
+/*
+ * UBI write command
+ */
+#define IPQ_UBI_VOL_WRITE_SUPPORT
+
 #endif /* _IPQ5018_H */
