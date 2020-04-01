@@ -240,9 +240,13 @@ void ipq_fdt_mem_rsvd_fixup(void *blob)
 	/* Set the dload_status to DLOAD_DISABLE */
 	nodeoff = fdt_path_offset(blob, "/soc/qca,scm_restart_reason");
 	if (nodeoff < 0) {
-		debug("fdt-fixup: unable to find compatible node\n");
-		return;
+		nodeoff = fdt_path_offset(blob, "/qti,scm_restart_reason");
+		if (nodeoff < 0) {
+			debug("fdt-fixup: unable to find compatible node\n");
+			return;
+		}
 	}
+
 	ret = fdt_setprop(blob, nodeoff, "dload_status", &dload, sizeof(dload));
 	if (ret != 0) {
 		debug("fdt-fixup: unable to find compatible node\n");
