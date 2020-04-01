@@ -1397,6 +1397,7 @@ unsigned int get_dts_machid(unsigned int machid)
 	switch (machid)
 	{
 		case MACH_TYPE_IPQ6018_AP_CP01_C2:
+		case MACH_TYPE_IPQ6018_AP_CP01_C3:
 			return MACH_TYPE_IPQ6018_AP_CP01_C1;
 		case MACH_TYPE_IPQ6018_AP_CP01_C4:
 			return MACH_TYPE_IPQ6018_AP_CP01_C1;
@@ -1414,6 +1415,9 @@ void ipq_uboot_fdt_fixup(void)
 	{
 		case MACH_TYPE_IPQ6018_AP_CP01_C2:
 			config = "config@cp01-c2";
+			break;
+		case MACH_TYPE_IPQ6018_AP_CP01_C3:
+			config = "config@cp01-c3";
 			break;
 		case MACH_TYPE_IPQ6018_AP_CP01_C4:
 			config = "config@cp01-c4";
