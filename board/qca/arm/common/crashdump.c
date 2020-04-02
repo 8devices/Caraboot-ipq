@@ -714,8 +714,16 @@ void dump_func(unsigned int dump_level)
 		printf("\nHit any key within 10s to stop dump activity...");
 		while (!tstc()) {       /* while no incoming data */
 			if (get_timer_masked() >= etime) {
-				if (do_dumpqca_data(dump_level) == CMD_RET_FAILURE)
-					printf("Crashdump saving failed!\n");
+				if (getenv("dump_minimal_and_full")) { 
+					/* dump minidump and full dump*/
+					if (do_dumpqca_data(MINIMAL_DUMP) == CMD_RET_FAILURE)
+						printf("Minidump saving failed!\n");
+					if (do_dumpqca_data(FULL_DUMP) == CMD_RET_FAILURE)
+						printf("Crashdump saving failed!\n");
+				} else {
+					if (do_dumpqca_data(dump_level) == CMD_RET_FAILURE)
+						printf("Crashdump saving failed!\n");
+				}
 				break;
 			}
 		}
