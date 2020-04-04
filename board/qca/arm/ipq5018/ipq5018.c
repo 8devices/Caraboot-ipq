@@ -497,10 +497,16 @@ void reset_cpu(unsigned long a)
 
 void qpic_clk_enbale(void)
 {
+#ifdef QPIC_CLOCK_ENABLE
+/*
+ || clock enable code has been disabled due to NOC error in emualtion
+ || will verify on RDB and remove this clock configuration
+*/
 	writel(QPIC_CBCR_VAL, GCC_QPIC_CBCR_ADDR);
 	writel(0x1, GCC_QPIC_AHB_CBCR_ADDR);
 	writel(0x1, GCC_QPIC_IO_MACRO_CBCR);
 	writel(0x1, GCC_QPIC_CBCR_ADDR);
+#endif
 }
 
 void board_nand_init(void)
