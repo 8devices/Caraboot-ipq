@@ -1444,7 +1444,7 @@ class Pack(object):
                                    flinfo.chipsize, blocksize, chipsize, root_part)
                 self.partitions = mibib_hk10.get_parts()
 
-                script.append('if test "$machid" = "801000e" || test "$machid" = "801010e"; then\n', fatal=False)
+                script.append('if test "$machid" = "801000e" || test "$machid" = "801010e" || test "$machid" = "8010012"; then\n', fatal=False)
                 ret = self.__gen_flash_script(script, flinfo, root)
                 if ret == 0:
                     return 0 #Issue in packing hk10+pine single-image
