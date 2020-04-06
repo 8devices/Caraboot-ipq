@@ -24,9 +24,9 @@
 		pci0 = "/pci@20000000";
 	};
 	ess-switch {
-		switch_mac_mode = <0x0>;
-		switch_mac_mode1 = <0x6>;
-		switch_mac_mode2 = <0x6>;
+		switch_mac_mode = <0x5>;
+		switch_mac_mode1 = <0x7>;
+		switch_mac_mode2 = <0x2>;
 		aquantia_port = <4>;
 		aquantia_gpio = <44>;
 		port_phyinfo {
@@ -47,6 +47,10 @@
 				phy_type = <1>;
 			};
 			port@4 {
+				phy_address = <4>;
+				phy_type = <1>;
+			};
+			port@5 {
 				phy_address = <7>;
 				phy_type = <3>;
 			};
