@@ -21,5 +21,20 @@ config USB_XHCI_IPQ
 config PCI_IPQ
 	bool "Enable pci support for ipq5018"
 
+config MMC_FLASH
+	bool "Enable MMC flash support for ipq5018"
+
+config IPQ_TZT
+	bool "Enable TZ test command for ipq5018"
+
+config UBI_WRITE
+	bool "Enable ubi volume write command for ipq5018"
+
+config QPIC_SERIAL
+	bool "Enable QPIC serial spi nand  for ipq5018"
+
+config IPQ_TINY
+	bool "Enable Tiny support for ipq5018"
+
 endif
 

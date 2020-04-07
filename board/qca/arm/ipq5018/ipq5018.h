@@ -292,6 +292,8 @@
 #define ARM_PSCI_TZ_FN_CPU_ON		ARM_PSCI_TZ_FN(3)
 #define ARM_PSCI_TZ_FN_AFFINITY_INFO	ARM_PSCI_TZ_FN(4)
 
+#define CLK_ENABLE				0x1
+
 unsigned int __invoke_psci_fn_smc(unsigned int, unsigned int,
 					 unsigned int, unsigned int);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016, 2018-2019 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2016, 2018-2020 The Linux Foundation. All rights reserved.
 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -18,6 +18,4 @@
 #ifdef CONFIG_IPQ5018_I2C
 void i2c_clock_config(void);
 #endif
-
-#define CLK_ENABLE	0x1
 #endif /*IPQ5018_CLK_H*/

@@ -23,9 +23,13 @@
 #include <asm/arch-qca-common/scm.h>
 #include <asm/arch-qca-common/iomap.h>
 #include <ipq5018.h>
+#ifdef CONFIG_QCA_MMC
 #include <mmc.h>
 #include <sdhci.h>
+#endif
+#ifdef CONFIG_USB_XHCI_IPQ
 #include <usb.h>
+#endif
 
 #define DLOAD_MAGIC_COOKIE	0x10
 #define DLOAD_DISABLED		0x40
@@ -33,7 +37,11 @@
 ipq_gmac_board_cfg_t gmac_cfg[CONFIG_IPQ_NO_MACS];
 
 DECLARE_GLOBAL_DATA_PTR;
+
+#ifdef CONFIG_QCA_MMC
 struct sdhci_host mmc_host;
+#endif
+
 extern int ipq_spi_init(u16);
 
 const char *rsvd_node = "/reserved-memory";
@@ -511,7 +519,9 @@ void qpic_clk_enbale(void)
 
 void board_nand_init(void)
 {
+#ifdef CONFIG_QPIC_SERIAL
 	qpic_nand_init(NULL);
+#endif
 
 #ifdef CONFIG_QCA_SPI
 	int gpio_node;
