@@ -109,99 +109,25 @@ struct dumpinfo_t dumpinfo_s[] = {
 int dump_entries_s = ARRAY_SIZE(dumpinfo_s);
 u32 *tz_wonce = (u32 *)CONFIG_IPQ6018_TZ_WONCE_4_ADDR;
 
-
-void uart2_configure_mux(void)
-{
-	unsigned long cfg_rcgr;
-
-	cfg_rcgr = readl(GCC_BLSP1_UART2_APPS_CFG_RCGR);
-	/* Clear mode, src sel, src div */
-	cfg_rcgr &= ~(GCC_UART_CFG_RCGR_MODE_MASK |
-			GCC_UART_CFG_RCGR_SRCSEL_MASK |
-			GCC_UART_CFG_RCGR_SRCDIV_MASK);
-
-	cfg_rcgr |= ((UART2_RCGR_SRC_SEL << GCC_UART_CFG_RCGR_SRCSEL_SHIFT)
-			& GCC_UART_CFG_RCGR_SRCSEL_MASK);
-
-	cfg_rcgr |= ((UART2_RCGR_SRC_DIV << GCC_UART_CFG_RCGR_SRCDIV_SHIFT)
-			& GCC_UART_CFG_RCGR_SRCDIV_MASK);
-
-	cfg_rcgr |= ((UART2_RCGR_MODE << GCC_UART_CFG_RCGR_MODE_SHIFT)
-			& GCC_UART_CFG_RCGR_MODE_MASK);
-
-	writel(cfg_rcgr, GCC_BLSP1_UART2_APPS_CFG_RCGR);
-}
-
-void uart2_set_rate_mnd(unsigned int m,
-			unsigned int n, unsigned int two_d)
-{
-	writel(m, GCC_BLSP1_UART2_APPS_M);
-	writel(NOT_N_MINUS_M(n, m), GCC_BLSP1_UART2_APPS_N);
-	writel(NOT_2D(two_d), GCC_BLSP1_UART2_APPS_D);
-}
-
-int uart2_trigger_update(void)
-{
-	unsigned long cmd_rcgr;
-	int timeout = 0;
-
-	cmd_rcgr = readl(GCC_BLSP1_UART2_APPS_CMD_RCGR);
-	cmd_rcgr |= UART2_CMD_RCGR_UPDATE;
-	writel(cmd_rcgr, GCC_BLSP1_UART2_APPS_CMD_RCGR);
-
-	while (readl(GCC_BLSP1_UART2_APPS_CMD_RCGR) & UART2_CMD_RCGR_UPDATE) {
-		if (timeout++ >= CLOCK_UPDATE_TIMEOUT_US) {
-			printf("Timeout waiting for UART2 clock update\n");
-			return -ETIMEDOUT;
-		}
-		udelay(1);
-	}
-	cmd_rcgr = readl(GCC_BLSP1_UART2_APPS_CMD_RCGR);
-	return 0;
-}
-
-void uart2_toggle_clock(void)
-{
-	unsigned long cbcr_val;
-
-	cbcr_val = readl(GCC_BLSP1_UART2_APPS_CBCR);
-	cbcr_val |= UART2_CBCR_CLK_ENABLE;
-	writel(cbcr_val, GCC_BLSP1_UART2_APPS_CBCR);
-}
-
-void uart2_clock_config(unsigned int m,
-			unsigned int n, unsigned int two_d)
-{
-	uart2_configure_mux();
-	uart2_set_rate_mnd(m, n, two_d);
-	uart2_trigger_update();
-	uart2_toggle_clock();
-}
+#define BLSP1_UART0_BASE	0x078AF000
+#define UART_PORT_ID(reg)	((reg - BLSP1_UART0_BASE) / 0x1000)
 
 void qca_serial_init(struct ipq_serial_platdata *plat)
 {
-	int node, uart2_node;
+	int ret;
 
-	writel(1, GCC_BLSP1_UART1_APPS_CBCR);
-
-	node = fdt_path_offset(gd->fdt_blob, "/serial@78B1000/serial_gpio");
-	if (node < 0) {
-		printf("Could not find serial_gpio node\n");
+	if (plat->gpio_node < 0) {
+		printf("serial_init: unable to find gpio node \n");
 		return;
 	}
 
-	if (plat->port_id == 1) {
-		uart2_node = fdt_path_offset(gd->fdt_blob, "uart2");
-		if (uart2_node < 0) {
-			printf("Could not find uart2 node\n");
-			return;
-		}
-		node = fdt_subnode_offset(gd->fdt_blob,
-				uart2_node, "serial_gpio");
-		uart2_clock_config(plat->m_value, plat->n_value, plat->d_value);
-		writel(1, GCC_BLSP1_UART2_APPS_CBCR);
-	}
-	qca_gpio_init(node);
+	qca_gpio_init(plat->gpio_node);
+	plat->port_id = UART_PORT_ID(plat->reg_base);
+	ret = uart_clock_config(plat);
+	if (ret)
+		printf("UART clock config failed %d \n", ret);
+
+	return;
 }
 
 int do_pmic_reset()
