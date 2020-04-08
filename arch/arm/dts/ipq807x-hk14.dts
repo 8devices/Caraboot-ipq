@@ -47,10 +47,6 @@
 				phy_type = <1>;
 			};
 			port@4 {
-				phy_address = <4>;
-				phy_type = <1>;
-			};
-			port@5 {
 				phy_address = <7>;
 				phy_type = <3>;
 			};
