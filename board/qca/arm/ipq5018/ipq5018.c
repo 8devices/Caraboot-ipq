@@ -893,3 +893,16 @@ void board_pci_deinit()
 	return ;
 }
 #endif
+
+void fdt_fixup_wcss_rproc_for_atf(void *blob)
+{
+/*
+ * Set q6 in non-secure mode only if ATF is enable
+ */
+	parse_fdt_fixup("/soc/qcom_q6v5_wcss@CD00000%qcom,nosecure%1", blob);
+	parse_fdt_fixup("/soc/qcom_q6v5_wcss@CD00000%qca,wcss-aon-reset-seq%1", blob);
+/*
+ * Set btss in non-secure mode only if ATF is enable
+ */
+	parse_fdt_fixup("/soc/bt@7000000%qcom,nosecure%1", blob);
+}
