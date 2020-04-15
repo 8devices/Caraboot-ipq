@@ -472,6 +472,7 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 	kernel_img_info.kernel_load_addr = request;
 
 	if (ipq_fs_on_nand) {
+#ifdef CONFIG_CMD_UBI
 		/*
 		 * The kernel will be available inside a UBI volume
 		 */
@@ -512,6 +513,7 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 
 		kernel_img_info.kernel_load_size =
 			(unsigned int)ubi_get_volume_size("kernel");
+#endif
 #ifdef CONFIG_QCA_MMC
 	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH ||
 			((sfi->flash_type == SMEM_BOOT_SPI_FLASH) &&

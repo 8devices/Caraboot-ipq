@@ -20,7 +20,7 @@ CONFIG_SYS_PROMPT="IPQ5018# "
 #
 # Tiny support
 #
-# CONFIG_IPQ_TINY is not set
+CONFIG_IPQ_TINY=y
 
 #
 # Info commands
@@ -33,7 +33,7 @@ CONFIG_CMD_CONSOLE=y
 #
 # CONFIG_CMD_BOOTD is not set
 CONFIG_CMD_BOOTM=y
-CONFIG_CMD_GO=y
+# CONFIG_CMD_GO is not set
 # CONFIG_CMD_RUN is not set
 # CONFIG_CMD_IMI is not set
 # CONFIG_CMD_IMLS is not set
@@ -54,7 +54,7 @@ CONFIG_CMD_ENV_EXISTS=y
 CONFIG_CMD_MEMORY=y
 CONFIG_CMD_CRC32=y
 # CONFIG_LOOPW is not set
-CONFIG_CMD_MEMTEST=y
+# CONFIG_CMD_MEMTEST is not set
 # CONFIG_CMD_MX_CYCLIC is not set
 # CONFIG_CMD_MEMINFO is not set
 
@@ -64,15 +64,15 @@ CONFIG_CMD_MEMTEST=y
 
 CONFIG_CMD_DM=y
 # CONFIG_CMD_DEMO is not set
-CONFIG_CMD_LOADB=y
-CONFIG_CMD_LOADS=y
+# CONFIG_CMD_LOADB is not set
+# CONFIG_CMD_LOADS is not set
 CONFIG_CMD_FLASH=y
 # CONFIG_CMD_NAND is not set
 # CONFIG_CMD_SF is not set
 # CONFIG_CMD_SPI is not set
 # CONFIG_CMD_I2C is not set
 # CONFIG_CMD_USB is not set
-CONFIG_CMD_FPGA=y
+# CONFIG_CMD_FPGA is not set
 
 #
 # Shell scripting commands
@@ -90,7 +90,7 @@ CONFIG_CMD_NET=y
 # CONFIG_CMD_TFTPSRV is not set
 # CONFIG_CMD_RARP is not set
 # CONFIG_CMD_DHCP is not set
-CONFIG_CMD_NFS=y
+# CONFIG_CMD_NFS is not set
 # CONFIG_CMD_PING is not set
 # CONFIG_CMD_CDP is not set
 # CONFIG_CMD_SNTP is not set
@@ -105,8 +105,8 @@ CONFIG_CMD_MISC=y
 CONFIG_CMD_PART=y
 CONFIG_PARTITION_UUIDS=y
 # CONFIG_CMD_TIMER is not set
-CONFIG_IPQ_TZT=y
-CONFIG_UBI_WRITE=y
+# CONFIG_IPQ_TZT is not set
+# CONFIG_UBI_WRITE is not set
 #
 # Boot timing
 #
@@ -178,7 +178,7 @@ CONFIG_SIMPLE_BUS=y
 #
 # CONFIG_DM_I2C_COMPAT is not set
 # CONFIG_CROS_EC_KEYB is not set
-CONFIG_IPQ5018_I2C=y
+# CONFIG_IPQ5018_I2C is not set
 
 #
 # LED Support
@@ -197,7 +197,7 @@ CONFIG_IPQ5018_I2C=y
 # MMC Host controller Support
 #
 # CONFIG_DM_MMC is not set
-CONFIG_MMC_FLASH=y
+# CONFIG_MMC_FLASH is not set
 
 #
 # NAND Device Support
@@ -213,7 +213,7 @@ CONFIG_MMC_FLASH=y
 #
 # Serial NAND
 #
-CONFIG_QPIC_SERIAL=y
+# CONFIG_QPIC_SERIAL is not set
 
 #
 # SPI Flash Support
@@ -228,7 +228,7 @@ CONFIG_QPIC_SERIAL=y
 # PCI
 #
 # CONFIG_DM_PCI is not set
-CONFIG_PCI_IPQ=y
+# CONFIG_PCI_IPQ is not set
 
 #
 # Pin controllers
@@ -273,9 +273,9 @@ CONFIG_REQUIRE_SERIAL_CONSOLE=y
 #
 # USB support
 #
-CONFIG_USB=y
-CONFIG_DM_USB=y
-CONFIG_USB_XHCI_IPQ=y
+# CONFIG_USB is not set
+# CONFIG_DM_USB is not set
+# CONFIG_USB_XHCI_IPQ is not set
 
 #
 # Graphics support
