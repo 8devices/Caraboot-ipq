@@ -23,6 +23,34 @@
 #define MSM_SDC1_SDHCI_BASE		0x7804000
 
 /*
+ * GMAC Block Register
+ */
+#define GCC_GMAC0_BCR			0x01819000
+#define GCC_SNOC_GMAC0_AXI_CBCR		0x01826084
+#define GCC_SNOC_GMAC0_AHB_CBCR		0x018260A0
+#define GCC_GMAC0_PTP_CBCR		0x01868300
+#define GCC_GMAC0_CFG_CBCR		0x01868304
+#define GCC_GMAC0_SYS_CBCR		0x01868190
+
+#define GCC_GMAC1_BCR			0x01819100
+#define GCC_SNOC_GMAC1_AXI_CBCR		0x01826088
+#define GCC_SNOC_GMAC1_AHB_CBCR		0x018260A4
+#define GCC_GMAC1_SYS_CBCR		0x01868310
+#define GCC_GMAC1_PTP_CBCR		0x01868320
+#define GCC_GMAC1_CFG_CBCR		0x01868324
+/*
+ * GEPHY Block Register
+ */
+#define GCC_GEPHY_BCR			0x01856000
+#define GCC_GEPHY_MISC			0x01856004
+
+/*
+ * UNIPHY Block Register
+ */
+#define GCC_UNIPHY_BCR			0x01856100
+#define GCC_UNIPHY_AHB_CBCR		0x01856108
+#define GCC_UNIPHY_SYS_CBCR		0x0185610C
+/*
  * GCC-SDCC Registers
  */
 
@@ -317,9 +345,15 @@ unsigned int __invoke_psci_fn_smc(unsigned int, unsigned int,
 					 unsigned int, unsigned int);
 
 typedef struct {
-	uint base;
+	u32 base;
 	int unit;
-	uint phy_addr;
+	int phy_addr;
+	int phy_interface_mode;
+	int phy_napa_gpio;
+	int phy_type;
+	u32 mac_pwr0;
+	u32 mac_pwr1;
+	int ipq_swith;
 	const char phy_name[MDIO_NAME_LEN];
 } ipq_gmac_board_cfg_t;
 

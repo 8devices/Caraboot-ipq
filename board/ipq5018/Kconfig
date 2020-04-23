@@ -45,4 +45,7 @@ config IPQ_TINY_SPI_NOR
 config NAND_FLASH
 	bool "Enable NAND driver for ipq5018"
 
+config GEPHY
+	bool "Enable Internel GEPHY for ipq5018"
+
 endif

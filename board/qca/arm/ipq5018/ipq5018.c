@@ -567,6 +567,72 @@ unsigned long timer_read_counter(void)
 	return 0;
 }
 
+static void set_ext_mdio_gpio(void)
+{
+	/*  mdc  */
+	writel(0x7, (unsigned int *)GPIO_CONFIG_ADDR(36));
+	/*  mdio */
+	writel(0x7, (unsigned int *)GPIO_CONFIG_ADDR(37));
+}
+
+static void set_napa_phy_gpio(int gpio)
+{
+	unsigned int *napa_gpio_base;
+
+	napa_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(gpio);
+	writel(0x203, napa_gpio_base);
+	gpio_direction_output(gpio, 0x0);
+	mdelay(500);
+	gpio_set_value(gpio, 0x1);
+}
+
+void gmac_clock_enable(void)
+{
+	/* GEPHY BCR Enable */
+	writel(0x0, GCC_GEPHY_BCR);
+	udelay(10);
+
+	/* GMAC0 BCR Enable */
+	writel(0x0, GCC_GMAC0_BCR);
+	udelay(10);
+	/* GMAC0 AHB clock enable */
+	writel(0x1, GCC_SNOC_GMAC0_AHB_CBCR);
+	udelay(10);
+	/* GMAC0 SYS clock */
+	writel(0x1, GCC_GMAC0_SYS_CBCR);
+	udelay(10);
+	/* GMAC0 PTP clock */
+	writel(0x1, GCC_GMAC0_PTP_CBCR);
+	udelay(10);
+	/* GMAC0 CFG clock */
+	writel(0x1, GCC_GMAC0_CFG_CBCR);
+	udelay(10);
+
+	/* UNIPHY BCR Enable */
+	writel(0x0, GCC_UNIPHY_BCR);
+	udelay(10);
+	writel(0x1, GCC_UNIPHY_AHB_CBCR);
+	udelay(10);
+	writel(0x1, GCC_UNIPHY_SYS_CBCR);
+	udelay(10);
+
+	/* GMAC1 BCR Enable */
+	writel(0x0, GCC_GMAC1_BCR);
+	udelay(10);
+	/* GMAC0 AHB clock enable */
+	writel(0x1, GCC_SNOC_GMAC1_AHB_CBCR);
+	udelay(10);
+	/* GMAC0 SYS clock */
+	writel(0x1, GCC_GMAC1_SYS_CBCR);
+	udelay(10);
+	/* GMAC0 PTP clock */
+	writel(0x1, GCC_GMAC1_PTP_CBCR);
+	udelay(10);
+	/* GMAC0 CFG clock */
+	writel(0x1, GCC_GMAC1_CFG_CBCR);
+	udelay(10);
+}
+
 int board_eth_init(bd_t *bis)
 {
 	int status;
@@ -578,6 +644,15 @@ int board_eth_init(bd_t *bis)
 
 	gmac_cfg_node = fdt_path_offset(gd->fdt_blob, "/gmac_cfg");
 	if (gmac_cfg_node >= 0) {
+		/*
+		 * Clock enable
+		 */
+		gmac_clock_enable();
+
+		status =  fdtdec_get_uint(gd->fdt_blob,offset, "ext_mdio_gpio", 0);
+		if (status){
+			set_ext_mdio_gpio();
+		}
 		for (offset = fdt_first_subnode(gd->fdt_blob, gmac_cfg_node);
 			offset > 0;
 			offset = fdt_next_subnode(gd->fdt_blob, offset) , loop++) {
@@ -591,12 +666,33 @@ int board_eth_init(bd_t *bis)
 			gmac_cfg[loop].phy_addr = fdtdec_get_uint(gd->fdt_blob,
 					offset, "phy_address", 0);
 
+			gmac_cfg[loop].phy_interface_mode = fdtdec_get_uint(gd->fdt_blob,
+					offset, "phy_interface_mode", 0);
+
+			gmac_cfg[loop].phy_napa_gpio = fdtdec_get_uint(gd->fdt_blob,
+					offset, "napa_gpio", 0);
+			if (gmac_cfg[loop].phy_napa_gpio){
+				set_napa_phy_gpio(gmac_cfg[loop].phy_napa_gpio);
+			}
+
+			gmac_cfg[loop].phy_type = fdtdec_get_uint(gd->fdt_blob,
+					offset, "phy_type", -1);
+
+			gmac_cfg[loop].mac_pwr0 = fdtdec_get_uint(gd->fdt_blob,
+					offset, "mac_pwr0", 0);
+
+			gmac_cfg[loop].mac_pwr1 = fdtdec_get_uint(gd->fdt_blob,
+					offset, "mac_pwr1", 0);
+
+			gmac_cfg[loop].ipq_swith = fdtdec_get_uint(gd->fdt_blob,
+					offset, "s17c_switch_enable", 0);
+
 			phy_name_ptr = (char*)fdt_getprop(gd->fdt_blob, offset,
 					"phy_name", &phy_name_len);
 
 			strlcpy((char *)gmac_cfg[loop].phy_name, phy_name_ptr, phy_name_len);
-                }
-        }
+		}
+	}
 	gmac_cfg[loop].unit = -1;
 
 	ipq_gmac_common_init(gmac_cfg);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020  The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -16,6 +16,33 @@
 #include <common.h>
 #include <net.h>
 #include <configs/ipq5018.h>
+
+#define GEPHY					0x7 /* Dummy */
+
+#define GEPHY_PHY_TYPE				0x1
+#define NAPA_PHY_TYPE				0x2
+
+/* GMAC0 GCC clock */
+#define GCC_GMAC0_RX_CMD_RCGR			0x01868020
+#define GCC_GMAC0_RX_CFG_RCGR			0x01868024
+#define GCC_GMAC0_TX_CMD_RCGR			0x01868028
+#define GCC_GMAC0_TX_CFG_RCGR			0x0186802C
+#define GCC_GMAC0_RX_CBCR			0x01868240
+#define GCC_GMAC0_TX_CBCR			0x01868244
+#define GCC_GMAC0_RX_MISC			0x01868420
+#define GCC_GMAC0_TX_MISC			0x01868424
+#define GCC_GMAC0_MISC				0x01868428
+
+/* GMAC1 GCC Clock */
+#define GCC_GMAC1_RX_CMD_RCGR			0x01868030
+#define GCC_GMAC1_RX_CFG_RCGR			0x01868034
+#define GCC_GMAC1_TX_CMD_RCGR			0x01868038
+#define GCC_GMAC1_TX_CFG_RCGR			0x0186803C
+#define GCC_GMAC1_RX_CBCR			0x01868248
+#define GCC_GMAC1_TX_CBCR			0x0186824C
+#define GCC_GMAC1_RX_MISC			0x01868430
+#define GCC_GMAC1_TX_MISC			0x01868434
+#define GCC_GMAC1_MISC				0x01868438
 
 #define CONFIG_MACRESET_TIMEOUT			(3 * CONFIG_SYS_HZ)
 #define CONFIG_MDIO_TIMEOUT			(3 * CONFIG_SYS_HZ)
@@ -235,7 +262,9 @@ struct ipq_eth_dev {
 	uint			duplex;
 	uint			phy_configured;
 	uint			mac_unit;
+	uint			phy_type;
 	uint			mac_ps;
+	uint			ipq_swith;
 	int			link_printed;
 	u32			padding;
 	ipq_gmac_desc_t		*desc_tx[NO_OF_TX_DESC];

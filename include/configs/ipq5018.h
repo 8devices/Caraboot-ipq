@@ -220,6 +220,7 @@ extern loff_t board_env_size;
 */
 
 #define CONFIG_IPQ5018_GMAC
+#define CONFIG_IPQ5018_MDIO
 
 #define CONFIG_NET_RETRY_COUNT			5
 #define CONFIG_SYS_RX_ETH_BUFFER		16
@@ -231,10 +232,16 @@ extern loff_t board_env_size;
 #define CONFIG_NETMASK				255.255.255.0
 #define CONFIG_SERVERIP				192.168.10.19
 #define CONFIG_CMD_TFTPPUT
-#define CONFIG_IPQ_MDIO				2
+#define CONFIG_IPQ_MDIO				1
 #define CONFIG_IPQ_ETH_INIT_DEFER
-
 #define CONFIG_IPQ_NO_MACS			2
+
+/*
+ * PHY
+ */
+#define CONFIG_GEPHY
+#define CONFIG_QCA8033_PHY
+#define CONFIG_QCA8081_PHY
 
 /*
  * USB Support
