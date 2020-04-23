@@ -17,7 +17,6 @@
 #include <asm/errno.h>
 #include <environment.h>
 #include <fdtdec.h>
-#include <asm/arch-qca-common/qpic_nand.h>
 #include <asm/arch-qca-common/gpio.h>
 #include <asm/arch-qca-common/uart.h>
 #include <asm/arch-qca-common/scm.h>
@@ -29,6 +28,9 @@
 #endif
 #ifdef CONFIG_USB_XHCI_IPQ
 #include <usb.h>
+#endif
+#ifdef CONFIG_QPIC_NAND
+#include <asm/arch-qca-common/qpic_nand.h>
 #endif
 
 #define DLOAD_MAGIC_COOKIE	0x10

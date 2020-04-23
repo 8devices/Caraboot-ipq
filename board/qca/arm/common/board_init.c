@@ -24,10 +24,11 @@
 #include <sdhci.h>
 
 DECLARE_GLOBAL_DATA_PTR;
-
+#ifdef CONFIG_ENV_IS_IN_NAND
 extern int nand_env_device;
 extern env_t *nand_env_ptr;
 extern char *nand_env_name_spec;
+#endif
 extern char *sf_env_name_spec;
 extern int nand_saveenv(void);
 extern int sf_saveenv(void);
@@ -138,12 +139,16 @@ int board_init(void)
 
 #ifndef CONFIG_ENV_IS_NOWHERE
 	switch (sfi->flash_type) {
+#ifdef CONFIG_ENV_IS_IN_NAND
 	case SMEM_BOOT_NAND_FLASH:
 	case SMEM_BOOT_QSPI_NAND_FLASH:
 		nand_env_device = CONFIG_NAND_FLASH_INFO_IDX;
 		break;
+#endif
 	case SMEM_BOOT_SPI_FLASH:
+#ifdef CONFIG_ENV_IS_IN_NAND
 		nand_env_device = CONFIG_SPI_FLASH_INFO_IDX;
+#endif
 		break;
 	case SMEM_BOOT_MMC_FLASH:
 	case SMEM_BOOT_NO_FLASH:
@@ -196,9 +201,11 @@ int board_init(void)
 		env_name_spec = mmc_env_name_spec;
 #endif
 	} else {
+#ifdef CONFIG_ENV_IS_IN_NAND
 		saveenv = nand_saveenv;
 		env_ptr = nand_env_ptr;
 		env_name_spec = nand_env_name_spec;
+#endif
 	}
 #endif
 	ret = ipq_board_usb_init();

@@ -209,6 +209,7 @@ CONFIG_MMC_FLASH=y
 #
 # Generic NAND options
 #
+CONFIG_NAND_FLASH=y
 
 #
 # Serial NAND

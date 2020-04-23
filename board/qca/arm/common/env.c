@@ -18,10 +18,10 @@
 #ifdef CONFIG_SDHCI_SUPPORT
 #include <sdhci.h>
 #endif
-
+#ifdef CONFIG_ENV_IS_IN_NAND
 extern void nand_env_relocate_spec(void);
 extern int nand_env_init(void);
-
+#endif
 #ifdef CONFIG_ENV_IS_IN_SPI_FLASH
 extern void sf_env_relocate_spec(void);
 extern int sf_env_init(void);
@@ -58,7 +58,9 @@ int env_init(void)
 		ret = mmc_env_init();
 #endif
 	} else {
+#ifdef CONFIG_ENV_IS_IN_NAND
 		ret = nand_env_init();
+#endif
 	}
 
 	return ret;
@@ -85,7 +87,9 @@ void env_relocate_spec(void)
                 mmc_env_relocate_spec();
 #endif
 	} else {
+#ifdef CONFIG_ENV_IS_IN_NAND
 		nand_env_relocate_spec();
+#endif
 	}
 
 };

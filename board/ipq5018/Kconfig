@@ -42,4 +42,7 @@ config IPQ_MTD_NOR
 config IPQ_TINY_SPI_NOR
 	bool "This config helps to update spi-nor related updated in ipq5018"
 
+config NAND_FLASH
+	bool "Enable NAND driver for ipq5018"
+
 endif

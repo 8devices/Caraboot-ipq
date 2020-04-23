@@ -209,6 +209,7 @@ CONFIG_SIMPLE_BUS=y
 #
 # Generic NAND options
 #
+# CONFIG_NAND_FLASH is not set
 
 #
 # Serial NAND
