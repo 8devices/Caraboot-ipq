@@ -23,7 +23,11 @@
 #include <spi.h>
 #include <spi_flash.h>
 #endif
-
+#if defined(CONFIG_ART_COMPRESSED) &&	\
+	(defined(CONFIG_GZIP) || defined(CONFIG_LZMA))
+#include <mapmem.h>
+#include <lzma/LzmaTools.h>
+#endif
 #ifdef CONFIG_QCA_MMC
 #ifndef CONFIG_SDHCI_SUPPORT
 extern qca_mmc mmc_host;
@@ -52,6 +56,10 @@ int get_eth_mac_address(uchar *enetaddr, uint no_of_macs)
 #endif
 #ifdef CONFIG_IPQ_TINY_SPI_NOR
 	struct spi_flash *flash = NULL;
+#if defined(CONFIG_ART_COMPRESSED) && (defined(CONFIG_GZIP) || defined(CONFIG_LZMA))
+	void *load_buf, *image_buf;
+	unsigned long img_size;
+#endif
 #endif
 
 	if (sfi->flash_type != SMEM_BOOT_MMC_FLASH) {
@@ -85,7 +93,33 @@ int get_eth_mac_address(uchar *enetaddr, uint no_of_macs)
 			printf("No SPI flash device found\n");
 			ret = -1;
 		} else {
-			ret = spi_flash_read(flash, art_offset, length, enetaddr);
+#if defined(CONFIG_ART_COMPRESSED) && (defined(CONFIG_GZIP) || defined(CONFIG_LZMA))
+		image_buf = map_sysmem(CONFIG_SYS_LOAD_ADDR, 0);
+		load_buf = map_sysmem(CONFIG_SYS_LOAD_ADDR + 0x100000, 0);
+		img_size = qca_smem_flash_info.flash_block_size * size_blocks;
+		ret = spi_flash_read(flash, art_offset, img_size, image_buf);
+		if (ret == 0) {
+			ret = -1;
+#ifdef CONFIG_GZIP
+			ret = gunzip(load_buf, img_size, image_buf, &img_size);
+#endif
+#ifdef CONFIG_LZMA
+			if (ret != 0)
+				ret = lzmaBuffToBuffDecompress(load_buf,
+					(SizeT *)&img_size,
+					image_buf,
+					(SizeT)img_size);
+#endif
+			if (ret == 0) {
+				memcpy(enetaddr, load_buf, length);
+			} else {
+				printf("Invalid compression type..\n");
+				ret = -1;
+			}
+		}
+#else
+		ret = spi_flash_read(flash, art_offset, length, enetaddr);
+#endif
 		}
 		/*
 		 * Avoid unused warning
