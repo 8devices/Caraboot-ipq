@@ -21,29 +21,7 @@
 		reg = <0x78af000 0x200>;
 		id = <2>;
 		bit_rate = <0xff>;
-		status = "ok";
-		serial_gpio {
-			gpio1 {
-				gpio = <20>;
-				func = <1>;
-				pull = <GPIO_PULL_DOWN>;
-				oe = <GPIO_OE_DISABLE>;
-				drvstr = <GPIO_2MA>;
-				od_en = <GPIO_OD_DISABLE>;
-				sr_en = <GPIO_SR_DISABLE>;
-				pu_res =<GPIO_PULL_RES0>;
-			};
-			gpio2 {
-				gpio = <21>;
-				func = <1>;
-				pull = <GPIO_PULL_DOWN>;
-				oe = <GPIO_OE_DISABLE>;
-				drvstr = <GPIO_2MA>;
-				od_en = <GPIO_OD_DISABLE>;
-				sr_en = <GPIO_SR_DISABLE>;
-				pu_res =<GPIO_PULL_RES0>;
-			};
-		};
+		status = "disabled";
 	};
 
 	timer {
@@ -54,11 +32,38 @@
 	};
 
 	spi {
-		status = "ok";
 		compatible = "qcom,spi-qup-v2.7.0";
 		wr_pipe_0 = <4>;
 		rd_pipe_0 = <5>;
-		spi_gpio {};
+		status = "ok";
+		spi_gpio {
+			blsp0_spi_clk {
+				gpio = <10>;
+				func = <1>;
+				pull = <GPIO_NO_PULL>;
+				oe = <GPIO_OE_ENABLE>;
+				drvstr = <GPIO_8MA>;
+			};
+			blsp0_spi_mosi {
+				gpio = <11>;
+				func = <1>;
+				pull = <GPIO_NO_PULL>;
+				oe = <GPIO_OE_ENABLE>;
+				drvstr = <GPIO_8MA>;
+			};
+			blsp0_spi_miso {
+				gpio = <12>;
+				func = <1>;
+				pull = <GPIO_NO_PULL>;
+				drvstr = <GPIO_8MA>;
+			};
+			blsp0_spi_cs {
+				gpio = <13>;
+				func = <1>;
+				oe = <GPIO_OE_ENABLE>;
+				drvstr = <GPIO_8MA>;
+			};
+		};
 	};
 
 	nand: nand-controller@79B0000 {
@@ -66,51 +71,7 @@
 		#size-cells = <0>;
 		compatible = "qcom,qpic-nand-v2.1.1";
 		reg = <0x79B0000 0x10000>;
-
-		nand_gpio {
-			qspi_data0 {
-				gpio = <7>;
-				func = <2>;
-				pull = <GPIO_PULL_DOWN>;
-				drvstr = <GPIO_8MA>;
-				oe = <GPIO_OE_DISABLE>;
-			};
-			qspi_data1 {
-				gpio = <6>;
-				func = <2>;
-				pull = <GPIO_PULL_DOWN>;
-				drvstr = <GPIO_8MA>;
-				oe = <GPIO_OE_DISABLE>;
-			};
-			qspi_data2 {
-				gpio = <5>;
-				func = <2>;
-				pull = <GPIO_PULL_DOWN>;
-				drvstr = <GPIO_8MA>;
-				oe = <GPIO_OE_DISABLE>;
-			};
-			qspi_data3 {
-				gpio = <4>;
-				func = <2>;
-				pull = <GPIO_PULL_DOWN>;
-				drvstr = <GPIO_8MA>;
-				oe = <GPIO_OE_DISABLE>;
-			};
-			qspi_cs_n {
-				gpio = <8>;
-				func = <2>;
-				pull = <GPIO_PULL_DOWN>;
-				drvstr = <GPIO_8MA>;
-				oe = <GPIO_OE_DISABLE>;
-			};
-			qspi_clk {
-				gpio = <9>;
-				func = <2>;
-				pull = <GPIO_PULL_DOWN>;
-				drvstr = <GPIO_8MA>;
-				oe = <GPIO_OE_DISABLE>;
-			};
-		};
+		status = "disabled";
 	};
 
 	i2c@78b6000 {
@@ -163,46 +124,7 @@
 				"axi_conf", "pci_rst", "pci_phy";
 		perst_gpio = <27>;
 		gen3 = <1>;
-
-		pci_gpio {
-			gpio1 {
-				gpio = <14>;
-				func = <0>;
-				pull = <GPIO_NO_PULL>;
-				drvstr = <GPIO_2MA>;
-				oe = <GPIO_OE_ENABLE>;
-				od_en = <GPIO_OD_DISABLE>;
-				pu_res = <GPIO_PULL_RES0>;
-			};
-			gpio2 {
-				gpio = <15>;
-				func = <0>;
-				pull = <GPIO_NO_PULL>;
-				drvstr = <GPIO_2MA>;
-				oe = <GPIO_OE_ENABLE>;
-				od_en = <GPIO_OD_DISABLE>;
-				pu_res = <GPIO_PULL_RES0>;
-			};
-			gpio3 {
-				gpio = <16>;
-				func = <0>;
-				pull = <GPIO_NO_PULL>;
-				drvstr = <GPIO_2MA>;
-				oe = <GPIO_OE_DISABLE>;
-				od_en = <GPIO_OD_DISABLE>;
-				pu_res = <GPIO_PULL_RES0>;
-			};
-			gpio4 {
-				gpio = <27>;
-				func = <0>;
-				out = <GPIO_OUT_HIGH>;
-				pull = <GPIO_NO_PULL>;
-				drvstr = <GPIO_2MA>;
-				oe = <GPIO_OE_ENABLE>;
-				od_en = <GPIO_OD_DISABLE>;
-				pu_res = <GPIO_PULL_RES0>;
-			};
-		};
+		status = "disabled";
 	};
 
 	pci@a0000000 {
@@ -221,28 +143,6 @@
 				"axi_conf", "pci_rst", "pci_phy";
 		perst_gpio = <28>;
 		gen3 = <1>;
-
-		pci_gpio {
-			gpio1 {
-				gpio = <17>;
-				func = <0>;
-				pull = <GPIO_NO_PULL>;
-				drvstr = <GPIO_2MA>;
-				oe = <GPIO_OE_ENABLE>;
-				od_en = <GPIO_OD_DISABLE>;
-				pu_res = <GPIO_PULL_RES0>;
-			};
-			gpio2 {
-				gpio = <28>;
-				func = <0>;
-				out = <GPIO_OUT_HIGH>;
-				pull = <GPIO_NO_PULL>;
-				drvstr = <GPIO_2MA>;
-				oe = <GPIO_OE_ENABLE>;
-				od_en = <GPIO_OD_DISABLE>;
-				pu_res = <GPIO_PULL_RES0>;
-			};
-		};
+		status = "disabled";
 	};
-
 };

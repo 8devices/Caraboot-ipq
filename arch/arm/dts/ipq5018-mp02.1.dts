@@ -26,15 +26,53 @@
 		gmac_gpio = "/gmac_gpio";
 		usb0 = "/xhci@8a00000";
 		pci0 = "/pci@80000000";
+		pci1 = "/pci@a0000000";
 	};
 
-	mmc: sdhci@7804000 {
-		status = "disabled";
-	};
-
-	nand: nand-controller@79B0000 {
+	console: serial@78AF000 {
 		status = "ok";
-		nand_gpio {};
+		serial_gpio {
+			blsp0_uart_rx {
+				gpio = <28>;
+				func = <1>;
+				pull = <GPIO_PULL_DOWN>;
+				drvstr = <GPIO_8MA>;
+				od_en = <GPIO_OD_DISABLE>;
+			};
+			blsp0_uart_tx {
+				gpio = <29>;
+				func = <1>;
+				pull = <GPIO_NO_PULL>;
+				drvstr = <GPIO_8MA>;
+				od_en = <GPIO_OD_DISABLE>;
+			};
+		};
+	};
+
+	pci0: pci@80000000 {
+		status = "ok";
+		pci_gpio {
+			pcie_rst_n_5G {
+				gpio = <15>;
+				func = <0>;
+				pull = <GPIO_NO_PULL>;
+				od_en = <GPIO_OD_DISABLE>;
+				drvstr = <GPIO_8MA>;
+			};
+		};
+	};
+
+	pci1: pci@a0000000 {
+		status = "ok";
+		pci_gpio {
+			pcie_rst_n_6G {
+				gpio = <27>;
+				func = <0>;
+				pull = <GPIO_NO_PULL>;
+				od_en = <GPIO_OD_DISABLE>;
+				drvstr = <GPIO_8MA>;
+			};
+		};
 	};
 
 	gmac_cfg {
