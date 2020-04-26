@@ -227,7 +227,6 @@
 
 #define CMD_UPDATE				0x1
 #define ROOT_EN					0x2
-#define PIPE_CLK_ENABLE				0x4FF1
 #define CLK_DISABLE				0x0
 #define NOC_HANDSHAKE_FSM_EN			(1 << 15)
 
@@ -259,6 +258,11 @@
 #define GCC_PCIE0_AXI_CMD_RCGR			0x01875050
 #define GCC_PCIE0_AXI_CFG_RCGR			0x01875054
 #define GCC_PCIE0_LINK_DOWN_BCR			0x018750A8
+#define GCC_PCIE0_AUX_CFG_RCGR_SRC_SEL		(0 << 8)
+#define GCC_PCIE0_AUX_CFG_RCGR_SRC_DIV		0x17
+#define GCC_PCIE0_AXI_CFG_RCGR_SRC_SEL		(2 << 8)
+#define GCC_PCIE0_AXI_CFG_RCGR_SRC_DIV		0x9
+
 
 #define GCC_PCIE1_BOOT_CLOCK_CTL		0x01876000
 #define GCC_PCIE1_BCR				0x01876004
@@ -277,6 +281,21 @@
 #define GCC_PCIE1_AXI_S_BRIDGE_CBCR		0x01876048
 #define GCC_PCIE1_AXI_CMD_RCGR			0x01876050
 #define GCC_PCIE1_AXI_CFG_RCGR			0x01876054
+#define GCC_PCIE1_AUX_CFG_RCGR_SRC_SEL		(0 << 8)
+#define GCC_PCIE1_AUX_CFG_RCGR_SRC_DIV		0x17
+#define GCC_PCIE1_AXI_CFG_RCGR_SRC_SEL		(1 << 8)
+#define GCC_PCIE1_AXI_CFG_RCGR_SRC_DIV		0x7
+
+#define PCIE_AXI_M_CBCR			0x8
+#define PCIE_AXI_S_CBCR			0xC
+#define PCIE_AHB_CBCR			0x10
+#define PCIE_AUX_CBCR			0x14
+#define PCIE_PIPE_CBCR			0x18
+#define PCIE_AUX_CMD_RCGR		0x20
+#define PCIE_AUX_CFG_RCGR		0x24
+#define PCIE_AXI_S_BRIDGE_CBCR		0x48
+#define PCIE_AXI_CMD_RCGR		0x50
+#define PCIE_AXI_CFG_RCGR		0x54
 
 #define NOT_2D(two_d)                     (~two_d)
 #define NOT_N_MINUS_M(n,m)                (~(n - m))
