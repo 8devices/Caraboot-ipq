@@ -916,3 +916,8 @@ void fdt_fixup_wcss_rproc_for_atf(void *blob)
  */
 	parse_fdt_fixup("/soc/bt@7000000%qcom,nosecure%1", blob);
 }
+
+void run_tzt(void *address)
+{
+	execute_tzt(address);
+}
