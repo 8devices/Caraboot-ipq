@@ -358,4 +358,9 @@ extern loff_t board_env_size;
 #define IPQ_UBI_VOL_WRITE_SUPPORT
 #endif
 
+#undef CONFIG_BOOTM_NETBSD
+#undef CONFIG_BOOTM_PLAN9
+#undef CONFIG_BOOTM_RTEMS
+#undef CONFIG_BOOTM_VXWORKS
+
 #endif /* _IPQ5018_H */
