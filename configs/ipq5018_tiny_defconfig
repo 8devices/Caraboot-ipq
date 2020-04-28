@@ -223,6 +223,8 @@ CONFIG_SIMPLE_BUS=y
 # CONFIG_DM_ETH is not set
 # CONFIG_PHYLIB is not set
 # CONFIG_NETDEVICES is not set
+# CONFIG_IPQ_MTD_NOR is not set
+CONFIG_IPQ_TINY_SPI_NOR=y
 
 #
 # PCI
