@@ -24,7 +24,6 @@
 #define CONFIG_SPI_FLASH_CYPRESS
 #define CONFIG_SYS_NO_FLASH
 #define CONFIG_SYS_CACHELINE_SIZE		64
-#define CONFIG_CMD_CACHE
 #define CONFIG_IPQ_NO_RELOC
 
 #define CONFIG_SYS_VSNPRINTF
@@ -177,7 +176,6 @@ extern loff_t board_env_size;
 #define CONFIG_IPQ_4B_ADDR_SWITCH_REQD
 
 #define CONFIG_QUP_SPI_USE_DMA			1
-#define CONFIG_EFI_PARTITION
 #define CONFIG_QCA_BAM				1
 
 /*
@@ -194,6 +192,7 @@ extern loff_t board_env_size;
 #define CONFIG_SYS_MMC_ENV_DEV			0
 #define CONFIG_SDHCI_SUPPORT
 #define CONFIG_MMC_ADMA
+#define CONFIG_EFI_PARTITION
 /*
 * eMMC controller support only 4-bit
 * force SDHC driver to 4-bit mode
@@ -299,9 +298,11 @@ extern loff_t board_env_size;
 #define CONFIG_MTD_PARTITIONS
 #define NUM_ALT_PARTITION			16
 
-#define CONFIG_RBTREE
-
+#ifndef CONFIG_IPQ_TINY
 #define CONFIG_CMD_BOOTZ
+#define CONFIG_CMD_CACHE
+#endif
+
 #define CONFIG_FDT_FIXUP_PARTITIONS
 
 #define CONFIG_IPQ_FDT_FIXUP
@@ -353,6 +354,7 @@ extern loff_t board_env_size;
  */
 #ifdef CONFIG_UBI_WRITE
 #define CONFIG_CMD_UBI
+#define CONFIG_RBTREE
 #define IPQ_UBI_VOL_WRITE_SUPPORT
 #endif
 
