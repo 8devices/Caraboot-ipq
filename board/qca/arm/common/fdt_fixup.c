@@ -636,6 +636,7 @@ int ft_board_setup(void *blob, bd_t *bd)
 	uint32_t flash_type;
 	char *s;
 	char *mtdparts = NULL;
+	char *addparts = NULL;
 	char parts_str[4096];
 	int len = sizeof(parts_str), ret;
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
@@ -689,6 +690,12 @@ int ft_board_setup(void *blob, bd_t *bd)
 	if (mtdparts) {
 		qca_smem_part_to_mtdparts(mtdparts,len);
 		if (mtdparts[0] != '\0') {
+			addparts = getenv("addmtdparts");
+			if (addparts) {
+				debug("addmtdparts = %s\n", addparts);
+				strlcat(mtdparts, ",", sizeof(parts_str));
+				strlcat(mtdparts, addparts, sizeof(parts_str));
+			}
 			debug("mtdparts = %s\n", mtdparts);
 			setenv("mtdparts", mtdparts);
 		}
