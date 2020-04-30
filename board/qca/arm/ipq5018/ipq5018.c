@@ -401,11 +401,6 @@ void ipq_fdt_fixup_usb_device_mode(void *blob)
 		printf("%s: invalid param for usb_mode\n", __func__);
 }
 
-void fdt_fixup_set_dload_dis(void *blob)
-{
-	parse_fdt_fixup("/soc/qca,scm_restart_reason%dload_status%1", blob);
-}
-
 void ipq_fdt_fixup_socinfo(void *blob)
 {
 	uint32_t cpu_type;
