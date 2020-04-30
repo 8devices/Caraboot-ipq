@@ -1404,8 +1404,11 @@ static void qpic_spi_init(struct mtd_info *mtd)
 	uint32_t xfer_start = NAND_XFR_STEPS_V1_5_20;
 	int i;
 
-	/* Enabel QPIC CLK*/
-	qpic_clk_enbale();
+	qpic_set_clk_rate(IO_MACRO_CLK_200_MHZ, QPIC_IO_MACRO_CLK,
+			GPLL0_CLK_SRC);
+
+	/*qpic_set_clk_rate(IO_MACRO_CLK_200_MHZ, QPIC_IO_MACRO_CLK,
+			XO_CLK_SRC);*/
 
 	/* Configure the NAND_FLASH_SPI_CFG to load the timer CLK_CNTR_INIT_VAL_VEC
 	 * value, enable the LOAD_CLK_CNTR_INIT_EN bit and enable SPI_CFG mode.
