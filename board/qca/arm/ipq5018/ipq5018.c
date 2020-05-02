@@ -851,6 +851,105 @@ int ipq_board_usb_init(void)
 #endif
 
 #ifdef CONFIG_PCI_IPQ
+static void pcie_v2_clock_init(int id)
+{
+#ifdef CONFIG_PCI
+	int cfg;
+	unsigned tmp;
+	void __iomem *base;
+
+	/*single lane*/
+	if (id == 0) {
+		base = (void __iomem *)GCC_PCIE1_BOOT_CLOCK_CTL;
+		/* Configure pcie1_aux_clk_src */
+		cfg = (GCC_PCIE1_AUX_CFG_RCGR_SRC_SEL |
+				GCC_PCIE1_AUX_CFG_RCGR_SRC_DIV);
+	} else { /*double lane*/
+		base = (void __iomem *)GCC_PCIE0_BOOT_CLOCK_CTL;
+		/* Configure pcie0_aux_clk_src */
+		cfg = (GCC_PCIE0_AUX_CFG_RCGR_SRC_SEL |
+				GCC_PCIE0_AUX_CFG_RCGR_SRC_DIV);
+	}
+
+	writel(cfg, base + PCIE_AUX_CFG_RCGR);
+	writel(CMD_UPDATE, base + PCIE_AUX_CMD_RCGR);
+	mdelay(100);
+	writel(ROOT_EN, base + PCIE_AUX_CMD_RCGR);
+
+	if (id == 0)
+		/* Configure pcie1_axi_clk_src */
+		cfg = (GCC_PCIE1_AXI_CFG_RCGR_SRC_SEL |
+				GCC_PCIE1_AXI_CFG_RCGR_SRC_DIV);
+
+	else
+		/* Configure pcie0_axi_clk_src */
+		cfg = (GCC_PCIE0_AXI_CFG_RCGR_SRC_SEL |
+				GCC_PCIE0_AXI_CFG_RCGR_SRC_DIV);
+
+	writel(cfg, base + PCIE_AXI_CFG_RCGR);
+	writel(CMD_UPDATE, base + PCIE_AXI_CMD_RCGR);
+	mdelay(100);
+	writel(ROOT_EN, base + PCIE_AXI_CMD_RCGR);
+
+	/* Configure CBCRs */
+	if (id == 0)
+		writel(CLK_ENABLE, GCC_SYS_NOC_PCIE1_AXI_CBCR);
+	else
+		writel(CLK_ENABLE, GCC_SYS_NOC_PCIE0_AXI_CBCR);
+
+	writel(CLK_ENABLE, base + PCIE_AHB_CBCR);
+
+	tmp = readl(base + PCIE_AXI_M_CBCR);
+	tmp |= CLK_ENABLE;
+	writel(tmp, base + PCIE_AXI_M_CBCR);
+
+	tmp = readl(base + PCIE_AXI_S_CBCR);
+	tmp |= CLK_ENABLE;
+	writel(tmp, base + PCIE_AXI_S_CBCR);
+
+	writel(CLK_ENABLE, base + PCIE_AUX_CBCR);
+
+	tmp = readl(base + PCIE_PIPE_CBCR);
+	tmp |= CLK_ENABLE;
+	writel(tmp, base + PCIE_PIPE_CBCR);
+
+	writel(CLK_ENABLE, PCIE_AXI_S_BRIDGE_CBCR);
+#endif
+	return;
+}
+
+static void pcie_v2_clock_deinit(int id)
+{
+#ifdef CONFIG_PCI
+	void __iomem *base;
+
+	/*single lane*/
+	if (id == 0)
+		base = (void __iomem *)GCC_PCIE1_BOOT_CLOCK_CTL;
+	else  /*double lane*/
+		base = (void __iomem *)GCC_PCIE0_BOOT_CLOCK_CTL;
+
+	writel(0x0, base + PCIE_AUX_CFG_RCGR);
+	writel(0x0, base + PCIE_AUX_CMD_RCGR);
+	writel(0x0, base + PCIE_AXI_CFG_RCGR);
+	writel(0x0, base + PCIE_AXI_CMD_RCGR);
+	mdelay(100);
+
+	if (id == 0)
+		writel(0x0, GCC_SYS_NOC_PCIE1_AXI_CBCR);
+	else
+		writel(0x0, GCC_SYS_NOC_PCIE0_AXI_CBCR);
+
+	writel(0x0, base + PCIE_AHB_CBCR);
+	writel(0x0, base + PCIE_AXI_M_CBCR);
+	writel(0x0, base + PCIE_AXI_S_CBCR);
+	writel(0x0, base + PCIE_AUX_CBCR);
+	writel(0x0, base + PCIE_PIPE_CBCR);
+	writel(0x0, base + PCIE_AXI_S_BRIDGE_CBCR);
+#endif
+	return;
+}
+
 void board_pci_init(int id)
 {
 	int node, gpio_node;
@@ -866,6 +965,7 @@ void board_pci_init(int id)
 	if (gpio_node >= 0)
 		qca_gpio_init(gpio_node);
 
+	pcie_v2_clock_init(id);
 	return;
 }
 
@@ -898,6 +998,7 @@ void board_pci_deinit()
 		if (gpio_node >= 0)
 			qca_gpio_deinit(gpio_node);
 
+		pcie_v2_clock_deinit(i);
 	}
 
 	return ;

@@ -125,6 +125,7 @@
 		perst_gpio = <27>;
 		gen3 = <1>;
 		status = "disabled";
+		skip_phy_init = <1>;
 	};
 
 	pci@a0000000 {
@@ -144,5 +145,6 @@
 		perst_gpio = <28>;
 		gen3 = <1>;
 		status = "disabled";
+		skip_phy_init = <1>;
 	};
 };
