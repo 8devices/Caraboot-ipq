@@ -1657,7 +1657,7 @@ class Pack(object):
             self.__mkimage(images)
         else:
 	    fail_img = out_fname.split("/")
-            print "Failed to pack %s" % fail_img[-1]
+            error("Failed to pack %s" % fail_img[-1])
 
 class UsageError(Exception):
     """Indicates error in command arguments."""
