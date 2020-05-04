@@ -306,7 +306,7 @@ void emmc_clock_reset(void)
 
 int board_mmc_init(bd_t *bis)
 {
-	int node;
+	int node, gpio_node;
 	int ret = 0;
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 
@@ -315,6 +315,9 @@ int board_mmc_init(bd_t *bis)
 		printf("sdhci: Node Not found, skipping initialization\n");
 		return -1;
 	}
+
+	gpio_node = fdt_subnode_offset(gd->fdt_blob, node, "mmc_gpio");
+	qca_gpio_init(gpio_node);
 
 	mmc_host.ioaddr = (void *)MSM_SDC1_SDHCI_BASE;
 	mmc_host.voltages = MMC_VDD_165_195;

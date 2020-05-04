@@ -67,10 +67,14 @@ ifneq ($(CONFIG_IPQ_TINY),y)
 dtb-$(CONFIG_ARCH_IPQ5018) += ipq5018-emulation.dtb \
 			ipq5018-mp02.1.dtb \
 			ipq5018-mp03.1.dtb \
+			ipq5018-mp03.1-c2.dtb \
 			ipq5018-mp03.3.dtb \
+			ipq5018-mp03.3-c2.dtb \
 			ipq5018-db-mp02.1.dtb \
 			ipq5018-db-mp03.1.dtb \
-			ipq5018-db-mp03.3.dtb
+			ipq5018-db-mp03.1-c2.dtb \
+			ipq5018-db-mp03.3.dtb \
+			ipq5018-db-mp03.3-c2.dtb
 else
 dtb-$(CONFIG_ARCH_IPQ5018) += ipq5018-emulation.dtb
 endif
