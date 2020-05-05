@@ -1018,6 +1018,29 @@ void fdt_fixup_wcss_rproc_for_atf(void *blob)
 	parse_fdt_fixup("/soc/bt@7000000%qcom,nosecure%1", blob);
 }
 
+void fdt_fixup_bt_debug(void *blob)
+{
+	int node, phandle;
+	char node_name[32];
+
+	if ((gd->bd->bi_arch_number == MACH_TYPE_IPQ5018_AP_MP02_1) ||
+		(gd->bd->bi_arch_number == MACH_TYPE_IPQ5018_DB_MP02_1)) {
+		node = fdt_path_offset(blob, "/soc/pinctrl@1000000/btss_pins");
+		if (node) {
+			phandle = fdtdec_get_int(blob, node, "phandle", 0);
+			snprintf(node_name,
+				sizeof(node_name),
+				"%s%d",
+				"/soc/bt@7000000%pinctrl-0%",
+				phandle);
+			parse_fdt_fixup("/soc/bt@7000000%pinctrl-names%?btss_pins", blob);
+			parse_fdt_fixup(node_name, blob);
+		}
+	}
+	parse_fdt_fixup("/soc/serial@78b0000/%status%?ok", blob);
+
+}
+
 void run_tzt(void *address)
 {
 	execute_tzt(address);

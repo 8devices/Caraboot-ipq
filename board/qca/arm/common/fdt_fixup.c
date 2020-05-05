@@ -620,6 +620,11 @@ __weak void fdt_fixup_wcss_rproc_for_atf(void *blob)
 	return;
 }
 
+__weak void fdt_fixup_bt_debug(void *blob)
+{
+	return;
+}
+
 /*
  * For newer kernel that boot with device tree (3.14+), all of memory is
  * described in the /memory node, including areas that the kernel should not be
@@ -744,6 +749,10 @@ int ft_board_setup(void *blob, bd_t *bd)
 	if (s) {
 		fdt_fixup_set_qca_cold_reboot_enable(blob);
 		fdt_fixup_wcss_rproc_for_atf(blob);
+	}
+	s = getenv("bt_debug");
+	if (s) {
+		fdt_fixup_bt_debug(blob);
 	}
 
 #ifdef CONFIG_QCA_MMC
