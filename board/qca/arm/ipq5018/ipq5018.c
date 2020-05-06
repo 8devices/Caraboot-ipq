@@ -17,7 +17,6 @@
 #include <asm/errno.h>
 #include <environment.h>
 #include <fdtdec.h>
-#include <asm/arch-qca-common/qpic_nand.h>
 #include <asm/arch-qca-common/gpio.h>
 #include <asm/arch-qca-common/uart.h>
 #include <asm/arch-qca-common/scm.h>
@@ -29,6 +28,9 @@
 #endif
 #ifdef CONFIG_USB_XHCI_IPQ
 #include <usb.h>
+#endif
+#ifdef CONFIG_QPIC_NAND
+#include <asm/arch-qca-common/qpic_nand.h>
 #endif
 
 #define DLOAD_MAGIC_COOKIE	0x10
@@ -42,7 +44,9 @@ DECLARE_GLOBAL_DATA_PTR;
 struct sdhci_host mmc_host;
 #endif
 
+#ifdef CONFIG_IPQ_MTD_NOR
 extern int ipq_spi_init(u16);
+#endif
 
 const char *rsvd_node = "/reserved-memory";
 const char *del_node[] = {"uboot",
@@ -528,7 +532,9 @@ void board_nand_init(void)
 	gpio_node = fdt_path_offset(gd->fdt_blob, "/spi/spi_gpio");
 	if (gpio_node >= 0) {
 		qca_gpio_init(gpio_node);
+#ifdef CONFIG_IPQ_MTD_NOR
 		ipq_spi_init(CONFIG_IPQ_SPI_NOR_INFO_IDX);
+#endif
 	}
 #endif
 }

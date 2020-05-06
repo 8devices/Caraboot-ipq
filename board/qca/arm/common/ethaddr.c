@@ -19,6 +19,10 @@
 #include <asm/arch-qca-common/smem.h>
 #include <asm/arch-qca-common/qca_common.h>
 #include <sdhci.h>
+#ifdef CONFIG_IPQ_TINY_SPI_NOR
+#include <spi.h>
+#include <spi_flash.h>
+#endif
 
 #ifdef CONFIG_QCA_MMC
 #ifndef CONFIG_SDHCI_SUPPORT
@@ -46,6 +50,10 @@ int get_eth_mac_address(uchar *enetaddr, uint no_of_macs)
 	struct mmc *mmc;
 	char mmc_blks[512];
 #endif
+#ifdef CONFIG_IPQ_TINY_SPI_NOR
+	struct spi_flash *flash = NULL;
+#endif
+
 	if (sfi->flash_type != SMEM_BOOT_MMC_FLASH) {
 		if (qca_smem_flash_info.flash_type == SMEM_BOOT_SPI_FLASH)
 			flash_type = CONFIG_SPI_FLASH_INFO_IDX;
@@ -70,8 +78,23 @@ int get_eth_mac_address(uchar *enetaddr, uint no_of_macs)
 		art_offset =
 		((loff_t) qca_smem_flash_info.flash_block_size * start_blocks);
 
+#ifdef CONFIG_IPQ_TINY_SPI_NOR
+		flash = spi_flash_probe(CONFIG_SF_DEFAULT_BUS, CONFIG_SF_DEFAULT_CS,
+				CONFIG_SF_DEFAULT_SPEED, CONFIG_SF_DEFAULT_MODE);
+		if (flash == NULL){
+			printf("No SPI flash device found\n");
+			ret = -1;
+		} else {
+			ret = spi_flash_read(flash, art_offset, length, enetaddr);
+		}
+		/*
+		 * Avoid unused warning
+		 */
+		(void)flash_type;
+#else
 		ret = nand_read(&nand_info[flash_type],
 				art_offset, &length, enetaddr);
+#endif
 		if (ret < 0)
 			printf("ART partition read failed..\n");
 #ifdef CONFIG_QCA_MMC

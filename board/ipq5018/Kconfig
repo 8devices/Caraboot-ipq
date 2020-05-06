@@ -36,5 +36,13 @@ config QPIC_SERIAL
 config IPQ_TINY
 	bool "Enable Tiny support for ipq5018"
 
-endif
+config IPQ_MTD_NOR
+	bool "Register nor in MTD framework for ipq5018"
 
+config IPQ_TINY_SPI_NOR
+	bool "This config helps to update spi-nor related updated in ipq5018"
+
+config NAND_FLASH
+	bool "Enable NAND driver for ipq5018"
+
+endif

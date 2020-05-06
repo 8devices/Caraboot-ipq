@@ -118,8 +118,9 @@ struct crashdump_flash_emmc_cxt {
 };
 #endif
 
-
+#ifdef CONFIG_MTD_DEVICE
 static struct crashdump_flash_nand_cxt crashdump_nand_cnxt;
+#endif
 #ifdef CONFIG_QCA_SPI
 static struct spi_flash *crashdump_spi_flash;
 static struct crashdump_flash_spi_cxt crashdump_flash_spi_cnxt;
@@ -734,7 +735,7 @@ void dump_func(unsigned int dump_level)
 reset:
 	reset_board();
 }
-
+#ifdef CONFIG_MTD_DEVICE
 /*
 * Init function for NAND flash writing. It intializes its own context
 * and erases the required sectors
@@ -879,7 +880,7 @@ int crashdump_nand_flash_write_data(void *cnxt,
 
 	return 0;
 }
-
+#endif
 #ifdef CONFIG_QCA_SPI
 /* Init function for SPI NOR flash writing. It erases the required sectors */
 int init_crashdump_spi_flash_write(void *cnxt,
@@ -1121,11 +1122,13 @@ static int qca_wdt_write_crashdump_data(
 	*/
 	if (((flash_type == SMEM_BOOT_NAND_FLASH) ||
 		(flash_type == SMEM_BOOT_QSPI_NAND_FLASH))) {
+#ifdef CONFIG_MTD_DEVICE
 		crashdump_cnxt = (void *)&crashdump_nand_cnxt;
 		crashdump_flash_write_init = init_crashdump_nand_flash_write;
 		crashdump_flash_write = crashdump_nand_flash_write_data;
 		crashdump_flash_write_deinit =
 			deinit_crashdump_nand_flash_write;
+#endif
 #ifdef CONFIG_QCA_SPI
 	} else if (flash_type == SMEM_BOOT_SPI_FLASH) {
 		if (!crashdump_spi_flash) {
