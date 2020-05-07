@@ -120,26 +120,6 @@ void uart1_set_rate_mnd(unsigned int m,
 	writel(NOT_2D(two_d), GCC_BLSP1_UART1_APPS_D);
 }
 
-int uart1_trigger_update(void)
-{
-	unsigned long cmd_rcgr;
-	int timeout = 0;
-
-	cmd_rcgr = readl(GCC_BLSP1_UART1_APPS_CMD_RCGR);
-	cmd_rcgr |= UART1_CMD_RCGR_UPDATE;
-	writel(cmd_rcgr, GCC_BLSP1_UART1_APPS_CMD_RCGR);
-
-	while (readl(GCC_BLSP1_UART1_APPS_CMD_RCGR) & UART1_CMD_RCGR_UPDATE) {
-		if (timeout++ >= CLOCK_UPDATE_TIMEOUT_US) {
-			printf("Timeout waiting for UART1 clock update\n");
-			return -ETIMEDOUT;
-			udelay(1);
-		}
-	}
-	cmd_rcgr = readl(GCC_BLSP1_UART1_APPS_CMD_RCGR);
-	return 0;
-}
-
 void reset_board(void)
 {
 	run_command("reset", 0);
@@ -154,39 +134,48 @@ void uart1_toggle_clock(void)
 	writel(cbcr_val, GCC_BLSP1_UART1_APPS_CBCR);
 }
 
-void uart1_clock_config(unsigned int m,
-		unsigned int n, unsigned int two_d)
+int uart1_trigger_update(void)
 {
-	uart1_configure_mux();
-	uart1_set_rate_mnd(m, n, two_d);
-	uart1_trigger_update();
+	unsigned long cmd_rcgr;
+	int timeout = 0;
+
+	cmd_rcgr = readl(GCC_BLSP1_UART1_APPS_CMD_RCGR);
+	cmd_rcgr |= UART1_CMD_RCGR_UPDATE | UART1_CMD_RCGR_ROOT_EN;
+	writel(cmd_rcgr, GCC_BLSP1_UART1_APPS_CMD_RCGR);
+
+	while (readl(GCC_BLSP1_UART1_APPS_CMD_RCGR) & UART1_CMD_RCGR_UPDATE) {
+		if (timeout++ >= CLOCK_UPDATE_TIMEOUT_US) {
+			printf("Timeout waiting for UART1 clock update\n");
+			return -ETIMEDOUT;
+			udelay(1);
+		}
+	}
 	uart1_toggle_clock();
+	return 0;
+}
+
+int uart1_clock_config(struct ipq_serial_platdata *plat)
+{
+
+	uart1_configure_mux();
+	uart1_set_rate_mnd(plat->m_value,
+		plat->n_value,
+		plat->d_value);
+	return uart1_trigger_update();
 }
 
 void qca_serial_init(struct ipq_serial_platdata *plat)
 {
-	int node, uart1_node;
+	int ret;
 
-	writel(1, GCC_BLSP1_UART1_APPS_CBCR);
-	node = fdt_path_offset(gd->fdt_blob, "/serial@78AF000/serial_gpio");
-	if (node < 0) {
-		printf("Could not find serial_gpio node\n");
+	if (plat->gpio_node < 0) {
+		printf("serial_init: unable to find gpio node \n");
 		return;
 	}
-
-	if (plat->port_id == 1) {
-		uart1_node = fdt_path_offset(gd->fdt_blob, "uart1");
-		if (uart1_node < 0) {
-			printf("Could not find uart1 node\n");
-			return;
-		}
-	node = fdt_subnode_offset(gd->fdt_blob,
-				uart1_node, "serial_gpio");
-	uart1_clock_config(plat->m_value, plat->n_value, plat->d_value);
-	writel(1, GCC_BLSP1_UART1_APPS_CBCR);
-	}
-
-	qca_gpio_init(node);
+	qca_gpio_init(plat->gpio_node);
+	ret = uart1_clock_config(plat);
+	if (ret)
+		printf("UART clock config failed %d \n", ret);
 }
 
 /*

@@ -74,11 +74,12 @@
 #define GCC_UART_CFG_RCGR_SRCSEL_SHIFT    8
 #define GCC_UART_CFG_RCGR_SRCDIV_SHIFT    0
 
-#define UART1_RCGR_SRC_SEL                0x1
-#define UART1_RCGR_SRC_DIV                0x0
-#define UART1_RCGR_MODE                   0x2
-#define UART1_CMD_RCGR_UPDATE             0x1
-#define UART1_CBCR_CLK_ENABLE             0x1
+#define UART1_RCGR_SRC_SEL			0x1
+#define UART1_RCGR_SRC_DIV			0x0
+#define UART1_RCGR_MODE				0x2
+#define UART1_CMD_RCGR_UPDATE			0x1
+#define UART1_CMD_RCGR_ROOT_EN			0x2
+#define UART1_CBCR_CLK_ENABLE			0x1
 
 /* USB Registers */
 #define GCC_SYS_NOC_USB0_AXI_CBCR		0x1826040
