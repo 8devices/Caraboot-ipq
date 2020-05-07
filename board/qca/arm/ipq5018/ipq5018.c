@@ -627,21 +627,23 @@ void board_usb_deinit(int id)
 		return;
 
 	/* Enable USB PHY Power down */
-	setbits_le32(USB30_PHY_1_QUSB2PHY_BASE + 0xB4, 0x1);
+	setbits_le32(QUSB2PHY_BASE + 0xA4, 0x0);
 	/* Disable clocks */
-	writel(0x8000, GCC_USB0_PHY_CFG_AHB_CBCR);
-	writel(0x8ff0, GCC_USB0_MASTER_CBCR);
-	writel(0, GCC_SYS_NOC_USB0_AXI_CBCR);
-	writel(0, GCC_SNOC_BUS_TIMEOUT2_AHB_CBCR);
-	writel(0, GCC_USB0_SLEEP_CBCR);
-	writel(0, GCC_USB0_MOCK_UTMI_CBCR);
-	writel(0, GCC_USB0_AUX_CBCR);
+	writel(0x0, GCC_USB0_PHY_CFG_AHB_CBCR);
+	writel(0x4220, GCC_USB0_MASTER_CBCR);
+	writel(0x0, GCC_SYS_NOC_USB0_AXI_CBCR);
+	writel(0x0, GCC_USB0_SLEEP_CBCR);
+	writel(0x0, GCC_USB0_MOCK_UTMI_CBCR);
+	writel(0x0, GCC_USB0_AUX_CBCR);
+	writel(0x0, GCC_USB0_LFPS_CBCR);
 	/* GCC_QUSB2_0_PHY_BCR */
 	set_mdelay_clearbits_le32(GCC_QUSB2_0_PHY_BCR, 0x1, 10);
 	/* GCC_USB0_PHY_BCR */
 	set_mdelay_clearbits_le32(GCC_USB0_PHY_BCR, 0x1, 10);
 	/* GCC Reset USB BCR */
 	set_mdelay_clearbits_le32(GCC_USB0_BCR, 0x1, 10);
+	/* Deselect the usb phy mux */
+	writel(0x0, TCSR_USB_PCIE_SEL);
 }
 
 static void usb_clock_init(int id)
@@ -660,12 +662,21 @@ static void usb_clock_init(int id)
 	cfg = (GCC_USB_MOCK_UTMI_SRC_SEL |
 		GCC_USB_MOCK_UTMI_SRC_DIV);
 	writel(cfg, GCC_USB0_MOCK_UTMI_CFG_RCGR);
-	writel(UTMI_M, GCC_USB0_MOCK_UTMI_M);
-	writel(UTMI_N, GCC_USB0_MOCK_UTMI_N);
-	writel(UTMI_D, GCC_USB0_MOCK_UTMI_D);
+	writel(GCC_USB_MOCK_UTMI_CLK_DIV, GCC_USB0_MOCK_UTMI_CBCR);
 	writel(CMD_UPDATE, GCC_USB0_MOCK_UTMI_CMD_RCGR);
 	mdelay(100);
 	writel(ROOT_EN, GCC_USB0_MOCK_UTMI_CMD_RCGR);
+
+	/* Configure usb0_lfps_cmd_rcgr */
+	cfg = (GCC_USB0_LFPS_CFG_SRC_SEL |
+		GCC_USB0_LFPS_CFG_SRC_DIV);
+	writel(cfg, GCC_USB0_LFPS_CFG_RCGR);
+	writel(LFPS_M, GCC_USB0_LFPS_M);
+	writel(LFPS_N, GCC_USB0_LFPS_N);
+	writel(LFPS_D, GCC_USB0_LFPS_D);
+	writel(CMD_UPDATE, GCC_USB0_LFPS_CMD_RCGR);
+	mdelay(100);
+	writel(ROOT_EN, GCC_USB0_LFPS_CMD_RCGR);
 
 	/* Configure usb0_aux_clk_src */
 	cfg = (GCC_USB0_AUX_CFG_SRC_SEL |
@@ -677,132 +688,61 @@ static void usb_clock_init(int id)
 
 	/* Configure CBCRs */
 	writel(CLK_DISABLE, GCC_SYS_NOC_USB0_AXI_CBCR);
-	writel(CLK_DISABLE, GCC_SNOC_BUS_TIMEOUT2_AHB_CBCR);
 	writel(CLK_ENABLE, GCC_SYS_NOC_USB0_AXI_CBCR);
 	writel((readl(GCC_USB0_MASTER_CBCR) | CLK_ENABLE),
 		GCC_USB0_MASTER_CBCR);
-	writel(CLK_ENABLE, GCC_SNOC_BUS_TIMEOUT2_AHB_CBCR);
 	writel(CLK_ENABLE, GCC_USB0_SLEEP_CBCR);
 	writel(CLK_ENABLE, GCC_USB0_MOCK_UTMI_CBCR);
-	writel((CLK_ENABLE | NOC_HANDSHAKE_FSM_EN),
-		GCC_USB0_PHY_CFG_AHB_CBCR);
+	writel(CLK_ENABLE, GCC_USB0_PHY_CFG_AHB_CBCR);
 	writel(CLK_ENABLE, GCC_USB0_AUX_CBCR);
 	writel(CLK_ENABLE, GCC_USB0_PIPE_CBCR);
+	writel(CLK_ENABLE, GCC_USB0_LFPS_CBCR);
 }
 
 static void usb_init_hsphy(void __iomem *phybase)
 {
-	/* Enable QUSB2PHY Power down */
-	setbits_le32(phybase+0xB4, 0x1);
-
-	/* PHY Config Sequence */
-	/* QUSB2PHY_PLL:PLL Feedback Divider Value */
-	out_8(phybase+0x00, 0x14);
-	/* QUSB2PHY_PORT_TUNE1: USB Product Application Tuning Register A */
-	out_8(phybase+0x80, 0xF8);
-	/* QUSB2PHY_PORT_TUNE2: USB Product Application Tuning Register B */
-	out_8(phybase+0x84, 0xB3);
-	/* QUSB2PHY_PORT_TUNE3: USB Product Application Tuning Register C */
-	out_8(phybase+0x88, 0x83);
-	/* QUSB2PHY_PORT_TUNE4: USB Product Application Tuning Register D */
-	out_8(phybase+0x8C, 0xC0);
-	/* QUSB2PHY_PORT_TEST2 */
-	out_8(phybase+0x9C, 0x14);
-	/* QUSB2PHY_PLL_TUNE: PLL Test Configuration */
-	out_8(phybase+0x08, 0x30);
-	/* QUSB2PHY_PLL_USER_CTL1: PLL Control Configuration */
-	out_8(phybase+0x0C, 0x79);
-	/* QUSB2PHY_PLL_USER_CTL2: PLL Control Configuration */
-	out_8(phybase+0x10, 0x21);
-	/* QUSB2PHY_PORT_TUNE5 */
-	out_8(phybase+0x90, 0x00);
-	/* QUSB2PHY_PLL_PWR_CTL: PLL Manual SW Programming
-	 * and Biasing Power Options */
-	out_8(phybase+0x18, 0x00);
-	/* QUSB2PHY_PLL_AUTOPGM_CTL1: Auto vs. Manual PLL/Power-mode
-	 * programming State Machine Control Options */
-	out_8(phybase+0x1C, 0x9F);
-	/* QUSB2PHY_PLL_TEST: PLL Test Configuration-Disable diff ended clock */
-	out_8(phybase+0x04, 0x80);
-
-	/* Disable QUSB2PHY Power down */
-	clrbits_le32(phybase+0xB4, 0x1);
+	/* Disable USB PHY Power down */
+	setbits_le32(phybase + 0xA4, 0x1);
+	/* Enable override ctrl */
+	writel(UTMI_PHY_OVERRIDE_EN, phybase + USB_PHY_CFG0);
+	/* Enable POR*/
+	writel(POR_EN, phybase + USB_PHY_UTMI_CTRL5);
+	udelay(15);
+	/* Configure frequency select value*/
+	writel(FREQ_SEL, phybase + USB_PHY_FSEL_SEL);
+	/* Configure refclk frequency */
+	writel(COMMONONN | FSEL | RETENABLEN,
+			phybase + USB_PHY_HS_PHY_CTRL_COMMON0);
+	/* select refclk source */
+	writel(CLKCORE, phybase + USB_PHY_REFCLK_CTRL);
+	/* select ATERESET*/
+	writel(POR_EN & ATERESET, phybase + USB_PHY_UTMI_CTRL5);
+	writel(USB2_SUSPEND_N_SEL | USB2_SUSPEND_N | USB2_UTMI_CLK_EN,
+			phybase + USB_PHY_HS_PHY_CTRL2);
+	writel(0x0, phybase + USB_PHY_UTMI_CTRL5);
+	writel(USB2_SUSPEND_N | USB2_UTMI_CLK_EN,
+			phybase + USB_PHY_HS_PHY_CTRL2);
+	/* Disable override ctrl */
+	writel(0x0, phybase + USB_PHY_CFG0);
 }
 
 static void usb_init_ssphy(void __iomem *phybase)
 {
-	out_8(phybase + USB3_PHY_POWER_DOWN_CONTROL,0x1);
-	out_8(phybase + QSERDES_COM_SYSCLK_EN_SEL,0x1a);
-	out_8(phybase + QSERDES_COM_BIAS_EN_CLKBUFLR_EN,0x08);
-	out_8(phybase + QSERDES_COM_CLK_SELECT,0x30);
-	out_8(phybase + QSERDES_COM_BG_TRIM,0x0f);
-	out_8(phybase + QSERDES_RX_UCDR_FASTLOCK_FO_GAIN,0x0b);
-	out_8(phybase + QSERDES_COM_SVS_MODE_CLK_SEL,0x01);
-	out_8(phybase + QSERDES_COM_HSCLK_SEL,0x00);
-	out_8(phybase + QSERDES_COM_CMN_CONFIG,0x06);
-	out_8(phybase + QSERDES_COM_PLL_IVCO,0x0f);
-	out_8(phybase + QSERDES_COM_SYS_CLK_CTRL,0x06);
-	out_8(phybase + QSERDES_COM_DEC_START_MODE0,0x68);
-	out_8(phybase + QSERDES_COM_DIV_FRAC_START1_MODE0,0xAB);
-	out_8(phybase + QSERDES_COM_DIV_FRAC_START2_MODE0,0xAA);
-	out_8(phybase + QSERDES_COM_DIV_FRAC_START3_MODE0,0x02);
-	out_8(phybase + QSERDES_COM_CP_CTRL_MODE0,0x09);
-	out_8(phybase + QSERDES_COM_PLL_RCTRL_MODE0,0x16);
-	out_8(phybase + QSERDES_COM_PLL_CCTRL_MODE0,0x28);
-	out_8(phybase + QSERDES_COM_INTEGLOOP_GAIN0_MODE0,0xA0);
-	out_8(phybase + QSERDES_COM_LOCK_CMP1_MODE0,0xAA);
-	out_8(phybase + QSERDES_COM_LOCK_CMP2_MODE0,0x29);
-	out_8(phybase + QSERDES_COM_LOCK_CMP3_MODE0,0x00);
-	out_8(phybase + QSERDES_COM_CORE_CLK_EN,0x00);
-	out_8(phybase + QSERDES_COM_LOCK_CMP_CFG,0x00);
-	out_8(phybase + QSERDES_COM_VCO_TUNE_MAP,0x00);
-	out_8(phybase + QSERDES_COM_BG_TIMER,0x0a);
-	out_8(phybase + QSERDES_COM_SSC_EN_CENTER,0x01);
-	out_8(phybase + QSERDES_COM_SSC_PER1,0x7D);
-	out_8(phybase + QSERDES_COM_SSC_PER2,0x01);
-	out_8(phybase + QSERDES_COM_SSC_ADJ_PER1,0x00);
-	out_8(phybase + QSERDES_COM_SSC_ADJ_PER2,0x00);
-	out_8(phybase + QSERDES_COM_SSC_STEP_SIZE1,0x0A);
-	out_8(phybase + QSERDES_COM_SSC_STEP_SIZE2,0x05);
-	out_8(phybase + QSERDES_RX_UCDR_SO_GAIN,0x06);
-	out_8(phybase + QSERDES_RX_RX_EQU_ADAPTOR_CNTRL2,0x02);
-	out_8(phybase + QSERDES_RX_RX_EQU_ADAPTOR_CNTRL3,0x6c);
-	out_8(phybase + QSERDES_RX_RX_EQU_ADAPTOR_CNTRL3,0x4c);
-	out_8(phybase + QSERDES_RX_RX_EQU_ADAPTOR_CNTRL4,0xb8);
-	out_8(phybase + QSERDES_RX_RX_EQ_OFFSET_ADAPTOR_CNTRL,0x77);
-	out_8(phybase + QSERDES_RX_RX_OFFSET_ADAPTOR_CNTRL2,0x80);
-	out_8(phybase + QSERDES_RX_SIGDET_CNTRL,0x03);
-	out_8(phybase + QSERDES_RX_SIGDET_DEGLITCH_CNTRL,0x16);
-	out_8(phybase + QSERDES_RX_SIGDET_ENABLES,0x0c);
-	out_8(phybase + QSERDES_TX_HIGHZ_TRANSCEIVEREN_BIAS_D,0x45);
-	out_8(phybase + QSERDES_TX_RCV_DETECT_LVL_2,0x12);
-	out_8(phybase + QSERDES_TX_LANE_MODE,0x06);
-	out_8(phybase + PCS_TXDEEMPH_M6DB_V0,0x15);
-	out_8(phybase + PCS_TXDEEMPH_M3P5DB_V0,0x0e);
-	out_8(phybase + PCS_FLL_CNTRL2,0x83);
-	out_8(phybase + PCS_FLL_CNTRL1,0x02);
-	out_8(phybase + PCS_FLL_CNT_VAL_L,0x09);
-	out_8(phybase + PCS_FLL_CNT_VAL_H_TOL,0xa2);
-	out_8(phybase + PCS_FLL_MAN_CODE,0x85);
-	out_8(phybase + PCS_LOCK_DETECT_CONFIG1,0xd1);
-	out_8(phybase + PCS_LOCK_DETECT_CONFIG2,0x1f);
-	out_8(phybase + PCS_LOCK_DETECT_CONFIG3,0x47);
-	out_8(phybase + PCS_POWER_STATE_CONFIG2,0x1b);
-	out_8(phybase + PCS_RXEQTRAINING_WAIT_TIME,0x75);
-	out_8(phybase + PCS_RXEQTRAINING_RUN_TIME,0x13);
-	out_8(phybase + PCS_LFPS_TX_ECSTART_EQTLOCK,0x86);
-	out_8(phybase + PCS_PWRUP_RESET_DLY_TIME_AUXCLK,0x04);
-	out_8(phybase + PCS_TSYNC_RSYNC_TIME,0x44);
-	out_8(phybase + PCS_RCVR_DTCT_DLY_P1U2_L,0xe7);
-	out_8(phybase + PCS_RCVR_DTCT_DLY_P1U2_H,0x03);
-	out_8(phybase + PCS_RCVR_DTCT_DLY_U3_L,0x40);
-	out_8(phybase + PCS_RCVR_DTCT_DLY_U3_H,0x00);
-	out_8(phybase + PCS_RX_SIGDET_LVL,0x88);
-	out_8(phybase + USB3_PCS_TXDEEMPH_M6DB_V0,0x17);
-	out_8(phybase + USB3_PCS_TXDEEMPH_M3P5DB_V0,0x0f);
-	out_8(phybase + QSERDES_RX_SIGDET_ENABLES,0x0);
-	out_8(phybase + USB3_PHY_START_CONTROL,0x03);
-	out_8(phybase + USB3_PHY_SW_RESET,0x00);
+	/* select usb phy mux */
+	writel(0x1, TCSR_USB_PCIE_SEL);
+	writel(CLK_ENABLE, GCC_USB0_PHY_CFG_AHB_CBCR);
+	writel(CLK_ENABLE, GCC_USB0_PIPE_CBCR);
+	writel(CLK_DISABLE, GCC_USB0_PIPE_CBCR);
+	udelay(100);
+	/*set frequency initial value*/
+	writel(0x1cb9, phybase + SSCG_CTRL_REG_4);
+	writel(0x023a, phybase + SSCG_CTRL_REG_5);
+	/*set spectrum spread count*/
+	writel(0x1360, phybase + SSCG_CTRL_REG_3);
+	/*set fstep*/
+	writel(0x1, phybase + SSCG_CTRL_REG_1);
+	writel(0xeb, phybase + SSCG_CTRL_REG_2);
+	return;
 }
 
 static void usb_init_phy(int index)
@@ -834,8 +774,8 @@ static void usb_init_phy(int index)
 	clrbits_le32(qusb2_phy_bcr, 0x1);
 	mdelay(10);
 
-	usb_init_hsphy((u32 *)USB30_PHY_1_QUSB2PHY_BASE);
-	usb_init_ssphy((u32 *)USB30_PHY_1_USB3PHY_AHB2PHY_BASE);
+	usb_init_hsphy((u32 *)QUSB2PHY_BASE);
+	usb_init_ssphy((u32 *)USB3PHY_APB_BASE);
 }
 
 int ipq_board_usb_init(void)
