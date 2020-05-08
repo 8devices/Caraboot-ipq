@@ -510,19 +510,62 @@ void reset_cpu(unsigned long a)
 	while(1);
 }
 
-void qpic_clk_enbale(void)
+#ifdef CONFIG_QPIC_NAND
+void qpic_set_clk_rate(unsigned int clk_rate, int blk_type, int req_clk_src_type)
 {
-#ifdef QPIC_CLOCK_ENABLE
-/*
- || clock enable code has been disabled due to NOC error in emualtion
- || will verify on RDB and remove this clock configuration
-*/
-	writel(QPIC_CBCR_VAL, GCC_QPIC_CBCR_ADDR);
-	writel(0x1, GCC_QPIC_AHB_CBCR_ADDR);
-	writel(0x1, GCC_QPIC_IO_MACRO_CBCR);
-	writel(0x1, GCC_QPIC_CBCR_ADDR);
-#endif
+	switch (blk_type) {
+		case QPIC_IO_MACRO_CLK:
+			/* set the FB_CLK_BIT of register QPIC_QSPI_MSTR_CONFIG
+			 * to by pass the serial training. if this FB_CLK_BIT
+			 * bit enabled then , we can apply upto maximum 200MHz
+			 * input to IO_MACRO_BLOCK.
+			*/
+			writel((FB_CLK_BIT | readl(NAND_QSPI_MSTR_CONFIG)),
+					NAND_QSPI_MSTR_CONFIG);
+
+			/* select the clk source for IO_PAD_MACRO
+			 * clk source wil be either XO = 24MHz. or GPLL0 = 800MHz.
+			 */
+			if (req_clk_src_type == XO_CLK_SRC) {
+				/* default XO clock will enabled
+				 * i.e XO clock = 24MHz.
+				 * so div value will 0.
+				 * Input clock to IO_MACRO will be divided by 4 by default
+				 * by hardware and then taht clock will be go on bus.
+				 * i.e 24/4MHz = 6MHz i.e 6MHz will go onto the bus.
+				 */
+				writel(0x0, GCC_QPIC_IO_MACRO_CFG_RCGR);
+
+			} else if (req_clk_src_type == GPLL0_CLK_SRC) {
+				/* selct GPLL0 clock source 800MHz
+				 * so 800/4 = 200MHz.
+				 * Input clock to IO_MACRO will be divided by 4 by default
+				 * by hardware and then that clock will be go on bus.
+				 * i.e 200/4MHz = 50MHz i.e 50MHz will go onto the bus.
+				 */
+				writel(0x107, GCC_QPIC_IO_MACRO_CFG_RCGR);
+
+			} else {
+				printf("wrong clk src selection requested.\n");
+			}
+
+			/* Enablle update bit to update the new configuration */
+			writel((UPDATE_EN | readl(GCC_QPIC_IO_MACRO_CMD_RCGR)),
+					GCC_QPIC_IO_MACRO_CMD_RCGR);
+
+			/* Enable the QPIC_IO_MACRO_CLK */
+			writel(0x1, GCC_QPIC_IO_MACRO_CBCR);
+
+		       break;
+		case QPIC_CORE_CLK:
+		       /* To DO if needed for QPIC core clock setting */
+		       break;
+		default:
+		       printf("wrong qpic block type\n");
+		       break;
+	}
 }
+#endif
 
 void board_nand_init(void)
 {

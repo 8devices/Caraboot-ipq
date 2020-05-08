@@ -112,6 +112,7 @@
 #define NAND_FLASH_SPI_CFG		NAND_REG(0x70C0)
 #define NAND_SPI_NUM_ADDR_CYCLES	NAND_REG(0x70C4)
 #define NAND_SPI_BUSY_CHECK_WAIT_CNT	NAND_REG(0x70C8)
+#define NAND_QSPI_MSTR_CONFIG           NAND_REG(0x7f60)
 
 /* Register mask & shift value used in SPI transfer mode */
 #define SPI_TRANSFER_MODE_1X		0x1
