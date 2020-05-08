@@ -1144,6 +1144,8 @@ extern unsigned int __machine_arch_type;
 #define MACH_TYPE_IPQ6018_AP_CP01_C2  	0x8030001
 #define MACH_TYPE_IPQ6018_AP_CP01_C3  	0x8030002
 #define MACH_TYPE_IPQ6018_AP_CP01_C4    0x8030003
+#define MACH_TYPE_IPQ5018_AP_MP02_1	0x8040000
+#define MACH_TYPE_IPQ5018_DB_MP02_1	0X1040003
 
 #ifdef CONFIG_ARCH_EBSA110
 # ifdef machine_arch_type
