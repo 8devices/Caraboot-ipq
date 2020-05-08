@@ -16,7 +16,7 @@
 / {
 	model ="QCA, IPQ5018-MP03.1";
 	compatible = "qca,ipq5018", "qca,ipq5018-mp03.1";
-	machid = <0x8040100>;
+	machid = <0x8040001>;
 	config_name = "config@mp03.1";
 
 	aliases {
@@ -27,10 +27,6 @@
 		usb0 = "/xhci@8a00000";
 		pci0 = "/pci@80000000";
 		pci1 = "/pci@a0000000";
-	};
-
-	mmc: sdhci@7804000 {
-		compatible = "qcom,sdhci-msm";
 	};
 
 	console: serial@78AF000 {
