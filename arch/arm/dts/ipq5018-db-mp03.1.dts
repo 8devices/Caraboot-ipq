@@ -27,6 +27,7 @@
 		usb0 = "/xhci@8a00000";
 		pci0 = "/pci@80000000";
 		pci1 = "/pci@a0000000";
+		nand = "/nand-controller@79B0000";
 	};
 
 	console: serial@78AF000 {
@@ -50,7 +51,7 @@
 	};
 
 	nand: nand-controller@79B0000 {
-		status = "ok";
+		status = "okay";
 		nand_gpio {
 			qspi_dat3 {
 				gpio = <4>;

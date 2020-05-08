@@ -20,7 +20,7 @@
 
 	mmc: sdhci@7804000 {
 		compatible = "qcom,sdhci-msm";
-		status = "ok";
+		status = "okay";
 		mmc_gpio {
 			emmc_dat3 {
 				gpio = <4>;

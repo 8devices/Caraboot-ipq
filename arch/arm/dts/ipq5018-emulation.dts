@@ -26,6 +26,7 @@
 		gmac_gpio = "/gmac_gpio";
 		usb0 = "/xhci@8a00000";
 		pci0 = "/pci@80000000";
+		nand = "/nand-controller@79B0000";
 	};
 
 	mmc: sdhci@7804000 {
@@ -55,7 +56,7 @@
 	};
 
 	nand: nand-controller@79B0000 {
-		status = "ok";
+		status = "okay";
 		nand_gpio {
 			qspi_dat3 {
 				gpio = <4>;

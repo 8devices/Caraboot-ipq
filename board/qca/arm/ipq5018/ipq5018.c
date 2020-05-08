@@ -570,7 +570,19 @@ void qpic_set_clk_rate(unsigned int clk_rate, int blk_type, int req_clk_src_type
 void board_nand_init(void)
 {
 #ifdef CONFIG_QPIC_SERIAL
-	qpic_nand_init(NULL);
+	/* check for nand node in dts
+	 * if nand node in dts is disabled then
+	 * simply return from here without
+	 * initializing
+	 */
+	int node;
+
+	node = fdt_path_offset(gd->fdt_blob, "/nand-controller");
+	if (!fdtdec_get_is_enabled(gd->fdt_blob, node)) {
+		printf("QPIC: disabled, skipping initialization\n");
+	} else {
+		qpic_nand_init(NULL);
+	}
 #endif
 
 #ifdef CONFIG_QCA_SPI
