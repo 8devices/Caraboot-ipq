@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2019 The Linux Foundation. All rights reserved.
+* Copyright (c) 2019-2020 The Linux Foundation. All rights reserved.
 *
 * This program is free software; you can redistribute it and/or modify
 * it under the terms of the GNU General Public License version 2 and
@@ -18,9 +18,7 @@
 #include <malloc.h>
 #include <phy.h>
 #include <net.h>
-#include <miiphy.h>
 #include <asm/global_data.h>
-#include <fdtdec.h>
 #include "ipq_phy.h"
 #include <asm/arch-ipq5018/ipq5018_gmac.h>
 
@@ -39,10 +37,14 @@ uchar ipq_def_enetaddr[6] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
 phy_info_t *phy_info[IPQ5018_PHY_MAX] = {0};
 
 extern int ipq_mdio_read(int mii_id, int regnum, ushort *data);
+extern int ipq5018_mdio_read(int mii_id, int regnum, ushort *data);
 extern int ipq_qca8033_phy_init(struct phy_ops **ops, u32 phy_id);
-extern void ipq_qca8075_phy_map_ops(struct phy_ops **ops);
 extern int ipq_qca8081_phy_init(struct phy_ops **ops, u32 phy_id);
+extern int ipq_gephy_phy_init(struct phy_ops **ops, u32 phy_id);
 extern int ipq_sw_mdio_init(const char *);
+extern int ipq5018_sw_mdio_init(const char *);
+extern void ppe_uniphy_mode_set(uint32_t mode);
+extern int ipq_athrs17_init(ipq_gmac_board_cfg_t *gmac_cfg);
 
 static int ipq_eth_wr_macaddr(struct eth_device *dev)
 {
@@ -238,69 +240,146 @@ static inline u32 ipq_gmac_is_desc_empty(ipq_gmac_desc_t *fr)
 {
 	return ((fr->length & DescSize1Mask) == 0);
 }
-#if 0
-static int ipq_eth_update(struct eth_device *dev, bd_t *this)
+static void ipq5018_gmac0_speed_clock_set(int speed_clock1,
+	int speed_clock2, int gmacid)
+{
+	int iTxRx;
+	uint32_t reg_value;
+	/*
+	 * iTxRx indicates Tx and RX register
+	 * 0 = Rx and 1 = Tx
+	 */
+	for (iTxRx = 0; iTxRx < 2; ++iTxRx){
+		/* gcc port first clock divider */
+		reg_value = 0;
+		reg_value = readl(GCC_GMAC0_RX_CFG_RCGR +
+				(iTxRx * 8) + (gmacid * 0x10));
+		reg_value &= ~0x71f;
+		reg_value |= speed_clock1;
+		writel(reg_value, GCC_GMAC0_RX_CFG_RCGR +
+				(iTxRx * 8) + (gmacid * 0x10));
+		/* gcc port second clock divider */
+		reg_value = 0;
+		reg_value = readl(GCC_GMAC0_RX_MISC +
+				(iTxRx * 4) + (gmacid * 0x10));
+		reg_value &= ~0xf;
+		reg_value |= speed_clock2;
+		writel(reg_value, GCC_GMAC0_RX_MISC +
+				(iTxRx * 4) + (gmacid * 0x10));
+		/* update above clock configuration */
+		reg_value = 0;
+		reg_value = readl(GCC_GMAC0_RX_CMD_RCGR +
+				(iTxRx * 8) + (gmacid * 0x10));
+		reg_value &= ~0x1;
+		reg_value |= 0x1;
+		writel(reg_value, GCC_GMAC0_RX_CMD_RCGR +
+				(iTxRx * 8) + (gmacid * 0x10));
+	}
+}
+
+static int ipq5018_phy_link_update(struct eth_device *dev)
 {
 	struct ipq_eth_dev *priv = dev->priv;
-	struct phy_ops *phy_get_ops = priv->ops[priv->mac_unit];
-	uint phy_status;
-	uint cur_speed;
-	uint cur_duplex;
+	int i;
+	u8 status;
+	struct phy_ops *phy_get_ops;
+	fal_port_speed_t speed;
+	fal_port_duplex_t duplex;
+	char *lstatus[] = {"up", "Down"};
+	char *dp[] = {"Half", "Full"};
+	int speed_clock1 = 0, speed_clock2 = 0;
 
-	phy_status = phy_get_ops->phy_get_link_status(priv->mac_unit, priv->phy_address);
-	phy_get_ops->phy_get_speed(priv->mac_unit, priv->phy_address, &curr_speed);
-	phy_get_ops->phy_get_duplex(priv->mac_unit, priv->phy_address, &duplex);
+	for (i =  0; i < IPQ5018_PHY_MAX; i++) {
 
-		if (cur_speed != priv->speed || cur_duplex != priv->duplex) {
-			ipq_info("Link %x status changed\n", priv->mac_unit);
-			if (priv->duplex)
-				ipq_info("Full duplex link\n");
-			else
-				ipq_info("Half duplex link\n");
+		phy_get_ops = priv->ops[i];
 
-			ipq_info("Link %x up, Phy_status = %x\n",
-					priv->mac_unit, phy_status);
-
-			switch (cur_speed) {
-			case SPEED_1000M:
-				ipq_info("Port:%d speed 1000Mbps\n",
-					priv->mac_unit);
-				priv->mac_ps = GMII_PORT_SELECT;
-				break;
-
-			case SPEED_100M:
-				ipq_info("Port:%d speed 100Mbps\n",
-					priv->mac_unit);
-				priv->mac_ps = MII_PORT_SELECT;
-				break;
-
-			case SPEED_10M:
-				ipq_info("Port:%d speed 10Mbps\n",
-					priv->mac_unit);
-				priv->mac_ps = MII_PORT_SELECT;
-				break;
-
-			default:
-				ipq_info("Port speed unknown\n");
-				return -1;
-			}
-
-			priv->speed = cur_speed;
-			priv->duplex = cur_duplex;
-
+		if (!phy_get_ops || !phy_get_ops->phy_get_link_status ||
+			!phy_get_ops->phy_get_speed ||
+			!phy_get_ops->phy_get_duplex) {
+			printf ("Link status/Get speed/Get duplex not mapped\n");
+			return -1;
 		}
+
+		status = phy_get_ops->phy_get_link_status(priv->mac_unit,
+			priv->phy_address);
+		phy_get_ops->phy_get_speed(priv->mac_unit,
+			priv->phy_address, &speed);
+		phy_get_ops->phy_get_duplex(priv->mac_unit,
+			priv->phy_address, &duplex);
+
+		switch (speed) {
+			case FAL_SPEED_10:
+				speed_clock1 = 0x109;
+				speed_clock2 = 0x9;
+				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
+						priv->mac_unit, i, lstatus[status], speed,
+						dp[duplex]);
+				break;
+			case FAL_SPEED_100:
+				speed_clock1 = 0x101;
+				speed_clock2 = 0x4;
+				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
+						priv->mac_unit, i, lstatus[status], speed,
+						dp[duplex]);
+				break;
+			case FAL_SPEED_1000:
+				speed_clock1 = 0x101;
+				speed_clock2 = 0x0;
+				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
+						priv->mac_unit, i, lstatus[status], speed,
+						dp[duplex]);
+				break;
+			case FAL_SPEED_10000:
+				speed_clock1 = 0x101;
+				speed_clock2 = 0x0;
+				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
+						priv->mac_unit, i, lstatus[status], speed,
+						dp[duplex]);
+				break;
+			case FAL_SPEED_2500:
+				speed_clock1 = 0x107;
+				speed_clock2 = 0x0;
+				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
+						priv->mac_unit, i, lstatus[status], speed,
+						dp[duplex]);
+				break;
+			case FAL_SPEED_5000:
+				speed_clock2 = 0x1;
+				speed_clock2 = 0x0;
+				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
+						priv->mac_unit, i, lstatus[status], speed,
+						dp[duplex]);
+				break;
+			default:
+				printf("Unknown speed\n");
+				break;
+		}
+	}
+	if (priv->mac_unit){
+		if (priv->phy_type == QCA8081_PHY_TYPE)
+			ppe_uniphy_mode_set(PORT_WRAPPER_SGMII_PLUS);
+		else
+			ppe_uniphy_mode_set(PORT_WRAPPER_SGMII_FIBER);
+	}
+
+	ipq5018_gmac0_speed_clock_set(speed_clock1, speed_clock2, priv->mac_unit);
+
+	if (status) {
+		/* No PHY link is alive */
+		return -1;
+	}
 
 	return 0;
 }
-#endif
+
 int ipq_eth_init(struct eth_device *dev, bd_t *this)
 {
 	struct ipq_eth_dev *priv = dev->priv;
 	struct eth_dma_regs *dma_reg = (struct eth_dma_regs *)priv->dma_regs_p;
 	u32 data;
-#if 0
-	ipq_phy_link_status(dev);
-#endif
+
+	if(ipq5018_phy_link_update(dev) < 0);
+
 	priv->next_rx = 0;
 	priv->next_tx = 0;
 
@@ -455,8 +534,7 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 {
 	struct eth_device *dev[CONFIG_IPQ_NO_MACS];
 	uchar enet_addr[CONFIG_IPQ_NO_MACS * 6];
-	char ethaddr[32] = "ethaddr";
-	int i, phy_id;
+	int i;
 	uint32_t phy_chip_id, phy_chip_id1, phy_chip_id2;
 	int ret;
 	memset(enet_addr, 0, sizeof(enet_addr));
@@ -468,11 +546,11 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 
 		dev[i] = malloc(sizeof(struct eth_device));
 		if (dev[i] == NULL)
-			goto failed;
+			goto init_failed;
 
 		ipq_gmac_macs[i] = malloc(sizeof(struct ipq_eth_dev));
 		if (ipq_gmac_macs[i] == NULL)
-			goto failed;
+			goto init_failed;
 
 		memset(dev[i], 0, sizeof(struct eth_device));
 		memset(ipq_gmac_macs[i], 0, sizeof(struct ipq_eth_dev));
@@ -484,12 +562,9 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 		dev[i]->send = ipq_eth_send;
 		dev[i]->write_hwaddr = ipq_eth_wr_macaddr;
 		dev[i]->priv = (void *) ipq_gmac_macs[i];
-
-		snprintf(dev[i]->name, sizeof(dev[i]->name), "eth%d", i);
-
 		/*
-		 * Setting the Default MAC address if the MAC read from ART partition
-		 * is invalid.
+		 * Setting the Default MAC address
+		 * if the MAC read from ART partition is invalid
 		 */
 		if ((ret < 0) ||
 			(!is_valid_ethaddr(&enet_addr[i * 6]))) {
@@ -507,7 +582,7 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 			dev[i]->enetaddr[4],
 			dev[i]->enetaddr[5]);
 
-		snprintf(ethaddr, sizeof(ethaddr), "eth%daddr", (i + 1));
+		snprintf(dev[i]->name, sizeof(dev[i]->name), "eth%d", i);
 
 		ipq_gmac_macs[i]->dev = dev[i];
 		ipq_gmac_macs[i]->mac_unit = gmac_cfg->unit;
@@ -515,82 +590,88 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 			(struct eth_mac_regs *)(gmac_cfg->base);
 		ipq_gmac_macs[i]->dma_regs_p =
 			(struct eth_dma_regs *)(gmac_cfg->base + DW_DMA_BASE_OFFSET);
-#if 0
-		ipq_gmac_macs[i]->interface = gmac_cfg->phy;
-		ipq_gmac_macs[i]->phy_address = gmac_cfg->phy_addr.addr;
-		ipq_gmac_macs[i]->no_of_phys = gmac_cfg->phy_addr.count;
-#endif
 		ipq_gmac_macs[i]->phy_address = gmac_cfg->phy_addr;
 		ipq_gmac_macs[i]->gmac_board_cfg = gmac_cfg;
+		ipq_gmac_macs[i]->interface = gmac_cfg->phy_interface_mode;
+		ipq_gmac_macs[i]->phy_type = gmac_cfg->phy_type;
+		ipq_gmac_macs[i]->ipq_swith = gmac_cfg->ipq_swith;
 
-#if 0
-		if (get_params.gmac_port == gmac_cfg->unit) {
-			ipq_gmac_macs[i]->forced_params = &get_params;
-		}
-#endif
-		/* tx/rx Descriptor initialization */
-		if (ipq_gmac_tx_rx_desc_ring(dev[i]->priv) == -1)
-			goto failed;
-#if 0
-		if(ipq_gmac_macs[i]->mac_unit == 0)
-			ipq_gmac_macs[i]->speed = SPEED_10M;
-		else
-			ipq_gmac_macs[i]->speed = SPEED_1000M;
-#endif
+		strlcpy((char *)ipq_gmac_macs[i]->phy_name,
+			gmac_cfg->phy_name,
+			sizeof(ipq_gmac_macs[i]->phy_name));
 
-		strlcpy((char *)ipq_gmac_macs[i]->phy_name, gmac_cfg->phy_name,
-					sizeof(ipq_gmac_macs[i]->phy_name));
+		phy_chip_id = -1;
 
-if (0){
-		if (ipq_sw_mdio_init(gmac_cfg->phy_name))
-			goto failed;
-
-		for (phy_id =  0; phy_id < 2; phy_id++) {
-#if 0
-			if (phy_node >= 0) {
-				phy_addr = phy_info[phy_id]->phy_address;
+		if (gmac_cfg->unit){
+			ret = ipq_sw_mdio_init(gmac_cfg->phy_name);
+				if (ret)
+					goto init_failed;
+			if (ipq_gmac_macs[i]->ipq_swith){
+				ipq_athrs17_init(gmac_cfg);
 			} else {
-				if (phy_id == port_8033)
-					phy_addr = QCA8033_PHY_ADDR;
-				else if (phy_id == aquantia_port)
-					phy_addr = AQU_PHY_ADDR;
-				else
-					phy_addr = phy_id;
+				phy_chip_id1 = ipq_mdio_read(
+						ipq_gmac_macs[i]->phy_address,
+						QCA_PHY_ID1, NULL);
+				phy_chip_id2 = ipq_mdio_read(
+						ipq_gmac_macs[i]->phy_address,
+						QCA_PHY_ID2, NULL);
+				phy_chip_id = (phy_chip_id1 << 16) | phy_chip_id2;
 			}
-#endif
-			phy_chip_id1 = ipq_mdio_read(
-				ipq_gmac_macs[i]->phy_address, QCA_PHY_ID1, NULL);
-			phy_chip_id2 = ipq_mdio_read(
-				ipq_gmac_macs[i]->phy_address, QCA_PHY_ID2, NULL);
+		} else {
+			ret = ipq5018_sw_mdio_init(gmac_cfg->phy_name);
+				if (ret)
+					goto init_failed;
+			phy_chip_id1 = ipq5018_mdio_read(ipq_gmac_macs[i]->phy_address,
+						QCA_PHY_ID1, NULL);
+			phy_chip_id2 = ipq5018_mdio_read(ipq_gmac_macs[i]->phy_address,
+						QCA_PHY_ID2, NULL);
 			phy_chip_id = (phy_chip_id1 << 16) | phy_chip_id2;
-
-			switch(phy_chip_id) {
-				case QCA8033_PHY:
-					ipq_qca8033_phy_init(
-					&ipq_gmac_macs[i]->ops[phy_id],
-						ipq_gmac_macs[i]->phy_address);
-					break;
-				case QCA8081_PHY:
-				case QCA8081_1_1_PHY:
-					ipq_qca8081_phy_init(
-					&ipq_gmac_macs[i]->ops[phy_id],
-						ipq_gmac_macs[i]->phy_address);
-					break;
-				default:
-					ipq_qca8075_phy_map_ops(&ipq_gmac_macs[i]->ops[phy_id]);
-					break;
-			}
 		}
-}
-	eth_register(dev[i]);
+
+		switch(phy_chip_id) {
+			/*
+			 * NAPA PHY For GMAC1
+			 */
+			case QCA8081_PHY:
+			case QCA8081_1_1_PHY:
+				ipq_qca8081_phy_init(
+					&ipq_gmac_macs[i]->ops[i],
+					ipq_gmac_macs[i]->phy_address);
+				break;
+			/*
+			 * Internel GEPHY only for GMAC0
+			 */
+			case GEPHY:
+				ipq_gephy_phy_init(
+					&ipq_gmac_macs[i]->ops[i],
+					ipq_gmac_macs[i]->phy_address);
+				break;
+			/*
+			 * 1G PHY
+			 */
+			case QCA8033_PHY:
+				ipq_qca8033_phy_init(
+					&ipq_gmac_macs[i]->ops[i],
+					ipq_gmac_macs[i]->phy_address);
+				break;
+			default:
+				printf("GMAC%d : Invalid PHY ID \n", i);
+				break;
+		}
+		/*
+		 * Tx/Rx Descriptor initialization
+		 */
+		if (ipq_gmac_tx_rx_desc_ring(dev[i]->priv) == -1)
+			goto init_failed;
+
+		eth_register(dev[i]);
 	}
 
 	return 0;
 
-failed:
+init_failed:
 	for (i = 0; i < IPQ5018_GMAC_PORT; i++) {
 		if (dev[i]) {
-			eth_unregister(dev[i]);
 			free(dev[i]);
 		}
 		if (ipq_gmac_macs[i])

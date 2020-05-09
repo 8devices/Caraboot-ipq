@@ -128,11 +128,12 @@
 
 	gmac_cfg {
 		gmac_count = <2>;
-
+		ext_mdio_gpio = <1>;
 		gmac1_cfg {
 			unit = <0>;
 			base = <0x39C00000>;
 			phy_address = <7>;
+			phy_interface_mode = <2>;
 			phy_name = "IPQ MDIO0";
 		};
 
@@ -140,7 +141,11 @@
 			unit = <1>;
 			base = <0x39D00000>;
 			phy_address = <1>;
+			phy_interface_mode = <2>;
 			phy_name = "IPQ MDIO1";
+			mac_pwr0 = <0x00080000>;
+			mac_pwr1 = <0x00040000>;
+			s17c_switch_enable = <0>;
 		};
        };
 
