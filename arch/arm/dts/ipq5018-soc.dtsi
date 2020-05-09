@@ -19,7 +19,9 @@
 	serial@78AF000 {
 		compatible = "qca,ipq-uartdm";
 		reg = <0x78af000 0x200>;
-		id = <2>;
+		m_value = <0x24>;
+		n_value = <0xC31A>;
+		d_value = <0xC2F6>;
 		bit_rate = <0xff>;
 		status = "disabled";
 	};
