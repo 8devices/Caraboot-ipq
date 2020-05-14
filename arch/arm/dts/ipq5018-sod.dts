@@ -14,9 +14,9 @@
 /dts-v1/;
 #include "ipq5018-soc.dtsi"
 / {
-	model ="QCA, IPQ5018-SOD";
-	compatible = "qca,ipq5018", "qca,ipq5018-sod";
-	machid = <0x0F040100>;
+	model ="QCA, IPQ5018-MP03.1";
+	compatible = "qca,ipq5018", "qca,ipq5018-mp03.1";
+	machid = <0x8040001>;
 	config_name = "config@mp03.1";
 
 	aliases {
