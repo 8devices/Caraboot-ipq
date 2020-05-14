@@ -166,11 +166,17 @@
 #define GUCTL					0x700C12C
 #define FLADJ					0x700C630
 
-#define USB30_PHY_1_QUSB2PHY_BASE		0x79000
+#define QUSB2PHY_BASE				0x5b000
+
+#define GCC_USB0_LFPS_CFG_SRC_SEL		(0x1 << 8)
+#define GCC_USB0_LFPS_CFG_SRC_DIV		(0x1f << 0)
+#define LFPS_M					0x1
+#define LFPS_N					0xfe
+#define LFPS_D					0xfd
 
 #define GCC_USB0_AUX_CFG_MODE_DUAL_EDGE 	(2 << 12)
 #define GCC_USB0_AUX_CFG_SRC_SEL		(0 << 8)
-#define GCC_USB0_AUX_CFG_SRC_DIV		(0 << 0)
+#define GCC_USB0_AUX_CFG_SRC_DIV		(0x17 << 0)
 
 #define AUX_M					0x0
 #define AUX_N					0x0
@@ -181,20 +187,18 @@
 
 
 #define GCC_USB0_MASTER_CFG_RCGR_SRC_SEL	(1 << 8)
-#define GCC_USB0_MASTER_CFG_RCGR_SRC_DIV	(0xb << 0)
+#define GCC_USB0_MASTER_CFG_RCGR_SRC_DIV	(0x7 << 0)
 
-#define GCC_USB_MOCK_UTMI_SRC_SEL		(0 << 8)
-#define GCC_USB_MOCK_UTMI_SRC_DIV		(1 << 0)
+#define GCC_USB_MOCK_UTMI_SRC_SEL		(1 << 8)
+#define GCC_USB_MOCK_UTMI_SRC_DIV		(0x13 << 0)
 #define UTMI_M					0x1
 #define UTMI_N					0xf7
 #define UTMI_D					0xf6
+#define GCC_USB_MOCK_UTMI_CLK_DIV		(0x1 << 16)
 
-#define GCC_SNOC_BUS_TIMEOUT2_AHB_CBCR		0x01847014
 #define GCC_QUSB2_1_PHY_BCR			0x1841040
-#define USB30_PHY_2_QUSB2PHY_BASE		0x59000
 
-#define USB30_PHY_1_USB3PHY_AHB2PHY_BASE	0x78000
-#define USB30_PHY_2_USB2PHY_AHB2PHY_BASE	0x58000
+#define USB3PHY_APB_BASE			0x5d000
 
 #define USB3_PHY_POWER_DOWN_CONTROL		0x804
 #define QSERDES_COM_SYSCLK_EN_SEL		0xac
@@ -355,6 +359,32 @@
 #define ARM_PSCI_TZ_FN_AFFINITY_INFO	ARM_PSCI_TZ_FN(4)
 
 #define CLK_ENABLE				0x1
+#define SSCG_CTRL_REG_1			0x9c
+#define SSCG_CTRL_REG_2			0xa0
+#define SSCG_CTRL_REG_3			0xa4
+#define SSCG_CTRL_REG_4			0xa8
+#define SSCG_CTRL_REG_5			0xac
+#define SSCG_CTRL_REG_6			0xb0
+
+#define USB_PHY_CFG0                    0x94
+#define USB_PHY_UTMI_CTRL5              0x50
+#define USB_PHY_FSEL_SEL                0xB8
+#define USB_PHY_HS_PHY_CTRL_COMMON0     0x54
+#define USB_PHY_REFCLK_CTRL             0xA0
+#define USB_PHY_HS_PHY_CTRL2            0x64
+#define USB_PHY_UTMI_CTRL0              0x3c
+
+#define UTMI_PHY_OVERRIDE_EN           (1 << 1)
+#define POR_EN                         (1 << 1)
+#define FREQ_SEL                       (1 << 0)
+#define COMMONONN                      (1 << 7)
+#define FSEL                           (1 << 4)
+#define RETENABLEN                     (1 << 3)
+#define USB2_SUSPEND_N_SEL             (1 << 3)
+#define USB2_SUSPEND_N                 (1 << 2)
+#define USB2_UTMI_CLK_EN               (1 << 1)
+#define CLKCORE                        (1 << 1)
+#define ATERESET                       ~(1 << 0)
 
 unsigned int __invoke_psci_fn_smc(unsigned int, unsigned int,
 					 unsigned int, unsigned int);
