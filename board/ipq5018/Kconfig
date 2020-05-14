@@ -48,4 +48,7 @@ config NAND_FLASH
 config GEPHY
 	bool "Enable Internel GEPHY for ipq5018"
 
+config ART_COMPRESSED
+	bool "Enable uncompress support for ipq5018"
+
 endif

@@ -373,4 +373,9 @@ extern loff_t board_env_size;
 #undef CONFIG_BOOTM_RTEMS
 #undef CONFIG_BOOTM_VXWORKS
 
+#ifdef CONFIG_ART_COMPRESSED
+#undef CONFIG_GZIP
+#undef CONFIG_ZLIB
+#endif
+
 #endif /* _IPQ5018_H */
