@@ -511,14 +511,6 @@ void qpic_set_clk_rate(unsigned int clk_rate, int blk_type, int req_clk_src_type
 {
 	switch (blk_type) {
 		case QPIC_IO_MACRO_CLK:
-			/* set the FB_CLK_BIT of register QPIC_QSPI_MSTR_CONFIG
-			 * to by pass the serial training. if this FB_CLK_BIT
-			 * bit enabled then , we can apply upto maximum 200MHz
-			 * input to IO_MACRO_BLOCK.
-			*/
-			writel((FB_CLK_BIT | readl(NAND_QSPI_MSTR_CONFIG)),
-					NAND_QSPI_MSTR_CONFIG);
-
 			/* select the clk source for IO_PAD_MACRO
 			 * clk source wil be either XO = 24MHz. or GPLL0 = 800MHz.
 			 */
@@ -539,7 +531,16 @@ void qpic_set_clk_rate(unsigned int clk_rate, int blk_type, int req_clk_src_type
 				 * by hardware and then that clock will be go on bus.
 				 * i.e 200/4MHz = 50MHz i.e 50MHz will go onto the bus.
 				 */
-				writel(0x107, GCC_QPIC_IO_MACRO_CFG_RCGR);
+				if (clk_rate == IO_MACRO_CLK_320_MHZ)
+				       writel(0x104, GCC_QPIC_IO_MACRO_CFG_RCGR);
+				else if (clk_rate == IO_MACRO_CLK_266_MHZ)
+					writel(0x105, GCC_QPIC_IO_MACRO_CFG_RCGR);
+				else if (clk_rate == IO_MACRO_CLK_228_MHZ)
+					writel(0x106, GCC_QPIC_IO_MACRO_CFG_RCGR);
+				else if (clk_rate == IO_MACRO_CLK_100_MHZ)
+					writel(0x10F, GCC_QPIC_IO_MACRO_CFG_RCGR);
+				else if (clk_rate == IO_MACRO_CLK_200_MHZ)
+					writel(0x107, GCC_QPIC_IO_MACRO_CFG_RCGR);
 
 			} else {
 				printf("wrong clk src selection requested.\n");
