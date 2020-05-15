@@ -934,6 +934,10 @@ int ipq_board_usb_init(void)
 	for (i=0; i<CONFIG_USB_MAX_CONTROLLER_COUNT; i++) {
 		snprintf(node_name, sizeof(node_name), "usb%d", i);
 		nodeoff = fdt_path_offset(gd->fdt_blob, node_name);
+		if (nodeoff < 0){
+			printf("USB: Node Not found, skipping initialization \n");
+			return -1;
+		}
 		if (!fdtdec_get_int(gd->fdt_blob, nodeoff, "qcom,emulation", 0)) {
 
 			usb_clock_init(i);
