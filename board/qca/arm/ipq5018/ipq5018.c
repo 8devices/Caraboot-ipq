@@ -127,8 +127,8 @@ void uart1_set_rate_mnd(unsigned int m,
 		unsigned int n, unsigned int two_d)
 {
 	writel(m, GCC_BLSP1_UART1_APPS_M);
-	writel(NOT_N_MINUS_M(n, m), GCC_BLSP1_UART1_APPS_N);
-	writel(NOT_2D(two_d), GCC_BLSP1_UART1_APPS_D);
+	writel(n, GCC_BLSP1_UART1_APPS_N);
+	writel(two_d, GCC_BLSP1_UART1_APPS_D);
 }
 
 void reset_board(void)
