@@ -87,6 +87,7 @@ MODE = ""
 image_type = "all"
 memory_size = "default"
 lk = "false"
+skip_4k_nand = "false"
 
 #
 # Python 2.6 and earlier did not have OrderedDict use the backport
@@ -1682,6 +1683,7 @@ class ArgParser(object):
 	global image_type
 	global memory_size
         global lk
+        global skip_4k_nand
 
         """Start the parsing process, and populate members with parsed value.
 
@@ -1691,7 +1693,7 @@ class ArgParser(object):
 	cdir = os.path.abspath(os.path.dirname(""))
         if len(sys.argv) > 1:
             try:
-                opts, args = getopt(sys.argv[1:], "", ["arch=", "fltype=", "srcPath=", "inImage=", "outImage=", "image_type=", "memory=", "lk"])
+                opts, args = getopt(sys.argv[1:], "", ["arch=", "fltype=", "srcPath=", "inImage=", "outImage=", "image_type=", "memory=", "lk", "skip_4k_nand"])
             except GetoptError, e:
 		raise UsageError(e.msg)
 
@@ -1719,6 +1721,9 @@ class ArgParser(object):
 
                 elif option =="--lk":
                     lk = "true"
+
+                elif option =="--skip_4k_nand":
+                    skip_4k_nand = "true"
 
 
 #Verify Arguments passed by user
@@ -1785,6 +1790,7 @@ class ArgParser(object):
         print " \t\tIf specified, CDTs created with specified memory size will be used for single-image.\n"
         print
         print "  --lk \t\tReplace u-boot with lkboot for appsbl"
+        print "  --skip_4k_nand \tskip generating 4k nand images"
         print " \t\tThis Argument does not take any value"
         print "Pack Version: %s" % version
 
@@ -1874,15 +1880,16 @@ def main():
     config = SRC_DIR + "/" + ARCH_NAME + "/config.xml"
     root = ET.parse(config)
 
-# Add nand-4k flash type, if nand flash type is specified
-    if "nand" in parser.flash_type.split(","):
-        if root.find(".//data[@type='NAND_PARAMETER']/entry") != None:
-            parser.flash_type = parser.flash_type + ",nand-4k"
+    if skip_4k_nand != "true":
+	# Add nand-4k flash type, if nand flash type is specified
+	if "nand" in parser.flash_type.split(","):
+            if root.find(".//data[@type='NAND_PARAMETER']/entry") != None:
+		parser.flash_type = parser.flash_type + ",nand-4k"
 
-# Add norplusnand-4k flash type, if norplusnand flash type is specified
-    if "norplusnand" in parser.flash_type.split(","):
-        if root.find(".//data[@type='NAND_PARAMETER']/entry") != None:
-            parser.flash_type = parser.flash_type + ",norplusnand-4k"
+	# Add norplusnand-4k flash type, if norplusnand flash type is specified
+	if "norplusnand" in parser.flash_type.split(","):
+            if root.find(".//data[@type='NAND_PARAMETER']/entry") != None:
+		parser.flash_type = parser.flash_type + ",norplusnand-4k"
 
 # Format the output image name from Arch, flash type and mode
     for flash_type in parser.flash_type.split(","):
