@@ -127,8 +127,8 @@ void uart1_set_rate_mnd(unsigned int m,
 		unsigned int n, unsigned int two_d)
 {
 	writel(m, GCC_BLSP1_UART1_APPS_M);
-	writel(NOT_N_MINUS_M(n, m), GCC_BLSP1_UART1_APPS_N);
-	writel(NOT_2D(two_d), GCC_BLSP1_UART1_APPS_D);
+	writel(n, GCC_BLSP1_UART1_APPS_N);
+	writel(two_d, GCC_BLSP1_UART1_APPS_D);
 }
 
 void reset_board(void)
@@ -929,6 +929,10 @@ int ipq_board_usb_init(void)
 	for (i=0; i<CONFIG_USB_MAX_CONTROLLER_COUNT; i++) {
 		snprintf(node_name, sizeof(node_name), "usb%d", i);
 		nodeoff = fdt_path_offset(gd->fdt_blob, node_name);
+		if (nodeoff < 0){
+			printf("USB: Node Not found, skipping initialization \n");
+			return -1;
+		}
 		if (!fdtdec_get_int(gd->fdt_blob, nodeoff, "qcom,emulation", 0)) {
 
 			usb_clock_init(i);
