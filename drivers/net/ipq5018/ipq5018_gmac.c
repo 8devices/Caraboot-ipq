@@ -280,7 +280,6 @@ static void ipq5018_gmac0_speed_clock_set(int speed_clock1,
 static int ipq5018_phy_link_update(struct eth_device *dev)
 {
 	struct ipq_eth_dev *priv = dev->priv;
-	int i;
 	u8 status;
 	struct phy_ops *phy_get_ops;
 	fal_port_speed_t speed;
@@ -289,65 +288,55 @@ static int ipq5018_phy_link_update(struct eth_device *dev)
 	char *dp[] = {"Half", "Full"};
 	int speed_clock1 = 0, speed_clock2 = 0;
 
-	for (i =  0; i < IPQ5018_PHY_MAX; i++) {
-
-		phy_get_ops = priv->ops[i];
-
-		if (!phy_get_ops || !phy_get_ops->phy_get_link_status ||
-			!phy_get_ops->phy_get_speed ||
-			!phy_get_ops->phy_get_duplex) {
+	if (priv->ipq_swith == 0) {
+		phy_get_ops = priv->ops;
+		if ((phy_get_ops == NULL) ||
+			(phy_get_ops->phy_get_link_status == NULL) ||
+			(phy_get_ops->phy_get_speed == NULL) ||
+			(phy_get_ops->phy_get_duplex == NULL)) {
 			printf ("Link status/Get speed/Get duplex not mapped\n");
 			return -1;
 		}
+	}
 
+	if (priv->ipq_swith) {
+		speed_clock1 = 0x1;
+		speed_clock2 = 0;
+	} else {
 		status = phy_get_ops->phy_get_link_status(priv->mac_unit,
-			priv->phy_address);
+				priv->phy_address);
 		phy_get_ops->phy_get_speed(priv->mac_unit,
-			priv->phy_address, &speed);
+				priv->phy_address, &speed);
 		phy_get_ops->phy_get_duplex(priv->mac_unit,
-			priv->phy_address, &duplex);
+				priv->phy_address, &duplex);
 
 		switch (speed) {
 			case FAL_SPEED_10:
-				speed_clock1 = 0x109;
+				speed_clock1 = 0x9;
 				speed_clock2 = 0x9;
-				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
-						priv->mac_unit, i, lstatus[status], speed,
+				printf ("eth%d  %s Speed :%d %s duplex\n",
+						priv->mac_unit, lstatus[status], speed,
 						dp[duplex]);
 				break;
 			case FAL_SPEED_100:
-				speed_clock1 = 0x101;
-				speed_clock2 = 0x4;
-				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
-						priv->mac_unit, i, lstatus[status], speed,
+				speed_clock1 = 0x9;
+				speed_clock2 = 0;
+				printf ("eth%d %s Speed :%d %s duplex\n",
+						priv->mac_unit, lstatus[status], speed,
 						dp[duplex]);
 				break;
 			case FAL_SPEED_1000:
-				speed_clock1 = 0x101;
-				speed_clock2 = 0x0;
-				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
-						priv->mac_unit, i, lstatus[status], speed,
-						dp[duplex]);
-				break;
-			case FAL_SPEED_10000:
-				speed_clock1 = 0x101;
-				speed_clock2 = 0x0;
-				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
-						priv->mac_unit, i, lstatus[status], speed,
+				speed_clock1 = 0x1;
+				speed_clock2 = 0;
+				printf ("eth%d %s Speed :%d %s duplex\n",
+						priv->mac_unit, lstatus[status], speed,
 						dp[duplex]);
 				break;
 			case FAL_SPEED_2500:
-				speed_clock1 = 0x107;
-				speed_clock2 = 0x0;
-				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
-						priv->mac_unit, i, lstatus[status], speed,
-						dp[duplex]);
-				break;
-			case FAL_SPEED_5000:
-				speed_clock2 = 0x1;
-				speed_clock2 = 0x0;
-				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
-						priv->mac_unit, i, lstatus[status], speed,
+				speed_clock1 = 0x1;
+				speed_clock2 = 0;
+				printf ("eth%d %s Speed :%d %s duplex\n",
+						priv->mac_unit, lstatus[status], speed,
 						dp[duplex]);
 				break;
 			default:
@@ -355,6 +344,7 @@ static int ipq5018_phy_link_update(struct eth_device *dev)
 				break;
 		}
 	}
+
 	if (priv->mac_unit){
 		if (priv->phy_type == QCA8081_PHY_TYPE)
 			ppe_uniphy_mode_set(PORT_WRAPPER_SGMII_PLUS);
@@ -607,7 +597,8 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 				if (ret)
 					goto init_failed;
 			if (ipq_gmac_macs[i]->ipq_swith){
-				ipq_athrs17_init(gmac_cfg);
+				if (ipq_athrs17_init(gmac_cfg) != 0)
+					printf(" S17C switch init failed \n");
 			} else {
 				phy_chip_id1 = ipq_mdio_read(
 						ipq_gmac_macs[i]->phy_address,
@@ -635,7 +626,7 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 			case QCA8081_PHY:
 			case QCA8081_1_1_PHY:
 				ipq_qca8081_phy_init(
-					&ipq_gmac_macs[i]->ops[i],
+					&ipq_gmac_macs[i]->ops,
 					ipq_gmac_macs[i]->phy_address);
 				break;
 			/*
@@ -643,7 +634,7 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 			 */
 			case GEPHY:
 				ipq_gephy_phy_init(
-					&ipq_gmac_macs[i]->ops[i],
+					&ipq_gmac_macs[i]->ops,
 					ipq_gmac_macs[i]->phy_address);
 				break;
 			/*
@@ -651,7 +642,7 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 			 */
 			case QCA8033_PHY:
 				ipq_qca8033_phy_init(
-					&ipq_gmac_macs[i]->ops[i],
+					&ipq_gmac_macs[i]->ops,
 					ipq_gmac_macs[i]->phy_address);
 				break;
 			default:

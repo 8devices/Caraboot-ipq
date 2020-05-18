@@ -633,15 +633,126 @@ static void set_napa_phy_gpio(int gpio)
 	gpio_set_value(gpio, 0x1);
 }
 
-void gmac_clock_enable(void)
+static void cmn_blk_clk_set(void)
 {
-	/* GEPHY BCR Enable */
-	writel(0x0, GCC_GEPHY_BCR);
-	udelay(10);
+	/* GMN block */
+	writel(0x1, GCC_CMN_BLK_AHB_CBCR);
+	mdelay(200);
+	writel(0x1, GCC_CMN_BLK_SYS_CBCR);
+	mdelay(200);
+}
 
-	/* GMAC0 BCR Enable */
-	writel(0x0, GCC_GMAC0_BCR);
-	udelay(10);
+static void uniphy_clk_set(void)
+{
+	writel(0x1, GCC_UNIPHY_AHB_CBCR);
+	mdelay(200);
+	writel(0x1, GCC_UNIPHY_SYS_CBCR);
+	mdelay(200);
+}
+
+static void gephy_port_clock_reset(void)
+{
+	writel(0, GCC_GEPHY_RX_CBCR);
+	mdelay(200);
+	writel(0, GCC_GEPHY_TX_CBCR);
+	mdelay(200);
+}
+
+static void gmac0_clock_reset(void)
+{
+	writel(0, GCC_GMAC0_RX_CBCR);
+	mdelay(200);
+	writel(0, GCC_GMAC0_TX_CBCR);
+	mdelay(200);
+}
+
+static void gmac_clk_src_init(void)
+{
+	u32 reg_val;
+
+	/*select source of GMAC*/
+	reg_val = readl(GCC_GMAC0_RX_CFG_RCGR);
+	reg_val &= ~GCC_GMAC_CFG_RCGR_SRC_SEL_MASK;
+	reg_val |= GCC_GMAC0_RX_SRC_SEL_GEPHY_TX;
+	writel(reg_val, GCC_GMAC0_RX_CFG_RCGR);
+
+	reg_val = readl(GCC_GMAC0_TX_CFG_RCGR);
+	reg_val &= ~GCC_GMAC_CFG_RCGR_SRC_SEL_MASK;
+	reg_val |= GCC_GMAC0_TX_SRC_SEL_GEPHY_TX;
+	writel(reg_val, GCC_GMAC0_TX_CFG_RCGR);
+
+	reg_val = readl(GCC_GMAC1_RX_CFG_RCGR);
+	reg_val &= ~GCC_GMAC_CFG_RCGR_SRC_SEL_MASK;
+	reg_val |= GCC_GMAC1_RX_SRC_SEL_UNIPHY_RX;
+	writel(reg_val, GCC_GMAC1_RX_CFG_RCGR);
+
+	reg_val = readl(GCC_GMAC1_TX_CFG_RCGR);
+	reg_val &= ~GCC_GMAC_CFG_RCGR_SRC_SEL_MASK;
+	reg_val |= GCC_GMAC1_TX_SRC_SEL_UNIPHY_TX;
+	writel(reg_val, GCC_GMAC1_TX_CFG_RCGR);
+}
+
+static void gephy_reset(void)
+{
+	u32 reg_val;
+
+	reg_val = readl(GCC_GEPHY_BCR);
+	writel(reg_val | (GCC_GEPHY_BCR_BLK_ARES),
+		GCC_GEPHY_BCR);
+	mdelay(200);
+	writel(reg_val & (~GCC_GEPHY_BCR_BLK_ARES),
+		GCC_GEPHY_BCR);
+	reg_val = readl(GCC_GEPHY_MISC);
+	writel(reg_val | (GCC_GEPHY_MISC_ARES),
+		GCC_GEPHY_MISC);
+	mdelay(200);
+	writel(reg_val & (~GCC_GEPHY_MISC_ARES),
+		GCC_GEPHY_MISC);
+}
+
+static void uniphy_reset(void)
+{
+	u32 reg_val;
+
+	reg_val = readl(GCC_UNIPHY_BCR);
+	writel(reg_val | (GCC_UNIPHY_BCR_BLK_ARES),
+		GCC_UNIPHY_BCR);
+	mdelay(200);
+	writel(reg_val & (~GCC_UNIPHY_BCR_BLK_ARES),
+		GCC_UNIPHY_BCR);
+}
+
+static void gmac_reset(void)
+{
+	u32 reg_val;
+
+	reg_val = readl(GCC_GMAC0_BCR);
+	writel(reg_val | (GCC_GMAC0_BCR_BLK_ARES),
+		GCC_GMAC0_BCR);
+	mdelay(200);
+	writel(reg_val & (~GCC_GMAC0_BCR_BLK_ARES),
+		GCC_GMAC0_BCR);
+
+	reg_val = readl(GCC_GMAC1_BCR);
+	writel(reg_val | (GCC_GMAC1_BCR_BLK_ARES),
+		GCC_GMAC1_BCR);
+	mdelay(200);
+	writel(reg_val & (~GCC_GMAC1_BCR_BLK_ARES),
+		GCC_GMAC1_BCR);
+
+}
+
+static void gmac_clock_enable(void)
+{
+	cmn_blk_clk_set();
+	uniphy_clk_set();
+	gephy_port_clock_reset();
+	gmac0_clock_reset();
+	gmac_clk_src_init();
+	gephy_reset();
+	uniphy_reset();
+	gmac_reset();
+
 	/* GMAC0 AHB clock enable */
 	writel(0x1, GCC_SNOC_GMAC0_AHB_CBCR);
 	udelay(10);
@@ -655,17 +766,6 @@ void gmac_clock_enable(void)
 	writel(0x1, GCC_GMAC0_CFG_CBCR);
 	udelay(10);
 
-	/* UNIPHY BCR Enable */
-	writel(0x0, GCC_UNIPHY_BCR);
-	udelay(10);
-	writel(0x1, GCC_UNIPHY_AHB_CBCR);
-	udelay(10);
-	writel(0x1, GCC_UNIPHY_SYS_CBCR);
-	udelay(10);
-
-	/* GMAC1 BCR Enable */
-	writel(0x0, GCC_GMAC1_BCR);
-	udelay(10);
 	/* GMAC0 AHB clock enable */
 	writel(0x1, GCC_SNOC_GMAC1_AHB_CBCR);
 	udelay(10);
