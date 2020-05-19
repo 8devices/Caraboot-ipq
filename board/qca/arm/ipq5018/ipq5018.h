@@ -99,7 +99,6 @@
 #define GCC_SDCC1_APPS_D		0x01842014
 #define GCC_SDCC1_APPS_CBCR		0x01842018
 #define GCC_SDCC1_AHB_CBCR		0x0184201C
-#define GCC_SDCC1_MISC			0x01842020
 
 /*
  * GCC-QPIC Registers
@@ -141,9 +140,6 @@
 #define GCC_BLSP1_UART2_APPS_M            0x0180303C
 #define GCC_BLSP1_UART2_APPS_N            0x01803040
 #define GCC_BLSP1_UART2_APPS_D            0x01803044
-
-
-#define GCC_SDCC1_BCR                     0x01842000
 
 #define GCC_UART_CFG_RCGR_MODE_MASK       0x3000
 #define GCC_UART_CFG_RCGR_SRCSEL_MASK     0x0700

@@ -259,6 +259,10 @@ void emmc_clock_config(void)
 	/* Delay for clock operation complete */
 	udelay(10);
 	writel(0x1, GCC_SDCC1_APPS_M);
+	/* check this M, N D value while debugging
+	 * because as per clock tool the actual M, N, D
+	 * values are M=1, N=FA, D=F9
+	 */
 	writel(0xFC, GCC_SDCC1_APPS_N);
 	writel(0xFD, GCC_SDCC1_APPS_D);
 	/* Delay for clock operation complete */
@@ -286,15 +290,12 @@ void sdhci_bus_pwr_off(struct sdhci_host *host)
 	sdhci_writeb(host,(val & (~SDHCI_POWER_ON)), SDHCI_POWER_CONTROL);
 }
 
-void emmc_clock_disable(void)
+__weak void board_mmc_deinit(void)
 {
-	/* Clear divider */
-	writel(0x0, GCC_SDCC1_MISC);
-}
-
-void board_mmc_deinit(void)
-{
-	emmc_clock_disable();
+	/*since we do not have misc register in ipq5018
+	 * so simply return from this function
+	 */
+	return;
 }
 
 void emmc_clock_reset(void)
@@ -325,7 +326,6 @@ int board_mmc_init(bd_t *bis)
 	mmc_host.cfg.part_type = PART_TYPE_EFI;
 	mmc_host.quirks = SDHCI_QUIRK_BROKEN_VOLTAGE;
 
-	emmc_clock_disable();
 	emmc_clock_reset();
 	udelay(10);
 	emmc_clock_config();
