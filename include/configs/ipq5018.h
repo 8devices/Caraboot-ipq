@@ -24,14 +24,15 @@
 #define CONFIG_SPI_FLASH_CYPRESS
 #define CONFIG_SYS_NO_FLASH
 #define CONFIG_SYS_CACHELINE_SIZE		64
-#define CONFIG_CMD_CACHE
 #define CONFIG_IPQ_NO_RELOC
 
 #define CONFIG_SYS_VSNPRINTF
 
 /*
-* Enable Early and Late init
-* This config needs for secondary boot and to set BADOFF5E
+ * Enable Early and Late init
+ * This config needs for secondary boot and to set BADOFF5E
+ * This config also need for spi-nor boot,
+ * set size and offset of hlos and rootfs
 */
 #define CONFIG_BOARD_EARLY_INIT_F
 #define CONFIG_BOARD_LATE_INIT
@@ -48,12 +49,6 @@
 * PSCI Calls enable
 */
 #define CONFIG_ARMV7_PSCI
-
-/*
- * Block Device & Disk  Partition Config
- */
-#define HAVE_BLOCK_DEVICE
-#define CONFIG_DOS_PARTITION
 
 /*
  * Enable Flashwrite command
@@ -142,8 +137,6 @@ extern loff_t board_env_size;
 #define CONFIG_ENV_RANGE			board_env_range
 #define CONFIG_SYS_MALLOC_LEN			(CONFIG_ENV_SIZE_MAX + (1024 << 10))
 
-#define CONFIG_ENV_IS_IN_NAND			1
-
 /*
  * NAND Flash Configs
 */
@@ -152,16 +145,22 @@ extern loff_t board_env_size;
  * CONFIG_IPQ_NAND: QPIC NAND in FIFO/block mode.
  * BAM is enabled by default.
  */
-#define CONFIG_QPIC_NAND
 #define CONFIG_CMD_NAND
-#define CONFIG_CMD_NAND_YAFFS
 #define CONFIG_SYS_NAND_SELF_INIT
-#define CONFIG_SYS_NAND_ONFI_DETECTION
-#define CONFIG_PAGE_SCOPE_MULTI_PAGE_READ
+#define CONFIG_CMD_MTDPARTS
 
-/* QSPI Flash configs
- */
-#define CONFIG_QPIC_SERIAL
+#ifdef CONFIG_NAND_FLASH
+#define CONFIG_ENV_IS_IN_NAND			1
+#define CONFIG_QPIC_NAND
+#define CONFIG_SYS_NAND_ONFI_DETECTION
+#define CONFIG_CMD_NAND_YAFFS
+#define CONFIG_MTD_DEVICE
+#define CONFIG_MTD_PARTITIONS
+#endif
+
+#ifdef CONFIG_QPIC_SERIAL
+#define CONFIG_PAGE_SCOPE_MULTI_PAGE_READ
+#endif
 
 /*
 * SPI Flash Configs
@@ -183,15 +182,13 @@ extern loff_t board_env_size;
 #define CONFIG_IPQ_4B_ADDR_SWITCH_REQD
 
 #define CONFIG_QUP_SPI_USE_DMA			1
-#define CONFIG_EFI_PARTITION
 #define CONFIG_QCA_BAM				1
 
 /*
  * MMC configs
  */
+#ifdef CONFIG_MMC_FLASH
 #define CONFIG_QCA_MMC
-
-#ifdef CONFIG_QCA_MMC
 #define CONFIG_MMC
 #define CONFIG_CMD_MMC
 #define CONFIG_GENERIC_MMC
@@ -201,6 +198,7 @@ extern loff_t board_env_size;
 #define CONFIG_SYS_MMC_ENV_DEV			0
 #define CONFIG_SDHCI_SUPPORT
 #define CONFIG_MMC_ADMA
+#define CONFIG_EFI_PARTITION
 /*
 * eMMC controller support only 4-bit
 * force SDHC driver to 4-bit mode
@@ -211,8 +209,6 @@ extern loff_t board_env_size;
 /*
 * I2C Enable
 */
-#define CONFIG_IPQ5018_I2C
-
 #ifdef CONFIG_IPQ5018_I2C
 #define CONFIG_SYS_I2C_QUP
 #define CONFIG_CMD_I2C
@@ -224,6 +220,7 @@ extern loff_t board_env_size;
 */
 
 #define CONFIG_IPQ5018_GMAC
+#define CONFIG_IPQ5018_MDIO
 
 #define CONFIG_NET_RETRY_COUNT			5
 #define CONFIG_SYS_RX_ETH_BUFFER		16
@@ -235,10 +232,16 @@ extern loff_t board_env_size;
 #define CONFIG_NETMASK				255.255.255.0
 #define CONFIG_SERVERIP				192.168.10.19
 #define CONFIG_CMD_TFTPPUT
-#define CONFIG_IPQ_MDIO				2
+#define CONFIG_IPQ_MDIO				1
 #define CONFIG_IPQ_ETH_INIT_DEFER
-
 #define CONFIG_IPQ_NO_MACS			2
+
+/*
+ * PHY
+ */
+#define CONFIG_GEPHY
+#define CONFIG_QCA8033_PHY
+#define CONFIG_QCA8081_PHY
 
 /*
  * USB Support
@@ -250,6 +253,11 @@ extern loff_t board_env_size;
 #define CONFIG_USB_STORAGE
 #define CONFIG_SYS_USB_XHCI_MAX_ROOT_PORTS      2
 #define CONFIG_USB_MAX_CONTROLLER_COUNT         1
+/*
+ * Block Device & Disk  Partition Config
+ */
+#define HAVE_BLOCK_DEVICE
+#define CONFIG_DOS_PARTITION
 #endif
 
 /*
@@ -288,7 +296,6 @@ extern loff_t board_env_size;
 #define CONFIG_CMD_XIMG
 
 /* MTEST */
-#define CONFIG_CMD_MEMTEST
 #define CONFIG_SYS_MEMTEST_START		CONFIG_SYS_SDRAM_BASE + 0x1300000
 #define CONFIG_SYS_MEMTEST_END			CONFIG_SYS_MEMTEST_START + 0x100
 
@@ -299,15 +306,13 @@ extern loff_t board_env_size;
 
 #define CONFIG_BOOTDELAY			2
 
-#define CONFIG_MTD_DEVICE
-#define CONFIG_CMD_MTDPARTS
-#define CONFIG_MTD_PARTITIONS
 #define NUM_ALT_PARTITION			16
 
-#define CONFIG_CMD_UBI
-#define CONFIG_RBTREE
-
+#ifndef CONFIG_IPQ_TINY
 #define CONFIG_CMD_BOOTZ
+#define CONFIG_CMD_CACHE
+#endif
+
 #define CONFIG_FDT_FIXUP_PARTITIONS
 
 #define CONFIG_IPQ_FDT_FIXUP
@@ -337,9 +342,7 @@ extern loff_t board_env_size;
 #define CONFIG_QCA_APPSBL_DLOAD
 #define CONFIG_IPQ5018_DMAGIC_ADDR		0x193D100
 #ifdef CONFIG_QCA_APPSBL_DLOAD
-#define CONFIG_CMD_TFTPPUT
-#define CONFIG_CMD_TFTPPUT
-/* We will be uploading very big files */
+
 #undef CONFIG_NET_RETRY_COUNT
 #define CONFIG_NET_RETRY_COUNT  500
 
@@ -357,13 +360,22 @@ extern loff_t board_env_size;
 #define CONFIG_SYS_CACHELINE_SIZE		64
 
 /*
- * Tz Xpu test ccommand
- */
-#define CONFIG_IPQ_TZT
-
-/*
  * UBI write command
  */
+#ifdef CONFIG_UBI_WRITE
+#define CONFIG_CMD_UBI
+#define CONFIG_RBTREE
 #define IPQ_UBI_VOL_WRITE_SUPPORT
+#endif
+
+#undef CONFIG_BOOTM_NETBSD
+#undef CONFIG_BOOTM_PLAN9
+#undef CONFIG_BOOTM_RTEMS
+#undef CONFIG_BOOTM_VXWORKS
+
+#ifdef CONFIG_ART_COMPRESSED
+#undef CONFIG_GZIP
+#undef CONFIG_ZLIB
+#endif
 
 #endif /* _IPQ5018_H */

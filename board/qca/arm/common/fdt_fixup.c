@@ -595,11 +595,6 @@ __weak void fdt_fixup_cpus_node(void * blob)
 	return;
 }
 
-__weak void fdt_fixup_set_dload_dis(void *blob)
-{
-	return;
-}
-
 __weak void fdt_fixup_set_dload_warm_reset(void *blob)
 {
 	return;
@@ -620,6 +615,11 @@ __weak void fdt_fixup_wcss_rproc_for_atf(void *blob)
 	return;
 }
 
+__weak void fdt_fixup_bt_debug(void *blob)
+{
+	return;
+}
+
 /*
  * For newer kernel that boot with device tree (3.14+), all of memory is
  * described in the /memory node, including areas that the kernel should not be
@@ -636,6 +636,7 @@ int ft_board_setup(void *blob, bd_t *bd)
 	uint32_t flash_type;
 	char *s;
 	char *mtdparts = NULL;
+	char *addparts = NULL;
 	char parts_str[4096];
 	int len = sizeof(parts_str), ret;
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
@@ -689,6 +690,12 @@ int ft_board_setup(void *blob, bd_t *bd)
 	if (mtdparts) {
 		qca_smem_part_to_mtdparts(mtdparts,len);
 		if (mtdparts[0] != '\0') {
+			addparts = getenv("addmtdparts");
+			if (addparts) {
+				debug("addmtdparts = %s\n", addparts);
+				strlcat(mtdparts, ",", sizeof(parts_str));
+				strlcat(mtdparts, addparts, sizeof(parts_str));
+			}
 			debug("mtdparts = %s\n", mtdparts);
 			setenv("mtdparts", mtdparts);
 		}
@@ -729,7 +736,7 @@ int ft_board_setup(void *blob, bd_t *bd)
 		fdt_fixup_set_dload_warm_reset(blob);
 	s = getenv("dload_dis");
 	if (s)
-		fdt_fixup_set_dload_dis(blob);
+		ipq_fdt_mem_rsvd_fixup(blob);
 	s = getenv("qce_fixed_key");
 	if (s)
 		fdt_fixup_set_qce_fixed_key(blob);
@@ -737,6 +744,10 @@ int ft_board_setup(void *blob, bd_t *bd)
 	if (s) {
 		fdt_fixup_set_qca_cold_reboot_enable(blob);
 		fdt_fixup_wcss_rproc_for_atf(blob);
+	}
+	s = getenv("bt_debug");
+	if (s) {
+		fdt_fixup_bt_debug(blob);
 	}
 
 #ifdef CONFIG_QCA_MMC

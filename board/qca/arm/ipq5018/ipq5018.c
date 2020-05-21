@@ -17,15 +17,21 @@
 #include <asm/errno.h>
 #include <environment.h>
 #include <fdtdec.h>
-#include <asm/arch-qca-common/qpic_nand.h>
 #include <asm/arch-qca-common/gpio.h>
 #include <asm/arch-qca-common/uart.h>
 #include <asm/arch-qca-common/scm.h>
 #include <asm/arch-qca-common/iomap.h>
 #include <ipq5018.h>
+#ifdef CONFIG_QCA_MMC
 #include <mmc.h>
 #include <sdhci.h>
+#endif
+#ifdef CONFIG_USB_XHCI_IPQ
 #include <usb.h>
+#endif
+#ifdef CONFIG_QPIC_NAND
+#include <asm/arch-qca-common/qpic_nand.h>
+#endif
 
 #define DLOAD_MAGIC_COOKIE	0x10
 #define DLOAD_DISABLED		0x40
@@ -33,8 +39,14 @@
 ipq_gmac_board_cfg_t gmac_cfg[CONFIG_IPQ_NO_MACS];
 
 DECLARE_GLOBAL_DATA_PTR;
+
+#ifdef CONFIG_QCA_MMC
 struct sdhci_host mmc_host;
+#endif
+
+#ifdef CONFIG_IPQ_MTD_NOR
 extern int ipq_spi_init(u16);
+#endif
 
 const char *rsvd_node = "/reserved-memory";
 const char *del_node[] = {"uboot",
@@ -56,10 +68,16 @@ struct dumpinfo_t dumpinfo_n[] = {
          *                                |        (192k)        |
 	 *                                |                      |
          *                                ------------------------
+	 *				  |			 |
+	 *				  |	BTRAM Copy	 |
+	 *				  |	  (352k)	 |
+	 *				  |			 |
+	 *				  ------------------------
 	 */
 	{ "EBICS0.BIN", 0x40000000, 0x10000000, 0 },
 	{ "IMEM.BIN", 0x08600000, 0x00001000, 0 },
 	{ "NSSUTCM.BIN", 0x08600658, 0x00030000, 0, 1, 0x2000 },
+	{ "BTRAM.BIN", 0x08600658, 0x00058000, 0, 1, 0x00032000 },
 	{ "UNAME.BIN", 0, 0, 0, 0, 0, MINIMAL_DUMP },
 	{ "CPU_INFO.BIN", 0, 0, 0, 0, 0, MINIMAL_DUMP },
 	{ "DMESG.BIN", 0, 0, 0, 0, 0, MINIMAL_DUMP },
@@ -73,6 +91,7 @@ struct dumpinfo_t dumpinfo_s[] = {
 	{ "EBICS_S1.BIN", CONFIG_TZ_END_ADDR, 0x10000000, 0 },
 	{ "IMEM.BIN", 0x08600000, 0x00001000, 0 },
 	{ "NSSUTCM.BIN", 0x08600658, 0x00030000, 0, 1, 0x2000 },
+	{ "BTRAM.BIN", 0x08600658, 0x00058000, 0, 1, 0x00032000 },
 	{ "UNAME.BIN", 0, 0, 0, 0, 0, MINIMAL_DUMP },
 	{ "CPU_INFO.BIN", 0, 0, 0, 0, 0, MINIMAL_DUMP },
 	{ "DMESG.BIN", 0, 0, 0, 0, 0, MINIMAL_DUMP },
@@ -108,28 +127,8 @@ void uart1_set_rate_mnd(unsigned int m,
 		unsigned int n, unsigned int two_d)
 {
 	writel(m, GCC_BLSP1_UART1_APPS_M);
-	writel(NOT_N_MINUS_M(n, m), GCC_BLSP1_UART1_APPS_N);
-	writel(NOT_2D(two_d), GCC_BLSP1_UART1_APPS_D);
-}
-
-int uart1_trigger_update(void)
-{
-	unsigned long cmd_rcgr;
-	int timeout = 0;
-
-	cmd_rcgr = readl(GCC_BLSP1_UART1_APPS_CMD_RCGR);
-	cmd_rcgr |= UART1_CMD_RCGR_UPDATE;
-	writel(cmd_rcgr, GCC_BLSP1_UART1_APPS_CMD_RCGR);
-
-	while (readl(GCC_BLSP1_UART1_APPS_CMD_RCGR) & UART1_CMD_RCGR_UPDATE) {
-		if (timeout++ >= CLOCK_UPDATE_TIMEOUT_US) {
-			printf("Timeout waiting for UART1 clock update\n");
-			return -ETIMEDOUT;
-			udelay(1);
-		}
-	}
-	cmd_rcgr = readl(GCC_BLSP1_UART1_APPS_CMD_RCGR);
-	return 0;
+	writel(n, GCC_BLSP1_UART1_APPS_N);
+	writel(two_d, GCC_BLSP1_UART1_APPS_D);
 }
 
 void reset_board(void)
@@ -146,39 +145,48 @@ void uart1_toggle_clock(void)
 	writel(cbcr_val, GCC_BLSP1_UART1_APPS_CBCR);
 }
 
-void uart1_clock_config(unsigned int m,
-		unsigned int n, unsigned int two_d)
+int uart1_trigger_update(void)
 {
-	uart1_configure_mux();
-	uart1_set_rate_mnd(m, n, two_d);
-	uart1_trigger_update();
+	unsigned long cmd_rcgr;
+	int timeout = 0;
+
+	cmd_rcgr = readl(GCC_BLSP1_UART1_APPS_CMD_RCGR);
+	cmd_rcgr |= UART1_CMD_RCGR_UPDATE | UART1_CMD_RCGR_ROOT_EN;
+	writel(cmd_rcgr, GCC_BLSP1_UART1_APPS_CMD_RCGR);
+
+	while (readl(GCC_BLSP1_UART1_APPS_CMD_RCGR) & UART1_CMD_RCGR_UPDATE) {
+		if (timeout++ >= CLOCK_UPDATE_TIMEOUT_US) {
+			printf("Timeout waiting for UART1 clock update\n");
+			return -ETIMEDOUT;
+			udelay(1);
+		}
+	}
 	uart1_toggle_clock();
+	return 0;
+}
+
+int uart1_clock_config(struct ipq_serial_platdata *plat)
+{
+
+	uart1_configure_mux();
+	uart1_set_rate_mnd(plat->m_value,
+		plat->n_value,
+		plat->d_value);
+	return uart1_trigger_update();
 }
 
 void qca_serial_init(struct ipq_serial_platdata *plat)
 {
-	int node, uart1_node;
+	int ret;
 
-	writel(1, GCC_BLSP1_UART1_APPS_CBCR);
-	node = fdt_path_offset(gd->fdt_blob, "/serial@78AF000/serial_gpio");
-	if (node < 0) {
-		printf("Could not find serial_gpio node\n");
+	if (plat->gpio_node < 0) {
+		printf("serial_init: unable to find gpio node \n");
 		return;
 	}
-
-	if (plat->port_id == 1) {
-		uart1_node = fdt_path_offset(gd->fdt_blob, "uart1");
-		if (uart1_node < 0) {
-			printf("Could not find uart1 node\n");
-			return;
-		}
-	node = fdt_subnode_offset(gd->fdt_blob,
-				uart1_node, "serial_gpio");
-	uart1_clock_config(plat->m_value, plat->n_value, plat->d_value);
-	writel(1, GCC_BLSP1_UART1_APPS_CBCR);
-	}
-
-	qca_gpio_init(node);
+	qca_gpio_init(plat->gpio_node);
+	ret = uart1_clock_config(plat);
+	if (ret)
+		printf("UART clock config failed %d \n", ret);
 }
 
 /*
@@ -251,6 +259,10 @@ void emmc_clock_config(void)
 	/* Delay for clock operation complete */
 	udelay(10);
 	writel(0x1, GCC_SDCC1_APPS_M);
+	/* check this M, N D value while debugging
+	 * because as per clock tool the actual M, N, D
+	 * values are M=1, N=FA, D=F9
+	 */
 	writel(0xFC, GCC_SDCC1_APPS_N);
 	writel(0xFD, GCC_SDCC1_APPS_D);
 	/* Delay for clock operation complete */
@@ -278,15 +290,12 @@ void sdhci_bus_pwr_off(struct sdhci_host *host)
 	sdhci_writeb(host,(val & (~SDHCI_POWER_ON)), SDHCI_POWER_CONTROL);
 }
 
-void emmc_clock_disable(void)
+__weak void board_mmc_deinit(void)
 {
-	/* Clear divider */
-	writel(0x0, GCC_SDCC1_MISC);
-}
-
-void board_mmc_deinit(void)
-{
-	emmc_clock_disable();
+	/*since we do not have misc register in ipq5018
+	 * so simply return from this function
+	 */
+	return;
 }
 
 void emmc_clock_reset(void)
@@ -298,7 +307,7 @@ void emmc_clock_reset(void)
 
 int board_mmc_init(bd_t *bis)
 {
-	int node;
+	int node, gpio_node;
 	int ret = 0;
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 
@@ -308,13 +317,15 @@ int board_mmc_init(bd_t *bis)
 		return -1;
 	}
 
+	gpio_node = fdt_subnode_offset(gd->fdt_blob, node, "mmc_gpio");
+	qca_gpio_init(gpio_node);
+
 	mmc_host.ioaddr = (void *)MSM_SDC1_SDHCI_BASE;
 	mmc_host.voltages = MMC_VDD_165_195;
 	mmc_host.version = SDHCI_SPEC_300;
 	mmc_host.cfg.part_type = PART_TYPE_EFI;
 	mmc_host.quirks = SDHCI_QUIRK_BROKEN_VOLTAGE;
 
-	emmc_clock_disable();
 	emmc_clock_reset();
 	udelay(10);
 	emmc_clock_config();
@@ -388,11 +399,6 @@ void ipq_fdt_fixup_usb_device_mode(void *blob)
 		fdt_fixup_diag_gadget(blob);
 	else
 		printf("%s: invalid param for usb_mode\n", __func__);
-}
-
-void fdt_fixup_set_dload_dis(void *blob)
-{
-	parse_fdt_fixup("/soc/qca,scm_restart_reason%dload_status%1", blob);
 }
 
 void ipq_fdt_fixup_socinfo(void *blob)
@@ -495,30 +501,90 @@ void reset_cpu(unsigned long a)
 	while(1);
 }
 
-void qpic_clk_enbale(void)
+#ifdef CONFIG_QPIC_NAND
+void qpic_set_clk_rate(unsigned int clk_rate, int blk_type, int req_clk_src_type)
 {
-#ifdef QPIC_CLOCK_ENABLE
-/*
- || clock enable code has been disabled due to NOC error in emualtion
- || will verify on RDB and remove this clock configuration
-*/
-	writel(QPIC_CBCR_VAL, GCC_QPIC_CBCR_ADDR);
-	writel(0x1, GCC_QPIC_AHB_CBCR_ADDR);
-	writel(0x1, GCC_QPIC_IO_MACRO_CBCR);
-	writel(0x1, GCC_QPIC_CBCR_ADDR);
-#endif
+	switch (blk_type) {
+		case QPIC_IO_MACRO_CLK:
+			/* select the clk source for IO_PAD_MACRO
+			 * clk source wil be either XO = 24MHz. or GPLL0 = 800MHz.
+			 */
+			if (req_clk_src_type == XO_CLK_SRC) {
+				/* default XO clock will enabled
+				 * i.e XO clock = 24MHz.
+				 * so div value will 0.
+				 * Input clock to IO_MACRO will be divided by 4 by default
+				 * by hardware and then taht clock will be go on bus.
+				 * i.e 24/4MHz = 6MHz i.e 6MHz will go onto the bus.
+				 */
+				writel(0x0, GCC_QPIC_IO_MACRO_CFG_RCGR);
+
+			} else if (req_clk_src_type == GPLL0_CLK_SRC) {
+				/* selct GPLL0 clock source 800MHz
+				 * so 800/4 = 200MHz.
+				 * Input clock to IO_MACRO will be divided by 4 by default
+				 * by hardware and then that clock will be go on bus.
+				 * i.e 200/4MHz = 50MHz i.e 50MHz will go onto the bus.
+				 */
+				if (clk_rate == IO_MACRO_CLK_320_MHZ)
+				       writel(0x104, GCC_QPIC_IO_MACRO_CFG_RCGR);
+				else if (clk_rate == IO_MACRO_CLK_266_MHZ)
+					writel(0x105, GCC_QPIC_IO_MACRO_CFG_RCGR);
+				else if (clk_rate == IO_MACRO_CLK_228_MHZ)
+					writel(0x106, GCC_QPIC_IO_MACRO_CFG_RCGR);
+				else if (clk_rate == IO_MACRO_CLK_100_MHZ)
+					writel(0x10F, GCC_QPIC_IO_MACRO_CFG_RCGR);
+				else if (clk_rate == IO_MACRO_CLK_200_MHZ)
+					writel(0x107, GCC_QPIC_IO_MACRO_CFG_RCGR);
+
+			} else {
+				printf("wrong clk src selection requested.\n");
+			}
+
+			/* Enablle update bit to update the new configuration */
+			writel((UPDATE_EN | readl(GCC_QPIC_IO_MACRO_CMD_RCGR)),
+					GCC_QPIC_IO_MACRO_CMD_RCGR);
+
+			/* Enable the QPIC_IO_MACRO_CLK */
+			writel(0x1, GCC_QPIC_IO_MACRO_CBCR);
+
+		       break;
+		case QPIC_CORE_CLK:
+		       /* To DO if needed for QPIC core clock setting */
+		       break;
+		default:
+		       printf("wrong qpic block type\n");
+		       break;
+	}
 }
+#endif
 
 void board_nand_init(void)
 {
-	qpic_nand_init(NULL);
+#ifdef CONFIG_QPIC_SERIAL
+	/* check for nand node in dts
+	 * if nand node in dts is disabled then
+	 * simply return from here without
+	 * initializing
+	 */
+	int node;
+
+	node = fdt_path_offset(gd->fdt_blob, "/nand-controller");
+	if (!fdtdec_get_is_enabled(gd->fdt_blob, node)) {
+		printf("QPIC: disabled, skipping initialization\n");
+	} else {
+		qpic_nand_init(NULL);
+	}
+#endif
 
 #ifdef CONFIG_QCA_SPI
 	int gpio_node;
 	gpio_node = fdt_path_offset(gd->fdt_blob, "/spi/spi_gpio");
 	if (gpio_node >= 0) {
 		qca_gpio_init(gpio_node);
+#ifdef CONFIG_IPQ_MTD_NOR
 		ipq_spi_init(CONFIG_IPQ_SPI_NOR_INFO_IDX);
+#endif
 	}
 #endif
 }
@@ -548,6 +614,172 @@ unsigned long timer_read_counter(void)
 	return 0;
 }
 
+static void set_ext_mdio_gpio(void)
+{
+	/*  mdc  */
+	writel(0x7, (unsigned int *)GPIO_CONFIG_ADDR(36));
+	/*  mdio */
+	writel(0x7, (unsigned int *)GPIO_CONFIG_ADDR(37));
+}
+
+static void set_napa_phy_gpio(int gpio)
+{
+	unsigned int *napa_gpio_base;
+
+	napa_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(gpio);
+	writel(0x203, napa_gpio_base);
+	gpio_direction_output(gpio, 0x0);
+	mdelay(500);
+	gpio_set_value(gpio, 0x1);
+}
+
+static void cmn_blk_clk_set(void)
+{
+	/* GMN block */
+	writel(0x1, GCC_CMN_BLK_AHB_CBCR);
+	mdelay(200);
+	writel(0x1, GCC_CMN_BLK_SYS_CBCR);
+	mdelay(200);
+}
+
+static void uniphy_clk_set(void)
+{
+	writel(0x1, GCC_UNIPHY_AHB_CBCR);
+	mdelay(200);
+	writel(0x1, GCC_UNIPHY_SYS_CBCR);
+	mdelay(200);
+}
+
+static void gephy_port_clock_reset(void)
+{
+	writel(0, GCC_GEPHY_RX_CBCR);
+	mdelay(200);
+	writel(0, GCC_GEPHY_TX_CBCR);
+	mdelay(200);
+}
+
+static void gmac0_clock_reset(void)
+{
+	writel(0, GCC_GMAC0_RX_CBCR);
+	mdelay(200);
+	writel(0, GCC_GMAC0_TX_CBCR);
+	mdelay(200);
+}
+
+static void gmac_clk_src_init(void)
+{
+	u32 reg_val;
+
+	/*select source of GMAC*/
+	reg_val = readl(GCC_GMAC0_RX_CFG_RCGR);
+	reg_val &= ~GCC_GMAC_CFG_RCGR_SRC_SEL_MASK;
+	reg_val |= GCC_GMAC0_RX_SRC_SEL_GEPHY_TX;
+	writel(reg_val, GCC_GMAC0_RX_CFG_RCGR);
+
+	reg_val = readl(GCC_GMAC0_TX_CFG_RCGR);
+	reg_val &= ~GCC_GMAC_CFG_RCGR_SRC_SEL_MASK;
+	reg_val |= GCC_GMAC0_TX_SRC_SEL_GEPHY_TX;
+	writel(reg_val, GCC_GMAC0_TX_CFG_RCGR);
+
+	reg_val = readl(GCC_GMAC1_RX_CFG_RCGR);
+	reg_val &= ~GCC_GMAC_CFG_RCGR_SRC_SEL_MASK;
+	reg_val |= GCC_GMAC1_RX_SRC_SEL_UNIPHY_RX;
+	writel(reg_val, GCC_GMAC1_RX_CFG_RCGR);
+
+	reg_val = readl(GCC_GMAC1_TX_CFG_RCGR);
+	reg_val &= ~GCC_GMAC_CFG_RCGR_SRC_SEL_MASK;
+	reg_val |= GCC_GMAC1_TX_SRC_SEL_UNIPHY_TX;
+	writel(reg_val, GCC_GMAC1_TX_CFG_RCGR);
+}
+
+static void gephy_reset(void)
+{
+	u32 reg_val;
+
+	reg_val = readl(GCC_GEPHY_BCR);
+	writel(reg_val | (GCC_GEPHY_BCR_BLK_ARES),
+		GCC_GEPHY_BCR);
+	mdelay(200);
+	writel(reg_val & (~GCC_GEPHY_BCR_BLK_ARES),
+		GCC_GEPHY_BCR);
+	reg_val = readl(GCC_GEPHY_MISC);
+	writel(reg_val | (GCC_GEPHY_MISC_ARES),
+		GCC_GEPHY_MISC);
+	mdelay(200);
+	writel(reg_val & (~GCC_GEPHY_MISC_ARES),
+		GCC_GEPHY_MISC);
+}
+
+static void uniphy_reset(void)
+{
+	u32 reg_val;
+
+	reg_val = readl(GCC_UNIPHY_BCR);
+	writel(reg_val | (GCC_UNIPHY_BCR_BLK_ARES),
+		GCC_UNIPHY_BCR);
+	mdelay(200);
+	writel(reg_val & (~GCC_UNIPHY_BCR_BLK_ARES),
+		GCC_UNIPHY_BCR);
+}
+
+static void gmac_reset(void)
+{
+	u32 reg_val;
+
+	reg_val = readl(GCC_GMAC0_BCR);
+	writel(reg_val | (GCC_GMAC0_BCR_BLK_ARES),
+		GCC_GMAC0_BCR);
+	mdelay(200);
+	writel(reg_val & (~GCC_GMAC0_BCR_BLK_ARES),
+		GCC_GMAC0_BCR);
+
+	reg_val = readl(GCC_GMAC1_BCR);
+	writel(reg_val | (GCC_GMAC1_BCR_BLK_ARES),
+		GCC_GMAC1_BCR);
+	mdelay(200);
+	writel(reg_val & (~GCC_GMAC1_BCR_BLK_ARES),
+		GCC_GMAC1_BCR);
+
+}
+
+static void gmac_clock_enable(void)
+{
+	cmn_blk_clk_set();
+	uniphy_clk_set();
+	gephy_port_clock_reset();
+	gmac0_clock_reset();
+	gmac_clk_src_init();
+	gephy_reset();
+	uniphy_reset();
+	gmac_reset();
+
+	/* GMAC0 AHB clock enable */
+	writel(0x1, GCC_SNOC_GMAC0_AHB_CBCR);
+	udelay(10);
+	/* GMAC0 SYS clock */
+	writel(0x1, GCC_GMAC0_SYS_CBCR);
+	udelay(10);
+	/* GMAC0 PTP clock */
+	writel(0x1, GCC_GMAC0_PTP_CBCR);
+	udelay(10);
+	/* GMAC0 CFG clock */
+	writel(0x1, GCC_GMAC0_CFG_CBCR);
+	udelay(10);
+
+	/* GMAC0 AHB clock enable */
+	writel(0x1, GCC_SNOC_GMAC1_AHB_CBCR);
+	udelay(10);
+	/* GMAC0 SYS clock */
+	writel(0x1, GCC_GMAC1_SYS_CBCR);
+	udelay(10);
+	/* GMAC0 PTP clock */
+	writel(0x1, GCC_GMAC1_PTP_CBCR);
+	udelay(10);
+	/* GMAC0 CFG clock */
+	writel(0x1, GCC_GMAC1_CFG_CBCR);
+	udelay(10);
+}
+
 int board_eth_init(bd_t *bis)
 {
 	int status;
@@ -559,6 +791,15 @@ int board_eth_init(bd_t *bis)
 
 	gmac_cfg_node = fdt_path_offset(gd->fdt_blob, "/gmac_cfg");
 	if (gmac_cfg_node >= 0) {
+		/*
+		 * Clock enable
+		 */
+		gmac_clock_enable();
+
+		status =  fdtdec_get_uint(gd->fdt_blob,offset, "ext_mdio_gpio", 0);
+		if (status){
+			set_ext_mdio_gpio();
+		}
 		for (offset = fdt_first_subnode(gd->fdt_blob, gmac_cfg_node);
 			offset > 0;
 			offset = fdt_next_subnode(gd->fdt_blob, offset) , loop++) {
@@ -572,12 +813,33 @@ int board_eth_init(bd_t *bis)
 			gmac_cfg[loop].phy_addr = fdtdec_get_uint(gd->fdt_blob,
 					offset, "phy_address", 0);
 
+			gmac_cfg[loop].phy_interface_mode = fdtdec_get_uint(gd->fdt_blob,
+					offset, "phy_interface_mode", 0);
+
+			gmac_cfg[loop].phy_napa_gpio = fdtdec_get_uint(gd->fdt_blob,
+					offset, "napa_gpio", 0);
+			if (gmac_cfg[loop].phy_napa_gpio){
+				set_napa_phy_gpio(gmac_cfg[loop].phy_napa_gpio);
+			}
+
+			gmac_cfg[loop].phy_type = fdtdec_get_uint(gd->fdt_blob,
+					offset, "phy_type", -1);
+
+			gmac_cfg[loop].mac_pwr0 = fdtdec_get_uint(gd->fdt_blob,
+					offset, "mac_pwr0", 0);
+
+			gmac_cfg[loop].mac_pwr1 = fdtdec_get_uint(gd->fdt_blob,
+					offset, "mac_pwr1", 0);
+
+			gmac_cfg[loop].ipq_swith = fdtdec_get_uint(gd->fdt_blob,
+					offset, "s17c_switch_enable", 0);
+
 			phy_name_ptr = (char*)fdt_getprop(gd->fdt_blob, offset,
 					"phy_name", &phy_name_len);
 
 			strlcpy((char *)gmac_cfg[loop].phy_name, phy_name_ptr, phy_name_len);
-                }
-        }
+		}
+	}
 	gmac_cfg[loop].unit = -1;
 
 	ipq_gmac_common_init(gmac_cfg);
@@ -608,21 +870,23 @@ void board_usb_deinit(int id)
 		return;
 
 	/* Enable USB PHY Power down */
-	setbits_le32(USB30_PHY_1_QUSB2PHY_BASE + 0xB4, 0x1);
+	setbits_le32(QUSB2PHY_BASE + 0xA4, 0x0);
 	/* Disable clocks */
-	writel(0x8000, GCC_USB0_PHY_CFG_AHB_CBCR);
-	writel(0x8ff0, GCC_USB0_MASTER_CBCR);
-	writel(0, GCC_SYS_NOC_USB0_AXI_CBCR);
-	writel(0, GCC_SNOC_BUS_TIMEOUT2_AHB_CBCR);
-	writel(0, GCC_USB0_SLEEP_CBCR);
-	writel(0, GCC_USB0_MOCK_UTMI_CBCR);
-	writel(0, GCC_USB0_AUX_CBCR);
+	writel(0x0, GCC_USB0_PHY_CFG_AHB_CBCR);
+	writel(0x4220, GCC_USB0_MASTER_CBCR);
+	writel(0x0, GCC_SYS_NOC_USB0_AXI_CBCR);
+	writel(0x0, GCC_USB0_SLEEP_CBCR);
+	writel(0x0, GCC_USB0_MOCK_UTMI_CBCR);
+	writel(0x0, GCC_USB0_AUX_CBCR);
+	writel(0x0, GCC_USB0_LFPS_CBCR);
 	/* GCC_QUSB2_0_PHY_BCR */
 	set_mdelay_clearbits_le32(GCC_QUSB2_0_PHY_BCR, 0x1, 10);
 	/* GCC_USB0_PHY_BCR */
 	set_mdelay_clearbits_le32(GCC_USB0_PHY_BCR, 0x1, 10);
 	/* GCC Reset USB BCR */
 	set_mdelay_clearbits_le32(GCC_USB0_BCR, 0x1, 10);
+	/* Deselect the usb phy mux */
+	writel(0x0, TCSR_USB_PCIE_SEL);
 }
 
 static void usb_clock_init(int id)
@@ -641,12 +905,21 @@ static void usb_clock_init(int id)
 	cfg = (GCC_USB_MOCK_UTMI_SRC_SEL |
 		GCC_USB_MOCK_UTMI_SRC_DIV);
 	writel(cfg, GCC_USB0_MOCK_UTMI_CFG_RCGR);
-	writel(UTMI_M, GCC_USB0_MOCK_UTMI_M);
-	writel(UTMI_N, GCC_USB0_MOCK_UTMI_N);
-	writel(UTMI_D, GCC_USB0_MOCK_UTMI_D);
+	writel(GCC_USB_MOCK_UTMI_CLK_DIV, GCC_USB0_MOCK_UTMI_CBCR);
 	writel(CMD_UPDATE, GCC_USB0_MOCK_UTMI_CMD_RCGR);
 	mdelay(100);
 	writel(ROOT_EN, GCC_USB0_MOCK_UTMI_CMD_RCGR);
+
+	/* Configure usb0_lfps_cmd_rcgr */
+	cfg = (GCC_USB0_LFPS_CFG_SRC_SEL |
+		GCC_USB0_LFPS_CFG_SRC_DIV);
+	writel(cfg, GCC_USB0_LFPS_CFG_RCGR);
+	writel(LFPS_M, GCC_USB0_LFPS_M);
+	writel(LFPS_N, GCC_USB0_LFPS_N);
+	writel(LFPS_D, GCC_USB0_LFPS_D);
+	writel(CMD_UPDATE, GCC_USB0_LFPS_CMD_RCGR);
+	mdelay(100);
+	writel(ROOT_EN, GCC_USB0_LFPS_CMD_RCGR);
 
 	/* Configure usb0_aux_clk_src */
 	cfg = (GCC_USB0_AUX_CFG_SRC_SEL |
@@ -658,132 +931,61 @@ static void usb_clock_init(int id)
 
 	/* Configure CBCRs */
 	writel(CLK_DISABLE, GCC_SYS_NOC_USB0_AXI_CBCR);
-	writel(CLK_DISABLE, GCC_SNOC_BUS_TIMEOUT2_AHB_CBCR);
 	writel(CLK_ENABLE, GCC_SYS_NOC_USB0_AXI_CBCR);
 	writel((readl(GCC_USB0_MASTER_CBCR) | CLK_ENABLE),
 		GCC_USB0_MASTER_CBCR);
-	writel(CLK_ENABLE, GCC_SNOC_BUS_TIMEOUT2_AHB_CBCR);
 	writel(CLK_ENABLE, GCC_USB0_SLEEP_CBCR);
 	writel(CLK_ENABLE, GCC_USB0_MOCK_UTMI_CBCR);
-	writel((CLK_ENABLE | NOC_HANDSHAKE_FSM_EN),
-		GCC_USB0_PHY_CFG_AHB_CBCR);
+	writel(CLK_ENABLE, GCC_USB0_PHY_CFG_AHB_CBCR);
 	writel(CLK_ENABLE, GCC_USB0_AUX_CBCR);
 	writel(CLK_ENABLE, GCC_USB0_PIPE_CBCR);
+	writel(CLK_ENABLE, GCC_USB0_LFPS_CBCR);
 }
 
 static void usb_init_hsphy(void __iomem *phybase)
 {
-	/* Enable QUSB2PHY Power down */
-	setbits_le32(phybase+0xB4, 0x1);
-
-	/* PHY Config Sequence */
-	/* QUSB2PHY_PLL:PLL Feedback Divider Value */
-	out_8(phybase+0x00, 0x14);
-	/* QUSB2PHY_PORT_TUNE1: USB Product Application Tuning Register A */
-	out_8(phybase+0x80, 0xF8);
-	/* QUSB2PHY_PORT_TUNE2: USB Product Application Tuning Register B */
-	out_8(phybase+0x84, 0xB3);
-	/* QUSB2PHY_PORT_TUNE3: USB Product Application Tuning Register C */
-	out_8(phybase+0x88, 0x83);
-	/* QUSB2PHY_PORT_TUNE4: USB Product Application Tuning Register D */
-	out_8(phybase+0x8C, 0xC0);
-	/* QUSB2PHY_PORT_TEST2 */
-	out_8(phybase+0x9C, 0x14);
-	/* QUSB2PHY_PLL_TUNE: PLL Test Configuration */
-	out_8(phybase+0x08, 0x30);
-	/* QUSB2PHY_PLL_USER_CTL1: PLL Control Configuration */
-	out_8(phybase+0x0C, 0x79);
-	/* QUSB2PHY_PLL_USER_CTL2: PLL Control Configuration */
-	out_8(phybase+0x10, 0x21);
-	/* QUSB2PHY_PORT_TUNE5 */
-	out_8(phybase+0x90, 0x00);
-	/* QUSB2PHY_PLL_PWR_CTL: PLL Manual SW Programming
-	 * and Biasing Power Options */
-	out_8(phybase+0x18, 0x00);
-	/* QUSB2PHY_PLL_AUTOPGM_CTL1: Auto vs. Manual PLL/Power-mode
-	 * programming State Machine Control Options */
-	out_8(phybase+0x1C, 0x9F);
-	/* QUSB2PHY_PLL_TEST: PLL Test Configuration-Disable diff ended clock */
-	out_8(phybase+0x04, 0x80);
-
-	/* Disable QUSB2PHY Power down */
-	clrbits_le32(phybase+0xB4, 0x1);
+	/* Disable USB PHY Power down */
+	setbits_le32(phybase + 0xA4, 0x1);
+	/* Enable override ctrl */
+	writel(UTMI_PHY_OVERRIDE_EN, phybase + USB_PHY_CFG0);
+	/* Enable POR*/
+	writel(POR_EN, phybase + USB_PHY_UTMI_CTRL5);
+	udelay(15);
+	/* Configure frequency select value*/
+	writel(FREQ_SEL, phybase + USB_PHY_FSEL_SEL);
+	/* Configure refclk frequency */
+	writel(COMMONONN | FSEL | RETENABLEN,
+			phybase + USB_PHY_HS_PHY_CTRL_COMMON0);
+	/* select refclk source */
+	writel(CLKCORE, phybase + USB_PHY_REFCLK_CTRL);
+	/* select ATERESET*/
+	writel(POR_EN & ATERESET, phybase + USB_PHY_UTMI_CTRL5);
+	writel(USB2_SUSPEND_N_SEL | USB2_SUSPEND_N | USB2_UTMI_CLK_EN,
+			phybase + USB_PHY_HS_PHY_CTRL2);
+	writel(0x0, phybase + USB_PHY_UTMI_CTRL5);
+	writel(USB2_SUSPEND_N | USB2_UTMI_CLK_EN,
+			phybase + USB_PHY_HS_PHY_CTRL2);
+	/* Disable override ctrl */
+	writel(0x0, phybase + USB_PHY_CFG0);
 }
 
 static void usb_init_ssphy(void __iomem *phybase)
 {
-	out_8(phybase + USB3_PHY_POWER_DOWN_CONTROL,0x1);
-	out_8(phybase + QSERDES_COM_SYSCLK_EN_SEL,0x1a);
-	out_8(phybase + QSERDES_COM_BIAS_EN_CLKBUFLR_EN,0x08);
-	out_8(phybase + QSERDES_COM_CLK_SELECT,0x30);
-	out_8(phybase + QSERDES_COM_BG_TRIM,0x0f);
-	out_8(phybase + QSERDES_RX_UCDR_FASTLOCK_FO_GAIN,0x0b);
-	out_8(phybase + QSERDES_COM_SVS_MODE_CLK_SEL,0x01);
-	out_8(phybase + QSERDES_COM_HSCLK_SEL,0x00);
-	out_8(phybase + QSERDES_COM_CMN_CONFIG,0x06);
-	out_8(phybase + QSERDES_COM_PLL_IVCO,0x0f);
-	out_8(phybase + QSERDES_COM_SYS_CLK_CTRL,0x06);
-	out_8(phybase + QSERDES_COM_DEC_START_MODE0,0x68);
-	out_8(phybase + QSERDES_COM_DIV_FRAC_START1_MODE0,0xAB);
-	out_8(phybase + QSERDES_COM_DIV_FRAC_START2_MODE0,0xAA);
-	out_8(phybase + QSERDES_COM_DIV_FRAC_START3_MODE0,0x02);
-	out_8(phybase + QSERDES_COM_CP_CTRL_MODE0,0x09);
-	out_8(phybase + QSERDES_COM_PLL_RCTRL_MODE0,0x16);
-	out_8(phybase + QSERDES_COM_PLL_CCTRL_MODE0,0x28);
-	out_8(phybase + QSERDES_COM_INTEGLOOP_GAIN0_MODE0,0xA0);
-	out_8(phybase + QSERDES_COM_LOCK_CMP1_MODE0,0xAA);
-	out_8(phybase + QSERDES_COM_LOCK_CMP2_MODE0,0x29);
-	out_8(phybase + QSERDES_COM_LOCK_CMP3_MODE0,0x00);
-	out_8(phybase + QSERDES_COM_CORE_CLK_EN,0x00);
-	out_8(phybase + QSERDES_COM_LOCK_CMP_CFG,0x00);
-	out_8(phybase + QSERDES_COM_VCO_TUNE_MAP,0x00);
-	out_8(phybase + QSERDES_COM_BG_TIMER,0x0a);
-	out_8(phybase + QSERDES_COM_SSC_EN_CENTER,0x01);
-	out_8(phybase + QSERDES_COM_SSC_PER1,0x7D);
-	out_8(phybase + QSERDES_COM_SSC_PER2,0x01);
-	out_8(phybase + QSERDES_COM_SSC_ADJ_PER1,0x00);
-	out_8(phybase + QSERDES_COM_SSC_ADJ_PER2,0x00);
-	out_8(phybase + QSERDES_COM_SSC_STEP_SIZE1,0x0A);
-	out_8(phybase + QSERDES_COM_SSC_STEP_SIZE2,0x05);
-	out_8(phybase + QSERDES_RX_UCDR_SO_GAIN,0x06);
-	out_8(phybase + QSERDES_RX_RX_EQU_ADAPTOR_CNTRL2,0x02);
-	out_8(phybase + QSERDES_RX_RX_EQU_ADAPTOR_CNTRL3,0x6c);
-	out_8(phybase + QSERDES_RX_RX_EQU_ADAPTOR_CNTRL3,0x4c);
-	out_8(phybase + QSERDES_RX_RX_EQU_ADAPTOR_CNTRL4,0xb8);
-	out_8(phybase + QSERDES_RX_RX_EQ_OFFSET_ADAPTOR_CNTRL,0x77);
-	out_8(phybase + QSERDES_RX_RX_OFFSET_ADAPTOR_CNTRL2,0x80);
-	out_8(phybase + QSERDES_RX_SIGDET_CNTRL,0x03);
-	out_8(phybase + QSERDES_RX_SIGDET_DEGLITCH_CNTRL,0x16);
-	out_8(phybase + QSERDES_RX_SIGDET_ENABLES,0x0c);
-	out_8(phybase + QSERDES_TX_HIGHZ_TRANSCEIVEREN_BIAS_D,0x45);
-	out_8(phybase + QSERDES_TX_RCV_DETECT_LVL_2,0x12);
-	out_8(phybase + QSERDES_TX_LANE_MODE,0x06);
-	out_8(phybase + PCS_TXDEEMPH_M6DB_V0,0x15);
-	out_8(phybase + PCS_TXDEEMPH_M3P5DB_V0,0x0e);
-	out_8(phybase + PCS_FLL_CNTRL2,0x83);
-	out_8(phybase + PCS_FLL_CNTRL1,0x02);
-	out_8(phybase + PCS_FLL_CNT_VAL_L,0x09);
-	out_8(phybase + PCS_FLL_CNT_VAL_H_TOL,0xa2);
-	out_8(phybase + PCS_FLL_MAN_CODE,0x85);
-	out_8(phybase + PCS_LOCK_DETECT_CONFIG1,0xd1);
-	out_8(phybase + PCS_LOCK_DETECT_CONFIG2,0x1f);
-	out_8(phybase + PCS_LOCK_DETECT_CONFIG3,0x47);
-	out_8(phybase + PCS_POWER_STATE_CONFIG2,0x1b);
-	out_8(phybase + PCS_RXEQTRAINING_WAIT_TIME,0x75);
-	out_8(phybase + PCS_RXEQTRAINING_RUN_TIME,0x13);
-	out_8(phybase + PCS_LFPS_TX_ECSTART_EQTLOCK,0x86);
-	out_8(phybase + PCS_PWRUP_RESET_DLY_TIME_AUXCLK,0x04);
-	out_8(phybase + PCS_TSYNC_RSYNC_TIME,0x44);
-	out_8(phybase + PCS_RCVR_DTCT_DLY_P1U2_L,0xe7);
-	out_8(phybase + PCS_RCVR_DTCT_DLY_P1U2_H,0x03);
-	out_8(phybase + PCS_RCVR_DTCT_DLY_U3_L,0x40);
-	out_8(phybase + PCS_RCVR_DTCT_DLY_U3_H,0x00);
-	out_8(phybase + PCS_RX_SIGDET_LVL,0x88);
-	out_8(phybase + USB3_PCS_TXDEEMPH_M6DB_V0,0x17);
-	out_8(phybase + USB3_PCS_TXDEEMPH_M3P5DB_V0,0x0f);
-	out_8(phybase + QSERDES_RX_SIGDET_ENABLES,0x0);
-	out_8(phybase + USB3_PHY_START_CONTROL,0x03);
-	out_8(phybase + USB3_PHY_SW_RESET,0x00);
+	/* select usb phy mux */
+	writel(0x1, TCSR_USB_PCIE_SEL);
+	writel(CLK_ENABLE, GCC_USB0_PHY_CFG_AHB_CBCR);
+	writel(CLK_ENABLE, GCC_USB0_PIPE_CBCR);
+	writel(CLK_DISABLE, GCC_USB0_PIPE_CBCR);
+	udelay(100);
+	/*set frequency initial value*/
+	writel(0x1cb9, phybase + SSCG_CTRL_REG_4);
+	writel(0x023a, phybase + SSCG_CTRL_REG_5);
+	/*set spectrum spread count*/
+	writel(0x1360, phybase + SSCG_CTRL_REG_3);
+	/*set fstep*/
+	writel(0x1, phybase + SSCG_CTRL_REG_1);
+	writel(0xeb, phybase + SSCG_CTRL_REG_2);
+	return;
 }
 
 static void usb_init_phy(int index)
@@ -815,8 +1017,8 @@ static void usb_init_phy(int index)
 	clrbits_le32(qusb2_phy_bcr, 0x1);
 	mdelay(10);
 
-	usb_init_hsphy((u32 *)USB30_PHY_1_QUSB2PHY_BASE);
-	usb_init_ssphy((u32 *)USB30_PHY_1_USB3PHY_AHB2PHY_BASE);
+	usb_init_hsphy((u32 *)QUSB2PHY_BASE);
+	usb_init_ssphy((u32 *)USB3PHY_APB_BASE);
 }
 
 int ipq_board_usb_init(void)
@@ -827,6 +1029,10 @@ int ipq_board_usb_init(void)
 	for (i=0; i<CONFIG_USB_MAX_CONTROLLER_COUNT; i++) {
 		snprintf(node_name, sizeof(node_name), "usb%d", i);
 		nodeoff = fdt_path_offset(gd->fdt_blob, node_name);
+		if (nodeoff < 0){
+			printf("USB: Node Not found, skipping initialization \n");
+			return -1;
+		}
 		if (!fdtdec_get_int(gd->fdt_blob, nodeoff, "qcom,emulation", 0)) {
 
 			usb_clock_init(i);
@@ -841,6 +1047,105 @@ int ipq_board_usb_init(void)
 #endif
 
 #ifdef CONFIG_PCI_IPQ
+static void pcie_v2_clock_init(int id)
+{
+#ifdef CONFIG_PCI
+	int cfg;
+	unsigned tmp;
+	void __iomem *base;
+
+	/*single lane*/
+	if (id == 0) {
+		base = (void __iomem *)GCC_PCIE1_BOOT_CLOCK_CTL;
+		/* Configure pcie1_aux_clk_src */
+		cfg = (GCC_PCIE1_AUX_CFG_RCGR_SRC_SEL |
+				GCC_PCIE1_AUX_CFG_RCGR_SRC_DIV);
+	} else { /*double lane*/
+		base = (void __iomem *)GCC_PCIE0_BOOT_CLOCK_CTL;
+		/* Configure pcie0_aux_clk_src */
+		cfg = (GCC_PCIE0_AUX_CFG_RCGR_SRC_SEL |
+				GCC_PCIE0_AUX_CFG_RCGR_SRC_DIV);
+	}
+
+	writel(cfg, base + PCIE_AUX_CFG_RCGR);
+	writel(CMD_UPDATE, base + PCIE_AUX_CMD_RCGR);
+	mdelay(100);
+	writel(ROOT_EN, base + PCIE_AUX_CMD_RCGR);
+
+	if (id == 0)
+		/* Configure pcie1_axi_clk_src */
+		cfg = (GCC_PCIE1_AXI_CFG_RCGR_SRC_SEL |
+				GCC_PCIE1_AXI_CFG_RCGR_SRC_DIV);
+
+	else
+		/* Configure pcie0_axi_clk_src */
+		cfg = (GCC_PCIE0_AXI_CFG_RCGR_SRC_SEL |
+				GCC_PCIE0_AXI_CFG_RCGR_SRC_DIV);
+
+	writel(cfg, base + PCIE_AXI_CFG_RCGR);
+	writel(CMD_UPDATE, base + PCIE_AXI_CMD_RCGR);
+	mdelay(100);
+	writel(ROOT_EN, base + PCIE_AXI_CMD_RCGR);
+
+	/* Configure CBCRs */
+	if (id == 0)
+		writel(CLK_ENABLE, GCC_SYS_NOC_PCIE1_AXI_CBCR);
+	else
+		writel(CLK_ENABLE, GCC_SYS_NOC_PCIE0_AXI_CBCR);
+
+	writel(CLK_ENABLE, base + PCIE_AHB_CBCR);
+
+	tmp = readl(base + PCIE_AXI_M_CBCR);
+	tmp |= CLK_ENABLE;
+	writel(tmp, base + PCIE_AXI_M_CBCR);
+
+	tmp = readl(base + PCIE_AXI_S_CBCR);
+	tmp |= CLK_ENABLE;
+	writel(tmp, base + PCIE_AXI_S_CBCR);
+
+	writel(CLK_ENABLE, base + PCIE_AUX_CBCR);
+
+	tmp = readl(base + PCIE_PIPE_CBCR);
+	tmp |= CLK_ENABLE;
+	writel(tmp, base + PCIE_PIPE_CBCR);
+
+	writel(CLK_ENABLE, PCIE_AXI_S_BRIDGE_CBCR);
+#endif
+	return;
+}
+
+static void pcie_v2_clock_deinit(int id)
+{
+#ifdef CONFIG_PCI
+	void __iomem *base;
+
+	/*single lane*/
+	if (id == 0)
+		base = (void __iomem *)GCC_PCIE1_BOOT_CLOCK_CTL;
+	else  /*double lane*/
+		base = (void __iomem *)GCC_PCIE0_BOOT_CLOCK_CTL;
+
+	writel(0x0, base + PCIE_AUX_CFG_RCGR);
+	writel(0x0, base + PCIE_AUX_CMD_RCGR);
+	writel(0x0, base + PCIE_AXI_CFG_RCGR);
+	writel(0x0, base + PCIE_AXI_CMD_RCGR);
+	mdelay(100);
+
+	if (id == 0)
+		writel(0x0, GCC_SYS_NOC_PCIE1_AXI_CBCR);
+	else
+		writel(0x0, GCC_SYS_NOC_PCIE0_AXI_CBCR);
+
+	writel(0x0, base + PCIE_AHB_CBCR);
+	writel(0x0, base + PCIE_AXI_M_CBCR);
+	writel(0x0, base + PCIE_AXI_S_CBCR);
+	writel(0x0, base + PCIE_AUX_CBCR);
+	writel(0x0, base + PCIE_PIPE_CBCR);
+	writel(0x0, base + PCIE_AXI_S_BRIDGE_CBCR);
+#endif
+	return;
+}
+
 void board_pci_init(int id)
 {
 	int node, gpio_node;
@@ -856,6 +1161,7 @@ void board_pci_init(int id)
 	if (gpio_node >= 0)
 		qca_gpio_init(gpio_node);
 
+	pcie_v2_clock_init(id);
 	return;
 }
 
@@ -888,8 +1194,50 @@ void board_pci_deinit()
 		if (gpio_node >= 0)
 			qca_gpio_deinit(gpio_node);
 
+		pcie_v2_clock_deinit(i);
 	}
 
 	return ;
 }
 #endif
+
+void fdt_fixup_wcss_rproc_for_atf(void *blob)
+{
+/*
+ * Set q6 in non-secure mode only if ATF is enable
+ */
+	parse_fdt_fixup("/soc/qcom_q6v5_wcss@CD00000%qcom,nosecure%1", blob);
+	parse_fdt_fixup("/soc/qcom_q6v5_wcss@CD00000%qca,wcss-aon-reset-seq%1", blob);
+/*
+ * Set btss in non-secure mode only if ATF is enable
+ */
+	parse_fdt_fixup("/soc/bt@7000000%qcom,nosecure%1", blob);
+}
+
+void fdt_fixup_bt_debug(void *blob)
+{
+	int node, phandle;
+	char node_name[32];
+
+	if ((gd->bd->bi_arch_number == MACH_TYPE_IPQ5018_AP_MP02_1) ||
+		(gd->bd->bi_arch_number == MACH_TYPE_IPQ5018_DB_MP02_1)) {
+		node = fdt_path_offset(blob, "/soc/pinctrl@1000000/btss_pins");
+		if (node) {
+			phandle = fdtdec_get_int(blob, node, "phandle", 0);
+			snprintf(node_name,
+				sizeof(node_name),
+				"%s%d",
+				"/soc/bt@7000000%pinctrl-0%",
+				phandle);
+			parse_fdt_fixup("/soc/bt@7000000%pinctrl-names%?btss_pins", blob);
+			parse_fdt_fixup(node_name, blob);
+		}
+	}
+	parse_fdt_fixup("/soc/serial@78b0000/%status%?ok", blob);
+
+}
+
+void run_tzt(void *address)
+{
+	execute_tzt(address);
+}

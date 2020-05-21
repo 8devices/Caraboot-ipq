@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2020  The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -16,6 +16,11 @@
 #include <common.h>
 #include <net.h>
 #include <configs/ipq5018.h>
+
+#define GEPHY					0x7 /* Dummy */
+
+#define GEPHY_PHY_TYPE				0x1
+#define NAPA_PHY_TYPE				0x2
 
 #define CONFIG_MACRESET_TIMEOUT			(3 * CONFIG_SYS_HZ)
 #define CONFIG_MDIO_TIMEOUT			(3 * CONFIG_SYS_HZ)
@@ -224,7 +229,7 @@ typedef struct
 } ipq_gmac_desc_t ;
 
 #define IPQ5018_GMAC_PORT	2
-#define IPQ5018_PHY_MAX		2
+#define IPQ5018_PHY_MAX		1
 
 struct ipq_eth_dev {
 	uint			phy_address;
@@ -235,7 +240,9 @@ struct ipq_eth_dev {
 	uint			duplex;
 	uint			phy_configured;
 	uint			mac_unit;
+	uint			phy_type;
 	uint			mac_ps;
+	uint			ipq_swith;
 	int			link_printed;
 	u32			padding;
 	ipq_gmac_desc_t		*desc_tx[NO_OF_TX_DESC];
@@ -247,7 +254,7 @@ struct ipq_eth_dev {
 	struct eth_mac_regs	*mac_regs_p;
 	struct eth_dma_regs	*dma_regs_p;
 	struct eth_device *dev;
-	struct phy_ops		*ops[IPQ5018_PHY_MAX];
+	struct phy_ops		*ops;
 	const char phy_name[MDIO_NAME_LEN];
 	struct ipq_forced_mode *forced_params;
 	ipq_gmac_board_cfg_t	*gmac_board_cfg;
