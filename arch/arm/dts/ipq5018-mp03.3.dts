@@ -85,6 +85,12 @@
 				od_en = <GPIO_OD_DISABLE>;
 				drvstr = <GPIO_8MA>;
 			};
+			qspi_clk {
+				gpio = <9>;
+				func = <2>;
+				od_en = <GPIO_OD_DISABLE>;
+				drvstr = <GPIO_8MA>;
+			};
 		};
 	};
 
