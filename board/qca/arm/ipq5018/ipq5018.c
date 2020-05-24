@@ -310,7 +310,6 @@ int board_mmc_init(bd_t *bis)
 	int node, gpio_node;
 	int ret = 0;
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
-
 	node = fdt_path_offset(gd->fdt_blob, "mmc");
 	if (node < 0) {
 		printf("sdhci: Node Not found, skipping initialization\n");
@@ -568,7 +567,6 @@ void board_nand_init(void)
 	 * initializing
 	 */
 	int node;
-
 	node = fdt_path_offset(gd->fdt_blob, "/nand-controller");
 	if (!fdtdec_get_is_enabled(gd->fdt_blob, node)) {
 		printf("QPIC: disabled, skipping initialization\n");
@@ -614,12 +612,27 @@ unsigned long timer_read_counter(void)
 	return 0;
 }
 
-static void set_ext_mdio_gpio(void)
+static void set_ext_mdio_gpio(int node)
 {
-	/*  mdc  */
-	writel(0x7, (unsigned int *)GPIO_CONFIG_ADDR(36));
-	/*  mdio */
-	writel(0x7, (unsigned int *)GPIO_CONFIG_ADDR(37));
+	unsigned int mdio_gpio[2] = {0};
+	int status = -1;
+	unsigned int *s17C_gpio_base;
+
+	status = fdtdec_get_int_array(gd->fdt_blob,
+					node,
+					"ext_mdio_gpio",
+					mdio_gpio,
+					2);
+	if (status >= 0) {
+		/*  mdc  */
+		s17C_gpio_base =
+			(unsigned int *)GPIO_CONFIG_ADDR(mdio_gpio[0]);
+		writel(0x7, s17C_gpio_base);
+		/*  mdio */
+		s17C_gpio_base =
+			(unsigned int *)GPIO_CONFIG_ADDR(mdio_gpio[1]);
+		writel(0x7, s17C_gpio_base);
+	}
 }
 
 static void set_napa_phy_gpio(int gpio)
@@ -628,42 +641,58 @@ static void set_napa_phy_gpio(int gpio)
 
 	napa_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(gpio);
 	writel(0x203, napa_gpio_base);
-	gpio_direction_output(gpio, 0x0);
+	writel(0x0, GPIO_IN_OUT_ADDR(gpio));
 	mdelay(500);
-	gpio_set_value(gpio, 0x1);
+	writel(0x1, GPIO_IN_OUT_ADDR(gpio));
+}
+
+static void reset_s17c_switch_gpio(int gpio)
+{
+	unsigned int *switch_gpio_base =
+		(unsigned int *)GPIO_CONFIG_ADDR(gpio);
+
+	writel(0x203, switch_gpio_base);
+	writel(0x0, GPIO_IN_OUT_ADDR(gpio));
+	mdelay(500);
+	writel(0x2, GPIO_IN_OUT_ADDR(gpio));
 }
 
 static void cmn_blk_clk_set(void)
 {
 	/* GMN block */
 	writel(0x1, GCC_CMN_BLK_AHB_CBCR);
-	mdelay(200);
+	mdelay(20);
 	writel(0x1, GCC_CMN_BLK_SYS_CBCR);
-	mdelay(200);
+	mdelay(20);
 }
 
 static void uniphy_clk_set(void)
 {
 	writel(0x1, GCC_UNIPHY_AHB_CBCR);
-	mdelay(200);
+	mdelay(20);
 	writel(0x1, GCC_UNIPHY_SYS_CBCR);
-	mdelay(200);
+	mdelay(20);
+	writel(0x1, GCC_UNIPHY_RX_CBCR);
+	mdelay(20);
+	writel(0x1, GCC_UNIPHY_TX_CBCR);
+	mdelay(20);
+
 }
 
 static void gephy_port_clock_reset(void)
 {
 	writel(0, GCC_GEPHY_RX_CBCR);
-	mdelay(200);
+	mdelay(20);
 	writel(0, GCC_GEPHY_TX_CBCR);
-	mdelay(200);
+	mdelay(20);
 }
 
 static void gmac0_clock_reset(void)
 {
 	writel(0, GCC_GMAC0_RX_CBCR);
-	mdelay(200);
+	mdelay(20);
 	writel(0, GCC_GMAC0_TX_CBCR);
-	mdelay(200);
+	mdelay(20);
 }
 
 static void gmac_clk_src_init(void)
@@ -699,13 +728,13 @@ static void gephy_reset(void)
 	reg_val = readl(GCC_GEPHY_BCR);
 	writel(reg_val | (GCC_GEPHY_BCR_BLK_ARES),
 		GCC_GEPHY_BCR);
-	mdelay(200);
+	mdelay(20);
 	writel(reg_val & (~GCC_GEPHY_BCR_BLK_ARES),
 		GCC_GEPHY_BCR);
 	reg_val = readl(GCC_GEPHY_MISC);
 	writel(reg_val | (GCC_GEPHY_MISC_ARES),
 		GCC_GEPHY_MISC);
-	mdelay(200);
+	mdelay(20);
 	writel(reg_val & (~GCC_GEPHY_MISC_ARES),
 		GCC_GEPHY_MISC);
 }
@@ -717,7 +746,7 @@ static void uniphy_reset(void)
 	reg_val = readl(GCC_UNIPHY_BCR);
 	writel(reg_val | (GCC_UNIPHY_BCR_BLK_ARES),
 		GCC_UNIPHY_BCR);
-	mdelay(200);
+	mdelay(20);
 	writel(reg_val & (~GCC_UNIPHY_BCR_BLK_ARES),
 		GCC_UNIPHY_BCR);
 }
@@ -729,7 +758,7 @@ static void gmac_reset(void)
 	reg_val = readl(GCC_GMAC0_BCR);
 	writel(reg_val | (GCC_GMAC0_BCR_BLK_ARES),
 		GCC_GMAC0_BCR);
-	mdelay(200);
+	mdelay(20);
 	writel(reg_val & (~GCC_GMAC0_BCR_BLK_ARES),
 		GCC_GMAC0_BCR);
 
@@ -742,6 +771,69 @@ static void gmac_reset(void)
 
 }
 
+static void cmn_clock_init (void)
+{
+	u32 reg_val = 0;
+	reg_val = readl(CMN_BLK_ADDR + 4);
+	reg_val = (reg_val & FREQUENCY_MASK) | INTERNAL_48MHZ_CLOCK;
+	writel(reg_val, CMN_BLK_ADDR + 0x4);
+	reg_val = readl(CMN_BLK_ADDR);
+	reg_val = reg_val | 0x40;
+	writel(reg_val, CMN_BLK_ADDR);
+	mdelay(1);
+	reg_val = reg_val & (~0x40);
+	writel(reg_val, CMN_BLK_ADDR);
+	mdelay(1);
+	writel(0xbf, CMN_BLK_ADDR);
+	mdelay(1);
+	writel(0xff, CMN_BLK_ADDR);
+	mdelay(1);
+}
+
+static void cmnblk_enable(void)
+{
+	u32 reg_val;
+
+	reg_val = readl(TCSR_ETH_LDO_RDY_REG);
+	reg_val |= ETH_LDO_RDY;
+	writel(reg_val, TCSR_ETH_LDO_RDY_REG);
+}
+
+static void cmnblk_check_state(void)
+{
+	u32 reg_val, times = 20;
+
+	while(times--)
+	{
+		reg_val = readl(CMN_PLL_PLL_LOCKED_REG);
+		if(reg_val & CMN_PLL_LOCKED) {
+			printf("cmbblk is stable %x\n",
+			reg_val);
+			break;
+		}
+		mdelay(10);
+	}
+	if(!times) {
+		printf("200ms have been over %x\n",
+		readl(CMN_PLL_PLL_LOCKED_REG));
+	}
+}
+
+static void uniphy_refclk_set(void)
+{
+/*
+ * This function drive the uniphy ref clock
+ * DEC_REFCLKOUTPUTCONTROLREGISTERS
+ * Its is configured as 25 MHZ
+ */
+#define UNIPHY_REF_CLK_CTRL_REG		0x98074
+
+	u32 reg_val = readl(UNIPHY_REF_CLK_CTRL_REG);
+	reg_val |= 0x2;
+	writel(reg_val, UNIPHY_REF_CLK_CTRL_REG);
+	mdelay(500);
+}
+
 static void gmac_clock_enable(void)
 {
 	cmn_blk_clk_set();
@@ -749,9 +841,13 @@ static void gmac_clock_enable(void)
 	gephy_port_clock_reset();
 	gmac0_clock_reset();
 	gmac_clk_src_init();
+	cmn_clock_init();
+	cmnblk_enable();
+	cmnblk_check_state();
 	gephy_reset();
 	uniphy_reset();
 	gmac_reset();
+	uniphy_refclk_set();
 
 	/* GMAC0 AHB clock enable */
 	writel(0x1, GCC_SNOC_GMAC0_AHB_CBCR);
@@ -783,10 +879,11 @@ static void gmac_clock_enable(void)
 int board_eth_init(bd_t *bis)
 {
 	int status;
-	int gmac_gpio_node = 0;
 	int gmac_cfg_node = 0, offset = 0;
 	int loop = 0;
+	int switch_gpio = 0;
 	int phy_name_len = 0;
+	unsigned int tmp_phy_array[8] = {0};
 	char *phy_name_ptr = NULL;
 
 	gmac_cfg_node = fdt_path_offset(gd->fdt_blob, "/gmac_cfg");
@@ -796,10 +893,8 @@ int board_eth_init(bd_t *bis)
 		 */
 		gmac_clock_enable();
 
-		status =  fdtdec_get_uint(gd->fdt_blob,offset, "ext_mdio_gpio", 0);
-		if (status){
-			set_ext_mdio_gpio();
-		}
+		set_ext_mdio_gpio(gmac_cfg_node);
+
 		for (offset = fdt_first_subnode(gd->fdt_blob, gmac_cfg_node);
 			offset > 0;
 			offset = fdt_next_subnode(gd->fdt_blob, offset) , loop++) {
@@ -821,18 +916,32 @@ int board_eth_init(bd_t *bis)
 			if (gmac_cfg[loop].phy_napa_gpio){
 				set_napa_phy_gpio(gmac_cfg[loop].phy_napa_gpio);
 			}
-
+			switch_gpio =  fdtdec_get_uint(gd->fdt_blob, offset, "switch_gpio", 0);
+			if (switch_gpio) {
+				reset_s17c_switch_gpio(switch_gpio);
+			}
 			gmac_cfg[loop].phy_type = fdtdec_get_uint(gd->fdt_blob,
 					offset, "phy_type", -1);
 
-			gmac_cfg[loop].mac_pwr0 = fdtdec_get_uint(gd->fdt_blob,
-					offset, "mac_pwr0", 0);
-
-			gmac_cfg[loop].mac_pwr1 = fdtdec_get_uint(gd->fdt_blob,
-					offset, "mac_pwr1", 0);
+			gmac_cfg[loop].mac_pwr = fdtdec_get_uint(gd->fdt_blob,
+					offset, "mac_pwr", 0);
 
 			gmac_cfg[loop].ipq_swith = fdtdec_get_uint(gd->fdt_blob,
 					offset, "s17c_switch_enable", 0);
+			if (gmac_cfg[loop].ipq_swith) {
+				gmac_cfg[loop].switch_port_count = fdtdec_get_uint(
+					gd->fdt_blob,
+					offset, "switch_port_count", 0);
+
+				fdtdec_get_int_array(gd->fdt_blob, offset, "switch_phy_address",
+					tmp_phy_array, gmac_cfg[loop].switch_port_count);
+
+				for(int inner_loop = 0; inner_loop < gmac_cfg[loop].switch_port_count;
+					inner_loop++){
+				gmac_cfg[loop].switch_port_phy_address[inner_loop] =
+					(char)tmp_phy_array[inner_loop];
+				}
+			}
 
 			phy_name_ptr = (char*)fdt_getprop(gd->fdt_blob, offset,
 					"phy_name", &phy_name_len);
@@ -842,12 +951,6 @@ int board_eth_init(bd_t *bis)
 	}
 	gmac_cfg[loop].unit = -1;
 
-	ipq_gmac_common_init(gmac_cfg);
-
-	gmac_gpio_node = fdt_path_offset(gd->fdt_blob, "gmac_gpio");
-	if (gmac_gpio_node) {
-		qca_gpio_init(gmac_gpio_node);
-	}
 	status = ipq_gmac_init(gmac_cfg);
 
 	return status;

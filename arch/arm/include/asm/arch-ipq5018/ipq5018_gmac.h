@@ -18,6 +18,7 @@
 #include <configs/ipq5018.h>
 
 #define GEPHY					0x7 /* Dummy */
+#define S17C					0x1302
 
 #define GEPHY_PHY_TYPE				0x1
 #define NAPA_PHY_TYPE				0x2
@@ -38,7 +39,6 @@
 
 /* Poll demand definitions */
 #define POLL_DATA				(0x0)
-
 
 /* Descriptior related definitions */
 #define MAC_MAX_FRAME_SZ			(1600)
@@ -173,6 +173,7 @@
 #define MII_PORT_SELECT				(1 << 15)
 #define GMII_PORT_SELECT			(0 << 15)
 #define FRAME_BURST_ENABLE			(1 << 21)
+#define JABBER_DISABLE				(1 << 22)
 #define JUMBO_FRAME_ENABLE			(1 << 20)
 #define HALF_DUPLEX_ENABLE			(0 << 11)
 #define FULL_DUPLEX_ENABLE			(1 << 11)
