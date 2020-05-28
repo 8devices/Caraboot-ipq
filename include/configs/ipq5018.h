@@ -158,6 +158,11 @@ extern loff_t board_env_size;
 #endif
 
 #ifdef CONFIG_QPIC_SERIAL
+#ifdef QSPI_SERIAL_DEBUG /* QSPI DEBUG */
+#define qspi_debug(fmt,args...)	printf (fmt ,##args)
+#else
+#define qspi_debug(fmt,args...)
+#endif /* QSPI DEBUG */
 #define CONFIG_PAGE_SCOPE_MULTI_PAGE_READ
 #define CONFIG_QSPI_SERIAL_TRAINING
 #endif
