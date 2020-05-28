@@ -679,20 +679,56 @@ static void uniphy_clk_set(void)
 
 }
 
-static void gephy_port_clock_reset(void)
+static void gephy_uniphy_clock_disable(void)
 {
-	writel(0, GCC_GEPHY_RX_CBCR);
+	u32 reg_val = 0;
+
+	reg_val = readl(GCC_GEPHY_RX_CBCR);
+	reg_val &= ~GCC_CBCR_CLK_ENABLE;
+	writel(reg_val, GCC_GEPHY_RX_CBCR);
 	mdelay(20);
-	writel(0, GCC_GEPHY_TX_CBCR);
+
+	reg_val = readl(GCC_GEPHY_TX_CBCR);
+	reg_val &= ~GCC_CBCR_CLK_ENABLE;
+	writel(reg_val, GCC_GEPHY_TX_CBCR);
 	mdelay(20);
+
+	reg_val = readl(GCC_UNIPHY_RX_CBCR);
+	reg_val &= ~GCC_CBCR_CLK_ENABLE;
+	writel(reg_val, GCC_UNIPHY_RX_CBCR);
+	mdelay(20);
+
+	reg_val = readl(GCC_UNIPHY_TX_CBCR);
+	reg_val &= ~GCC_CBCR_CLK_ENABLE;
+	writel(reg_val, GCC_UNIPHY_TX_CBCR);
+	mdelay(20);
+
 }
 
-static void gmac0_clock_reset(void)
+static void gmac_clock_disable(void)
 {
-	writel(0, GCC_GMAC0_RX_CBCR);
+        u32 reg_val = 0;
+
+	reg_val = readl(GCC_GMAC0_RX_CBCR);
+	reg_val &= ~GCC_CBCR_CLK_ENABLE;
+	writel(reg_val, GCC_GMAC0_RX_CBCR);
 	mdelay(20);
-	writel(0, GCC_GMAC0_TX_CBCR);
+
+	reg_val = readl(GCC_GMAC0_TX_CBCR);
+	reg_val &= ~GCC_CBCR_CLK_ENABLE;
+	writel(reg_val, GCC_GMAC0_TX_CBCR);
 	mdelay(20);
+
+	reg_val = readl(GCC_GMAC1_RX_CBCR);
+	reg_val &= ~GCC_CBCR_CLK_ENABLE;
+	writel(reg_val, GCC_GMAC1_RX_CBCR);
+	mdelay(20);
+
+	reg_val = readl(GCC_GMAC1_TX_CBCR);
+	reg_val &= ~GCC_CBCR_CLK_ENABLE;
+	writel(reg_val, GCC_GMAC1_TX_CBCR);
+	mdelay(20);
+
 }
 
 static void gmac_clk_src_init(void)
@@ -719,6 +755,10 @@ static void gmac_clk_src_init(void)
 	reg_val &= ~GCC_GMAC_CFG_RCGR_SRC_SEL_MASK;
 	reg_val |= GCC_GMAC1_TX_SRC_SEL_UNIPHY_TX;
 	writel(reg_val, GCC_GMAC1_TX_CFG_RCGR);
+
+	reg_val = readl(GCC_GMAC_CFG_RCGR);
+	reg_val = 0x209;
+	writel(reg_val, GCC_GMAC_CFG_RCGR);
 }
 
 static void gephy_reset(void)
@@ -834,12 +874,74 @@ static void uniphy_refclk_set(void)
 	mdelay(500);
 }
 
-static void gmac_clock_enable(void)
+static void gcc_clock_enable(void)
+{
+	u32 reg_val;
+
+	reg_val = readl(GCC_MDIO0_BASE + 0x4);
+	reg_val |= 0x1;
+	writel(reg_val, GCC_MDIO0_BASE + 0x4);
+
+	reg_val = readl(GCC_MDIO0_BASE + 0x14);
+	reg_val |= 0x1;
+	writel(reg_val, GCC_MDIO0_BASE + 0x14);
+
+	reg_val = readl(GCC_GMAC0_SYS_CBCR);
+	reg_val |= 0x1;
+	writel(reg_val, GCC_GMAC0_SYS_CBCR);
+
+	reg_val = readl(GCC_GMAC0_PTP_CBCR);
+	reg_val |= 0x1;
+	writel(reg_val, GCC_GMAC0_PTP_CBCR);
+
+	reg_val = readl(GCC_GMAC0_CFG_CBCR);
+	reg_val |= 0x1;
+	writel(reg_val, GCC_GMAC0_CFG_CBCR);
+
+	reg_val = readl(GCC_GMAC1_SYS_CBCR);
+	reg_val |= 0x1;
+	writel(reg_val, GCC_GMAC1_SYS_CBCR);
+
+	reg_val = readl(GCC_GMAC1_PTP_CBCR);
+	reg_val |= 0x1;
+	writel(reg_val, GCC_GMAC1_PTP_CBCR);
+
+	reg_val = readl(GCC_GMAC1_CFG_CBCR);
+	reg_val |= 0x1;
+	writel(reg_val, GCC_GMAC1_CFG_CBCR);
+
+	reg_val = readl(GCC_GMAC0_RX_CBCR);
+	reg_val |= 0x1;
+	writel(reg_val, GCC_GMAC0_RX_CBCR);
+
+	reg_val = readl(GCC_GMAC0_TX_CBCR);
+	reg_val |= 0x1;
+	writel(reg_val, GCC_GMAC0_TX_CBCR);
+
+	reg_val = readl(GCC_GMAC1_RX_CBCR);
+	reg_val |= 0x1;
+	writel(reg_val, GCC_GMAC1_RX_CBCR);
+
+	reg_val = readl(GCC_GMAC1_TX_CBCR);
+	reg_val |= 0x1;
+	writel(reg_val, GCC_GMAC1_TX_CBCR);
+
+	reg_val = readl(GCC_SNOC_GMAC0_AHB_CBCR);
+	reg_val |= 0x1;
+	writel(reg_val, GCC_SNOC_GMAC0_AHB_CBCR);
+
+	reg_val = readl(GCC_SNOC_GMAC1_AHB_CBCR);
+	reg_val |= 0x1;
+	writel(reg_val, GCC_SNOC_GMAC1_AHB_CBCR);
+
+}
+
+static void ethernet_clock_enable(void)
 {
 	cmn_blk_clk_set();
 	uniphy_clk_set();
-	gephy_port_clock_reset();
-	gmac0_clock_reset();
+	gephy_uniphy_clock_disable();
+	gmac_clock_disable();
 	gmac_clk_src_init();
 	cmn_clock_init();
 	cmnblk_enable();
@@ -848,37 +950,21 @@ static void gmac_clock_enable(void)
 	uniphy_reset();
 	gmac_reset();
 	uniphy_refclk_set();
+	gcc_clock_enable();
+}
 
-	/* GMAC0 AHB clock enable */
-	writel(0x1, GCC_SNOC_GMAC0_AHB_CBCR);
-	udelay(10);
-	/* GMAC0 SYS clock */
-	writel(0x1, GCC_GMAC0_SYS_CBCR);
-	udelay(10);
-	/* GMAC0 PTP clock */
-	writel(0x1, GCC_GMAC0_PTP_CBCR);
-	udelay(10);
-	/* GMAC0 CFG clock */
-	writel(0x1, GCC_GMAC0_CFG_CBCR);
-	udelay(10);
+static void enable_gephy_led(int gpio)
+{
+	unsigned int *led_gpio_base =
+		(unsigned int *)GPIO_CONFIG_ADDR(gpio);
 
-	/* GMAC0 AHB clock enable */
-	writel(0x1, GCC_SNOC_GMAC1_AHB_CBCR);
-	udelay(10);
-	/* GMAC0 SYS clock */
-	writel(0x1, GCC_GMAC1_SYS_CBCR);
-	udelay(10);
-	/* GMAC0 PTP clock */
-	writel(0x1, GCC_GMAC1_PTP_CBCR);
-	udelay(10);
-	/* GMAC0 CFG clock */
-	writel(0x1, GCC_GMAC1_CFG_CBCR);
-	udelay(10);
+	writel(0xc5, led_gpio_base);
 }
 
 int board_eth_init(bd_t *bis)
 {
 	int status;
+	int led_gpio;
 	int gmac_cfg_node = 0, offset = 0;
 	int loop = 0;
 	int switch_gpio = 0;
@@ -891,7 +977,11 @@ int board_eth_init(bd_t *bis)
 		/*
 		 * Clock enable
 		 */
-		gmac_clock_enable();
+		ethernet_clock_enable();
+		led_gpio = fdtdec_get_uint(gd->fdt_blob,
+				gmac_cfg_node, "gephy_led", 0);
+		if (led_gpio)
+			enable_gephy_led(led_gpio);
 
 		set_ext_mdio_gpio(gmac_cfg_node);
 
@@ -949,7 +1039,9 @@ int board_eth_init(bd_t *bis)
 			strlcpy((char *)gmac_cfg[loop].phy_name, phy_name_ptr, phy_name_len);
 		}
 	}
-	gmac_cfg[loop].unit = -1;
+
+	if (loop < CONFIG_IPQ_NO_MACS)
+		 gmac_cfg[loop].unit = -1;
 
 	status = ipq_gmac_init(gmac_cfg);
 

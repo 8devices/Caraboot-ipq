@@ -89,10 +89,16 @@ static void ipq_eth_mac_cfg(struct eth_device *dev)
 
 	ipq_mac_framefilter = PROMISCUOUS_MODE_ON;
 
-	ipq_mac_cfg |= (FRAME_BURST_ENABLE | JUMBO_FRAME_ENABLE | JABBER_DISABLE |
+	if (priv->mac_unit) {
+		ipq_mac_cfg |= (FRAME_BURST_ENABLE | JUMBO_FRAME_ENABLE | JABBER_DISABLE |
 				TX_ENABLE | RX_ENABLE | FULL_DUPLEX_ENABLE);
 
-	writel(ipq_mac_cfg, &mac_reg->conf);
+		writel(ipq_mac_cfg, &mac_reg->conf);
+	} else {
+		ipq_mac_cfg |= (priv->speed | FULL_DUPLEX_ENABLE | FRAME_BURST_ENABLE |
+				TX_ENABLE | RX_ENABLE);
+		writel(ipq_mac_cfg, &mac_reg->conf);
+	}
 
 	writel(ipq_mac_framefilter, &mac_reg->framefilt);
 
@@ -259,7 +265,7 @@ static void ipq5018_gmac0_speed_clock_set(int speed_clock1,
 		reg_value = 0;
 		reg_value = readl(GCC_GMAC0_RX_CFG_RCGR +
 				(iTxRx * 8) + (gmacid * 0x10));
-		reg_value &= ~0x71f;
+		reg_value &= ~0x1f;
 		reg_value |= speed_clock1;
 		writel(reg_value, GCC_GMAC0_RX_CFG_RCGR +
 				(iTxRx * 8) + (gmacid * 0x10));
@@ -280,6 +286,21 @@ static void ipq5018_gmac0_speed_clock_set(int speed_clock1,
 		writel(reg_value, GCC_GMAC0_RX_CMD_RCGR +
 				(iTxRx * 8) + (gmacid * 0x10));
 	}
+}
+
+static void ipq5018_enable_gephy(void)
+{
+	uint32_t reg_val;
+
+	reg_val = readl(GCC_GEPHY_RX_CBCR);
+	reg_val |= GCC_CBCR_CLK_ENABLE;
+	writel(reg_val, GCC_GEPHY_RX_CBCR);
+	mdelay(20);
+
+	reg_val = readl(GCC_GEPHY_TX_CBCR);
+	reg_val |= GCC_CBCR_CLK_ENABLE;
+	writel(reg_val, GCC_GEPHY_TX_CBCR);
+	mdelay(20);
 }
 
 static int ipq5018_phy_link_update(struct eth_device *dev)
@@ -305,7 +326,7 @@ static int ipq5018_phy_link_update(struct eth_device *dev)
 	}
 
 	if (priv->ipq_swith) {
-		speed_clock1 = 0x101;
+		speed_clock1 = 1;
 		speed_clock2 = 0;
 		status = 0;
 	} else {
@@ -318,15 +339,17 @@ static int ipq5018_phy_link_update(struct eth_device *dev)
 
 		switch (speed) {
 			case FAL_SPEED_10:
-				speed_clock1 = 0x9;
-				speed_clock2 = 0x9;
+				speed_clock1 = 9;
+				speed_clock2 = 9;
+				priv->speed = MII_PORT_SELECT;
 				printf ("eth%d  %s Speed :%d %s duplex\n",
 						priv->mac_unit,
 						lstatus[status], speed,
 						dp[duplex]);
 				break;
 			case FAL_SPEED_100:
-				speed_clock1 = 0x9;
+				priv->speed = MII_PORT_SELECT;
+				speed_clock1 = 9;
 				speed_clock2 = 0;
 				printf ("eth%d %s Speed :%d %s duplex\n",
 						priv->mac_unit,
@@ -334,7 +357,8 @@ static int ipq5018_phy_link_update(struct eth_device *dev)
 						dp[duplex]);
 				break;
 			case FAL_SPEED_1000:
-				speed_clock1 = 0x101;
+				priv->speed = SGMII_PORT_SELECT;
+				speed_clock1 = 1;
 				speed_clock2 = 0;
 				printf ("eth%d %s Speed :%d %s duplex\n",
 						priv->mac_unit,
@@ -342,7 +366,8 @@ static int ipq5018_phy_link_update(struct eth_device *dev)
 						dp[duplex]);
 				break;
 			case FAL_SPEED_2500:
-				speed_clock1 = 0x101;
+				priv->speed = SGMII_PORT_SELECT;
+				speed_clock1 = 1;
 				speed_clock2 = 0;
 				printf ("eth%d %s Speed :%d %s duplex\n",
 						priv->mac_unit,
@@ -361,6 +386,8 @@ static int ipq5018_phy_link_update(struct eth_device *dev)
 			ppe_uniphy_mode_set(PORT_WRAPPER_SGMII_PLUS);
 		else
 			ppe_uniphy_mode_set(PORT_WRAPPER_SGMII_FIBER);
+	} else {
+		ipq5018_enable_gephy();
 	}
 
 	ipq5018_gmac0_speed_clock_set(speed_clock1, speed_clock2, priv->mac_unit);
@@ -679,6 +706,7 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 			 */
 			case QCA8081_PHY:
 			case QCA8081_1_1_PHY:
+				ipq_gmac_macs[i]->phy_type = QCA8081_PHY;
 				ipq_qca8081_phy_init(
 					&ipq_gmac_macs[i]->ops,
 					ipq_gmac_macs[i]->phy_address);
@@ -687,6 +715,7 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 			 * Internel GEPHY only for GMAC0
 			 */
 			case GEPHY:
+				ipq_gmac_macs[i]->phy_type = GEPHY;
 				ipq_gephy_phy_init(
 					&ipq_gmac_macs[i]->ops,
 					ipq_gmac_macs[i]->phy_address);
@@ -695,6 +724,7 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 			 * 1G PHY
 			 */
 			case QCA8033_PHY:
+				ipq_gmac_macs[i]->phy_type = QCA8033_PHY;
 				ipq_qca8033_phy_init(
 					&ipq_gmac_macs[i]->ops,
 					ipq_gmac_macs[i]->phy_address);

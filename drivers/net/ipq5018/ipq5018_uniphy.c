@@ -59,6 +59,8 @@ static void ppe_gcc_uniphy_soft_reset(void)
 
 static void ppe_uniphy_sgmii_mode_set(uint32_t mode)
 {
+	bool force_enable =false;
+
 	writel(UNIPHY_MISC2_REG_SGMII_MODE,
 		PPE_UNIPHY_BASE + UNIPHY_MISC2_REG_OFFSET);
 
@@ -81,6 +83,7 @@ static void ppe_uniphy_sgmii_mode_set(uint32_t mode)
 	switch (mode) {
 		case PORT_WRAPPER_SGMII_FIBER:
 			writel(UNIPHY_SG_MODE, PPE_UNIPHY_BASE + PPE_UNIPHY_MODE_CONTROL);
+			force_enable = true;
 			break;
 
 		case PORT_WRAPPER_SGMII0_RGMII4:
@@ -88,6 +91,7 @@ static void ppe_uniphy_sgmii_mode_set(uint32_t mode)
 		case PORT_WRAPPER_SGMII4_RGMII4:
 			writel((UNIPHY_SG_MODE | UNIPHY_PSGMII_MAC_MODE),
 					PPE_UNIPHY_BASE + PPE_UNIPHY_MODE_CONTROL);
+			force_enable = true;
 			break;
 
 		case PORT_WRAPPER_SGMII_PLUS:
@@ -116,10 +120,11 @@ static void ppe_uniphy_sgmii_mode_set(uint32_t mode)
 /*
  * Force Speed mode enable
  */
-
-	writel((readl(PPE_UNIPHY_BASE + UNIPHY_DEC_CHANNEL_0_INPUT_OUTPUT_4) |
-		UNIPHY_FORCE_SPEED_25M),
-		PPE_UNIPHY_BASE + UNIPHY_DEC_CHANNEL_0_INPUT_OUTPUT_4);
+	if(force_enable){
+		writel((readl(PPE_UNIPHY_BASE + UNIPHY_DEC_CHANNEL_0_INPUT_OUTPUT_4) |
+			UNIPHY_FORCE_SPEED_25M),
+			PPE_UNIPHY_BASE + UNIPHY_DEC_CHANNEL_0_INPUT_OUTPUT_4);
+	}
 }
 
 void ppe_uniphy_mode_set(uint32_t mode)

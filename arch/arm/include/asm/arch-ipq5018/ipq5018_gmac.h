@@ -17,11 +17,8 @@
 #include <net.h>
 #include <configs/ipq5018.h>
 
-#define GEPHY					0x7 /* Dummy */
+#define GEPHY					0x004DD0C0
 #define S17C					0x1302
-
-#define GEPHY_PHY_TYPE				0x1
-#define NAPA_PHY_TYPE				0x2
 
 #define CONFIG_MACRESET_TIMEOUT			(3 * CONFIG_SYS_HZ)
 #define CONFIG_MDIO_TIMEOUT			(3 * CONFIG_SYS_HZ)
@@ -171,7 +168,7 @@
 
 /* GMAC config definitions */
 #define MII_PORT_SELECT				(1 << 15)
-#define GMII_PORT_SELECT			(0 << 15)
+#define SGMII_PORT_SELECT			(0 << 15)
 #define FRAME_BURST_ENABLE			(1 << 21)
 #define JABBER_DISABLE				(1 << 22)
 #define JUMBO_FRAME_ENABLE			(1 << 20)
