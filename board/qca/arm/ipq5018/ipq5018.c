@@ -1058,7 +1058,6 @@ void board_usb_deinit(int id)
 {
 	int nodeoff;
 	char node_name[8];
-
 	snprintf(node_name, sizeof(node_name), "usb%d", id);
 	nodeoff = fdt_path_offset(gd->fdt_blob, node_name);
 	if (fdtdec_get_int(gd->fdt_blob, nodeoff, "qcom,emulation", 0))
@@ -1088,6 +1087,9 @@ static void usb_clock_init(int id)
 {
 	int cfg;
 
+	/* select usb phy mux */
+	writel(0x1, TCSR_USB_PCIE_SEL);
+
 	/* Configure usb0_master_clk_src */
 	cfg = (GCC_USB0_MASTER_CFG_RCGR_SRC_SEL |
 		GCC_USB0_MASTER_CFG_RCGR_SRC_DIV);
@@ -1105,17 +1107,6 @@ static void usb_clock_init(int id)
 	mdelay(100);
 	writel(ROOT_EN, GCC_USB0_MOCK_UTMI_CMD_RCGR);
 
-	/* Configure usb0_lfps_cmd_rcgr */
-	cfg = (GCC_USB0_LFPS_CFG_SRC_SEL |
-		GCC_USB0_LFPS_CFG_SRC_DIV);
-	writel(cfg, GCC_USB0_LFPS_CFG_RCGR);
-	writel(LFPS_M, GCC_USB0_LFPS_M);
-	writel(LFPS_N, GCC_USB0_LFPS_N);
-	writel(LFPS_D, GCC_USB0_LFPS_D);
-	writel(CMD_UPDATE, GCC_USB0_LFPS_CMD_RCGR);
-	mdelay(100);
-	writel(ROOT_EN, GCC_USB0_LFPS_CMD_RCGR);
-
 	/* Configure usb0_aux_clk_src */
 	cfg = (GCC_USB0_AUX_CFG_SRC_SEL |
 		GCC_USB0_AUX_CFG_SRC_DIV);
@@ -1124,16 +1115,30 @@ static void usb_clock_init(int id)
 	mdelay(100);
 	writel(ROOT_EN, GCC_USB0_AUX_CMD_RCGR);
 
+	/* Configure usb0_lfps_cmd_rcgr */
+	cfg = (GCC_USB0_LFPS_CFG_SRC_SEL |
+		GCC_USB0_LFPS_CFG_SRC_DIV);
+	writel(cfg, GCC_USB0_LFPS_CFG_RCGR);
+	writel(LFPS_M, GCC_USB0_LFPS_M);
+	writel(LFPS_N, GCC_USB0_LFPS_N);
+	writel(LFPS_D, GCC_USB0_LFPS_D);
+	writel(readl(GCC_USB0_LFPS_CFG_RCGR) | GCC_USB0_LFPS_MODE,
+			GCC_USB0_LFPS_CFG_RCGR);
+	writel(CMD_UPDATE, GCC_USB0_LFPS_CMD_RCGR);
+	mdelay(100);
+	writel(ROOT_EN, GCC_USB0_LFPS_CMD_RCGR);
+
 	/* Configure CBCRs */
 	writel(CLK_DISABLE, GCC_SYS_NOC_USB0_AXI_CBCR);
 	writel(CLK_ENABLE, GCC_SYS_NOC_USB0_AXI_CBCR);
 	writel((readl(GCC_USB0_MASTER_CBCR) | CLK_ENABLE),
 		GCC_USB0_MASTER_CBCR);
 	writel(CLK_ENABLE, GCC_USB0_SLEEP_CBCR);
-	writel(CLK_ENABLE, GCC_USB0_MOCK_UTMI_CBCR);
+	writel((GCC_USB_MOCK_UTMI_CLK_DIV | CLK_ENABLE),
+		GCC_USB0_MOCK_UTMI_CBCR);
+	writel(CLK_DISABLE, GCC_USB0_PIPE_CBCR);
 	writel(CLK_ENABLE, GCC_USB0_PHY_CFG_AHB_CBCR);
 	writel(CLK_ENABLE, GCC_USB0_AUX_CBCR);
-	writel(CLK_ENABLE, GCC_USB0_PIPE_CBCR);
 	writel(CLK_ENABLE, GCC_USB0_LFPS_CBCR);
 }
 
@@ -1166,17 +1171,14 @@ static void usb_init_hsphy(void __iomem *phybase)
 
 static void usb_init_ssphy(void __iomem *phybase)
 {
-	/* select usb phy mux */
-	writel(0x1, TCSR_USB_PCIE_SEL);
 	writel(CLK_ENABLE, GCC_USB0_PHY_CFG_AHB_CBCR);
 	writel(CLK_ENABLE, GCC_USB0_PIPE_CBCR);
-	writel(CLK_DISABLE, GCC_USB0_PIPE_CBCR);
 	udelay(100);
 	/*set frequency initial value*/
 	writel(0x1cb9, phybase + SSCG_CTRL_REG_4);
 	writel(0x023a, phybase + SSCG_CTRL_REG_5);
 	/*set spectrum spread count*/
-	writel(0x1360, phybase + SSCG_CTRL_REG_3);
+	writel(0xd360, phybase + SSCG_CTRL_REG_3);
 	/*set fstep*/
 	writel(0x1, phybase + SSCG_CTRL_REG_1);
 	writel(0xeb, phybase + SSCG_CTRL_REG_2);
@@ -1190,23 +1192,27 @@ static void usb_init_phy(int index)
 	boot_clk_ctl = (u32 *)GCC_USB_0_BOOT_CLOCK_CTL;
 	usb_bcr = (u32 *)GCC_USB0_BCR;
 	qusb2_phy_bcr = (u32 *)GCC_QUSB2_0_PHY_BCR;
+
 	/* Disable USB Boot Clock */
 	clrbits_le32(boot_clk_ctl, 0x0);
 
 	/* GCC Reset USB BCR */
 	set_mdelay_clearbits_le32(usb_bcr, 0x1, 10);
 
+	/*usb3 specific wrapper reset*/
+	writel(0x3, 0x08AF89BC);
+
 	/* GCC_QUSB2_PHY_BCR */
 	setbits_le32(qusb2_phy_bcr, 0x1);
 
 	/* GCC_USB0_PHY_BCR */
 	setbits_le32(GCC_USB0_PHY_BCR, 0x1);
-	mdelay(10);
+	mdelay(100);
 	clrbits_le32(GCC_USB0_PHY_BCR, 0x1);
 
 	/* Config user control register */
-	writel(0x0C804010, USB30_GUCTL);
-	writel(0x8C80C8A0, USB30_FLADJ);
+	writel(0x4004010, USB30_GUCTL);
+	writel(0x4945920, USB30_FLADJ);
 
 	/* GCC_QUSB2_0_PHY_BCR */
 	clrbits_le32(qusb2_phy_bcr, 0x1);

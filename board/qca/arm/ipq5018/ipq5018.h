@@ -228,6 +228,7 @@
 #define LFPS_M					0x1
 #define LFPS_N					0xfe
 #define LFPS_D					0xfd
+#define GCC_USB0_LFPS_MODE			(0x2 << 12)
 
 #define GCC_USB0_AUX_CFG_MODE_DUAL_EDGE 	(2 << 12)
 #define GCC_USB0_AUX_CFG_SRC_SEL		(0 << 8)
@@ -246,9 +247,6 @@
 
 #define GCC_USB_MOCK_UTMI_SRC_SEL		(1 << 8)
 #define GCC_USB_MOCK_UTMI_SRC_DIV		(0x13 << 0)
-#define UTMI_M					0x1
-#define UTMI_N					0xf7
-#define UTMI_D					0xf6
 #define GCC_USB_MOCK_UTMI_CLK_DIV		(0x1 << 16)
 
 #define GCC_QUSB2_1_PHY_BCR			0x1841040
