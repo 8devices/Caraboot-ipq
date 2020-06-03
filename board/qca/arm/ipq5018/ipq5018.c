@@ -733,7 +733,7 @@ static void gmac_clock_disable(void)
 
 static void gmac_clk_src_init(void)
 {
-	u32 reg_val;
+	u32 reg_val, iGmac_id, iTxRx;
 
 	/*select source of GMAC*/
 	reg_val = readl(GCC_GMAC0_RX_CFG_RCGR);
@@ -756,9 +756,26 @@ static void gmac_clk_src_init(void)
 	reg_val |= GCC_GMAC1_TX_SRC_SEL_UNIPHY_TX;
 	writel(reg_val, GCC_GMAC1_TX_CFG_RCGR);
 
+	/* update above clock configuration */
+	for (iGmac_id = 0; iGmac_id < 2; ++iGmac_id) {
+		for (iTxRx = 0; iTxRx < 2; ++iTxRx){
+			reg_val = 0;
+			reg_val = readl(GCC_GMAC0_RX_CMD_RCGR +
+				(iTxRx * 8) + (iGmac_id * 0x10));
+			reg_val &= ~0x1;
+			reg_val |= 0x1;
+			writel(reg_val, GCC_GMAC0_RX_CMD_RCGR +
+				(iTxRx * 8) + (iGmac_id * 0x10));
+		}
+	}
 	reg_val = readl(GCC_GMAC_CFG_RCGR);
 	reg_val = 0x209;
 	writel(reg_val, GCC_GMAC_CFG_RCGR);
+
+	reg_val = readl(GCC_GMAC_CMD_RCGR);
+	reg_val &= ~0x1;
+	reg_val |= 0x1;
+	writel(reg_val, GCC_GMAC_CMD_RCGR);
 }
 
 static void gephy_reset(void)
