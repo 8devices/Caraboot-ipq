@@ -3081,8 +3081,8 @@ static int qpic_nand_multi_page_read(struct mtd_info *mtd, uint32_t page,
 		}
 
 		if (uncorrectable_err_cws) {
-			nand_ret = qpic_nand_check_erased_page(mtd, page, (ops_datbuf + (j * mtd->writesize)),
-						       ops_oobbuf + j * 64,
+			nand_ret = qpic_nand_check_erased_page(mtd, page + j, (ops_datbuf + (j * mtd->writesize)),
+						       ops_oobbuf,
 						       uncorrectable_err_cws,
 						       &max_bitflips);
 			if (nand_ret < 0)
@@ -3449,7 +3449,6 @@ static int qpic_nand_read_page_scope_multi_page(struct mtd_info *mtd,
 
 	start_page = ((to >> chip->page_shift));
 	num_pages = qpic_get_read_page_count(mtd, ops, to);
-
 	while (1) {
 
 		if (num_pages > MAX_MULTI_PAGE) {
