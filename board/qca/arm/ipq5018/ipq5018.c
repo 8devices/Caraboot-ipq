@@ -1203,6 +1203,8 @@ static void usb_init_ssphy(void __iomem *phybase)
 	/*set fstep*/
 	writel(0x1, phybase + SSCG_CTRL_REG_1);
 	writel(0xeb, phybase + SSCG_CTRL_REG_2);
+	writel((readl(phybase + CDR_CTRL_REG_1) | APB_FIXED_OFFSET),
+		phybase + CDR_CTRL_REG_1);
 	return;
 }
 
