@@ -140,7 +140,7 @@ static const unsigned int training_block_128[] = {
 	0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F,
 };
 #define TRAINING_PART_OFFSET	0x3c00000
-#define MAXIMUM_ALLOCATED_TRAINING_BLOCK	8
+#define MAXIMUM_ALLOCATED_TRAINING_BLOCK	4
 #define TOTAL_NUM_PHASE	7
 #endif
 
@@ -4089,77 +4089,40 @@ static void qpic_set_phase(int phase)
 	}
 }
 
-static int find_element(int val, u8 *phase_table, int index)
+static bool IsEven(int num)
 {
-	int i;
-	int ret = 0;
-
-	for (i = 0; i < TOTAL_NUM_PHASE; i++) {
-		if (phase_table[i] == val) {
-			ret = i;
-			break;
-		}
-	}
-
-	if ( i > TOTAL_NUM_PHASE) {
-		printf("%s : wrong array index\n",__func__);
-		ret = -EIO;
-	}
-
-	return ret;
+	return (!(num & 1));
 }
 
 static int qpic_find_most_appropriate_phase(u8 *phase_table, int phase_count)
 {
-	int cnt = 0;
-	int i, j, new_index = 0, limit;
+	int cnt = 0, i;
 	int phase = 0x0;
-	u8 phase_ranges[TOTAL_NUM_PHASE] = {1, 2, 3, 4, 5, 6, 7};
+	u8 phase_ranges[TOTAL_NUM_PHASE] = {'\0'};
 
 	/*currently we are considering continious 3 phase will
 	 * pass and tke the middle one out of passed three phase.
 	 * if all 7 phase passed so return middle phase i.e 4
 	 */
-
-	new_index = find_element(phase_table[0], phase_ranges, 0);
-	if (new_index < 0) {
-		printf("%s : Wrong index ..\n",__func__);
-		return -EIO;
+	phase_count -= 2;
+	for (i = 0; i < phase_count; i++) {
+		if ((phase_table[i] + 1 == phase_table[i + 1]) &&
+				(phase_table[i + 1] + 1 == phase_table[i + 2])) {
+			phase_ranges[cnt++] = phase_table[i + 1];
+		}
 	}
 
-	/* best case all phase will passed */
-	j = 0;
-	if (new_index == 0) {
-		for (i =0; i < TOTAL_NUM_PHASE; i++) {
-			if ((phase_table[j] == phase_ranges[i]))
-				cnt++;
-			j++;
-		}
-
-		if (cnt == TOTAL_NUM_PHASE)
-			return 4;
+	/* filter out middle phase
+	 * if cnt is odd then one middle phase
+	 * if cnt is even then two middile phase
+	 * so select lower one
+	 */
+	if (IsEven(cnt)) {
+		phase = phase_ranges[cnt/2 - 1];
 	} else {
-		limit = TOTAL_NUM_PHASE - new_index;
-		j = 0;
-		cnt = 0;
-		for (i = new_index; i <= limit; i++) {
-			if (phase_table[j] == phase_ranges[i])	{
-				cnt++;
-				if (cnt == 3)
-					break;
-			} else if (phase_table[j] > phase_ranges[i]) {
-
-				new_index = find_element(phase_table[j], phase_ranges, i);
-				if (new_index < 0) {
-					printf("%s : wrong index..\n",__func__);
-					return -EIO;
-				}
-			}
-
-			j++;
-		}
+		phase = phase_ranges[cnt/2];
 	}
-	phase = phase_ranges[i-1];
+
 	return phase;
 }
 
@@ -4168,29 +4131,37 @@ static int qpic_execute_serial_training(struct mtd_info *mtd)
 	struct qpic_nand_dev *dev = MTD_QPIC_NAND_DEV(mtd);
 	struct nand_chip *chip = MTD_NAND_CHIP(mtd);
 
-	unsigned int start, training_offset, blk_cnt = 0;
+	unsigned int start, blk_cnt = 0;
 	unsigned int offset, pageno, curr_freq;
-	int size = sizeof(training_block_64);
-	unsigned int io_macro_freq_tbl[] = {100000000, 200000000, 228000000,
-					266000000, 320000000};
+	int size = sizeof(training_block_128);
+	unsigned int io_macro_freq_tbl[] = {24000000, 100000000, 200000000, 320000000};
 
-	unsigned char *data_buff, trained_phase[TOTAL_NUM_PHASE];
-	int phase, phase_cnt;
-	int training_seq_cnt = 3;
-	int index = 4, ret, phase_failed=0;
+	unsigned char *data_buff, trained_phase[TOTAL_NUM_PHASE] = {'\0'};
+	int phase, phase_cnt, clk_src;
+	int training_seq_cnt = 4;
+	int index = 3, ret, phase_failed=0;
+	u32 start_blocks;
+	u32 size_blocks;
+	loff_t training_offset;
 
-	training_offset = TRAINING_PART_OFFSET;
-	/* write pattern at lower frequency */
+	ret = smem_getpart("0:TRAINING", &start_blocks, &size_blocks);
+	if (ret < 0) {
+		printf("Serial Training part offset not found.\n");
+		return -EIO;
+	}
+
+	training_offset = ((loff_t) mtd->erasesize * start_blocks);
+
 	start = (training_offset >> chip->phys_erase_shift);
 	offset = (start << chip->phys_erase_shift);
-	/* erase the all block */
 	pageno = (offset >> chip->page_shift);
 
+	clk_src = GPLL0_CLK_SRC;
 	/* At 50Mhz frequency check the bad blocks, if training
 	 * blocks is not bad then only start training else operate
 	 * at 50Mhz with bypassing software serial traning.
 	 */
-	while (qpic_nand_block_isbad(mtd, offset) != 0) {
+	while (qpic_nand_block_isbad(mtd, offset)) {
 		/* block is bad skip this block and goto next
 		 * block
 		 */
@@ -4199,6 +4170,8 @@ static int qpic_execute_serial_training(struct mtd_info *mtd)
 		offset = (start << chip->phys_erase_shift);
 		pageno = (offset >> chip->page_shift);
 		blk_cnt++;
+		if (blk_cnt == MAXIMUM_ALLOCATED_TRAINING_BLOCK)
+			break;
 	}
 
 	if (blk_cnt == MAXIMUM_ALLOCATED_TRAINING_BLOCK) {
@@ -4220,8 +4193,9 @@ static int qpic_execute_serial_training(struct mtd_info *mtd)
 		ret = -ENOMEM;
 		goto err;
 	}
-	memset(data_buff, 0, size);
-	memcpy(data_buff, training_block_64, size);
+	/* prepare clean buffer */
+	memset(data_buff, 0xff, size);
+	memcpy(data_buff, training_block_128, size);
 
 	/*write training data to flash */
 	ret = NANDC_RESULT_SUCCESS;
@@ -4250,7 +4224,7 @@ static int qpic_execute_serial_training(struct mtd_info *mtd)
 	/* After write verify the the data with read @ lower frequency
 	 * after that only start serial tarining @ higher frequency
 	 */
-	memset(data_buff, 0, size);
+	memset(data_buff, 0xff, size);
 	ops.datbuf = (uint8_t *)data_buff;
 
 	ret = qpic_nand_read_page(mtd, pageno, NAND_CFG, &ops);
@@ -4260,7 +4234,7 @@ static int qpic_execute_serial_training(struct mtd_info *mtd)
 	}
 
 	/* compare original data and read data */
-	if (memcmp(data_buff, training_block_64, size)) {
+	if (memcmp(data_buff, training_block_128, size)) {
 		printf("Training data read failed @ lower frequency\n");
 		goto err;
 	}
@@ -4276,7 +4250,9 @@ rettry:
 	phase_cnt = 0;
 
 	/* set frequency, start from higer frequency */
-	qpic_set_clk_rate(curr_freq, QPIC_IO_MACRO_CLK, GPLL0_CLK_SRC);
+	if (curr_freq == IO_MACRO_CLK_24MHZ)
+		clk_src = XO_CLK_SRC;
+	qpic_set_clk_rate(curr_freq, QPIC_IO_MACRO_CLK, clk_src);
 
 	do {
 		/* set the phase */
@@ -4291,12 +4267,11 @@ rettry:
 			goto err;
 		}
 		/* compare original data and read data */
-		if (memcmp(data_buff, training_block_64, size)) {
+		if (memcmp(data_buff, training_block_128, size)) {
 			/* wrong data read on one of miso line
 			 * change the phase value and try again
 			 */
 			phase_failed++;
-			continue;
 		} else {
 			/* we got good phase update the good phase list
 			 */
@@ -4310,11 +4285,16 @@ rettry:
 		/* Get the appropriate phase */
 		phase = qpic_find_most_appropriate_phase(trained_phase, phase_cnt);
 		qpic_set_phase(phase);
+
+		/* update freq & phase to patch to the kernel */
+		qpic_frequency = curr_freq;
+		qpic_phase = phase;
 	} else {
 		/* lower the the clock frequency
 		 * and try again
 		 */
 		curr_freq = io_macro_freq_tbl[--index];
+		printf("Retry with lower frequency @:%d\n",curr_freq);
 		if (--training_seq_cnt)
 			goto rettry;
 

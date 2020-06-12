@@ -48,6 +48,8 @@ struct sdhci_host mmc_host;
 extern int ipq_spi_init(u16);
 #endif
 
+unsigned int qpic_frequency = 0, qpic_phase = 0;
+
 const char *rsvd_node = "/reserved-memory";
 const char *del_node[] = {"uboot",
 			  "sbl",
@@ -1438,6 +1440,34 @@ void fdt_fixup_wcss_rproc_for_atf(void *blob)
  * Set btss in non-secure mode only if ATF is enable
  */
 	parse_fdt_fixup("/soc/bt@7000000%qcom,nosecure%1", blob);
+}
+
+void fdt_fixup_qpic(void *blob)
+{
+	int node_off, ret;
+	const char *qpic_node = {"/soc/qpic-nand@79b0000"};
+
+	/* This fixup is for qpic io_macro_clk
+	 * frequency & phase value
+	 */
+	node_off = fdt_path_offset(blob, qpic_node);
+	if (node_off < 0) {
+		printf("%s: QPIC: unable to find node '%s'\n",
+				__func__, qpic_node);
+		return;
+	}
+
+	ret = fdt_setprop_u32(blob, node_off, "qcom,iomacromax_clk", qpic_frequency);
+	if (ret) {
+		printf("%s : Unable to set property 'qcom,iomacromax_clk'\n",__func__);
+		return;
+	}
+
+	ret = fdt_setprop_u32(blob, node_off, "qcom,phase", qpic_phase);
+	if (ret) {
+		printf("%s : Unable to set property 'qcom,phase'\n",__func__);
+		return;
+	}
 }
 
 void fdt_fixup_bt_debug(void *blob)
