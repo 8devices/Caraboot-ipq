@@ -1073,13 +1073,14 @@ void set_flash_secondary_type(qca_smem_flash_info_t *smem)
 #ifdef CONFIG_USB_XHCI_IPQ
 void board_usb_deinit(int id)
 {
-	int nodeoff;
+	int nodeoff, ssphy;
 	char node_name[8];
 	snprintf(node_name, sizeof(node_name), "usb%d", id);
 	nodeoff = fdt_path_offset(gd->fdt_blob, node_name);
 	if (fdtdec_get_int(gd->fdt_blob, nodeoff, "qcom,emulation", 0))
 		return;
 
+	ssphy = fdtdec_get_int(gd->fdt_blob, nodeoff, "ssphy", 0);
 	/* Enable USB PHY Power down */
 	setbits_le32(QUSB2PHY_BASE + 0xA4, 0x0);
 	/* Disable clocks */
@@ -1093,19 +1094,22 @@ void board_usb_deinit(int id)
 	/* GCC_QUSB2_0_PHY_BCR */
 	set_mdelay_clearbits_le32(GCC_QUSB2_0_PHY_BCR, 0x1, 10);
 	/* GCC_USB0_PHY_BCR */
-	set_mdelay_clearbits_le32(GCC_USB0_PHY_BCR, 0x1, 10);
+	if (ssphy)
+		set_mdelay_clearbits_le32(GCC_USB0_PHY_BCR, 0x1, 10);
 	/* GCC Reset USB BCR */
 	set_mdelay_clearbits_le32(GCC_USB0_BCR, 0x1, 10);
 	/* Deselect the usb phy mux */
-	writel(0x0, TCSR_USB_PCIE_SEL);
+	if (ssphy)
+		writel(0x0, TCSR_USB_PCIE_SEL);
 }
 
-static void usb_clock_init(int id)
+static void usb_clock_init(int id, int ssphy)
 {
 	int cfg;
 
 	/* select usb phy mux */
-	writel(0x1, TCSR_USB_PCIE_SEL);
+	if (ssphy)
+		writel(0x1, TCSR_USB_PCIE_SEL);
 
 	/* Configure usb0_master_clk_src */
 	cfg = (GCC_USB0_MASTER_CFG_RCGR_SRC_SEL |
@@ -1202,7 +1206,7 @@ static void usb_init_ssphy(void __iomem *phybase)
 	return;
 }
 
-static void usb_init_phy(int index)
+static void usb_init_phy(int index, int ssphy)
 {
 	void __iomem *boot_clk_ctl, *usb_bcr, *qusb2_phy_bcr;
 
@@ -1216,16 +1220,15 @@ static void usb_init_phy(int index)
 	/* GCC Reset USB BCR */
 	set_mdelay_clearbits_le32(usb_bcr, 0x1, 10);
 
-	/*usb3 specific wrapper reset*/
-	writel(0x3, 0x08AF89BC);
-
 	/* GCC_QUSB2_PHY_BCR */
 	setbits_le32(qusb2_phy_bcr, 0x1);
 
 	/* GCC_USB0_PHY_BCR */
-	setbits_le32(GCC_USB0_PHY_BCR, 0x1);
-	mdelay(100);
-	clrbits_le32(GCC_USB0_PHY_BCR, 0x1);
+	if (ssphy) {
+		setbits_le32(GCC_USB0_PHY_BCR, 0x1);
+		mdelay(100);
+		clrbits_le32(GCC_USB0_PHY_BCR, 0x1);
+	}
 
 	/* Config user control register */
 	writel(0x4004010, USB30_GUCTL);
@@ -1236,25 +1239,28 @@ static void usb_init_phy(int index)
 	mdelay(10);
 
 	usb_init_hsphy((u32 *)QUSB2PHY_BASE);
-	usb_init_ssphy((u32 *)USB3PHY_APB_BASE);
+	if (ssphy)
+		usb_init_ssphy((u32 *)USB3PHY_APB_BASE);
 }
 
 int ipq_board_usb_init(void)
 {
-	int i, nodeoff;
+	int i, nodeoff, ssphy;
 	char node_name[8];
 
 	for (i=0; i<CONFIG_USB_MAX_CONTROLLER_COUNT; i++) {
 		snprintf(node_name, sizeof(node_name), "usb%d", i);
 		nodeoff = fdt_path_offset(gd->fdt_blob, node_name);
 		if (nodeoff < 0){
-			printf("USB: Node Not found, skipping initialization \n");
+			printf("USB: Node Not found, skipping initialization\n");
 			return -1;
 		}
+
+		ssphy = fdtdec_get_int(gd->fdt_blob, nodeoff, "ssphy", 0);
 		if (!fdtdec_get_int(gd->fdt_blob, nodeoff, "qcom,emulation", 0)) {
 
-			usb_clock_init(i);
-			usb_init_phy(i);
+			usb_clock_init(i, ssphy);
+			usb_init_phy(i, ssphy);
 		}else {
 			/* Config user control register */
 			writel(0x0C804010, USB30_GUCTL);
