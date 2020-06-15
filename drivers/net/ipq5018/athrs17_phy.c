@@ -171,7 +171,14 @@ int athrs17_init_switch(void)
 	do {
 		udelay(10);
 		data = athrs17_reg_read(S17_MASK_CTRL_REG);
+		i++;
+		if (i == 10){
+			printf("Failed to reset S17C \n");
+			return -1;
+		}
 	} while (data & S17_MASK_CTRL_SOFT_RET);
+
+	i = 0;
 
 	do {
 		udelay(10);
@@ -191,14 +198,12 @@ int athrs17_init_switch(void)
  *********************************************************************/
 void athrs17_reg_init(ipq_gmac_board_cfg_t *gmac_cfg)
 {
-	uint32_t data;
+	athrs17_reg_write(S17_MAC_PWR_REG, gmac_cfg->mac_pwr);
 
-	data = athrs17_reg_read(S17_MAC_PWR_REG) | gmac_cfg->mac_pwr0;
-	athrs17_reg_write(S17_MAC_PWR_REG, data);
-
-	athrs17_reg_write(S17_P0STATUS_REG, (S17_SPEED_1000M | S17_TXMAC_EN |
-					     S17_RXMAC_EN | S17_TX_FLOW_EN |
-					     S17_RX_FLOW_EN | S17_DUPLEX_FULL));
+	athrs17_reg_write(S17_P0STATUS_REG, (S17_SPEED_1000M |
+						S17_TXMAC_EN |
+						S17_RXMAC_EN |
+						S17_DUPLEX_FULL));
 
 	athrs17_reg_write(S17_GLOFW_CTRL1_REG, (S17_IGMP_JOIN_LEAVE_DPALL |
 						S17_BROAD_DPALL |
@@ -206,10 +211,12 @@ void athrs17_reg_init(ipq_gmac_board_cfg_t *gmac_cfg)
 						S17_UNI_FLOOD_DPALL));
 
 	athrs17_reg_write(S17_P5PAD_MODE_REG, S17_MAC0_RGMII_RXCLK_DELAY);
-	athrs17_reg_write(S17_P0PAD_MODE_REG, (S17_MAC0_RGMII_EN | \
-		S17_MAC0_RGMII_TXCLK_DELAY | S17_MAC0_RGMII_RXCLK_DELAY | \
-		(0x1 << S17_MAC0_RGMII_TXCLK_SHIFT) | \
-		(0x3 << S17_MAC0_RGMII_RXCLK_SHIFT)));
+
+	athrs17_reg_write(S17_P0PAD_MODE_REG, (S17_MAC0_RGMII_EN |
+						S17_MAC0_RGMII_TXCLK_DELAY |
+						S17_MAC0_RGMII_RXCLK_DELAY |
+					(0x1 << S17_MAC0_RGMII_TXCLK_SHIFT) |
+					(0x2 << S17_MAC0_RGMII_RXCLK_SHIFT)));
 
 	printf("%s: complete\n", __func__);
 }
@@ -223,19 +230,16 @@ void athrs17_reg_init_lan(ipq_gmac_board_cfg_t *gmac_cfg)
 {
 	uint32_t reg_val;
 
-	athrs17_reg_write(S17_P6STATUS_REG, (S17_SPEED_1000M | S17_TXMAC_EN |
-					     S17_RXMAC_EN |
-					     S17_DUPLEX_FULL));
+	athrs17_reg_write(S17_P6STATUS_REG, (S17_SPEED_1000M |
+						S17_TXMAC_EN |
+						S17_RXMAC_EN |
+						S17_DUPLEX_FULL));
 
-	reg_val = athrs17_reg_read(S17_MAC_PWR_REG) | gmac_cfg->mac_pwr1;
-	athrs17_reg_write(S17_MAC_PWR_REG, reg_val);
-
+	athrs17_reg_write(S17_MAC_PWR_REG, gmac_cfg->mac_pwr);
 	reg_val = athrs17_reg_read(S17_P6PAD_MODE_REG);
 	athrs17_reg_write(S17_P6PAD_MODE_REG, (reg_val | S17_MAC6_SGMII_EN));
 
-	reg_val = athrs17_reg_read(S17_PWS_REG);
-	athrs17_reg_write(S17_PWS_REG, (reg_val |
-			   S17c_PWS_SERDES_ANEG_DISABLE));
+	athrs17_reg_write(S17_PWS_REG, 0x2613a0);
 
 	athrs17_reg_write(S17_SGMII_CTRL_REG,(S17c_SGMII_EN_PLL |
 					S17c_SGMII_EN_RX |
@@ -252,6 +256,8 @@ void athrs17_reg_init_lan(ipq_gmac_board_cfg_t *gmac_cfg)
 					S17c_SGMII_PAUSE_25M |
 					S17c_SGMII_HALF_DUPLEX_25M |
 					S17c_SGMII_FULL_DUPLEX_25M));
+
+	athrs17_reg_write(S17_MODULE_EN_REG, S17_MIB_COUNTER_ENABLE);
 }
 
 struct athrs17_regmap {
@@ -260,13 +266,18 @@ struct athrs17_regmap {
 };
 
 struct athrs17_regmap regmap[] = {
-	{ 0x000, 0x0e0 },
-	{ 0x100, 0x168 },
-	{ 0x200, 0x270 },
-	{ 0x400, 0x454 },
-	{ 0x600, 0x718 },
-	{ 0x800, 0xb70 },
-	{ 0xC00, 0xC80 },
+	{ 0x000,  0x0e4  },
+	{ 0x100,  0x168  },
+	{ 0x200,  0x270  },
+	{ 0x400,  0x454  },
+	{ 0x600,  0x718  },
+	{ 0x800,  0xb70  },
+	{ 0xC00,  0xC80  },
+	{ 0x1100, 0x11a7 },
+	{ 0x1200, 0x12a7 },
+	{ 0x1300, 0x13a7 },
+	{ 0x1400, 0x14a7 },
+	{ 0x1600, 0x16a7 },
 };
 
 int do_ar8xxx_dump(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]) {

@@ -304,7 +304,7 @@ extern loff_t board_env_size;
 #define CONFIG_BOOTARGS				"console=ttyMSM0,115200n8"
 #define QCA_ROOT_FS_PART_NAME			"rootfs"
 
-#define CONFIG_BOOTDELAY			2
+#define CONFIG_BOOTDELAY			5
 
 #define NUM_ALT_PARTITION			16
 
@@ -331,7 +331,6 @@ extern loff_t board_env_size;
 #define SCM_CMD_TZ_PSHOLD			0x16
 #define BOOT_VERSION				0
 #define TZ_VERSION				1
-#define RPM_VERSION				3
 #endif
 
 
@@ -351,7 +350,7 @@ extern loff_t board_env_size;
 
 #define CONFIG_QCA_KERNEL_CRASHDUMP_ADDRESS	*((unsigned int *)0x08600658)
 #define CONFIG_CPU_CONTEXT_DUMP_SIZE		4096
-#define TLV_BUF_OFFSET				244 * 1024
+#define TLV_BUF_OFFSET				1012 * 1024
 #define CONFIG_TLV_DUMP_SIZE			12 * 1024
 
 /* L1 cache line size is 64 bytes, L2 cache line size is 128 bytes

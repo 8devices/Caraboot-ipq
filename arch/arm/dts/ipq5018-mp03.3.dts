@@ -85,6 +85,12 @@
 				od_en = <GPIO_OD_DISABLE>;
 				drvstr = <GPIO_8MA>;
 			};
+			qspi_clk {
+				gpio = <9>;
+				func = <2>;
+				od_en = <GPIO_OD_DISABLE>;
+				drvstr = <GPIO_8MA>;
+			};
 		};
 	};
 
@@ -113,7 +119,7 @@
 	};
 
 	gmac_cfg {
-		gmac_count = <2>;
+		gephy_led = <46>;
 
 		gmac1_cfg {
 			unit = <0>;
@@ -121,14 +127,6 @@
 			phy_address = <7>;
 			phy_name = "IPQ MDIO0";
 		};
-
-		gmac2_cfg {
-			unit = <1>;
-			base = <0x39D00000>;
-			phy_address = <1>;
-			phy_name = "IPQ MDIO1";
-		};
 	};
 
-	gmac_gpio{};
 };

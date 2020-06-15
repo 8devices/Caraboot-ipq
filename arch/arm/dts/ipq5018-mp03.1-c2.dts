@@ -53,7 +53,7 @@
 			emmc_cmd{
 				gpio = <8>;
 				func = <1>;
-				pull = <GPIO_NO_PULL>;
+				pull = <GPIO_PULL_UP>;
 				od_en = <GPIO_OD_DISABLE>;
 				drvstr = <GPIO_8MA>;
 			};

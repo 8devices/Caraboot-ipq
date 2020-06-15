@@ -139,7 +139,7 @@ static const unsigned int training_block_128[] = {
 	0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F,
 	0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F,
 };
-#define TRAINING_PART_OFFSET	0x100000
+#define TRAINING_PART_OFFSET	0x3c00000
 #define MAXIMUM_ALLOCATED_TRAINING_BLOCK	8
 #define TOTAL_NUM_PHASE	7
 #endif
@@ -1429,37 +1429,58 @@ static void qpic_spi_init(struct mtd_info *mtd)
 {
 	uint32_t xfer_start = NAND_XFR_STEPS_V1_5_20;
 	int i;
+	unsigned int default_clk_rate;
 
-	unsigned int val;
 	int num_desc = 0;
-
 	struct cmd_element *cmd_list_ptr = ce_array;
 	struct cmd_element *cmd_list_ptr_start = ce_array;
 
+	unsigned int val;
+
 	val = readl(NAND_QSPI_MSTR_CONFIG);
+
+#if defined(QSPI_IO_MACRO_DEFAULT_CLK_320MHZ) && !defined(CONFIG_QSPI_SERIAL_TRAINING)
+	default_clk_rate = IO_MACRO_CLK_320_MHZ;
+	val &= ~FB_CLK_BIT;
+#else
+	default_clk_rate = IO_MACRO_CLK_200_MHZ;
 	val |= FB_CLK_BIT;
+#endif
+	if ((readl(QPIC_NAND_CTRL) & BAM_MODE_EN)) {
 
-	bam_add_cmd_element(cmd_list_ptr, NAND_QSPI_MSTR_CONFIG, (uint32_t)val, CE_WRITE_TYPE);
-	cmd_list_ptr++;
+		bam_add_cmd_element(cmd_list_ptr, NAND_QSPI_MSTR_CONFIG,
+				(uint32_t)val, CE_WRITE_TYPE);
+		cmd_list_ptr++;
 
-	bam_add_cmd_element(cmd_list_ptr, NAND_FLASH_SPI_CFG, (uint32_t)0, CE_WRITE_TYPE);
-	cmd_list_ptr++;
+		bam_add_cmd_element(cmd_list_ptr, NAND_FLASH_SPI_CFG,
+				(uint32_t)0, CE_WRITE_TYPE);
+		cmd_list_ptr++;
 
-	bam_add_cmd_element(cmd_list_ptr, NAND_FLASH_SPI_CFG, (uint32_t)SPI_CFG_VAL, CE_WRITE_TYPE);
-	cmd_list_ptr++;
+		bam_add_cmd_element(cmd_list_ptr, NAND_FLASH_SPI_CFG,
+				(uint32_t)SPI_CFG_VAL, CE_WRITE_TYPE);
+		cmd_list_ptr++;
 
-	val = SPI_CFG_VAL & ~SPI_LOAD_CLK_CNTR_INIT_EN;
-	bam_add_cmd_element(cmd_list_ptr, NAND_FLASH_SPI_CFG, (uint32_t)val, CE_WRITE_TYPE);
-	cmd_list_ptr++;
+		val = SPI_CFG_VAL & ~SPI_LOAD_CLK_CNTR_INIT_EN;
+		bam_add_cmd_element(cmd_list_ptr, NAND_FLASH_SPI_CFG,
+				(uint32_t)val, CE_WRITE_TYPE);
+		cmd_list_ptr++;
 
-	bam_add_one_desc(&bam,
+		bam_add_one_desc(&bam,
 			CMD_PIPE_INDEX,
 			(unsigned char*)cmd_list_ptr_start,
 			((uint32_t)cmd_list_ptr - (uint32_t)cmd_list_ptr_start),
-			BAM_DESC_CMD_FLAG | BAM_DESC_LOCK_FLAG);
-	num_desc++;
+			BAM_DESC_CMD_FLAG);
+		num_desc++;
 
-	qpic_nand_wait_for_cmd_exec(num_desc);
+		/* Notify BAM HW about the newly added descriptors */
+		bam_sys_gen_event(&bam, CMD_PIPE_INDEX, num_desc);
+	} else {
+		writel(val, NAND_QSPI_MSTR_CONFIG);
+		writel(0x0, NAND_FLASH_SPI_CFG);
+		writel(SPI_CFG_VAL, NAND_FLASH_SPI_CFG);
+		val = SPI_CFG_VAL & ~SPI_LOAD_CLK_CNTR_INIT_EN;
+		writel(val, NAND_FLASH_SPI_CFG);
+	}
 
 	num_desc = 0;
 
@@ -1468,8 +1489,7 @@ static void qpic_spi_init(struct mtd_info *mtd)
 	 * bit enabled then , we can apply upto maximum 200MHz
 	 * input to IO_MACRO_BLOCK.
 	 */
-
-	qpic_set_clk_rate(IO_MACRO_CLK_200_MHZ, QPIC_IO_MACRO_CLK,
+	qpic_set_clk_rate(default_clk_rate, QPIC_IO_MACRO_CLK,
 			GPLL0_CLK_SRC);
 
 	/*qpic_set_clk_rate(IO_MACRO_CLK_200_MHZ, QPIC_IO_MACRO_CLK,
@@ -1512,26 +1532,31 @@ static void qpic_spi_init(struct mtd_info *mtd)
 	/* No of address cycle is same for Giga device & Micron so
 	 * configure no of address cycle now.
 	 */
-	cmd_list_ptr = ce_array;
-	bam_add_cmd_element(cmd_list_ptr, NAND_SPI_NUM_ADDR_CYCLES,
-			(uint32_t)SPI_NUM_ADDR_CYCLES, CE_WRITE_TYPE);
+	if ((readl(QPIC_NAND_CTRL) & BAM_MODE_EN)) {
+		cmd_list_ptr = ce_array;
+		bam_add_cmd_element(cmd_list_ptr, NAND_SPI_NUM_ADDR_CYCLES,
+				(uint32_t)SPI_NUM_ADDR_CYCLES, CE_WRITE_TYPE);
 
-	cmd_list_ptr++;
+		cmd_list_ptr++;
 
-	bam_add_cmd_element(cmd_list_ptr, NAND_SPI_BUSY_CHECK_WAIT_CNT,
-			(uint32_t)SPI_BUSY_CHECK_WAIT_CNT, CE_WRITE_TYPE);
+		bam_add_cmd_element(cmd_list_ptr, NAND_SPI_BUSY_CHECK_WAIT_CNT,
+				(uint32_t)SPI_BUSY_CHECK_WAIT_CNT, CE_WRITE_TYPE);
 
-	cmd_list_ptr++;
+		cmd_list_ptr++;
 
-	bam_add_one_desc(&bam,
+		bam_add_one_desc(&bam,
 			CMD_PIPE_INDEX,
 			(unsigned char*)cmd_list_ptr_start,
 			((uint32_t)cmd_list_ptr - (uint32_t)cmd_list_ptr_start),
-			BAM_DESC_CMD_FLAG | BAM_DESC_LOCK_FLAG);
-	num_desc++;
-	qpic_nand_wait_for_cmd_exec(num_desc);
+			BAM_DESC_CMD_FLAG);
+		num_desc++;
 
-	num_desc = 0;
+		/* Notify BAM HW about the newly added descriptors */
+		bam_sys_gen_event(&bam, CMD_PIPE_INDEX, num_desc);
+	} else {
+		writel(SPI_NUM_ADDR_CYCLES, NAND_SPI_NUM_ADDR_CYCLES);
+		writel(SPI_BUSY_CHECK_WAIT_CNT, NAND_SPI_BUSY_CHECK_WAIT_CNT);
+	}
 }
 #endif
 static int qpic_nand_reset(struct mtd_info *mtd)
@@ -3056,8 +3081,8 @@ static int qpic_nand_multi_page_read(struct mtd_info *mtd, uint32_t page,
 		}
 
 		if (uncorrectable_err_cws) {
-			nand_ret = qpic_nand_check_erased_page(mtd, page, (ops_datbuf + (j * mtd->writesize)),
-						       ops_oobbuf + j * 64,
+			nand_ret = qpic_nand_check_erased_page(mtd, page + j, (ops_datbuf + (j * mtd->writesize)),
+						       ops_oobbuf,
 						       uncorrectable_err_cws,
 						       &max_bitflips);
 			if (nand_ret < 0)
@@ -3424,7 +3449,6 @@ static int qpic_nand_read_page_scope_multi_page(struct mtd_info *mtd,
 
 	start_page = ((to >> chip->page_shift));
 	num_pages = qpic_get_read_page_count(mtd, ops, to);
-
 	while (1) {
 
 		if (num_pages > MAX_MULTI_PAGE) {
@@ -3979,9 +4003,33 @@ qpic_nand_mtd_params(struct mtd_info *mtd)
 }
 
 #ifdef CONFIG_QSPI_SERIAL_TRAINING
+static void qpic_reg_write_bam(unsigned int reg, unsigned int val)
+{
+	int num_desc = 0;
+	struct cmd_element *cmd_list_ptr = ce_array;
+	struct cmd_element *cmd_list_ptr_start = ce_array;
+
+	bam_add_cmd_element(cmd_list_ptr, reg,
+				(uint32_t)val, CE_WRITE_TYPE);
+	cmd_list_ptr++;
+
+	bam_add_one_desc(&bam,
+			CMD_PIPE_INDEX,
+			(unsigned char*)cmd_list_ptr_start,
+			((uint32_t)cmd_list_ptr - (uint32_t)cmd_list_ptr_start),
+			BAM_DESC_CMD_FLAG);
+	num_desc++;
+
+	/* Notify BAM HW about the newly added descriptors */
+	bam_sys_gen_event(&bam, CMD_PIPE_INDEX, num_desc);
+}
 static void qpic_set_phase(int phase)
 {
 	int spi_flash_cfg_val = 0x0;
+
+	int num_desc = 0;
+	struct cmd_element *cmd_list_ptr = ce_array;
+	struct cmd_element *cmd_list_ptr_start = ce_array;
 
 	if (phase < 1 || phase > 7) {
 		printf("%s : wrong phase value\n", __func__);
@@ -3989,40 +4037,129 @@ static void qpic_set_phase(int phase)
 	}
 	/* get the current value of NAND_FLASH_SPI_CFG register */
 	spi_flash_cfg_val = readl(NAND_FLASH_SPI_CFG);
-
 	/* set SPI_LOAD_CLK_CNTR_INIT_EN bit */
 	spi_flash_cfg_val |= SPI_LOAD_CLK_CNTR_INIT_EN;
-	writel(spi_flash_cfg_val, NAND_FLASH_SPI_CFG);
 
-	/* write the phase value for all the line */
-	spi_flash_cfg_val |= ((phase << 16) | (phase << 19) |
+	if ((readl(QPIC_NAND_CTRL) & BAM_MODE_EN)) {
+
+		bam_add_cmd_element(cmd_list_ptr, NAND_FLASH_SPI_CFG,
+				(uint32_t)spi_flash_cfg_val, CE_WRITE_TYPE);
+		cmd_list_ptr++;
+
+		spi_flash_cfg_val &= 0xf000ffff;
+		/* write the phase value for all the line */
+		spi_flash_cfg_val |= ((phase << 16) | (phase << 19) |
 			(phase << 22) | (phase << 25));
-	writel(spi_flash_cfg_val, NAND_FLASH_SPI_CFG);
 
-	/* clear the SPI_LOAD_CLK_CNTR_INIT_EN bit to load the required
-	 * phase value
-	 */
-	spi_flash_cfg_val &= ~SPI_LOAD_CLK_CNTR_INIT_EN;
-	writel(spi_flash_cfg_val, NAND_FLASH_SPI_CFG);
+		bam_add_cmd_element(cmd_list_ptr, NAND_FLASH_SPI_CFG,
+				(uint32_t)spi_flash_cfg_val, CE_WRITE_TYPE);
+		cmd_list_ptr++;
+		/* clear the SPI_LOAD_CLK_CNTR_INIT_EN bit to load the required
+		 * phase value
+		 */
+		spi_flash_cfg_val &= ~SPI_LOAD_CLK_CNTR_INIT_EN;
+
+		bam_add_cmd_element(cmd_list_ptr, NAND_FLASH_SPI_CFG,
+				(uint32_t)spi_flash_cfg_val, CE_WRITE_TYPE);
+		cmd_list_ptr++;
+
+		bam_add_one_desc(&bam,
+			CMD_PIPE_INDEX,
+			(unsigned char*)cmd_list_ptr_start,
+			((uint32_t)cmd_list_ptr - (uint32_t)cmd_list_ptr_start),
+			BAM_DESC_CMD_FLAG);
+		num_desc++;
+
+		/* Notify BAM HW about the newly added descriptors */
+		bam_sys_gen_event(&bam, CMD_PIPE_INDEX, num_desc);
+	} else {
+		writel(spi_flash_cfg_val, NAND_FLASH_SPI_CFG);
+
+		spi_flash_cfg_val &= 0xf000ffff;
+		/* write the phase value for all the line */
+		spi_flash_cfg_val |= ((phase << 16) | (phase << 19) |
+				(phase << 22) | (phase << 25));
+		writel(spi_flash_cfg_val, NAND_FLASH_SPI_CFG);
+
+		/* clear the SPI_LOAD_CLK_CNTR_INIT_EN bit to load the required
+		 * phase value
+		 */
+		spi_flash_cfg_val &= ~SPI_LOAD_CLK_CNTR_INIT_EN;
+		writel(spi_flash_cfg_val, NAND_FLASH_SPI_CFG);
+	}
+}
+
+static int find_element(int val, u8 *phase_table, int index)
+{
+	int i;
+	int ret = 0;
+
+	for (i = 0; i < TOTAL_NUM_PHASE; i++) {
+		if (phase_table[i] == val) {
+			ret = i;
+			break;
+		}
+	}
+
+	if ( i > TOTAL_NUM_PHASE) {
+		printf("%s : wrong array index\n",__func__);
+		ret = -EIO;
+	}
+
+	return ret;
 }
 
 static int qpic_find_most_appropriate_phase(u8 *phase_table, int phase_count)
 {
-	int cnt;
+	int cnt = 0;
+	int i, j, new_index = 0, limit;
 	int phase = 0x0;
 	u8 phase_ranges[TOTAL_NUM_PHASE] = {1, 2, 3, 4, 5, 6, 7};
 
 	/*currently we are considering continious 3 phase will
 	 * pass and tke the middle one out of passed three phase.
+	 * if all 7 phase passed so return middle phase i.e 4
 	 */
-	for (cnt = 0; cnt < phase_count; cnt++) {
-		if (!memcmp(phase_table+cnt, phase_ranges+cnt, 3)) {
-			phase = cnt+1;
-				break;
-		}
+
+	new_index = find_element(phase_table[0], phase_ranges, 0);
+	if (new_index < 0) {
+		printf("%s : Wrong index ..\n",__func__);
+		return -EIO;
 	}
 
-	phase = phase_table[phase];
+	/* best case all phase will passed */
+	j = 0;
+	if (new_index == 0) {
+		for (i =0; i < TOTAL_NUM_PHASE; i++) {
+			if ((phase_table[j] == phase_ranges[i]))
+				cnt++;
+			j++;
+		}
+
+		if (cnt == TOTAL_NUM_PHASE)
+			return 4;
+	} else {
+		limit = TOTAL_NUM_PHASE - new_index;
+		j = 0;
+		cnt = 0;
+		for (i = new_index; i <= limit; i++) {
+			if (phase_table[j] == phase_ranges[i])	{
+				cnt++;
+				if (cnt == 3)
+					break;
+			} else if (phase_table[j] > phase_ranges[i]) {
+
+				new_index = find_element(phase_table[j], phase_ranges, i);
+				if (new_index < 0) {
+					printf("%s : wrong index..\n",__func__);
+					return -EIO;
+				}
+			}
+
+			j++;
+		}
+	}
+	phase = phase_ranges[i-1];
 	return phase;
 }
 
@@ -4129,8 +4266,8 @@ static int qpic_execute_serial_training(struct mtd_info *mtd)
 	}
 
 	/* disable feed back clock bit to start serial training */
-	writel((~FB_CLK_BIT & readl(NAND_QSPI_MSTR_CONFIG)),
-			NAND_QSPI_MSTR_CONFIG);
+	qpic_reg_write_bam(NAND_QSPI_MSTR_CONFIG,
+			(~FB_CLK_BIT & readl(NAND_QSPI_MSTR_CONFIG)));
 
 	/* start serial training here */
 	curr_freq = io_macro_freq_tbl[index];
@@ -4158,8 +4295,8 @@ rettry:
 			/* wrong data read on one of miso line
 			 * change the phase value and try again
 			 */
-			continue;
 			phase_failed++;
+			continue;
 		} else {
 			/* we got good phase update the good phase list
 			 */
@@ -4167,7 +4304,7 @@ rettry:
 			/*printf("%s : Found good phase %d\n",__func__,phase);*/
 		}
 
-	} while (phase++ <= TOTAL_NUM_PHASE);
+	} while (phase++ < TOTAL_NUM_PHASE);
 
 	if (phase_cnt) {
 		/* Get the appropriate phase */
@@ -4394,16 +4531,28 @@ void qpic_nand_init(qpic_nand_cfg_t *qpic_nand_cfg)
 	if (ret) {
 		printf("Error in serial training.\n");
 		printf("switch back to 50MHz with feed back clock bit enabled\n");
-		writel((FB_CLK_BIT | readl(NAND_QSPI_MSTR_CONFIG)),
-			NAND_QSPI_MSTR_CONFIG);
+		if (!(readl(QPIC_NAND_CTRL) & BAM_MODE_EN)) {
+			qpic_reg_write_bam(NAND_QSPI_MSTR_CONFIG,
+				(FB_CLK_BIT | readl(NAND_QSPI_MSTR_CONFIG)));
+			qpic_set_clk_rate(IO_MACRO_CLK_200_MHZ, QPIC_IO_MACRO_CLK,
+					NAND_QSPI_MSTR_CONFIG);
+			qpic_reg_write_bam(NAND_FLASH_SPI_CFG, 0x0);
+			qpic_reg_write_bam(NAND_FLASH_SPI_CFG, SPI_CFG_VAL);
+			qpic_reg_write_bam(NAND_FLASH_SPI_CFG,
+					(SPI_CFG_VAL & ~SPI_LOAD_CLK_CNTR_INIT_EN));
 
-		qpic_set_clk_rate(IO_MACRO_CLK_200_MHZ, QPIC_IO_MACRO_CLK,
-				GPLL0_CLK_SRC);
+		} else {
+			writel((FB_CLK_BIT | readl(NAND_QSPI_MSTR_CONFIG)),
+				NAND_QSPI_MSTR_CONFIG);
 
-		writel(0x0, NAND_FLASH_SPI_CFG);
-		writel(SPI_CFG_VAL, NAND_FLASH_SPI_CFG);
-		writel((SPI_CFG_VAL & ~SPI_LOAD_CLK_CNTR_INIT_EN),
-			NAND_FLASH_SPI_CFG);
+			qpic_set_clk_rate(IO_MACRO_CLK_200_MHZ, QPIC_IO_MACRO_CLK,
+					GPLL0_CLK_SRC);
+
+			writel(0x0, NAND_FLASH_SPI_CFG);
+			writel(SPI_CFG_VAL, NAND_FLASH_SPI_CFG);
+			writel((SPI_CFG_VAL & ~SPI_LOAD_CLK_CNTR_INIT_EN),
+				NAND_FLASH_SPI_CFG);
+		}
 	}
 #endif
 	/* Register with MTD subsystem. */

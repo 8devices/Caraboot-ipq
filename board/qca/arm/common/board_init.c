@@ -181,10 +181,12 @@ int board_init(void)
 		break;
 #ifdef CONFIG_QCA_MMC
 	case SMEM_BOOT_MMC_FLASH:
-	case SMEM_BOOT_NO_FLASH:
 		board_env_range = CONFIG_ENV_SIZE_MAX;
 		break;
 #endif
+	case SMEM_BOOT_NO_FLASH:
+		board_env_range = CONFIG_ENV_SIZE_MAX;
+		break;
 	default:
 		printf("BUG: unsupported flash type : %d\n", sfi->flash_type);
 		BUG();
@@ -205,6 +207,10 @@ int board_init(void)
 		saveenv = nand_saveenv;
 		env_ptr = nand_env_ptr;
 		env_name_spec = nand_env_name_spec;
+#else
+		saveenv = sf_saveenv;
+		env_name_spec = sf_env_name_spec;
+
 #endif
 	}
 #endif

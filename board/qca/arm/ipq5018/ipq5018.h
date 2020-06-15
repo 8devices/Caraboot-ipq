@@ -22,16 +22,35 @@
 #define MSM_SDC1_BASE				0x7800000
 #define MSM_SDC1_SDHCI_BASE			0x7804000
 
+#define GCC_MDIO0_BASE				0x1858000
+#define GCC_GMAC_CFG_RCGR			0x01868084
+#define GCC_GMAC_CMD_RCGR			0x01868080
+#define GCC_GMAC_BASE				0x01868000
+
+
 #define GCC_GMAC_CFG_RCGR_SRC_SEL_MASK		0x700
 #define GCC_GMAC0_RX_SRC_SEL_GEPHY_TX		0x200
 #define GCC_GMAC0_TX_SRC_SEL_GEPHY_TX		0x100
 #define GCC_GMAC1_RX_SRC_SEL_UNIPHY_RX		0x100
 #define GCC_GMAC1_TX_SRC_SEL_UNIPHY_TX		0x100
+#define CMN_PLL_PLL_LOCKED_REG			0x9B064
+#define CMN_PLL_PLL_LOCKED_SIZE			0x4
+#define CMN_PLL_LOCKED				0x4
+
 /*
  * CMN BLK clock
  */
 #define GCC_CMN_BLK_AHB_CBCR			0x01856308
 #define GCC_CMN_BLK_SYS_CBCR			0x0185630C
+#define CMN_BLK_ADDR				0x0009B780
+#define CMN_BLK_SIZE				0x100
+#define FREQUENCY_MASK				0xfffffdf0
+#define INTERNAL_48MHZ_CLOCK    		0x7
+
+#define TCSR_ETH_LDO_RDY_REG			0x19475C4
+#define TCSR_ETH_LDO_RDY_SIZE			0x4
+#define ETH_LDO_RDY				0x1
+
 /*
  * GEPHY Block Register
  */
@@ -50,6 +69,8 @@
 #define GCC_UNIPHY_SYS_CBCR			0x0185610C
 #define GCC_UNIPHY_BCR_BLK_ARES			0x1
 #define GCC_UNIPHY_MISC_ARES			0x32
+#define GCC_UNIPHY_RX_CBCR			0x01856110
+#define GCC_UNIPHY_TX_CBCR			0x01856114
 
 /* GMAC0 GCC clock */
 #define GCC_GMAC0_RX_CMD_RCGR			0x01868020
@@ -86,6 +107,8 @@
 #define GCC_GMAC1_RX_CBCR			0x01868248
 #define GCC_GMAC1_TX_CBCR			0x0186824C
 #define GCC_GMAC1_BCR_BLK_ARES			0x1
+
+#define GCC_CBCR_CLK_ENABLE			0x1
 
 /*
  * GCC-SDCC Registers
@@ -206,6 +229,7 @@
 #define LFPS_M					0x1
 #define LFPS_N					0xfe
 #define LFPS_D					0xfd
+#define GCC_USB0_LFPS_MODE			(0x2 << 12)
 
 #define GCC_USB0_AUX_CFG_MODE_DUAL_EDGE 	(2 << 12)
 #define GCC_USB0_AUX_CFG_SRC_SEL		(0 << 8)
@@ -224,9 +248,6 @@
 
 #define GCC_USB_MOCK_UTMI_SRC_SEL		(1 << 8)
 #define GCC_USB_MOCK_UTMI_SRC_DIV		(0x13 << 0)
-#define UTMI_M					0x1
-#define UTMI_N					0xf7
-#define UTMI_D					0xf6
 #define GCC_USB_MOCK_UTMI_CLK_DIV		(0x1 << 16)
 
 #define GCC_QUSB2_1_PHY_BCR			0x1841040
@@ -422,6 +443,8 @@
 unsigned int __invoke_psci_fn_smc(unsigned int, unsigned int,
 					 unsigned int, unsigned int);
 
+#define S17C_MAX_PORT			4
+
 typedef struct {
 	u32 base;
 	int unit;
@@ -429,9 +452,10 @@ typedef struct {
 	int phy_interface_mode;
 	int phy_napa_gpio;
 	int phy_type;
-	u32 mac_pwr0;
-	u32 mac_pwr1;
+	u32 mac_pwr;
 	int ipq_swith;
+	int switch_port_count;
+	int switch_port_phy_address[S17C_MAX_PORT];
 	const char phy_name[MDIO_NAME_LEN];
 } ipq_gmac_board_cfg_t;
 

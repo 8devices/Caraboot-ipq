@@ -112,7 +112,7 @@
 	};
 
 	gmac_cfg {
-		gmac_count = <2>;
+		gephy_led = <46>;
 
 		gmac1_cfg {
 			unit = <0>;
@@ -120,14 +120,5 @@
 			phy_address = <7>;
 			phy_name = "IPQ MDIO0";
 		};
-
-		gmac2_cfg {
-			unit = <1>;
-			base = <0x39D00000>;
-			phy_address = <1>;
-			phy_name = "IPQ MDIO1";
-		};
 	};
-
-	gmac_gpio{};
 };
