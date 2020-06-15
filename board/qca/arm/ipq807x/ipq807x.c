@@ -1267,7 +1267,10 @@ unsigned int get_dts_machid(unsigned int machid)
 	switch (machid)
 	{
 		case MACH_TYPE_IPQ807x_AP_HK01_C3:
+		case MACH_TYPE_IPQ807x_AP_OAK03:
 			return MACH_TYPE_IPQ807x_AP_HK01_C1;
+		case MACH_TYPE_IPQ807x_AP_AC02:
+			return MACH_TYPE_IPQ807x_AP_AC01;
 		default:
 			return machid;
 	}
@@ -1282,6 +1285,12 @@ void ipq_uboot_fdt_fixup(void)
 	{
 		case MACH_TYPE_IPQ807x_AP_HK01_C3:
 			config = "config@hk01.c3";
+			break;
+		case MACH_TYPE_IPQ807x_AP_AC02:
+			config = "config@ac02";
+			break;
+		case MACH_TYPE_IPQ807x_AP_OAK03:
+			config = "config@oak03";
 			break;
 	}
 
