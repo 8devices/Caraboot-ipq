@@ -162,7 +162,162 @@ void ipq_fdt_fixup_version(void *blob)
 	}
 #endif /* RPM_VERSION */
 }
+#ifdef CONFIG_IPQ_TINY
+#define		OFFSET_NOT_SPECIFIED	(~0llu)
+struct reg_cell {
+	unsigned int r0;
+	unsigned int r1;
+};
 
+extern int fdt_del_partitions(void *blob, int parent_offset);
+
+int parse_nor_partition(const char *const partdef,
+			const char **ret,
+			struct part_info **retpart);
+
+void free_parse(struct list_head *head);
+
+static void ipq_nor_fdt_fixup(void *blob, struct flash_node_info *ni)
+{
+	int parent_offset;
+	struct part_info *part, *pPartInfo;
+	struct reg_cell cell;
+	int off, ndepth = 0;
+	int part_num, ret, newoff;
+	char buf[64];
+	int offset = 0;
+	struct list_head *pentry;
+	LIST_HEAD(tmp_list);
+	const char *pMtdparts =  getenv("mtdparts");
+
+	if (!pMtdparts)
+		return;
+
+	for (; ni->compat; ni++) {
+		parent_offset = fdt_node_offset_by_compatible(
+					blob, -1, ni->compat);
+		if (parent_offset != -FDT_ERR_NOTFOUND)
+			break;
+	}
+
+	if (parent_offset == -FDT_ERR_NOTFOUND){
+		printf(" compatible not found \n");
+		return;
+	}
+
+	ret = fdt_del_partitions(blob, parent_offset);
+	if (ret < 0)
+		return;
+
+	/*
+	 * Check if it is nand {}; subnode, adjust
+	 * the offset in this case
+	 */
+	off = fdt_next_node(blob, parent_offset, &ndepth);
+	if (off > 0 && ndepth == 1)
+		parent_offset = off;
+
+	if (strncmp(pMtdparts, "mtdparts=", 9) == 0) {
+		pMtdparts += 9;
+		pMtdparts = strchr(pMtdparts, ':');
+		pMtdparts++;
+	} else {
+		printf("mtdparts variable doesn't start with 'mtdparts='\n");
+		return;
+	}
+
+	part_num = 0;
+
+	while (pMtdparts && (*pMtdparts != '\0') && (*pMtdparts != ';')) {
+		if ((parse_nor_partition(pMtdparts, &pMtdparts, &pPartInfo) != 0))
+			break;
+
+		/* calculate offset when not specified */
+		if (pPartInfo->offset == OFFSET_NOT_SPECIFIED)
+			pPartInfo->offset = offset;
+		else
+			offset = pPartInfo->offset;
+
+		offset += pPartInfo->size;
+		/* partition is ok, add it to the list */
+		list_add_tail(&pPartInfo->link, &tmp_list);
+	}
+	list_for_each_prev(pentry, &tmp_list) {
+
+		part = list_entry(pentry, struct part_info, link);
+
+		debug("%2d: %-20s0x%08llx\t0x%08llx\t%d\n",
+			part_num, part->name, part->size,
+			part->offset, part->mask_flags);
+
+		snprintf(buf, sizeof(buf), "partition@%llx", part->offset);
+add_sub:
+		ret = fdt_add_subnode(blob, parent_offset, buf);
+		if (ret == -FDT_ERR_NOSPACE) {
+			ret = fdt_increase_size(blob, 512);
+			if (!ret)
+				goto add_sub;
+			else
+				goto err_size;
+		} else if (ret < 0) {
+			printf("Can't add partition node: %s\n",
+				fdt_strerror(ret));
+			return;
+		}
+		newoff = ret;
+
+		/* Check MTD_WRITEABLE_CMD flag */
+		if (pPartInfo->mask_flags & 1) {
+add_ro:
+			ret = fdt_setprop(blob, newoff, "read_only", NULL, 0);
+			if (ret == -FDT_ERR_NOSPACE) {
+				ret = fdt_increase_size(blob, 512);
+				if (!ret)
+					goto add_ro;
+				else
+					goto err_size;
+			} else if (ret < 0)
+				goto err_prop;
+		}
+
+		cell.r0 = cpu_to_fdt32(part->offset);
+		cell.r1 = cpu_to_fdt32(part->size);
+add_reg:
+		ret = fdt_setprop(blob, newoff, "reg", &cell, sizeof(cell));
+		if (ret == -FDT_ERR_NOSPACE) {
+			ret = fdt_increase_size(blob, 512);
+			if (!ret)
+				goto add_reg;
+			else
+				goto err_size;
+		} else if (ret < 0)
+			goto err_prop;
+
+add_label:
+		ret = fdt_setprop_string(blob, newoff, "label", part->name);
+		if (ret == -FDT_ERR_NOSPACE) {
+			ret = fdt_increase_size(blob, 512);
+			if (!ret)
+				goto add_label;
+			else
+				goto err_size;
+		} else if (ret < 0)
+			goto err_prop;
+
+		part_num++;
+	}
+	goto remove_list;
+err_size:
+	printf("Can't increase blob size: %s\n", fdt_strerror(ret));
+	goto remove_list;
+err_prop:
+	printf("Can't add property: %s\n", fdt_strerror(ret));
+	goto remove_list;
+remove_list:
+	free_parse(&tmp_list);
+	return;
+}
+#else
 void ipq_fdt_fixup_mtdparts(void *blob, struct flash_node_info *ni)
 {
 	struct mtd_device *dev;
@@ -191,6 +346,7 @@ void ipq_fdt_fixup_mtdparts(void *blob, struct flash_node_info *ni)
 		}
 	}
 }
+#endif
 
 void ipq_fdt_mem_rsvd_fixup(void *blob)
 {
@@ -641,6 +797,12 @@ int ft_board_setup(void *blob, bd_t *bd)
 	int len = sizeof(parts_str), ret;
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 	int activepart = 0;
+#ifdef CONFIG_IPQ_TINY
+	struct flash_node_info nodes[] = {
+		{ "n25q128a11", MTD_DEV_TYPE_NAND,
+				CONFIG_IPQ_SPI_NOR_INFO_IDX }
+		};
+#else
 	struct flash_node_info nodes[] = {
 		{ "qcom,msm-nand", MTD_DEV_TYPE_NAND, 0 },
 		{ "qcom,qcom_nand", MTD_DEV_TYPE_NAND, 0 },
@@ -653,7 +815,7 @@ int ft_board_setup(void *blob, bd_t *bd)
 		{ "s25fl256s1", MTD_DEV_TYPE_NAND, 1 },
 		{ NULL, 0, -1 },	/* Terminator */
 	};
-
+#endif
 	fdt_fixup_memory_banks(blob, &memory_start, &memory_size, 1);
 	ipq_fdt_fixup_version(blob);
 #ifndef CONFIG_QCA_APPSBL_DLOAD
@@ -701,7 +863,11 @@ int ft_board_setup(void *blob, bd_t *bd)
 		}
 
 		debug("MTDIDS: %s\n", getenv("mtdids"));
+#ifdef CONFIG_IPQ_TINY
+		ipq_nor_fdt_fixup(blob, nodes);
+#else
 		ipq_fdt_fixup_mtdparts(blob, nodes);
+#endif
 	}
 
 	/* Add "flash_type" to root node of the devicetree*/
