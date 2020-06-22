@@ -34,7 +34,7 @@ CONFIG_CMD_CONSOLE=y
 # CONFIG_CMD_BOOTD is not set
 CONFIG_CMD_BOOTM=y
 # CONFIG_CMD_GO is not set
-# CONFIG_CMD_RUN is not set
+CONFIG_CMD_RUN=y
 # CONFIG_CMD_IMI is not set
 # CONFIG_CMD_IMLS is not set
 # CONFIG_CMD_XIMG is not set
@@ -62,7 +62,7 @@ CONFIG_CMD_CRC32=y
 # Device access commands
 #
 
-CONFIG_CMD_DM=y
+# CONFIG_CMD_DM is not set
 # CONFIG_CMD_DEMO is not set
 # CONFIG_CMD_LOADB is not set
 # CONFIG_CMD_LOADS is not set
@@ -78,9 +78,9 @@ CONFIG_CMD_FLASH=y
 # Shell scripting commands
 #
 CONFIG_CMD_ECHO=y
-CONFIG_CMD_ITEST=y
+# CONFIG_CMD_ITEST is not set
 CONFIG_CMD_SOURCE=y
-CONFIG_CMD_SETEXPR=y
+# CONFIG_CMD_SETEXPR is not set
 
 #
 # Network commands
@@ -102,8 +102,8 @@ CONFIG_CMD_NET=y
 #
 # CONFIG_CMD_TIME is not set
 CONFIG_CMD_MISC=y
-CONFIG_CMD_PART=y
-CONFIG_PARTITION_UUIDS=y
+# CONFIG_CMD_PART is not set
+# CONFIG_PARTITION_UUIDS is not set
 # CONFIG_CMD_TIMER is not set
 # CONFIG_IPQ_TZT is not set
 # CONFIG_UBI_WRITE is not set
