@@ -1205,8 +1205,6 @@ static void usb_init_ssphy(void __iomem *phybase)
 	/*set fstep*/
 	writel(0x1, phybase + SSCG_CTRL_REG_1);
 	writel(0xeb, phybase + SSCG_CTRL_REG_2);
-	writel((readl(phybase + CDR_CTRL_REG_1) | APB_FIXED_OFFSET),
-		phybase + CDR_CTRL_REG_1);
 	return;
 }
 
@@ -1224,27 +1222,21 @@ static void usb_init_phy(int index, int ssphy)
 	/* GCC Reset USB BCR */
 	set_mdelay_clearbits_le32(usb_bcr, 0x1, 10);
 
-	/* GCC_QUSB2_PHY_BCR */
-	setbits_le32(qusb2_phy_bcr, 0x1);
-
-	/* GCC_USB0_PHY_BCR */
-	if (ssphy) {
+	if (ssphy)
 		setbits_le32(GCC_USB0_PHY_BCR, 0x1);
-		mdelay(100);
-		clrbits_le32(GCC_USB0_PHY_BCR, 0x1);
-	}
-
+	setbits_le32(qusb2_phy_bcr, 0x1);
+	udelay(1);
 	/* Config user control register */
 	writel(0x4004010, USB30_GUCTL);
 	writel(0x4945920, USB30_FLADJ);
-
-	/* GCC_QUSB2_0_PHY_BCR */
+	if (ssphy)
+		clrbits_le32(GCC_USB0_PHY_BCR, 0x1);
 	clrbits_le32(qusb2_phy_bcr, 0x1);
-	mdelay(10);
+	udelay(30);
 
-	usb_init_hsphy((u32 *)QUSB2PHY_BASE);
 	if (ssphy)
 		usb_init_ssphy((u32 *)USB3PHY_APB_BASE);
+	usb_init_hsphy((u32 *)QUSB2PHY_BASE);
 }
 
 int ipq_board_usb_init(void)
