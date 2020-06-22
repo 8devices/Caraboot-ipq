@@ -419,15 +419,6 @@
 #define SSCG_CTRL_REG_4			0xa8
 #define SSCG_CTRL_REG_5			0xac
 #define SSCG_CTRL_REG_6			0xb0
-#define CDR_CTRL_REG_1			0x80
-#define CDR_CTRL_REG_2			0x84
-#define CDR_CTRL_REG_3			0x88
-#define CDR_CTRL_REG_4			0x8C
-#define CDR_CTRL_REG_5			0x90
-#define CDR_CTRL_REG_6			0x94
-#define CDR_CTRL_REG_7			0x98
-
-#define APB_FIXED_OFFSET		(0x1 << 3)
 
 #define USB_PHY_CFG0                    0x94
 #define USB_PHY_UTMI_CTRL5              0x50
