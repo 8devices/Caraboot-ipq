@@ -776,6 +776,11 @@ __weak void fdt_fixup_bt_debug(void *blob)
 	return;
 }
 
+__weak void fdt_fixup_qpic(void *blob)
+{
+	return;
+}
+
 /*
  * For newer kernel that boot with device tree (3.14+), all of memory is
  * described in the /memory node, including areas that the kernel should not be
@@ -897,6 +902,7 @@ int ft_board_setup(void *blob, bd_t *bd)
 	fdt_fixup_cpr(blob);
 	fdt_fixup_cpus_node(blob);
 	fdt_low_memory_fixup(blob);
+	fdt_fixup_qpic(blob);
 	s = getenv("dload_warm_reset");
 	if (s)
 		fdt_fixup_set_dload_warm_reset(blob);

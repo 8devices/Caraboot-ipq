@@ -123,7 +123,12 @@
 			};
 		};
 	};
-        gmac_cfg {
+
+	usb0: xhci@8a00000 {
+		ssphy = <1>;
+	};
+
+	gmac_cfg {
 		ext_mdio_gpio = <36 37>;
 		gephy_led = <46>;
 

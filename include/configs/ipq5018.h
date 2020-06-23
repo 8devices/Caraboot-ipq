@@ -160,6 +160,7 @@ extern loff_t board_env_size;
 
 #ifdef CONFIG_QPIC_SERIAL
 #define CONFIG_PAGE_SCOPE_MULTI_PAGE_READ
+#define CONFIG_QSPI_SERIAL_TRAINING
 #endif
 
 /*

@@ -560,6 +560,7 @@ enum qpic_verion{
 	QCA_QPIC_V2_1_1,
 };
 
+extern unsigned int qpic_frequency, qpic_phase;
 
 /* result type */
 typedef enum {
