@@ -26,7 +26,7 @@
 		gmac_gpio = "/gmac_gpio";
 		usb0 = "/xhci@8a00000";
 		pci0 = "/pci@80000000";
-		pcie1 = "/pci@a0000000";
+		pci1 = "/pci@a0000000";
 		nand = "/nand-controller@79B0000";
 	};
 
@@ -96,10 +96,14 @@
 
 	pci0: pci@80000000 {
 		status = "ok";
+		perst_gpio = <18>;
+		mode = "fixed";
 		pci_gpio {
 			pci_rst {
-				gpio = <15>;
+				gpio = <18>;
 				func = <0>;
+				pull = <GPIO_NO_PULL>;
+				oe = <GPIO_OD_ENABLE>;
 				od_en = <GPIO_OD_DISABLE>;
 				drvstr = <GPIO_8MA>;
 			};
@@ -108,10 +112,14 @@
 
 	pci1: pci@a0000000 {
 		status = "ok";
+		perst_gpio = <15>;
+		mode = "fixed";
 		pci_gpio {
 			pci_rst {
-				gpio = <18>;
+				gpio = <15>;
 				func = <0>;
+				pull = <GPIO_NO_PULL>;
+				oe = <GPIO_OD_ENABLE>;
 				od_en = <GPIO_OD_DISABLE>;
 				drvstr = <GPIO_8MA>;
 			};
