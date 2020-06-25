@@ -89,7 +89,7 @@ struct dumpinfo_t dumpinfo_n[] = {
 int dump_entries_n = ARRAY_SIZE(dumpinfo_n);
 
 struct dumpinfo_t dumpinfo_s[] = {
-	{ "EBICS_S0.BIN", 0x40000000, 0xA600000, 0 },
+	{ "EBICS_S0.BIN", 0x40000000, 0xAC00000, 0 },
 	{ "EBICS_S1.BIN", CONFIG_TZ_END_ADDR, 0x10000000, 0 },
 	{ "IMEM.BIN", 0x08600000, 0x00001000, 0 },
 	{ "NSSUTCM.BIN", 0x08600658, 0x00030000, 0, 1, 0x2000 },
