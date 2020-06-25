@@ -121,13 +121,13 @@
 			0x80300000 0xd00000
 			0x80100000 0x100000
 			0x01875004 0x40
-			0x84000 0x1000>;
+			0x7e000 0x800>;
 		reg-names = "pci_dbi", "parf", "elbi","dm_iatu", "axi_bars",
 				"axi_conf", "pci_rst", "pci_phy";
-		perst_gpio = <27>;
 		gen3 = <1>;
+		lane = <1>;
 		status = "disabled";
-		skip_phy_init = <1>;
+		skip_phy_int = <1>;
 	};
 
 	pci@a0000000 {
@@ -140,13 +140,13 @@
 			0xa0001000 0x1000
 			0xa0300000 0xd00000
 			0xa0100000 0x100000
-			0x01875004 0x40
-			0x84000 0x1000>;
+			0x01876004 0x40
+			0x86000 0x1000>;
 		reg-names = "pci_dbi", "parf", "elbi","dm_iatu", "axi_bars",
 				"axi_conf", "pci_rst", "pci_phy";
-		perst_gpio = <28>;
 		gen3 = <1>;
+		lane = <2>;
 		status = "disabled";
-		skip_phy_init = <1>;
+		skip_phy_int = <1>;
 	};
 };

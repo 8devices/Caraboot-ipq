@@ -18,7 +18,6 @@
 #include <generated/asm-offsets.h>
 #endif
 
-#define IPQ5018_EMULATION
 #define CONFIG_IPQ5018
 #undef	CONFIG_QCA_DISABLE_SCM
 #define CONFIG_SPI_FLASH_CYPRESS
@@ -264,8 +263,8 @@ extern loff_t board_env_size;
 /*
  * PCIE Enable
  */
-#define PCI_MAX_DEVICES				1
-#if defined(CONFIG_PCI_IPQ) && !defined(IPQ5018_EMULATION)
+#define PCI_MAX_DEVICES				2
+#if defined(CONFIG_PCI_IPQ)
 #define CONFIG_PCI
 #define CONFIG_CMD_PCI
 #define CONFIG_PCI_SCAN_SHOW

@@ -341,6 +341,17 @@
 #define GCC_SYS_NOC_PCIE0_AXI_CBCR		0x01826048
 #define GCC_SYS_NOC_PCIE1_AXI_CBCR		0x0182604C
 
+#define GCC_PCIE_BCR_ENABLE			(1 << 0)
+#define GCC_PCIE_BLK_ARES			(1 << 0)
+#define GCC_PCIE_PIPE_ARES			(1 << 0)
+#define GCC_PCIE_SLEEP_ARES			(1 << 1)
+#define GCC_PCIE_CORE_STICKY_ARES		(1 << 2)
+#define GCC_PCIE_AXI_MASTER_ARES		(1 << 3)
+#define GCC_PCIE_AXI_SLAVE_ARES			(1 << 4)
+#define GCC_PCIE_AHB_ARES			(1 << 5)
+#define GCC_PCI_AXI_MASTER_STICKY_ARES		(1 << 6)
+#define GCC_PCI_AXI_SLAVE_STICKY_ARES		(1 << 7)
+
 #define GCC_PCIE0_BOOT_CLOCK_CTL		0x01875000
 #define GCC_PCIE0_BCR				0x01875004
 #define GCC_PCIE0_AXI_M_CBCR			0x01875008
@@ -387,6 +398,7 @@
 #define GCC_PCIE1_AXI_CFG_RCGR_SRC_SEL		(1 << 8)
 #define GCC_PCIE1_AXI_CFG_RCGR_SRC_DIV		0x7
 
+#define PCIE_BCR			0x4
 #define PCIE_AXI_M_CBCR			0x8
 #define PCIE_AXI_S_CBCR			0xC
 #define PCIE_AHB_CBCR			0x10
@@ -394,6 +406,9 @@
 #define PCIE_PIPE_CBCR			0x18
 #define PCIE_AUX_CMD_RCGR		0x20
 #define PCIE_AUX_CFG_RCGR		0x24
+#define PCIE_PHY_BCR			0x38
+#define PCIE_PHY_PHY_BCR		0x3c
+#define PCIE_MISC_RESET			0x40
 #define PCIE_AXI_S_BRIDGE_CBCR		0x48
 #define PCIE_AXI_CMD_RCGR		0x50
 #define PCIE_AXI_CFG_RCGR		0x54
@@ -412,13 +427,21 @@
 #define ARM_PSCI_TZ_FN_CPU_ON		ARM_PSCI_TZ_FN(3)
 #define ARM_PSCI_TZ_FN_AFFINITY_INFO	ARM_PSCI_TZ_FN(4)
 
-#define CLK_ENABLE				0x1
+#define CLK_ENABLE			0x1
+
 #define SSCG_CTRL_REG_1			0x9c
 #define SSCG_CTRL_REG_2			0xa0
 #define SSCG_CTRL_REG_3			0xa4
 #define SSCG_CTRL_REG_4			0xa8
 #define SSCG_CTRL_REG_5			0xac
 #define SSCG_CTRL_REG_6			0xb0
+#define CDR_CTRL_REG_1                  0x80
+#define CDR_CTRL_REG_2                  0x84
+#define CDR_CTRL_REG_3                  0x88
+#define CDR_CTRL_REG_4                  0x8C
+#define CDR_CTRL_REG_5                  0x90
+#define CDR_CTRL_REG_6                  0x94
+#define CDR_CTRL_REG_7                  0x98
 
 #define USB_PHY_CFG0                    0x94
 #define USB_PHY_UTMI_CTRL5              0x50
