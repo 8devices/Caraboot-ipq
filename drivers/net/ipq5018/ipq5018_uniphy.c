@@ -59,8 +59,6 @@ static void ppe_gcc_uniphy_soft_reset(void)
 
 static void ppe_uniphy_sgmii_mode_set(uint32_t mode)
 {
-	bool force_enable =false;
-
 	writel(UNIPHY_MISC2_REG_SGMII_MODE,
 		PPE_UNIPHY_BASE + UNIPHY_MISC2_REG_OFFSET);
 
@@ -83,7 +81,6 @@ static void ppe_uniphy_sgmii_mode_set(uint32_t mode)
 	switch (mode) {
 		case PORT_WRAPPER_SGMII_FIBER:
 			writel(UNIPHY_SG_MODE, PPE_UNIPHY_BASE + PPE_UNIPHY_MODE_CONTROL);
-			force_enable = true;
 			break;
 
 		case PORT_WRAPPER_SGMII0_RGMII4:
@@ -91,7 +88,6 @@ static void ppe_uniphy_sgmii_mode_set(uint32_t mode)
 		case PORT_WRAPPER_SGMII4_RGMII4:
 			writel((UNIPHY_SG_MODE | UNIPHY_PSGMII_MAC_MODE),
 					PPE_UNIPHY_BASE + PPE_UNIPHY_MODE_CONTROL);
-			force_enable = true;
 			break;
 
 		case PORT_WRAPPER_SGMII_PLUS:
@@ -116,15 +112,6 @@ static void ppe_uniphy_sgmii_mode_set(uint32_t mode)
 	udelay(500);
 
 	ppe_uniphy_calibration();
-
-/*
- * Force Speed mode enable
- */
-	if(force_enable){
-		writel((readl(PPE_UNIPHY_BASE + UNIPHY_DEC_CHANNEL_0_INPUT_OUTPUT_4) |
-			UNIPHY_FORCE_SPEED_25M),
-			PPE_UNIPHY_BASE + UNIPHY_DEC_CHANNEL_0_INPUT_OUTPUT_4);
-	}
 }
 
 void ppe_uniphy_mode_set(uint32_t mode)
@@ -135,3 +122,27 @@ void ppe_uniphy_mode_set(uint32_t mode)
 	ppe_uniphy_sgmii_mode_set(mode);
 }
 
+void ppe_uniphy_set_forceMode(void)
+{
+	uint32_t reg_value;
+
+	reg_value = readl(PPE_UNIPHY_BASE + UNIPHY_DEC_CHANNEL_0_INPUT_OUTPUT_4);
+	reg_value |= UNIPHY_FORCE_SPEED_25M;
+
+	writel(reg_value, PPE_UNIPHY_BASE + UNIPHY_DEC_CHANNEL_0_INPUT_OUTPUT_4);
+
+}
+
+void ppe_uniphy_refclk_set(void)
+{
+/*
+ * This function drive the uniphy ref clock
+ * DEC_REFCLKOUTPUTCONTROLREGISTERS
+ * Its is configured as 25 MHZ
+ */
+
+	u32 reg_val = readl(PPE_UNIPHY_BASE | UNIPHY_REF_CLK_CTRL_REG);
+	reg_val |= 0x2;
+	writel(reg_val, PPE_UNIPHY_BASE | UNIPHY_REF_CLK_CTRL_REG);
+	mdelay(200);
+}

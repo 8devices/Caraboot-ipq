@@ -48,6 +48,9 @@ struct sdhci_host mmc_host;
 extern int ipq_spi_init(u16);
 #endif
 
+extern void ppe_uniphy_set_forceMode(void);
+extern void ppe_uniphy_refclk_set(void);
+
 unsigned int qpic_frequency = 0, qpic_phase = 0;
 
 const char *rsvd_node = "/reserved-memory";
@@ -618,7 +621,7 @@ static void set_ext_mdio_gpio(int node)
 {
 	unsigned int mdio_gpio[2] = {0};
 	int status = -1;
-	unsigned int *s17C_gpio_base;
+	unsigned int *mdio_gpio_base;
 
 	status = fdtdec_get_int_array(gd->fdt_blob,
 					node,
@@ -627,13 +630,13 @@ static void set_ext_mdio_gpio(int node)
 					2);
 	if (status >= 0) {
 		/*  mdc  */
-		s17C_gpio_base =
+		mdio_gpio_base =
 			(unsigned int *)GPIO_CONFIG_ADDR(mdio_gpio[0]);
-		writel(0x7, s17C_gpio_base);
+		writel(0x7, mdio_gpio_base);
 		/*  mdio */
-		s17C_gpio_base =
+		mdio_gpio_base =
 			(unsigned int *)GPIO_CONFIG_ADDR(mdio_gpio[1]);
-		writel(0x7, s17C_gpio_base);
+		writel(0x7, mdio_gpio_base);
 	}
 }
 
@@ -652,6 +655,11 @@ static void reset_s17c_switch_gpio(int gpio)
 {
 	unsigned int *switch_gpio_base =
 		(unsigned int *)GPIO_CONFIG_ADDR(gpio);
+/*
+ * Set ref clock 25MHZ and enable Force mode
+ */
+	ppe_uniphy_refclk_set();
+	ppe_uniphy_set_forceMode();
 
 	writel(0x203, switch_gpio_base);
 	writel(0x0, GPIO_IN_OUT_ADDR(gpio));
@@ -878,21 +886,6 @@ static void cmnblk_check_state(void)
 	}
 }
 
-static void uniphy_refclk_set(void)
-{
-/*
- * This function drive the uniphy ref clock
- * DEC_REFCLKOUTPUTCONTROLREGISTERS
- * Its is configured as 25 MHZ
- */
-#define UNIPHY_REF_CLK_CTRL_REG		0x98074
-
-	u32 reg_val = readl(UNIPHY_REF_CLK_CTRL_REG);
-	reg_val |= 0x2;
-	writel(reg_val, UNIPHY_REF_CLK_CTRL_REG);
-	mdelay(500);
-}
-
 static void gcc_clock_enable(void)
 {
 	u32 reg_val;
@@ -968,7 +961,6 @@ static void ethernet_clock_enable(void)
 	gephy_reset();
 	uniphy_reset();
 	gmac_reset();
-	uniphy_refclk_set();
 	gcc_clock_enable();
 }
 

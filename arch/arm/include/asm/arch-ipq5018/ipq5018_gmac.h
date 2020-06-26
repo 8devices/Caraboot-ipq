@@ -17,6 +17,12 @@
 #include <net.h>
 #include <configs/ipq5018.h>
 
+#define LINK(_data)	(_data & 0x400)? "Up" : "Down"
+#define DUPLEX(_data)	(_data & 0x2000)? "Full duplex" : "Half duplex"
+#define SPEED(_data)	((_data & 0xC000) >> 12)
+#define SPEED_1000M	(1 << 3)
+#define SPEED_100M	(1 << 2)
+
 #define GEPHY					0x004DD0C0
 #define S17C					0x1302
 
