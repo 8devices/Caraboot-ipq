@@ -418,7 +418,7 @@
 #define CLOCK_UPDATE_TIMEOUT_US           1000
 
 #define KERNEL_AUTH_CMD                   0x13
-#define SCM_CMD_SEC_AUTH		       0x1F
+#define SCM_CMD_SEC_AUTH		0x15
 
 #define ARM_PSCI_TZ_FN_BASE		0x84000000
 #define ARM_PSCI_TZ_FN(n)		(ARM_PSCI_TZ_FN_BASE + (n))

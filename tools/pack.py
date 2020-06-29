@@ -713,6 +713,105 @@ class Pack(object):
 
         return 1
 
+    def __gen_flash_script_bootldr(self, entries, partition, flinfo, script):
+        for section in entries:
+
+            machid = int(section.find(".//machid").text, 0)
+            machid = "%x" % machid
+            board = section.find(".//board").text
+            memory = section.find(".//memory").text
+            tiny_image = section.find('.//tiny_image')
+
+            if tiny_image == None:
+                continue
+
+            filename = "bootldr1_" + board + "_" + memory + ".mbn"
+
+            img_size = self.__get_img_size(filename)
+            part_info = self.__get_part_info(partition)
+
+            section_label = partition.split(":")
+            if len(section_label) != 1:
+                section_conf = section_label[1]
+            else:
+                section_conf = section_label[0]
+
+            section_conf = section_conf.lower()
+
+            if self.flinfo.type == 'nand':
+                size = roundup(img_size, flinfo.pagesize)
+                tr = ' | tr \"\\000\" \"\\377\"'
+
+            if self.flinfo.type == 'emmc':
+                size = roundup(img_size, flinfo.blocksize)
+                tr = ''
+
+            if ((self.flinfo.type == 'nand' or self.flinfo.type == 'emmc') and (size != img_size)):
+                pad_size = size - img_size
+                filename_abs = os.path.join(self.images_dname, filename)
+                filename_abs_pad = filename_abs + ".padded"
+                cmd = 'cat %s > %s' % (filename_abs, filename_abs_pad)
+                ret = subprocess.call(cmd, shell=True)
+                if ret != 0:
+                    error("failed to copy image")
+                cmd = 'dd if=/dev/zero count=1 bs=%s %s >> %s' % (pad_size, tr, filename_abs_pad)
+                cmd = '(' + cmd + ') 1>/dev/null 2>/dev/null'
+                ret = subprocess.call(cmd, shell=True)
+                if ret != 0:
+                    error("failed to create padded image from script")
+
+            if self.flinfo.type != "emmc":
+               if part_info == None:
+                   if self.flinfo.type == 'norplusnand':
+                       if count > 2:
+                           error("More than 2 NAND images for NOR+NAND is not allowed")
+               elif img_size > part_info.length:
+                   print "img size is larger than part. len in '%s'" % section_conf
+                   return 0
+            else:
+                if part_info != None:
+                    if (img_size > 0):
+                        if img_size > (part_info.length * self.flinfo.blocksize):
+                            print "img size is larger than part. len in '%s'" % section_conf
+                            return 0
+
+            if part_info == None and self.flinfo.type != 'norplusnand':
+                print "Flash type is norplusemmc"
+                continue
+
+            if machid:
+                script.start_if("machid", machid)
+
+            script.start_activity("Flashing bootldr1-%s_%s:" % ( board, memory ))
+            if img_size > 0:
+                filename_pad = filename + ".padded"
+                if ((self.flinfo.type == 'nand' or self.flinfo.type == 'emmc') and (size != img_size)):
+                    script.imxtract("bootldr1_" + board + "_" + memory + "-" + sha1(filename_pad))
+                else:
+                    script.imxtract("bootldr1_" + board + "_" + memory + "-" + sha1(filename))
+
+            part_size = Pack.norplusnand_rootfs_img_size
+            if part_info == None:
+                if self.flinfo.type == 'norplusnand':
+                    offset = count * Pack.norplusnand_rootfs_img_size
+                    script.nand_write(offset, part_size, img_size, spi_nand)
+                    count = count + 1
+            else:
+                if part_info.which_flash == 0:
+                    offset = part_info.offset
+                    script.erase(offset, part_info.length)
+                    script.write(offset, img_size)
+                else:
+                    offset = part_info.offset
+                    script.nand_write(offset, part_info.length, img_size, spi_nand)
+
+            script.finish_activity()
+
+            if machid:
+                script.end_if()
+
+        return 1
+
     def __gen_flash_script_image(self, filename, soc_version, file_exists, machid, partition, flinfo, script):
 
 	    global IF_QCN9000
@@ -984,6 +1083,13 @@ class Pack(object):
 		except KeyError, e:
 			continue
 
+            if partition == "0:BOOTLDR1":
+                if image_type == "all" or section.attrib['image_type'] == image_type:
+                        ret = self.__gen_flash_script_bootldr(entries, partition, flinfo, script)
+                        if ret == 0:
+                            return 0
+                        continue
+
             if ARCH_NAME == "ipq806x":
             # Get Layout
                 try:
@@ -1089,6 +1195,56 @@ class Pack(object):
             if filename.lower() != "none":
                 if image_info not in images:
 		    images.append(image_info)
+
+    def __gen_script_bootldr(self, images, flinfo, root, section_conf, partition):
+        global ARCH_NAME
+
+        entries = root.findall(".//data[@type='MACH_ID_BOARD_MAP']/entry")
+
+        for section in entries:
+
+            board = section.find(".//board").text
+            tiny_image = section.find('.//tiny_image')
+
+            if tiny_image == None:
+                continue
+
+            if ARCH_NAME != "ipq806x":
+                try:
+                    memory = section.find(".//memory").text
+                except AttributeError, e:
+                    memory = "128M16"
+
+                if memory_size != "default":
+                    filename = "bootldr1_" + board + "_" + memory + "_LM" + memory_size + ".bin"
+                else:
+                    filename = "bootldr1_" + board + "_" + memory + ".mbn"
+                file_info = "bootldr1_" + board + "_" + memory
+            else:
+                filename = "bootldr1_" + board + ".mbn"
+                file_info = "bootldr1_" + board
+
+            part_info = self.__get_part_info(partition)
+
+            if part_info == None and self.flinfo.type != 'norplusnand':
+                continue
+
+            if self.flinfo.type == 'nand':
+                img_size = self.__get_img_size(filename)
+                size = roundup(img_size, flinfo.pagesize)
+                if ( size != img_size ):
+                    filename = filename + ".padded"
+            if self.flinfo.type == 'emmc':
+                img_size = self.__get_img_size(filename)
+                size = roundup(img_size, flinfo.blocksize)
+                if ( size != img_size ):
+                    filename = filename + ".padded"
+            image_info = ImageInfo(file_info + "-" + sha1(filename),
+                                   filename, "firmware")
+            if filename.lower() != "none":
+                if image_info not in images:
+		    images.append(image_info)
+
 
     def __gen_script_append_images(self, filename, soc_version, images, flinfo, root, section_conf, partition):
 
@@ -1285,6 +1441,14 @@ class Pack(object):
 		    if image_type == "all" or section[8].attrib['image_type'] == image_type:
 	                self.__gen_script_cdt(images, flinfo, root, section_conf, partition)
                 	continue
+                except KeyError, e:
+                    continue
+
+            if section_conf == "bootldr1":
+		try:
+		    if image_type == "all" or section[8].attrib['image_type'] == image_type:
+	                self.__gen_script_bootldr(images, flinfo, root, section_conf, partition)
+			continue
                 except KeyError, e:
                     continue
 
