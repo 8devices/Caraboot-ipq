@@ -173,6 +173,7 @@
 #define OP_SECOND_FRAME				(1 << 2)
 
 /* GMAC config definitions */
+#define FES_PORT_SPEED				(1 << 14)
 #define MII_PORT_SELECT				(1 << 15)
 #define SGMII_PORT_SELECT			(0 << 15)
 #define FRAME_BURST_ENABLE			(1 << 21)
