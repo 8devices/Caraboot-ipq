@@ -4219,7 +4219,7 @@ static int qpic_execute_serial_training(struct mtd_info *mtd)
 	ret = qpic_nand_write_page(mtd, pageno, NAND_CFG, &ops);
 	if (ret) {
 		printf("Error in writing training data..\n");
-		goto err;
+		goto free;
 	}
 	/* After write verify the the data with read @ lower frequency
 	 * after that only start serial tarining @ higher frequency
@@ -4229,14 +4229,14 @@ static int qpic_execute_serial_training(struct mtd_info *mtd)
 
 	ret = qpic_nand_read_page(mtd, pageno, NAND_CFG, &ops);
 	if (ret) {
-		printf("%s : Read training data failed.\n",__func__);
-		goto err;
+		printf("%s : Read training data failed before training start\n",__func__);
+		goto free;
 	}
 
 	/* compare original data and read data */
 	if (memcmp(data_buff, training_block_128, size)) {
 		printf("Training data read failed @ lower frequency\n");
-		goto err;
+		goto free;
 	}
 
 	/* disable feed back clock bit to start serial training */
@@ -4264,7 +4264,7 @@ rettry:
 		ret = qpic_nand_read_page(mtd, pageno, NAND_CFG, &ops);
 		if (ret) {
 			printf("%s : Read training data failed.\n",__func__);
-			goto err;
+			goto free;
 		}
 		/* compare original data and read data */
 		if (memcmp(data_buff, training_block_128, size)) {
