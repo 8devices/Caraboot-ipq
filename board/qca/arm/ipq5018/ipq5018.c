@@ -1638,3 +1638,26 @@ void run_tzt(void *address)
 {
 	execute_tzt(address);
 }
+
+void fdt_fixup_set_dload_warm_reset(void *blob)
+{
+	int nodeoff, ret;
+	uint32_t setval = 1;
+
+	nodeoff = fdt_path_offset(blob, "/soc/qca,scm_restart_reason");
+	if (nodeoff < 0) {
+		nodeoff = fdt_path_offset(blob, "/qti,scm_restart_reason");
+		if (nodeoff < 0) {
+			printf("fixup_set_dload: unable to find scm_restart_reason node\n");
+			return;
+		}
+	}
+
+	ret = fdt_setprop_u32(blob, nodeoff, "dload_status", setval);
+	if (ret)
+		printf("fixup_set_dload: 'dload_status' not set");
+
+	ret = fdt_setprop_u32(blob, nodeoff, "dload_warm_reset", setval);
+	if (ret)
+		printf("fixup_set_dload: 'dload_warm_reset' not set");
+}
