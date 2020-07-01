@@ -276,13 +276,18 @@ static int qca_wdt_extract_crashdump_data(
 	while (static_enum_count < 3) {
 		ret_val = qca_wdt_scm_extract_tlv_info(scm_tlv_msg,
 			&cur_type, &cur_size);
-		if (!ret_val && cur_type == QCA_WDT_LOG_DUMP_TYPE_UNAME ){
+		if (ret_val)
+			return ret_val;
+
+		switch (cur_type) {
+		case QCA_WDT_LOG_DUMP_TYPE_UNAME:
 			crashdump_data->uname_length = cur_size;
 			ret_val = qca_wdt_scm_extract_tlv_data(scm_tlv_msg,
 					crashdump_data->uname, cur_size);
 			crashdump_tlv_count++;
 			static_enum_count++;
-		}else if (!ret_val && cur_type == QCA_WDT_LOG_DUMP_TYPE_DMESG){
+			break;
+		case QCA_WDT_LOG_DUMP_TYPE_DMESG:
 			ret_val = qca_wdt_scm_extract_tlv_data(scm_tlv_msg,
 				(unsigned char *)&tlv_info,
 				cur_size);
@@ -292,7 +297,8 @@ static int qca_wdt_extract_crashdump_data(
 		         }
 			crashdump_tlv_count++;
 			static_enum_count++;
-		}else if (!ret_val && cur_type == QCA_WDT_LOG_DUMP_TYPE_LEVEL1_PT){
+			break;
+		case QCA_WDT_LOG_DUMP_TYPE_LEVEL1_PT:
 			ret_val = qca_wdt_scm_extract_tlv_data(scm_tlv_msg,(unsigned char *)&tlv_info,cur_size);
 			if (!ret_val) {
 				crashdump_data->pt_start =(unsigned char *)(uintptr_t)tlv_info.start;
@@ -300,12 +306,18 @@ static int qca_wdt_extract_crashdump_data(
 			}
 			crashdump_tlv_count++;
 			static_enum_count++;
-		}
-		else if(!ret_val && cur_type == QCA_WDT_LOG_DUMP_TYPE_WLAN_MOD) {
+			break;
+		case QCA_WDT_LOG_DUMP_TYPE_WLAN_MOD:
 			tlv_size = (cur_size + QCA_WDT_SCM_TLV_TYPE_LEN_SIZE);
 			scm_tlv_msg->cur_msg_buffer_pos += tlv_size;
+			break;
+		default:
+			printf("%s: invalid dump type\n", __func__);
+			ret_val = -EINVAL;
+			goto err;
 		}
 	}
+err:
 	return ret_val;
 }
 
@@ -1238,22 +1250,24 @@ int do_dumpqca_minimal_data(const char *offset)
 	tlv_msg.len = CONFIG_TLV_DUMP_SIZE;
 
 	ret_val = qca_wdt_extract_crashdump_data(&tlv_msg, &g_crashdump_data);
-
-	if (!ret_val) {
-		if (getenv("dump_to_flash")) {
-			ret_val = qca_wdt_write_crashdump_data(&g_crashdump_data,
-					flash_type, crashdump_offset);
-		} else {
-			dump_func(MINIMAL_DUMP);
-		}
-	}
-
 	if (ret_val) {
-		printf("crashdump data writing in flash failure\n");
-		return -EPERM;
+		printf("%s: crashdump extraction failed\n", __func__);
+		return ret_val;
 	}
 
-	printf("crashdump data writing in flash successful\n");
+	if (getenv("dump_to_flash")) {
+		ret_val = qca_wdt_write_crashdump_data(&g_crashdump_data,
+						       flash_type,
+						       crashdump_offset);
+		if (ret_val) {
+			printf("crashdump data writing in flash failure\n");
+			return -EPERM;
+		}
+
+		printf("crashdump data writing in flash successful\n");
+	} else {
+		dump_func(MINIMAL_DUMP);
+	}
 
 	return 0;
 }
