@@ -651,6 +651,18 @@ static void reset_napa_phy_gpio(int gpio)
 	writel(0x2, GPIO_IN_OUT_ADDR(gpio));
 }
 
+static void reset_8033_phy_gpio(int gpio)
+{
+	unsigned int *phy_8033_gpio_base;
+
+	ppe_uniphy_refclk_set();
+	phy_8033_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(gpio);
+	writel(0x2C1, phy_8033_gpio_base);
+	writel(0x0, GPIO_IN_OUT_ADDR(gpio));
+	mdelay(500);
+	writel(0x2, GPIO_IN_OUT_ADDR(gpio));
+}
+
 static void reset_s17c_switch_gpio(int gpio)
 {
 	unsigned int *switch_gpio_base =
@@ -1014,6 +1026,11 @@ int board_eth_init(bd_t *bis)
 					offset, "napa_gpio", 0);
 			if (gmac_cfg[loop].phy_napa_gpio){
 				reset_napa_phy_gpio(gmac_cfg[loop].phy_napa_gpio);
+			}
+			gmac_cfg[loop].phy_8033_gpio = fdtdec_get_uint(gd->fdt_blob,
+					offset, "8033_gpio", 0);
+			if (gmac_cfg[loop].phy_8033_gpio){
+				reset_8033_phy_gpio(gmac_cfg[loop].phy_8033_gpio);
 			}
 			switch_gpio =  fdtdec_get_uint(gd->fdt_blob, offset, "switch_gpio", 0);
 			if (switch_gpio) {

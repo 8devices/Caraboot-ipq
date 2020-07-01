@@ -479,6 +479,7 @@ typedef struct {
 	int phy_addr;
 	int phy_interface_mode;
 	int phy_napa_gpio;
+	int phy_8033_gpio;
 	int phy_type;
 	u32 mac_pwr;
 	int ipq_swith;

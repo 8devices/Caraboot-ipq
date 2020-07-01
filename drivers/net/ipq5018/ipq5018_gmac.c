@@ -89,7 +89,7 @@ static void ipq_eth_mac_cfg(struct eth_device *dev)
 	ipq_mac_framefilter = PROMISCUOUS_MODE_ON;
 
 	if (priv->mac_unit) {
-		if (priv->phy_type == QCA8081_1_1_PHY|| priv->phy_type == QCA8033_PHY)
+		if (priv->phy_type == QCA8081_1_1_PHY || priv->phy_type == QCA8033_PHY)
 			speed = priv->speed;
 
 		ipq_mac_cfg |= (FRAME_BURST_ENABLE | JUMBO_FRAME_ENABLE | JABBER_DISABLE |
@@ -747,6 +747,7 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 					&ipq_gmac_macs[i]->ops,
 					ipq_gmac_macs[i]->phy_address);
 				break;
+#ifdef CONFIG_QCA8033_PHY
 			/*
 			 * 1G PHY
 			 */
@@ -756,6 +757,7 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 					&ipq_gmac_macs[i]->ops,
 					ipq_gmac_macs[i]->phy_address);
 				break;
+#endif
 			case S17C:
 				break;
 			default:
