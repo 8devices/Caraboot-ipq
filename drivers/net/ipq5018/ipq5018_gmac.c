@@ -303,6 +303,38 @@ static void ipq5018_enable_gephy(void)
 	mdelay(20);
 }
 
+static int ipq5018_s17c_Link_Update(struct ipq_eth_dev *priv)
+{
+	uint16_t phy_data;
+	int status = 1;
+
+	for(int i = 0;
+		i < priv->gmac_board_cfg->switch_port_count; ++i){
+		phy_data = ipq_mdio_read(
+			priv->gmac_board_cfg->switch_port_phy_address[i],
+			0x11,
+			NULL);
+		if (phy_data == 0x50)
+			continue;
+		status = 0;
+		printf("Port%d %s ", i + 1, LINK(phy_data));
+
+		switch(SPEED(phy_data)){
+		case SPEED_1000M:
+			printf("Speed :1000M ");
+			break;
+		case SPEED_100M:
+			printf("Speed :100M ");
+			break;
+		default:
+			printf("Speed :10M ");
+		}
+
+		printf ("%s \n", DUPLEX(phy_data));
+	}
+	return status;
+}
+
 static int ipq5018_phy_link_update(struct eth_device *dev)
 {
 	struct ipq_eth_dev *priv = dev->priv;
@@ -328,7 +360,7 @@ static int ipq5018_phy_link_update(struct eth_device *dev)
 	if (priv->ipq_swith) {
 		speed_clock1 = 1;
 		speed_clock2 = 0;
-		status = 0;
+		status = ipq5018_s17c_Link_Update(priv);
 	} else {
 		status = phy_get_ops->phy_get_link_status(priv->mac_unit,
 				priv->phy_address);
@@ -380,22 +412,22 @@ static int ipq5018_phy_link_update(struct eth_device *dev)
 		}
 	}
 
+	if (status) {
+		/* No PHY link is alive */
+		return -1;
+	}
+
 	if (priv->mac_unit){
 		if (priv->phy_type == QCA8081_PHY_TYPE ||
 			priv->phy_type == QCA8081_1_1_PHY)
 			ppe_uniphy_mode_set(PORT_WRAPPER_SGMII_PLUS);
 		else
-			ppe_uniphy_mode_set(PORT_WRAPPER_SGMII_FIBER);
+			ppe_uniphy_mode_set(PORT_WRAPPER_SGMII0_RGMII4);
 	} else {
 		ipq5018_enable_gephy();
 	}
 
 	ipq5018_gmac0_speed_clock_set(speed_clock1, speed_clock2, priv->mac_unit);
-
-	if (status) {
-		/* No PHY link is alive */
-		return -1;
-	}
 
 	return 0;
 }
@@ -665,8 +697,6 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 				for (int port = 0;
 					port < gmac_cfg->switch_port_count;
 					++port) {
-					u32 value;
-
 					ipq_mdio_write(port, MII_ADVERTISE, ADVERTISE_ALL |
 							ADVERTISE_PAUSE_CAP | ADVERTISE_PAUSE_ASYM);
 					/*
@@ -674,12 +704,8 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 					 */
 					ipq_mdio_write(port, MII_CTRL1000, (0x0400|ADVERTISE_1000FULL));
 					ipq_mdio_write(port, MII_BMCR, BMCR_RESET | BMCR_ANENABLE);
-					value = ipq_mdio_read(port, 0, NULL);
-						value &= (~(1<<12));
-					ipq_mdio_write(port, 0, value);
 					mdelay(100);
 				}
-
 			} else {
 				phy_chip_id1 = ipq_mdio_read(
 						ipq_gmac_macs[i]->phy_address,

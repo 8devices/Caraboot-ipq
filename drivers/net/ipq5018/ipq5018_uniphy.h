@@ -46,6 +46,8 @@
 #define UNIPHY_DEC_CHANNEL_0_INPUT_OUTPUT_4	0x480
 #define UNIPHY_FORCE_SPEED_25M			(1 << 3)
 
+#define UNIPHY_REF_CLK_CTRL_REG			0x74
+
 #define UNIPHY_INSTANCE_LINK_DETECT		0x570
 
 #define UNIPHY_MISC2_REG_OFFSET 		0x218
@@ -59,4 +61,6 @@
 #define UNIPHY_PLL_RESET_REG_DEFAULT_VALUE 	0x02ff
 
 void ppe_uniphy_mode_set(uint32_t mode);
+void ppe_uniphy_set_forceMode(void);
+void ppe_uniphy_refclk_set(void);
 #endif
