@@ -96,7 +96,7 @@
 #define GPIO_IN_OUT_ADDR(x)			(TLMM_BASE + 0x4 + (x)*0x1000)
 
 #define CONFIG_SYS_SDRAM_BASE			0x40000000
-#define CONFIG_SYS_TEXT_BASE			0x4A900000
+#define CONFIG_SYS_TEXT_BASE			0x4A920000
 #define CONFIG_SYS_SDRAM_SIZE			0x10000000
 #define CONFIG_MAX_RAM_BANK_SIZE		CONFIG_SYS_SDRAM_SIZE
 #define CONFIG_SYS_LOAD_ADDR			(CONFIG_SYS_SDRAM_BASE + (64 << 20))
@@ -134,7 +134,7 @@ extern loff_t board_env_size;
 #define CONFIG_ENV_OFFSET			board_env_offset
 #define CONFIG_ENV_SIZE				CONFIG_ENV_SIZE_MAX
 #define CONFIG_ENV_RANGE			board_env_range
-#define CONFIG_SYS_MALLOC_LEN			(CONFIG_ENV_SIZE_MAX + (1024 << 10))
+#define CONFIG_SYS_MALLOC_LEN			(CONFIG_ENV_SIZE_MAX + (500 << 10))
 
 /*
  * NAND Flash Configs
