@@ -70,19 +70,4 @@
 	nand: nand-controller@79B0000 {
 		status = "disabled";
 	};
-        gmac_cfg {
-		gmac_count = <1>;
-		ext_mdio_gpio = <36 37>;
-		gmac2_cfg {
-			unit = <1>;
-			base = <0x39D00000>;
-			phy_name = "IPQ MDIO1";
-			mac_pwr = <0xaa545>;
-			s17c_switch_enable = <1>;
-			switch_port_count = <4>;
-			switch_phy_address = <0 1 2 3>;
-			switch_gpio = <39>;
-		};
-	};
-
 };

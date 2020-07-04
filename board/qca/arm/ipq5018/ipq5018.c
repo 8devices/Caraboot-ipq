@@ -979,9 +979,7 @@ int board_eth_init(bd_t *bis)
 	int gmac_cfg_node = 0, offset = 0;
 	int loop = 0;
 	int switch_gpio = 0;
-	int phy_name_len = 0;
 	unsigned int tmp_phy_array[8] = {0};
-	char *phy_name_ptr = NULL;
 
 	gmac_cfg_node = fdt_path_offset(gd->fdt_blob, "/gmac_cfg");
 	if (gmac_cfg_node >= 0) {
@@ -1043,11 +1041,6 @@ int board_eth_init(bd_t *bis)
 					(char)tmp_phy_array[inner_loop];
 				}
 			}
-
-			phy_name_ptr = (char*)fdt_getprop(gd->fdt_blob, offset,
-					"phy_name", &phy_name_len);
-
-			strlcpy((char *)gmac_cfg[loop].phy_name, phy_name_ptr, phy_name_len);
 		}
 	}
 
