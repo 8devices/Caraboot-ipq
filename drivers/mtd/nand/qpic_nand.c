@@ -793,8 +793,8 @@ static void qpic_serial_update_dev_params(struct mtd_info *mtd)
 	else
 		mtd->ecc_strength = 4;
 	printf("Serial NAND device Manufature:%s\n",serial_params->name);
-	printf("Device Size:%d MiB, Page size:%d, Spare Size:%d\n",
-		(int)(dev->density >> 20), dev->page_size, mtd->oobsize);
+	printf("Device Size:%d MiB, Page size:%d, Spare Size:%d, ECC:%d-bit\n",
+		(int)(dev->density >> 20), dev->page_size, mtd->oobsize, mtd->ecc_strength);
 }
 #endif
 
@@ -1031,10 +1031,9 @@ static int qpic_serial_get_feature(struct mtd_info *mtd, uint32_t ftr_addr)
 	 * Feature value will get updated in [15:8]
 	 */
 	nand_ret = qpic_nand_read_reg(NAND_FLASH_FEATURES, 0);
-#ifdef QPIC_DEBUG_SERIAL
-	printf("NAND Feature Register Addr:0x%02x and Val:0x%08x\n",
+
+	qspi_debug("NAND Feature Register Addr:0x%02x and Val:0x%08x\n",
 			ftr_addr,nand_ret);
-#endif
 err:
 	return nand_ret;
 
@@ -1172,8 +1171,8 @@ int qpic_spi_nand_config(struct mtd_info *mtd)
 	}
 
 	if ((status >> 8) & FLASH_SPI_NAND_BLK_PROCT_ENABLE) {
-		printf("%s: Block protection is enabled\n",__func__);
-		printf("%s: Issuing set feature command to disable it.\n",__func__);
+		qspi_debug("%s: Block protection is enabled\n",__func__);
+		qspi_debug("%s: Issuing set feature command to disable it.\n",__func__);
 
 		status  = qpic_serial_set_feature(mtd, FLASH_SPI_NAND_BLK_PROCT_ADDR,
 				FLASH_SPI_NAND_BLK_PROCT_DISABLE);
@@ -1194,9 +1193,9 @@ int qpic_spi_nand_config(struct mtd_info *mtd)
 					__func__);
 			return -QPIC_SERIAL_ERROR;
 		} else
-			printf("%s : Block protection Disabled.\n",__func__);
+			qspi_debug("%s : Block protection Disabled.\n",__func__);
 	} else
-		printf("%s: Block protection Disabled on Power on.\n",__func__);
+		qspi_debug("%s: Block protection Disabled on Power on.\n",__func__);
 
 	/* Get Internal ECC status */
 	status = qpic_serial_get_feature(mtd, FLASH_SPI_NAND_FR_ADDR);
@@ -1206,7 +1205,7 @@ int qpic_spi_nand_config(struct mtd_info *mtd)
 	}
 
 	if ((status  >> 8) & FLASH_SPI_NAND_FR_ECC_ENABLE) {
-		printf("%s : Internal ECC enabled, disabling internal ECC\n",__func__);
+		qspi_debug("%s : Internal ECC enabled, disabling internal ECC\n",__func__);
 
 		status &= ~(FLASH_SPI_NAND_FR_ECC_ENABLE);
 		status = qpic_serial_set_feature(mtd, FLASH_SPI_NAND_FR_ADDR,
@@ -1226,13 +1225,13 @@ int qpic_spi_nand_config(struct mtd_info *mtd)
 		}
 
 		if ((status  >> 8) & FLASH_SPI_NAND_FR_ECC_ENABLE) {
-			pr_info("%s: Failed to disabled device internal ECC\n",
+			printf("%s: Failed to disabled device internal ECC\n",
 					__func__);
 			return -QPIC_SERIAL_ERROR;
 		} else
-			printf("%s : Internal ECC disabled.\n",__func__);
+			qspi_debug("%s : Internal ECC disabled.\n",__func__);
 	} else
-		printf("%s : Internal ECC disabled on power on.\n",__func__);
+		qspi_debug("%s : Internal ECC disabled on power on.\n",__func__);
 
 	/* Enable QUAD mode if device supported. Check this condition only
 	 * if dev->quad_mode = true , means device will support Quad mode
@@ -1255,8 +1254,8 @@ int qpic_spi_nand_config(struct mtd_info *mtd)
 		}
 
 		if (!((status >> 8) & FLASH_SPI_NAND_FR_QUAD_ENABLE)) {
-			printf("%s : Quad bit not enabled.\n",__func__);
-			printf("%s : Issuning set feature command to enable it.\n",
+			qspi_debug("%s : Quad bit not enabled.\n",__func__);
+			qspi_debug("%s : Issuning set feature command to enable it.\n",
 					__func__);
 
 			/* Enable quad bit */
@@ -1274,16 +1273,16 @@ int qpic_spi_nand_config(struct mtd_info *mtd)
 			}
 
 			if (!((status >> 8) & FLASH_SPI_NAND_FR_QUAD_ENABLE)) {
-				printf("%s:Quad mode not enabled,so use x1 Mode.\n",
+				qspi_debug("%s:Quad mode not enabled,so use x1 Mode.\n",
 					__func__);
 				dev->quad_mode = false;
 				return 0;
 			} else {
-				printf("%s: Quad mode enabled. using X4 mode\n",__func__);
+				qspi_debug("%s: Quad mode enabled. using X4 mode\n",__func__);
 				return 0;
 			}
 		} else {
-			printf("%s: Quad mode enabled on Opwer on.\n",__func__);
+			qspi_debug("%s: Quad mode enabled on Opwer on.\n",__func__);
 			return 0;
 		}
 	}
