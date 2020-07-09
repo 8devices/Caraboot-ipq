@@ -1069,6 +1069,13 @@ void board_usb_deinit(int id)
 {
 	int nodeoff, ssphy;
 	char node_name[8];
+
+	if(readl(EUD_EUD_EN2))
+	/*
+	 * Eud enable skipping deinit part
+	 */
+		return;
+
 	snprintf(node_name, sizeof(node_name), "usb%d", id);
 	nodeoff = fdt_path_offset(gd->fdt_blob, node_name);
 	if (fdtdec_get_int(gd->fdt_blob, nodeoff, "qcom,emulation", 0))
@@ -1236,12 +1243,17 @@ int ipq_board_usb_init(void)
 	int i, nodeoff, ssphy;
 	char node_name[8];
 
+	if(readl(EUD_EUD_EN2)) {
+		printf("USB: EUD Enable, skipping initialization\n");
+		return 0;
+	}
+
 	for (i=0; i<CONFIG_USB_MAX_CONTROLLER_COUNT; i++) {
 		snprintf(node_name, sizeof(node_name), "usb%d", i);
 		nodeoff = fdt_path_offset(gd->fdt_blob, node_name);
 		if (nodeoff < 0){
 			printf("USB: Node Not found, skipping initialization\n");
-			return -1;
+			return 0;
 		}
 
 		ssphy = fdtdec_get_int(gd->fdt_blob, nodeoff, "ssphy", 0);

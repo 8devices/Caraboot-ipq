@@ -19,6 +19,11 @@
 #include <asm/arch-qca-common/qca_common.h>
 #include "phy.h"
 
+/*
+ * Eud register
+ */
+#define EUD_EUD_EN2				0x0005A000
+
 #define MSM_SDC1_BASE				0x7800000
 #define MSM_SDC1_SDHCI_BASE			0x7804000
 
