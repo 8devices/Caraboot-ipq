@@ -85,6 +85,12 @@ CONFIG_CMD_SETEXPR=y
 #
 # Network commands
 #
+
+#
+# Network PHY
+#
+CONFIG_QCA8081_PHY=y
+
 CONFIG_CMD_NET=y
 # CONFIG_CMD_TFTPPUT is not set
 # CONFIG_CMD_TFTPSRV is not set

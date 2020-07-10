@@ -82,16 +82,18 @@ static void ipq_eth_mac_cfg(struct eth_device *dev)
 {
 	struct ipq_eth_dev *priv = dev->priv;
 	struct eth_mac_regs *mac_reg = (struct eth_mac_regs *)priv->mac_regs_p;
-
+	uint speed = 0;
 	uint ipq_mac_cfg = 0;
-
 	uint ipq_mac_framefilter = 0;
 
 	ipq_mac_framefilter = PROMISCUOUS_MODE_ON;
 
 	if (priv->mac_unit) {
+		if (priv->phy_type == QCA8081_1_1_PHY|| priv->phy_type == QCA8033_PHY)
+			speed = priv->speed;
+
 		ipq_mac_cfg |= (FRAME_BURST_ENABLE | JUMBO_FRAME_ENABLE | JABBER_DISABLE |
-				TX_ENABLE | RX_ENABLE | FULL_DUPLEX_ENABLE);
+				TX_ENABLE | RX_ENABLE | FULL_DUPLEX_ENABLE | speed);
 
 		writel(ipq_mac_cfg, &mac_reg->conf);
 	} else {
@@ -345,6 +347,7 @@ static int ipq5018_phy_link_update(struct eth_device *dev)
 	char *lstatus[] = {"up", "Down"};
 	char *dp[] = {"Half", "Full"};
 	int speed_clock1 = 0, speed_clock2 = 0;
+	int mode = PORT_WRAPPER_SGMII0_RGMII4;
 
 	if (priv->ipq_swith == 0) {
 		phy_get_ops = priv->ops;
@@ -380,7 +383,7 @@ static int ipq5018_phy_link_update(struct eth_device *dev)
 						dp[duplex]);
 				break;
 			case FAL_SPEED_100:
-				priv->speed = MII_PORT_SELECT;
+				priv->speed = MII_PORT_SELECT | FES_PORT_SPEED;
 				speed_clock1 = 9;
 				speed_clock2 = 0;
 				printf ("eth%d %s Speed :%d %s duplex\n",
@@ -399,6 +402,7 @@ static int ipq5018_phy_link_update(struct eth_device *dev)
 				break;
 			case FAL_SPEED_2500:
 				priv->speed = SGMII_PORT_SELECT;
+				mode = PORT_WRAPPER_SGMII_PLUS;
 				speed_clock1 = 1;
 				speed_clock2 = 0;
 				printf ("eth%d %s Speed :%d %s duplex\n",
@@ -418,11 +422,7 @@ static int ipq5018_phy_link_update(struct eth_device *dev)
 	}
 
 	if (priv->mac_unit){
-		if (priv->phy_type == QCA8081_PHY_TYPE ||
-			priv->phy_type == QCA8081_1_1_PHY)
-			ppe_uniphy_mode_set(PORT_WRAPPER_SGMII_PLUS);
-		else
-			ppe_uniphy_mode_set(PORT_WRAPPER_SGMII0_RGMII4);
+		ppe_uniphy_mode_set(mode);
 	} else {
 		ipq5018_enable_gephy();
 	}
@@ -727,16 +727,18 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 		}
 
 		switch(phy_chip_id) {
+#ifdef CONFIG_QCA8081_PHY
 			/*
 			 * NAPA PHY For GMAC1
 			 */
 			case QCA8081_PHY:
 			case QCA8081_1_1_PHY:
-				ipq_gmac_macs[i]->phy_type = QCA8081_PHY;
+				ipq_gmac_macs[i]->phy_type = QCA8081_1_1_PHY;
 				ipq_qca8081_phy_init(
 					&ipq_gmac_macs[i]->ops,
 					ipq_gmac_macs[i]->phy_address);
 				break;
+#endif
 			/*
 			 * Internel GEPHY only for GMAC0
 			 */

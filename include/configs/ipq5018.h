@@ -246,7 +246,6 @@ extern loff_t board_env_size;
  */
 #define CONFIG_GEPHY
 #define CONFIG_QCA8033_PHY
-#define CONFIG_QCA8081_PHY
 
 /*
  * USB Support

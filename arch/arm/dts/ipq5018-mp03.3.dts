@@ -127,6 +127,7 @@
 	};
 
 	gmac_cfg {
+		ext_mdio_gpio = <36 37>;
 		gephy_led = <46>;
 
 		gmac1_cfg {
@@ -135,6 +136,14 @@
 			phy_address = <7>;
 			phy_name = "IPQ MDIO0";
 		};
+		gmac2_cfg {
+			unit = <1>;
+			base = <0x39D00000>;
+			phy_address = <0x1c>;
+			napa_gpio = <39>;
+			phy_name = "IPQ MDIO1";
+		};
+
 	};
 
 };

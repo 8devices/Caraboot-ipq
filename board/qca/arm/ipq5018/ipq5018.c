@@ -640,7 +640,7 @@ static void set_ext_mdio_gpio(int node)
 	}
 }
 
-static void set_napa_phy_gpio(int gpio)
+static void reset_napa_phy_gpio(int gpio)
 {
 	unsigned int *napa_gpio_base;
 
@@ -648,7 +648,7 @@ static void set_napa_phy_gpio(int gpio)
 	writel(0x203, napa_gpio_base);
 	writel(0x0, GPIO_IN_OUT_ADDR(gpio));
 	mdelay(500);
-	writel(0x1, GPIO_IN_OUT_ADDR(gpio));
+	writel(0x2, GPIO_IN_OUT_ADDR(gpio));
 }
 
 static void reset_s17c_switch_gpio(int gpio)
@@ -1015,7 +1015,7 @@ int board_eth_init(bd_t *bis)
 			gmac_cfg[loop].phy_napa_gpio = fdtdec_get_uint(gd->fdt_blob,
 					offset, "napa_gpio", 0);
 			if (gmac_cfg[loop].phy_napa_gpio){
-				set_napa_phy_gpio(gmac_cfg[loop].phy_napa_gpio);
+				reset_napa_phy_gpio(gmac_cfg[loop].phy_napa_gpio);
 			}
 			switch_gpio =  fdtdec_get_uint(gd->fdt_blob, offset, "switch_gpio", 0);
 			if (switch_gpio) {
@@ -1069,6 +1069,13 @@ void board_usb_deinit(int id)
 {
 	int nodeoff, ssphy;
 	char node_name[8];
+
+	if(readl(EUD_EUD_EN2))
+	/*
+	 * Eud enable skipping deinit part
+	 */
+		return;
+
 	snprintf(node_name, sizeof(node_name), "usb%d", id);
 	nodeoff = fdt_path_offset(gd->fdt_blob, node_name);
 	if (fdtdec_get_int(gd->fdt_blob, nodeoff, "qcom,emulation", 0))
@@ -1236,12 +1243,17 @@ int ipq_board_usb_init(void)
 	int i, nodeoff, ssphy;
 	char node_name[8];
 
+	if(readl(EUD_EUD_EN2)) {
+		printf("USB: EUD Enable, skipping initialization\n");
+		return 0;
+	}
+
 	for (i=0; i<CONFIG_USB_MAX_CONTROLLER_COUNT; i++) {
 		snprintf(node_name, sizeof(node_name), "usb%d", i);
 		nodeoff = fdt_path_offset(gd->fdt_blob, node_name);
 		if (nodeoff < 0){
 			printf("USB: Node Not found, skipping initialization\n");
-			return -1;
+			return 0;
 		}
 
 		ssphy = fdtdec_get_int(gd->fdt_blob, nodeoff, "ssphy", 0);
