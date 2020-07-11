@@ -1988,8 +1988,17 @@ def gen_kernelboot_img(parser):
                 BASE_ADDR = "0x41000000"
 
         src = parser.images_dname + "/qcom-" + BOARD_NAME + ".dtb"
+
+	#alternate name(alt_src) for linux-5.4 dtbs
+	alt_src = parser.images_dname + "/" + BOARD_NAME + ".dtb"
+	if ARCH_NAME == "ipq807x":
+		alt_src = parser.images_dname + "/ipq8074-hk01.dtb"
+
         if not os.path.exists(src):
-            error("%s file not found" % src)
+	    if os.path.exists(alt_src):
+		src = alt_src
+	    else:
+		error("%s file not found" % src)
         copy(src, TMP_DIR)
 
         src = parser.images_dname + "/Image"
