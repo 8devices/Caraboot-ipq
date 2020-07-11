@@ -64,7 +64,6 @@
 			unit = <0>;
 			base = <0x39C00000>;
 			phy_address = <7>;
-			phy_name = "IPQ MDIO0";
 		};
 	};
 };

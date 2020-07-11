@@ -134,14 +134,12 @@
 			unit = <0>;
 			base = <0x39C00000>;
 			phy_address = <7>;
-			phy_name = "IPQ MDIO0";
 		};
 		gmac2_cfg {
 			unit = <1>;
 			base = <0x39D00000>;
 			phy_address = <0x1c>;
 			napa_gpio = <39>;
-			phy_name = "IPQ MDIO1";
 		};
 
 	};

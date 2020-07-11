@@ -658,14 +658,13 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 		ipq_gmac_macs[i]->phy_type = gmac_cfg->phy_type;
 		ipq_gmac_macs[i]->ipq_swith = gmac_cfg->ipq_swith;
 
-		strlcpy((char *)ipq_gmac_macs[i]->phy_name,
-			gmac_cfg->phy_name,
-			sizeof(ipq_gmac_macs[i]->phy_name));
+		snprintf((char *)ipq_gmac_macs[i]->phy_name,
+				sizeof(ipq_gmac_macs[i]->phy_name), "IPQ MDIO%d", i);
 
 		phy_chip_id = -1;
 
 		if (gmac_cfg->unit){
-			ret = ipq_sw_mdio_init(gmac_cfg->phy_name);
+			ret = ipq_sw_mdio_init(ipq_gmac_macs[i]->phy_name);
 				if (ret)
 					goto init_failed;
 			if (ipq_gmac_macs[i]->ipq_swith){
@@ -716,7 +715,7 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 				phy_chip_id = (phy_chip_id1 << 16) | phy_chip_id2;
 			}
 		} else {
-			ret = ipq5018_sw_mdio_init(gmac_cfg->phy_name);
+			ret = ipq5018_sw_mdio_init(ipq_gmac_macs[i]->phy_name);
 				if (ret)
 					goto init_failed;
 			phy_chip_id1 = ipq5018_mdio_read(ipq_gmac_macs[i]->phy_address,
