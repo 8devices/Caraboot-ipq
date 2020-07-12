@@ -1704,11 +1704,8 @@ class Pack(object):
             else:
                 part_info = root.find(".//data[@type='" + ftype.upper() + "_PARAMETER']")
 
-	    if ARCH_NAME == "ipq6018" or ARCH_NAME == "ipq5018":
-		if MODE == "64":
-                    MODE_APPEND = "_64"
-                else:
-                    MODE_APPEND = ""
+            if ARCH_NAME in ["ipq6018", "ipq5018", "ipq807x"]:
+                MODE_APPEND = "_64" if MODE == "64" else ""
 
                 if ftype in ["nand-audio", "nand-audio-4k"]:
                     UBINIZE_CFG_NAME = ARCH_NAME + "-ubinize" + MODE_APPEND + "-audio.cfg"
@@ -1723,12 +1720,15 @@ class Pack(object):
                 f1.close()
                 f2.close()
 
-                if ftype in ["nand-4k", "nand-audio-4k", "norplusnand-4k"]:
-                    if ARCH_NAME == "ipq6018":
-                        UBI_IMG_NAME = "openwrt-ipq-ipq60xx" + MODE_APPEND + "-ubi-root-m4096-p256KiB.img"
-                    if ARCH_NAME == "ipq5018":
-                        UBI_IMG_NAME = "openwrt-ipq-ipq50xx" + MODE_APPEND + "-ubi-root-m4096-p256KiB.img"
+                part_file = SRC_DIR + "/" + ARCH_NAME + "/flash_partition/" + ftype + "-partition.xml"
+                parts = ET.parse(part_file).findall('.//partitions/partition')
+                for index in range(len(parts)):
+                        section = parts[index]
+                        if section[0].text == "rootfs":
+                            rootfs_pos = 9 if MODE == "64" else 8
+                            UBI_IMG_NAME = section[rootfs_pos].text
 
+                if ftype in ["nand-4k", "nand-audio-4k", "norplusnand-4k"]:
                     cmd = '%s -m 4096 -p 256KiB -o root.ubi %s' % ((SRC_DIR + "/ubinize") ,UBINIZE_CFG_NAME)
                     ret = subprocess.call(cmd, shell=True)
                     if ret != 0:
@@ -1737,12 +1737,8 @@ class Pack(object):
                     ret = subprocess.call(cmd, shell=True)
                     if ret != 0:
                          error("ubi image copy operation failed")
-                elif ftype in ["nand", "nand-audio", "norplusnand"]:
-                    if ARCH_NAME == "ipq6018":
-                        UBI_IMG_NAME = "openwrt-ipq-ipq60xx" + MODE_APPEND +"-ubi-root.img"
-                    if ARCH_NAME == "ipq5018":
-                        UBI_IMG_NAME = "openwrt-ipq-ipq50xx" + MODE_APPEND +"-ubi-root.img"
 
+                elif ftype in ["nand", "nand-audio", "norplusnand"]:
                     cmd = '%s -m 2048 -p 128KiB -o root.ubi %s' % ((SRC_DIR + "/ubinize") ,UBINIZE_CFG_NAME)
                     ret = subprocess.call(cmd, shell=True)
                     if ret != 0:
