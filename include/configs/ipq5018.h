@@ -391,6 +391,10 @@ extern loff_t board_env_size;
 #ifdef CONFIG_ART_COMPRESSED
 #undef CONFIG_GZIP
 #undef CONFIG_ZLIB
+/*
+ * CONFIG_COMPRESSED_LOAD_ADDR loads the compressed data for uncompress action
+ */
+#define CONFIG_COMPRESSED_LOAD_ADDR (CONFIG_SYS_LOAD_ADDR + (1 << 22))
 #endif
 
 #ifdef CONFIG_SMP_CMD_SUPPORT
