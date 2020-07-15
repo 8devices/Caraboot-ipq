@@ -52,6 +52,13 @@
 #define FREQUENCY_MASK				0xfffffdf0
 #define INTERNAL_48MHZ_CLOCK    		0x7
 
+#define CMN_BLK_PLL_SRC_ADDR			0x0009B028
+#define PLL_CTRL_SRC_MASK			0xfffffcff
+#define PLL_REFCLK_DIV_MASK			0xfffffe0f
+#define PLL_REFCLK_DIV_2			0x20
+#define CMN_BLK_PLL_SRC_SEL_FROM_REG		0x0
+#define CMN_BLK_PLL_SRC_SEL_FROM_LOGIC		0x1
+#define CMN_BLK_PLL_SRC_SEL_FROM_PCS		0x2
 #define TCSR_ETH_LDO_RDY_REG			0x19475C4
 #define TCSR_ETH_LDO_RDY_SIZE			0x4
 #define ETH_LDO_RDY				0x1

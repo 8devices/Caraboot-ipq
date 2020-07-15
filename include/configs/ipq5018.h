@@ -403,4 +403,10 @@ extern loff_t board_env_size;
 #define NR_CPUS				2
 #endif
 
+/*
+ * 96 MHz
+ */
+
+#define INTERNAL_96MHZ
+
 #endif /* _IPQ5018_H */

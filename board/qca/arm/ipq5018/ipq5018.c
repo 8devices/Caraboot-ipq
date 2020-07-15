@@ -909,9 +909,19 @@ static void configureRfa_96mhz(void)
 static void cmn_clock_init (void)
 {
 	u32 reg_val = 0;
+#ifdef INTERNAL_96MHZ
+	reg_val = readl(CMN_BLK_PLL_SRC_ADDR);
+	reg_val = ((reg_val & PLL_CTRL_SRC_MASK) |
+			(CMN_BLK_PLL_SRC_SEL_FROM_REG << 0x8));
+	writel(reg_val, CMN_BLK_PLL_SRC_ADDR);
+	reg_val = readl(CMN_BLK_ADDR + 4);
+	reg_val = (reg_val & PLL_REFCLK_DIV_MASK) | PLL_REFCLK_DIV_2;
+	writel(reg_val, CMN_BLK_ADDR + 0x4);
+#else
 	reg_val = readl(CMN_BLK_ADDR + 4);
 	reg_val = (reg_val & FREQUENCY_MASK) | INTERNAL_48MHZ_CLOCK;
 	writel(reg_val, CMN_BLK_ADDR + 0x4);
+#endif
 	reg_val = readl(CMN_BLK_ADDR);
 	reg_val = reg_val | 0x40;
 	writel(reg_val, CMN_BLK_ADDR);
@@ -1014,6 +1024,13 @@ static void gcc_clock_enable(void)
 	reg_val |= 0x1;
 	writel(reg_val, GCC_SNOC_GMAC1_AHB_CBCR);
 
+	reg_val = readl(GCC_SNOC_GMAC0_AXI_CBCR);
+	reg_val |= 0x1;
+	writel(reg_val, GCC_SNOC_GMAC0_AXI_CBCR);
+
+	reg_val = readl(GCC_SNOC_GMAC1_AXI_CBCR);
+	reg_val |= 0x1;
+	writel(reg_val, GCC_SNOC_GMAC1_AXI_CBCR);
 }
 
 static void ethernet_clock_enable(void)
