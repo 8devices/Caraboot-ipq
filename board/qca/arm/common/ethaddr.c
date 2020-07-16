@@ -25,6 +25,9 @@
 #endif
 #if defined(CONFIG_ART_COMPRESSED) &&	\
 	(defined(CONFIG_GZIP) || defined(CONFIG_LZMA))
+#ifndef CONFIG_COMPRESSED_LOAD_ADDR
+#define CONFIG_COMPRESSED_LOAD_ADDR CONFIG_SYS_LOAD_ADDR
+#endif
 #include <mapmem.h>
 #include <lzma/LzmaTools.h>
 #endif
@@ -94,8 +97,8 @@ int get_eth_mac_address(uchar *enetaddr, uint no_of_macs)
 			ret = -1;
 		} else {
 #if defined(CONFIG_ART_COMPRESSED) && (defined(CONFIG_GZIP) || defined(CONFIG_LZMA))
-		image_buf = map_sysmem(CONFIG_SYS_LOAD_ADDR, 0);
-		load_buf = map_sysmem(CONFIG_SYS_LOAD_ADDR + 0x100000, 0);
+		image_buf = map_sysmem(CONFIG_COMPRESSED_LOAD_ADDR, 0);
+		load_buf = map_sysmem(CONFIG_COMPRESSED_LOAD_ADDR + 0x100000, 0);
 		img_size = qca_smem_flash_info.flash_block_size * size_blocks;
 		ret = spi_flash_read(flash, art_offset, img_size, image_buf);
 		if (ret == 0) {

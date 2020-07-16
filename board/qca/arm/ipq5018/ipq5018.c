@@ -1658,3 +1658,33 @@ void fdt_fixup_set_dload_warm_reset(void *blob)
 	if (ret)
 		printf("fixup_set_dload: 'dload_warm_reset' not set");
 }
+
+#ifdef CONFIG_SMP_CMD_SUPPORT
+int is_secondary_core_off(unsigned int cpuid)
+{
+	int err;
+
+	err = __invoke_psci_fn_smc(ARM_PSCI_TZ_FN_AFFINITY_INFO, cpuid, 0, 0);
+
+	return err;
+}
+
+void bring_secondary_core_down(unsigned int state)
+{
+	__invoke_psci_fn_smc(ARM_PSCI_TZ_FN_CPU_OFF, state, 0, 0);
+}
+
+int bring_sec_core_up(unsigned int cpuid, unsigned int entry, unsigned int arg)
+{
+	int err;
+
+	err = __invoke_psci_fn_smc(ARM_PSCI_TZ_FN_CPU_ON, cpuid, entry, arg);
+	if (err) {
+		printf("Enabling CPU%d via psci failed!\n", cpuid);
+		return -1;
+	}
+
+	printf("Enabled CPU%d via psci successfully!\n", cpuid);
+	return 0;
+}
+#endif
