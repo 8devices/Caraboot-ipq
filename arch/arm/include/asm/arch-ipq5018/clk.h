@@ -16,6 +16,18 @@
 
 /* I2C clocks configuration */
 #ifdef CONFIG_IPQ5018_I2C
+
+#define GCC_BLSP1_QUP3_I2C_APPS_CFG_RCGR		0x1804004
+#define GCC_BLSP1_QUP3_I2C_APPS_CFG_RCGR_SRC_SEL	(1 << 8)
+#define GCC_BLSP1_QUP3_I2C_APPS_CFG_RCGR_SRC_DIV	(0x1F << 0)
+
+#define GCC_BLSP1_QUP3_I2C_APPS_CMD_RCGR	0x1804000
+#define GCC_BLSP1_QUP3_I2C_APPS_CBCR		0x1804010
+
+#define CMD_UPDATE	0x1
+#define ROOT_EN		0x2
+#define CLK_ENABLE	0x1
+
 void i2c_clock_config(void);
 #endif
 #endif /*IPQ5018_CLK_H*/
