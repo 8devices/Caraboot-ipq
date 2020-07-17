@@ -230,7 +230,7 @@ CONFIG_QPIC_SERIAL=y
 # CONFIG_DM_ETH is not set
 # CONFIG_PHYLIB is not set
 # CONFIG_NETDEVICES is not set
-CONFIG_IPQ_MTD_NOR=y
+# CONFIG_IPQ_MTD_NOR is not set
 # CONFIG_IPQ_TINY_SPI_NOR is not set
 
 #

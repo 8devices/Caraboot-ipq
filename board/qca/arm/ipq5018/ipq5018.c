@@ -46,7 +46,7 @@ DECLARE_GLOBAL_DATA_PTR;
 struct sdhci_host mmc_host;
 #endif
 
-#ifdef CONFIG_IPQ_MTD_NOR
+#ifdef CONFIG_MTD_DEVICE
 extern int ipq_spi_init(u16);
 #endif
 
@@ -596,7 +596,7 @@ void board_nand_init(void)
 	gpio_node = fdt_path_offset(gd->fdt_blob, "/spi/spi_gpio");
 	if (gpio_node >= 0) {
 		qca_gpio_init(gpio_node);
-#ifdef CONFIG_IPQ_MTD_NOR
+#ifdef CONFIG_MTD_DEVICE
 		ipq_spi_init(CONFIG_IPQ_SPI_NOR_INFO_IDX);
 #endif
 	}
