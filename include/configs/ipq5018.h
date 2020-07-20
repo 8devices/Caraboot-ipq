@@ -323,6 +323,10 @@ extern loff_t board_env_size;
 #ifndef CONFIG_IPQ_TINY
 #define CONFIG_CMD_BOOTZ
 #define CONFIG_CMD_CACHE
+/*
+ * Multicore CPU support
+ */
+#define CONFIG_SMP_CMD_SUPPORT
 #endif
 
 #define CONFIG_FDT_FIXUP_PARTITIONS
@@ -387,6 +391,14 @@ extern loff_t board_env_size;
 #ifdef CONFIG_ART_COMPRESSED
 #undef CONFIG_GZIP
 #undef CONFIG_ZLIB
+/*
+ * CONFIG_COMPRESSED_LOAD_ADDR loads the compressed data for uncompress action
+ */
+#define CONFIG_COMPRESSED_LOAD_ADDR (CONFIG_SYS_LOAD_ADDR + (1 << 22))
+#endif
+
+#ifdef CONFIG_SMP_CMD_SUPPORT
+#define NR_CPUS				2
 #endif
 
 #endif /* _IPQ5018_H */
