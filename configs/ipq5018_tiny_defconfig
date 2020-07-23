@@ -296,6 +296,11 @@ CONFIG_REQUIRE_SERIAL_CONSOLE=y
 #
 
 #
+# Ethernet PHY
+#
+CONFIG_QCA8033_PHY=y
+
+#
 # Library routines
 
 #

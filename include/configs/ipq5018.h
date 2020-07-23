@@ -242,10 +242,9 @@ extern loff_t board_env_size;
 #define CONFIG_IPQ_NO_MACS			2
 
 /*
- * PHY
+ * GEPHY
  */
 #define CONFIG_GEPHY
-#define CONFIG_QCA8033_PHY
 
 /*
  * USB Support
