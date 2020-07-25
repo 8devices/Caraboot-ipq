@@ -570,6 +570,19 @@ int qca_scm_secure_authenticate(void *cmd_buf, size_t cmd_len)
 }
 #endif
 
+int qca_scm_call_crypto_v8(u32 svc_id, u32 cmd_id, u32 *addr, u32 val)
+{
+        int ret = 0;
+        struct qca_scm_desc desc = {0};
+
+        desc.arginfo = QCA_SCM_ARGS(2, SCM_RW_OP, SCM_VAL);
+
+        desc.args[0] = (u32)addr;
+        desc.args[1] = val;
+        ret = scm_call_64(svc_id, cmd_id, &desc);
+        return ret;
+}
+
 int qca_scm_call_write(u32 svc_id, u32 cmd_id, u32 *addr, u32 val)
 {
 	int ret = 0;
@@ -619,6 +632,18 @@ int qca_scm_sdi(void)
 
         ret = scm_call(SCM_SVC_BOOT, SCM_CMD_TZ_CONFIG_HW_FOR_RAM_DUMP_ID, &clear_info,
                                 sizeof(clear_info), NULL, 0);
+
+        return ret;
+}
+
+int qca_scm_crypto(int cmd_id, void *req_ptr, uint32_t req_size)
+{
+        int ret;
+        if (is_scm_armv8())
+                ret = qca_scm_call_crypto_v8(SCM_SVC_CRYPTO, cmd_id,
+                                         (u32 *)req_ptr, req_size);
+        else
+		ret = -ENOTSUPP;
 
         return ret;
 }
