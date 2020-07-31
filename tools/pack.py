@@ -1685,7 +1685,7 @@ class Pack(object):
 	global QCN9000
 
         try:
-            if ftype == "tiny-nor":
+            if ftype == "tiny-nor" or ftype == "tiny-nor-debug":
                 part_info = root.find(".//data[@type='" + "NOR_PARAMETER']")
             elif ftype in ["nand", "nand-4k", "nand-audio", "nand-audio-4k"]:
                 if root.find(".//data[@type='NAND_PARAMETER']/entry") != None:
@@ -1760,7 +1760,7 @@ class Pack(object):
             if ARCH_NAME == "ipq807x" and (ftype == "norplusnand" or ftype == "nand"):
                 QCN9000 = True
 
-            if ftype in ["tiny-nor", "norplusnand", "norplusnand-4k", "norplusemmc"]:
+            if ftype in ["tiny-nor", "norplusnand", "norplusnand-4k", "norplusemmc", "tiny-nor-debug"]:
                 ftype = "nor"
             if ftype in ["nand-4k", "nand-audio", "nand-audio-4k"]:
                 ftype = "nand"
@@ -1782,7 +1782,7 @@ class Pack(object):
 
         QCN9000 = False
         try:
-            if self.flash_type in [ "nand", "nand-4k", "nand-audio", "nand-audio-4k", "nor", "tiny-nor", "norplusnand", "norplusnand-4k" ]:
+            if self.flash_type in [ "nand", "nand-4k", "nand-audio", "nand-audio-4k", "nor", "tiny-nor", "norplusnand", "norplusnand-4k", "tiny-nor-debug" ]:
                 ret = self.__process_board_flash(self.flash_type, images, root)
             elif self.flash_type == "emmc":
                 ret = self.__process_board_flash_emmc(self.flash_type, images, root)
@@ -1908,7 +1908,7 @@ class ArgParser(object):
 	    if self.flash_type == None:
                 self.flash_type = ArgParser.DEFAULT_TYPE
 	    for flash_type in self.flash_type.split(","):
-                if flash_type not in [ "nand", "nor", "tiny-nor", "emmc", "norplusnand", "norplusemmc" ]:
+                if flash_type not in [ "nand", "nor", "tiny-nor", "emmc", "norplusnand", "norplusemmc", "tiny-nor-debug" ]:
                     raise UsageError("invalid flash type '%s'" % flash_type)
 
 # Verify src Path
@@ -1936,7 +1936,7 @@ class ArgParser(object):
         print "options:"
         print "  --arch \tARCH_TYPE [ipq40xx/ipq806x/ipq807x/ipq807x_64/ipq6018/ipq6018_64/ipq5018/ipq5018_64]"
 	print
-	print "  --fltype \tFlash Type [nor/tiny-nor/nand/emmc/norplusnand/norplusemmc]"
+	print "  --fltype \tFlash Type [nor/tiny-nor/nand/emmc/norplusnand/norplusemmc/tiny-nor-debug]"
         print " \t\tMultiple flashtypes can be passed by a comma separated string"
         print " \t\tDefault is all. i.e If \"--fltype\" is not passed image for all the flash-type will be created.\n"
         print "  --srcPath \tPath to the directory containg the meta scripts and configs"
