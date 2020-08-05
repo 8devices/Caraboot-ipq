@@ -1175,6 +1175,12 @@ class Pack(object):
 		    except KeyError, e:
 			continue
 
+		imgs = section.findall('img_name')
+		for img in imgs:
+			memory_attr = img.get('memory')
+			if memory_attr != None and memory_attr == memory_size:
+				filename = img.text;
+
 	    else:
 		if diff_soc_ver_files:
                    try:
@@ -1196,6 +1202,9 @@ class Pack(object):
                    except KeyError, e:
                         print "Skipping partition '%s'" % section.attrib['label']
                         pass
+
+		if section != None and section.get('filename_mem' + memory_size) != None:
+			filename = section.get('filename_mem' + memory_size)
 
             if filename != "":
                 ret = self.__gen_flash_script_image(filename, soc_version, file_exists, machid, partition, flinfo, script)
@@ -1531,6 +1540,12 @@ class Pack(object):
 		    except KeyError, e:
 			continue
 
+		imgs = section.findall('img_name')
+		for img in imgs:
+			memory_attr = img.get('memory')
+			if memory_attr != None and memory_attr == memory_size:
+				filename = img.text;
+
                 # system-partition specific for HK+PINE
                 if section_conf == "mibib" and QCN9000:
                     img = section.find('img_name')
@@ -1560,6 +1575,9 @@ class Pack(object):
 		    except KeyError, e:
 			print "Skipping partition '%s'" % section.attrib['label']
 			pass
+
+		if section != None and section.get('filename_mem' + memory_size) != None:
+			filename = section.get('filename_mem' + memory_size)
 
             if filename != "":
                 self.__gen_script_append_images(filename, soc_version, images, flinfo, root, section_conf, partition)
