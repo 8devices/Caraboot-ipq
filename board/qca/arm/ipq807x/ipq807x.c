@@ -59,6 +59,9 @@
 #define NOC_ERR_CLR_REG		0xb0002a0
 
 #define DLOAD_MAGIC_COOKIE	0x10
+
+#define TCSR_SOC_HW_VERSION_REG 0x194D000
+
 DECLARE_GLOBAL_DATA_PTR;
 
 #define GCNT_PSHOLD             0x004AB000
@@ -1883,4 +1886,9 @@ void qgic_init(void)
 {
 	qgic_dist_init();
 	qgic_cpu_init();
+}
+
+int get_soc_hw_version(void)
+{
+	return readl(TCSR_SOC_HW_VERSION_REG);
 }

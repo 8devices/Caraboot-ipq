@@ -36,6 +36,8 @@
 #define DLOAD_MAGIC_COOKIE	0x10
 #define DLOAD_DISABLED		0x40
 
+#define TCSR_SOC_HW_VERSION_REG 0x194D000
+
 ipq_gmac_board_cfg_t gmac_cfg[CONFIG_IPQ_NO_MACS];
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -1705,3 +1707,8 @@ int bring_sec_core_up(unsigned int cpuid, unsigned int entry, unsigned int arg)
 	return 0;
 }
 #endif
+
+int get_soc_hw_version(void)
+{
+	return readl(TCSR_SOC_HW_VERSION_REG);
+}
