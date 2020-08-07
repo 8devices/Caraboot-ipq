@@ -595,7 +595,6 @@ class Pack(object):
     def __gen_flash_script_cdt(self, entries, partition, flinfo, script):
 	global ARCH_NAME
         for section in entries:
-
             machid = int(section.find(".//machid").text, 0)
             machid = "%x" % machid
             board = section.find(".//board").text
@@ -940,7 +939,7 @@ class Pack(object):
 
             return 1
 
-    def __gen_flash_script(self, script, flinfo, root):
+    def __gen_flash_script(self, script, flinfo, root, testmachid=False):
         """Generate the script to flash the images.
 
         info -- ConfigParser object, containing image flashing info
@@ -977,7 +976,23 @@ class Pack(object):
         else:
             parts_length = len(parts)
         entries = root.findall(".//data[@type='MACH_ID_BOARD_MAP']/entry")
-
+	if testmachid:
+	    machid_count = 0
+	    for section in entries:
+		machid = int(section.find(".//machid").text, 0)
+		machid = "%x" % machid
+		machid_count =  machid_count + 1
+		if machid_count == 1:
+		    script.script.append('if test "$machid" = "%s" ' % machid)
+		else:
+		    script.script.append('|| test "$machid" = "%s" ' % machid)
+	    if machid_count >= 1:
+		    script.script.append('; then\n')
+		    script.script.append('echo \'machid : Validation success\'\n')
+		    script.script.append('else\n')
+		    script.script.append('echo \'machid : unknown, aborting upgrade\'\n')
+		    script.script.append('exit 1\n')
+		    script.script.append('fi\n')
         first = False
         section = None
         part_index = 0
@@ -1303,7 +1318,7 @@ class Pack(object):
 	diff_files = ""
 	file_exists = 1
 
-        ret = self.__gen_flash_script(script, flinfo, root)
+        ret = self.__gen_flash_script(script, flinfo, root, True)
         if ret == 0:
             return 0 #Stop packing this single-image
 
@@ -1610,7 +1625,7 @@ class Pack(object):
                 self.partitions = mibib_qcn9000.get_parts()
 
                 script.append('if test "$machid" = "801000e" || test "$machid" = "801010e" || test "$machid" = "8010012" || test "$machid" = "8010013" || test "$machid" = "8010500"; then\n', fatal=False)
-                ret = self.__gen_flash_script(script, flinfo, root)
+                ret = self.__gen_flash_script(script, flinfo, root, True)
                 if ret == 0:
                     return 0 #Issue in packing hk+pine single-image
 
