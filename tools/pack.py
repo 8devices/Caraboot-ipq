@@ -89,6 +89,12 @@ memory_size = "default"
 lk = "false"
 skip_4k_nand = "false"
 
+# Note: ipq806x didn't expose any relevant version */
+soc_hw_version_ipq40xx = { 0x20050100 };
+soc_hw_version_ipq807x = { 0x200D0100, 0x200D0101, 0x200D0200 };
+soc_hw_version_ipq6018 = { 0x20170100 };
+soc_hw_version_ipq5018 = { 0x20180100 };
+
 #
 # Python 2.6 and earlier did not have OrderedDict use the backport
 # from ordereddict package. If that is not available report error.
@@ -976,6 +982,37 @@ class Pack(object):
         else:
             parts_length = len(parts)
         entries = root.findall(".//data[@type='MACH_ID_BOARD_MAP']/entry")
+
+        # Note: Skipping validation for ipq806x. It didn't expose any relevant ID. */
+	if ARCH_NAME == "ipq40xx":
+            soc_hw_versions = soc_hw_version_ipq40xx
+	if ARCH_NAME == "ipq807x" or ARCH_NAME == "ipq807x_64":
+            soc_hw_versions = soc_hw_version_ipq807x
+	if ARCH_NAME == "ipq6018" or ARCH_NAME == "ipq6018_64":
+            soc_hw_versions = soc_hw_version_ipq6018
+	if ARCH_NAME == "ipq5018" or ARCH_NAME == "ipq5018_64":
+            soc_hw_versions = soc_hw_version_ipq5018
+
+        chip_count = 0
+        for soc_hw_version in soc_hw_versions:
+            chip_count = chip_count + 1
+            if chip_count == 1:
+                script.script.append('if test -n $soc_hw_version')
+                script.script.append('; then\n')
+                script.script.append('if test "$soc_hw_version" = "%x" ' % soc_hw_version)
+            else:
+                script.script.append('|| test "$soc_hw_version" = "%x" ' % soc_hw_version)
+        if chip_count >= 1:
+            script.script.append('; then\n')
+            script.script.append('echo \'soc_hw_version : Validation success\'\n')
+            script.script.append('else\n')
+            script.script.append('echo \'soc_hw_version : did not match, aborting upgrade\'\n')
+            script.script.append('exit 1\n')
+            script.script.append('fi\n')
+            script.script.append('else\n')
+            script.script.append('echo \'soc_hw_version : unknown, skipping validation\'\n')
+            script.script.append('fi\n')
+
 	if testmachid:
 	    machid_count = 0
 	    for section in entries:
