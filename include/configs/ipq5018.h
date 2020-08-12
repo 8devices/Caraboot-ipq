@@ -232,7 +232,6 @@ extern loff_t board_env_size;
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_DHCP
 #define CONFIG_MII
-#define CONFIG_CMD_MII
 #define CONFIG_IPADDR				192.168.10.10
 #define CONFIG_NETMASK				255.255.255.0
 #define CONFIG_SERVERIP				192.168.10.19
@@ -326,6 +325,10 @@ extern loff_t board_env_size;
  * Multicore CPU support
  */
 #define CONFIG_SMP_CMD_SUPPORT
+/*
+ * Mii command support
+ */
+#define CONFIG_CMD_MII
 #endif
 
 #define CONFIG_FDT_FIXUP_PARTITIONS
