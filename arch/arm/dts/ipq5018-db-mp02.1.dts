@@ -59,7 +59,7 @@
 
 	gmac_cfg {
 		ext_mdio_gpio = <36 37>;
-		gephy_led = <46>;
+		gephy_led = <30>;
 
 		gmac1_cfg {
 			unit = <0>;
