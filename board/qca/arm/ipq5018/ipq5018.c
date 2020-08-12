@@ -1704,6 +1704,16 @@ void fdt_fixup_bt_debug(void *blob)
 
 }
 
+#ifdef CONFIG_IPQ_TINY
+void fdt_fixup_art_format(void *blob)
+{
+	int nodeoffset;
+	nodeoffset = fdt_path_offset(blob, "/");
+	fdt_add_subnode(blob, nodeoffset, "compressed_art");
+
+}
+#endif
+
 void run_tzt(void *address)
 {
 	execute_tzt(address);
