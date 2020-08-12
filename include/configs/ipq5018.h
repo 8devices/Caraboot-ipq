@@ -144,11 +144,11 @@ extern loff_t board_env_size;
  * CONFIG_IPQ_NAND: QPIC NAND in FIFO/block mode.
  * BAM is enabled by default.
  */
-#define CONFIG_CMD_NAND
-#define CONFIG_SYS_NAND_SELF_INIT
 #define CONFIG_CMD_MTDPARTS
+#define CONFIG_SYS_NAND_SELF_INIT
 
 #ifdef CONFIG_NAND_FLASH
+#define CONFIG_CMD_NAND
 #define CONFIG_ENV_IS_IN_NAND			1
 #define CONFIG_QPIC_NAND
 #define CONFIG_SYS_NAND_ONFI_DETECTION
