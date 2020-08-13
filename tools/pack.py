@@ -91,7 +91,7 @@ skip_4k_nand = "false"
 
 # Note: ipq806x didn't expose any relevant version */
 soc_hw_version_ipq40xx = { 0x20050100 };
-soc_hw_version_ipq807x = { 0x200D0100, 0x200D0101, 0x200D0200 };
+soc_hw_version_ipq807x = { 0x200D0100, 0x200D0101, 0x200D0102, 0x200D0200 };
 soc_hw_version_ipq6018 = { 0x20170100 };
 soc_hw_version_ipq5018 = { 0x20180100 };
 
