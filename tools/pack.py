@@ -88,6 +88,7 @@ image_type = "all"
 memory_size = "default"
 lk = "false"
 skip_4k_nand = "false"
+atf = "false"
 
 # Note: ipq806x didn't expose any relevant version */
 soc_hw_version_ipq40xx = { 0x20050100 };
@@ -1181,6 +1182,10 @@ class Pack(object):
 			if memory_attr != None and memory_attr == memory_size:
 				filename = img.text;
 
+			atf_image = img.get('atf')
+			if atf_image != None and atf == "true":
+				filename = img.text;
+
 	    else:
 		if diff_soc_ver_files:
                    try:
@@ -1205,6 +1210,9 @@ class Pack(object):
 
 		if section != None and section.get('filename_mem' + memory_size) != None:
 			filename = section.get('filename_mem' + memory_size)
+
+		if section != None and atf == "true" and section.get('filename_atf') != None:
+			filename = section.get('filename_atf')
 
             if filename != "":
                 ret = self.__gen_flash_script_image(filename, soc_version, file_exists, machid, partition, flinfo, script)
@@ -1571,6 +1579,10 @@ class Pack(object):
 			if memory_attr != None and memory_attr == memory_size:
 				filename = img.text;
 
+			atf_image = img.get('atf')
+			if atf_image != None and atf == "true":
+				filename = img.text;
+
                 # system-partition specific for HK+PINE
                 if section_conf == "mibib" and QCN9000:
                     img = section.find('img_name')
@@ -1603,6 +1615,9 @@ class Pack(object):
 
 		if section != None and section.get('filename_mem' + memory_size) != None:
 			filename = section.get('filename_mem' + memory_size)
+
+		if section != None and atf == "true" and section.get('filename_atf') != None:
+			filename = section.get('filename_atf')
 
             if filename != "":
                 self.__gen_script_append_images(filename, soc_version, images, flinfo, root, section_conf, partition)
@@ -1938,6 +1953,7 @@ class ArgParser(object):
 	global image_type
 	global memory_size
         global lk
+        global atf
         global skip_4k_nand
 
         """Start the parsing process, and populate members with parsed value.
@@ -1948,7 +1964,7 @@ class ArgParser(object):
 	cdir = os.path.abspath(os.path.dirname(""))
         if len(sys.argv) > 1:
             try:
-                opts, args = getopt(sys.argv[1:], "", ["arch=", "fltype=", "srcPath=", "inImage=", "outImage=", "image_type=", "memory=", "lk", "skip_4k_nand"])
+                opts, args = getopt(sys.argv[1:], "", ["arch=", "fltype=", "srcPath=", "inImage=", "outImage=", "image_type=", "memory=", "lk", "skip_4k_nand", "atf"])
             except GetoptError, e:
 		raise UsageError(e.msg)
 
@@ -1976,6 +1992,9 @@ class ArgParser(object):
 
                 elif option =="--lk":
                     lk = "true"
+
+                elif option =="--atf":
+                    atf = "true"
 
                 elif option =="--skip_4k_nand":
                     skip_4k_nand = "true"
@@ -2045,6 +2064,7 @@ class ArgParser(object):
         print " \t\tIf specified, CDTs created with specified memory size will be used for single-image.\n"
         print
         print "  --lk \t\tReplace u-boot with lkboot for appsbl"
+        print "  --atf \t\tReplace tz with atf for QSEE partition"
         print "  --skip_4k_nand \tskip generating 4k nand images"
         print " \t\tThis Argument does not take any value"
         print "Pack Version: %s" % version
