@@ -437,6 +437,25 @@ class FlashScript(object):
         self.append('if test "$%s" = "%s"; then\n' % (var, value),
                     fatal=False)
 
+    def start_if_or(self, var, val_list):
+        """Generate code, to check an environment variable.
+
+        var -- string, variable to check
+        value -- string, the list of values to compare with
+        """
+
+	n_val = len(val_list)
+	item = 1
+	cmd_str = "if "
+	for val in val_list:
+	    cmd_str = cmd_str + str('test "$%s" = "%s"' % (var, val))
+	    #cmd_str = cmd_str + "\"$" + var + "\"" + "=" + "\"" + val + "\""
+	    if item <= (n_val - 1):
+		cmd_str = cmd_str + " || "
+	    item = item + 1
+
+	self.append('%s; then\n' % cmd_str, fatal=False)
+
     def end_if(self):
         """Generate code, to end if statement."""
 
@@ -719,6 +738,105 @@ class Pack(object):
 
         return 1
 
+    def __gen_flash_script_wififw(self, entries, partition, filename, wifi_fw_type, flinfo, script):
+
+	machid_list = []
+	for section in entries:
+
+	    wififw_type = section.find('.//wififw_type')
+	    if wififw_type == None:
+		continue
+	    wififw_type = str(section.find(".//wififw_type").text)
+
+	    if str(wifi_fw_type) != str(wififw_type):
+		continue
+
+	    machid = int(section.find(".//machid").text, 0)
+	    machid = "%x" % machid
+
+	    machid_list.append(machid)
+
+	img_size = self.__get_img_size(filename)
+	part_info = self.__get_part_info(partition)
+
+	section_label = partition.split(":")
+        if len(section_label) != 1:
+	    section_conf = section_label[1]
+	else:
+	    section_conf = section_label[0]
+	section_conf = section_conf.lower()
+
+	if self.flinfo.type == 'nand':
+	    size = roundup(img_size, flinfo.pagesize)
+	    tr = ' | tr \"\\000\" \"\\377\"'
+
+	if self.flinfo.type == 'emmc':
+	    size = roundup(img_size, flinfo.blocksize)
+	    tr = ''
+
+	if ((self.flinfo.type == 'nand' or self.flinfo.type == 'emmc') and (size != img_size)):
+	    pad_size = size - img_size
+	    filename_abs = os.path.join(self.images_dname, filename)
+	    filename_abs_pad = filename_abs + ".padded"
+	    cmd = 'cat %s > %s' % (filename_abs, filename_abs_pad)
+	    ret = subprocess.call(cmd, shell=True)
+	    if ret != 0:
+		error("failed to copy image")
+	    cmd = 'dd if=/dev/zero count=1 bs=%s %s >> %s' % (pad_size, tr, filename_abs_pad)
+	    cmd = '(' + cmd + ') 1>/dev/null 2>/dev/null'
+	    ret = subprocess.call(cmd, shell=True)
+	    if ret != 0:
+		error("failed to create padded image from script")
+
+	if self.flinfo.type != "emmc":
+	    if part_info == None:
+		if self.flinfo.type == 'norplusnand':
+		    if count > 2:
+			error("More than 2 NAND images for NOR+NAND is not allowed")
+	    elif img_size > part_info.length:
+		print "img size is larger than part. len in '%s'" % section_conf
+		return 0
+	else:
+	    if part_info != None:
+		if (img_size > 0):
+		    if img_size > (part_info.length * self.flinfo.blocksize):
+			print "img size is larger than part. len in '%s'" % section_conf
+			return 0
+
+	if part_info == None and self.flinfo.type != 'norplusnand':
+	    print "Flash type is norplusemmc"
+	    return 1
+
+	script.start_if_or("machid", machid_list)
+	script.start_activity("Flashing %s_%s:" % ( section_conf, wifi_fw_type ))
+
+	if img_size > 0:
+	    filename_pad = filename + ".padded"
+	    if ((self.flinfo.type == 'nand' or self.flinfo.type == 'emmc') and (size != img_size)):
+		script.imxtract(section_conf + "_" + wifi_fw_type + "-" + sha1(filename_pad))
+	    else:
+		script.imxtract(section_conf + "_" + wifi_fw_type + "-" + sha1(filename))
+
+	part_size = Pack.norplusnand_rootfs_img_size
+	if part_info == None:
+	    if self.flinfo.type == 'norplusnand':
+		offset = count * Pack.norplusnand_rootfs_img_size
+		script.nand_write(offset, part_size, img_size, spi_nand)
+		count = count + 1
+	else:
+	    if part_info.which_flash == 0:
+		offset = part_info.offset
+		script.erase(offset, part_info.length)
+		script.write(offset, img_size)
+	    else:
+		offset = part_info.offset
+		script.nand_write(offset, part_info.length, img_size, spi_nand)
+
+	script.finish_activity()
+	script.end_if()
+
+        return 1
+
     def __gen_flash_script_bootldr(self, entries, partition, flinfo, script):
         for section in entries:
 
@@ -962,6 +1080,7 @@ class Pack(object):
 	soc_version = 0
 	diff_soc_ver_files = 0
 	file_exists = 1
+	wifi_fw_type = ""
 
         if self.flash_type == "norplusemmc" and flinfo.type == "emmc":
             srcDir_part = SRC_DIR + "/" + ARCH_NAME + "/flash_partition/" + flinfo.type + "-partition.xml"
@@ -1095,16 +1214,19 @@ class Pack(object):
 			    diff_soc_ver_files = section.attrib['diff_soc_ver_files']
 			except KeyError, e:
 			    try:
-				if image_type == "all" or section.attrib['image_type'] == image_type:
+				wifi_fw_type = section.attrib['wififw_type']
+			    except KeyError, e:
+				try:
+				    if image_type == "all" or section.attrib['image_type'] == image_type:
                                 	filename = section.attrib['filename']
                                         if lk == "true" and "u-boot" in filename:
                                             filename = filename.replace("u-boot", "lkboot")
                                 	partition = section.attrib['label']
-				if filename == "":
+				    if filename == "":
 					continue
-			    except KeyError, e:
-                                print "Skipping partition '%s'" % section.attrib['label']
-				pass
+				except KeyError, e:
+				    print "Skipping partition '%s'" % section.attrib['label']
+				    pass
 
 		    if diff_files == "true":
 			try:
@@ -1154,10 +1276,23 @@ class Pack(object):
                     error("invalid layout in '%s'" % section)
 
             if flinfo.type != "emmc":
-
 		img = section.find('img_name')
-		if img != None and 'soc_version' in img.attrib:
 
+		if img != None and 'wififw_type' in img.attrib:
+		    imgs = section.findall('img_name')
+		    try:
+			for img in imgs:
+			    filename = img.text
+			    wifi_fw_type = img.get('wififw_type')
+			    ret = self.__gen_flash_script_wififw(entries, partition, filename, wifi_fw_type, flinfo, script)
+			    if ret == 0:
+				return 0
+			    wifi_fw_type = ""
+			continue
+		    except KeyError, e:
+			continue
+
+		if img != None and 'soc_version' in img.attrib:
 		    imgs = section.findall('img_name')
 		    try:
 			for img in imgs:
@@ -1187,6 +1322,21 @@ class Pack(object):
 				filename = img.text;
 
 	    else:
+		if wifi_fw_type:
+		   try:
+			for fw_type in range(1, int(wifi_fw_type)+1):
+			    if image_type == "all" or section.attrib['image_type'] == image_type:
+				filename = section.attrib['filename_img' + str(fw_type)]
+				partition = section.attrib['label']
+				wifi_fw_type = "img" + str(fw_type)
+			        ret = self.__gen_flash_script_wififw(entries, partition, filename, wifi_fw_type, flinfo, script)
+				if ret == 0:
+				    return 0
+				wifi_fw_type = ""
+			continue
+		   except KeyError, e:
+			continue
+
 		if diff_soc_ver_files:
                    try:
                         for version in range(1, int(diff_soc_ver_files)+1):
@@ -1315,7 +1465,7 @@ class Pack(object):
 		    images.append(image_info)
 
 
-    def __gen_script_append_images(self, filename, soc_version, images, flinfo, root, section_conf, partition):
+    def __gen_script_append_images(self, filename, soc_version, wifi_fw_type, images, flinfo, root, section_conf, partition):
 
         global QCN9000
 
@@ -1345,6 +1495,8 @@ class Pack(object):
 	    section_conf = "ubi"
 	elif section_conf == "wififw" and self.flash_type in ["nand", "nand-4k", "nand-audio", "nand-audio-4k", "norplusnand", "norplusnand-4k"]:
 	    section_conf = "wififw_ubi"
+	elif section_conf == "wififw" and wifi_fw_type:
+	    section_conf = section_conf + "_" + wifi_fw_type
 
 	if soc_version:
 	    section_conf = section_conf + "_v" + str(soc_version)
@@ -1369,6 +1521,7 @@ class Pack(object):
 
 	soc_version = 0
 	diff_soc_ver_files = 0
+	wifi_fw_type = ""
 	diff_files = ""
 	file_exists = 1
 
@@ -1416,6 +1569,7 @@ class Pack(object):
             srcDir_part = SRC_DIR + "/" + ARCH_NAME + "/flash_partition/" + flinfo.type + "-partition.xml"
         else:
             srcDir_part = SRC_DIR + "/" + ARCH_NAME + "/flash_partition/" + self.flash_type.lower() + "-partition.xml"
+
         root_part = ET.parse(srcDir_part)
         if self.flash_type != "emmc" and flinfo.type != "emmc":
             parts = root_part.findall(".//partitions/partition")
@@ -1490,16 +1644,20 @@ class Pack(object):
 			    partition = section.attrib['label']
 			except KeyError, e:
 			    try:
-			       if image_type == "all" or section.attrib['image_type'] == image_type:
-				   filename = section.attrib['filename']
-                                   if lk == "true" and "u-boot" in filename:
-                                       filename = filename.replace("u-boot", "lkboot")
-				   partition = section.attrib['label']
-			       if filename == "":
-				   continue
+				wifi_fw_type = section.attrib['wififw_type']
+				partition = section.attrib['label']
 			    except KeyError, e:
-			       print "Skipping partition '%s'" % section.attrib['label']
-			       pass
+				try:
+				    if image_type == "all" or section.attrib['image_type'] == image_type:
+					filename = section.attrib['filename']
+				    if lk == "true" and "u-boot" in filename:
+					filename = filename.replace("u-boot", "lkboot")
+				    partition = section.attrib['label']
+				    if filename == "":
+					continue
+				except KeyError, e:
+				    print "Skipping partition '%s'" % section.attrib['label']
+				    pass
 
 		    if diff_files == "true":
 			try:
@@ -1549,6 +1707,19 @@ class Pack(object):
             if flinfo.type != "emmc":
 
 		img = section.find('img_name')
+
+		if img != None and 'wififw_type' in img.attrib:
+		    imgs = section.findall('img_name')
+		    try:
+			for img in imgs:
+			    wifi_fw_type = img.get('wififw_type')
+			    filename = img.text
+			    self.__gen_script_append_images(filename, soc_version, wifi_fw_type, images, flinfo, root, section_conf, partition)
+		            wififw_type = ""
+			continue
+		    except KeyError, e:
+			continue
+
 		if img != None and 'soc_version' in img.attrib:
 
 		    imgs = section.findall('img_name')
@@ -1560,13 +1731,13 @@ class Pack(object):
                                     filename_qcn9000 = filename.replace("wifi_fw_ubi", "wifi_fw_ipq8074_qcn9000_ubi")
 				    if os.path.exists(os.path.join(self.images_dname, filename_qcn9000)):
                                         section_conf_qcn9000 = section_conf + "_ubi_qcn9000"
-                                        self.__gen_script_append_images(filename_qcn9000, soc_version, images, flinfo, root, section_conf_qcn9000, partition)
+                                        self.__gen_script_append_images(filename_qcn9000, soc_version, wifi_fw_type, images, flinfo, root, section_conf_qcn9000, partition)
 				if 'optional' in img.attrib:
 				    if not os.path.exists(os.path.join(self.images_dname, filename)):
 					file_exists = 0
 
 				if file_exists == 1:
-				    self.__gen_script_append_images(filename, soc_version, images, flinfo, root, section_conf, partition)
+				    self.__gen_script_append_images(filename, soc_version, wifi_fw_type, images, flinfo, root, section_conf, partition)
 				file_exists = 1
 			soc_version = 0 # Clear soc_version for next iteration
 			continue
@@ -1588,9 +1759,24 @@ class Pack(object):
                     img = section.find('img_name')
                     filename_qcn9000 = img.text[:-4] + "-qcn9000.bin"
                     section_conf_qcn9000 = section_conf + "_qcn9000"
-                    self.__gen_script_append_images(filename_qcn9000, soc_version, images, flinfo, root, section_conf_qcn9000, partition)
+                    self.__gen_script_append_images(filename_qcn9000, soc_version, wifi_fw_type, images, flinfo, root, section_conf_qcn9000, partition)
 
             else:
+
+		if wifi_fw_type:
+		    try:
+			for fw_type in range(1, int(wifi_fw_type)+1):
+			    if image_type == "all" or section.attrib['image_type'] == image_type:
+				filename = section.attrib['filename_img' + str(fw_type)]
+				partition = section.attrib['label']
+				wifi_fw_type = "img" + str(fw_type)
+				self.__gen_script_append_images(filename, soc_version, wifi_fw_type, images, flinfo, root, section_conf, partition)
+				wifi_fw_type = ""
+			continue
+		    except KeyError, e:
+			print "Skipping partition '%s'" % section.attrib['label']
+			pass
+
 		if diff_soc_ver_files:
 		    try:
 			for version in range(1, int(diff_soc_ver_files)+1):
@@ -1604,7 +1790,7 @@ class Pack(object):
 					file_exists = 0
 
 			   if file_exists == 1:
-			        self.__gen_script_append_images(filename, version, images, flinfo, root, section_conf, partition)
+			        self.__gen_script_append_images(filename, version, wifi_fw_type, images, flinfo, root, section_conf, partition)
 			   file_exists = 1
 
 			diff_soc_ver_files = 0 # Clear diff_soc_ver_files for next iteration
@@ -1620,7 +1806,7 @@ class Pack(object):
 			filename = section.get('filename_atf')
 
             if filename != "":
-                self.__gen_script_append_images(filename, soc_version, images, flinfo, root, section_conf, partition)
+                self.__gen_script_append_images(filename, soc_version, wifi_fw_type, images, flinfo, root, section_conf, partition)
         return 1
 
     def __mkimage(self, images):
