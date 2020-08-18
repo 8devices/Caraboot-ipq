@@ -1208,7 +1208,7 @@ class Pack(object):
                         print "Skipping partition '%s'" % section.attrib['label']
                         pass
 
-		if section != None and section.get('filename_mem' + memory_size) != None:
+		if section != None and filename != "" and section.get('filename_mem' + memory_size) != None:
 			filename = section.get('filename_mem' + memory_size)
 
 		if section != None and atf == "true" and section.get('filename_atf') != None:
@@ -1613,7 +1613,7 @@ class Pack(object):
 			print "Skipping partition '%s'" % section.attrib['label']
 			pass
 
-		if section != None and section.get('filename_mem' + memory_size) != None:
+		if section != None and filename != "" and section.get('filename_mem' + memory_size) != None:
 			filename = section.get('filename_mem' + memory_size)
 
 		if section != None and atf == "true" and section.get('filename_atf') != None:
