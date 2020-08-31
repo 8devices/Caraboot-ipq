@@ -50,11 +50,6 @@ struct sdhci_host mmc_host;
 extern int ipq_spi_init(u16);
 #endif
 
-#ifdef INTERNAL_96MHZ
-static void writeRfa_reg(u32 reg, u32 reg_val);
-static void configureRfa_96mhz(void);
-#endif
-
 extern void ppe_uniphy_set_forceMode(void);
 extern void ppe_uniphy_refclk_set(void);
 
@@ -199,10 +194,6 @@ void qca_serial_init(struct ipq_serial_platdata *plat)
 	ret = uart1_clock_config(plat);
 	if (ret)
 		printf("UART clock config failed %d \n", ret);
-#ifdef INTERNAL_96MHZ
-	/* configure RFA 96 MHZ */
-	configureRfa_96mhz();
-#endif
 }
 
 /*
@@ -860,51 +851,6 @@ static void gmac_reset(void)
 		GCC_GMAC1_BCR);
 
 }
-
-#ifdef INTERNAL_96MHZ
-static void writeRfa_reg(u32 reg, u32 reg_val)
-{
-	u32 _reg = ((reg - 0xc4c0000)/4);
-	writel(0x4, 0xcb700e4);
-	mdelay(1);
-	writel(_reg, 0xcb700f8);
-	mdelay(1);
-	writel(reg_val, 0xcb700fc);
-	mdelay(1);
-	writel(0x44, 0xcb700e4);
-	mdelay(1);
-}
-
-static void configureRfa_96mhz(void)
-{
-	/* GCC_WCSSAON_RESET*/
-	writel(0x0, 0x1859010);
-	/* wsi2_init */
-	writel(0x2000, 0xcb70014);
-	mdelay(1);
-	writel(0x1, 0xcb700e8);
-	mdelay(1);
-	writel(0x4, 0xcb700e4);
-	mdelay(1);
-	writel(0xC, 0xcb700e4);
-	mdelay(1);
-	writel(0x4, 0xcb700e4);
-	mdelay(1);
-	writel(0x3A08, 0xcb700ec);
-	mdelay(1);
-	writeRfa_reg(0xc4d4864, 0x03c01d00);
-	mdelay(1);
-	writeRfa_reg(0xc4d4888, 0x0180e060);
-	mdelay(1);
-	writeRfa_reg(0xc4d4888, 0x0180ec60);
-	mdelay(1);
-	writeRfa_reg(0xc4d4888, 0x0180ece0);
-	mdelay(1);
-	/* release wsi */
-	writel(0x0, 0xcb700e8);
-	writel(0x1, 0x1859010);
-}
-#endif
 
 static void cmn_clock_init (void)
 {
