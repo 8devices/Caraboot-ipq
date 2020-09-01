@@ -1529,31 +1529,6 @@ class Pack(object):
         if ret == 0:
             return 0 #Stop packing this single-image
 
-	# ART partition back-up procedure
-        if ARCH_NAME == "ipq5018" and (self.flash_type == "norplusnand" or self.flash_type == "norplusemmc"):
-                script.append('if test "x$verbose" = "x"; then', fatal=False)
-                script.append('setenv stdout nulldev', fatal=False)
-                script.append('else', fatal=False)
-                script.append('setenv stdout serial', fatal=False)
-                script.append('fi', fatal=False)
-                script.append('sf read 0x50000000 0x290000 0x4', fatal=False)
-                script.append('mw.b 0x51000000 0xA505A505 0x4', fatal=False)
-                script.append('cmp.b 0x50000000 0x51000000 0x4 || magic=1', fatal=False)
-                script.append('if test "$magic" = "1"; then', fatal=False)
-                script.append('sf read 0x52000000 0x2f0000 0x70000', fatal=False)
-                script.append('sf erase 0x330000 0x70000', fatal=False)
-                script.append('sf write 0x52000000 0x330000 0x70000', fatal=False)
-                script.append('sf erase 0x290000 0x10000', fatal=False)
-                script.append('sf write 0x51000000 0x290000  0x4', fatal=False)
-                script.append('magic=0', fatal=False)
-                script.append('setenv stdout serial', fatal=False)
-                script.append('echo "Recovering ART partition:          [ done ]"', fatal=False)
-                script.append('else', fatal=False)
-                script.append('setenv stdout serial', fatal=False)
-                script.append('echo "Recovering ART partition:          [ skipped ]"', fatal=False)
-                script.append('fi', fatal=False)
-        # end of ART partition back-up procedure
-
         if QCN9000:
             script.end_if() #end if started for hk+pine
 
