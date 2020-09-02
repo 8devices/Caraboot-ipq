@@ -849,7 +849,10 @@ class Pack(object):
             if tiny_image == None:
                 continue
 
-            filename = "bootldr1_" + board + "_" + memory + ".mbn"
+	    if memory_size != "default":
+                filename = "bootldr1_" + board + "_" + memory + "_LM" + memory_size + ".mbn"
+	    else:
+                filename = "bootldr1_" + board + "_" + memory + ".mbn"
 
             img_size = self.__get_img_size(filename)
             part_info = self.__get_part_info(partition)
@@ -1435,7 +1438,7 @@ class Pack(object):
                     memory = "128M16"
 
                 if memory_size != "default":
-                    filename = "bootldr1_" + board + "_" + memory + "_LM" + memory_size + ".bin"
+                    filename = "bootldr1_" + board + "_" + memory + "_LM" + memory_size + ".mbn"
                 else:
                     filename = "bootldr1_" + board + "_" + memory + ".mbn"
                 file_info = "bootldr1_" + board + "_" + memory
