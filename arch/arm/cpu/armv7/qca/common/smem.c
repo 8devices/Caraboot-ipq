@@ -586,6 +586,52 @@ unsigned int get_partition_table_offset(void)
 }
 
 /*
+ * smem_getpart_from_offset - retreive partition start and size for given offset
+ * belongs to.
+ * @part_name: offset for which part start and size needed
+ * @start: location where the start offset is to be stored
+ * @size: location where the size is to be stored
+ *
+ * Returns 0 at success or -ENOENT otherwise.
+ */
+int smem_getpart_from_offset(uint32_t offset, uint32_t *start, uint32_t *size)
+{
+	unsigned i;
+	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
+	struct smem_ptn *p;
+	uint32_t bsize;
+
+	for (i = 0; i < smem_ptable.len; i++) {
+		p = &smem_ptable.parts[i];
+		*start = p->start;
+		bsize = get_part_block_size(p, sfi);
+
+		if (p->size == (~0u)) {
+		/*
+		 * Partition size is 'till end of device', calculate
+		 * appropriately
+		 */
+#ifdef CONFIG_CMD_NAND
+			*size = (nand_info[get_device_id_by_part(p)].size /
+				 bsize) - p->start;
+#else
+			*size = 0;
+			bsize = bsize;
+#endif
+		} else {
+			*size = p->size;
+		}
+		*start = *start * bsize;
+		*size = *size * bsize;
+		if (*start <= offset && *start + *size > offset) {
+			return 0;
+		}
+	}
+
+	return -ENOENT;
+
+}
+/*
  * smem_getpart - retreive partition start and size
  * @part_name: partition name
  * @start: location where the start offset is to be stored
