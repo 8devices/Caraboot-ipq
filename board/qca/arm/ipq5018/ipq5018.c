@@ -1738,3 +1738,8 @@ int get_soc_hw_version(void)
 {
 	return readl(TCSR_SOC_HW_VERSION_REG);
 }
+
+void sdi_disable(void)
+{
+	qca_scm_sdi();
+}
