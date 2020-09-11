@@ -34,7 +34,6 @@
 #endif
 
 #define DLOAD_MAGIC_COOKIE	0x10
-#define DLOAD_DISABLED		0x40
 
 #define TCSR_SOC_HW_VERSION_REG 0x194D000
 
@@ -357,16 +356,6 @@ int board_mmc_init(bd_t *bis)
 __weak int ipq_get_tz_version(char *version_name, int buf_size)
 {
 	return 1;
-}
-
-int apps_iscrashed_crashdump_disabled(void)
-{
-	u32 *dmagic = (u32 *)CONFIG_IPQ5018_DMAGIC_ADDR;
-
-	if (*dmagic == DLOAD_DISABLED)
-		return 1;
-
-	return 0;
 }
 
 int apps_iscrashed(void)
