@@ -450,8 +450,12 @@ int qca_scm_fuseipq(u32 svc_id, u32 cmd_id, void *buf, size_t len)
 	if (is_scm_armv8())
 	{
 		struct qca_scm_desc desc = {0};
-
+#ifdef CONFIG_ARCH_IPQ5018
+		desc.arginfo = QCA_SCM_ARGS(2, SCM_READ_OP);
+		desc.args[1] = 0x800;
+#else
 		desc.arginfo = QCA_SCM_ARGS(1, SCM_READ_OP);
+#endif
 		desc.args[0] = *((unsigned int *)buf);
 
 		ret = scm_call_64(svc_id, cmd_id, &desc);
