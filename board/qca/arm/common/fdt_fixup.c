@@ -16,6 +16,7 @@
 #include <asm/arch-qca-common/scm.h>
 #include <jffs2/load_kernel.h>
 #include <fdtdec.h>
+#include <stdlib.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -647,60 +648,148 @@ static int ipq40xx_patch_eth_params(void *blob, unsigned long gmac_no)
 }
 
 #ifdef CONFIG_IPQ_FDT_FIXUP
+/* setenv fdteditnum <num>   - here <num> represents number of envs to parse
+ * Note: without setting 'fdteditnum' fdtedit envs will not parsed
+ *
+ * fdtedit<num> <node>%<property>%<node_value>   - dts patching env format
+ * here '%' is separator; <num> can be between 1 to 99;
+ *
+ * 1. To change add/change a particular property of a node:
+ *       setenv fdtedit0 <node_path>%<property>%<value>
+ *
+ *    This can be used to add properties which doesn't have any value associated
+ *       eg: qca,secure; property of q6v5_wcss@CD00000 node can be added as:
+ *       setenv fdtedit0 /soc/q6v5_wcss@CD00000/%qca,secure%1
+ *    other eg:
+ *       fdtedit0=/soc/q6v5_wcss@CD00000%qca,sec-reset-cmd%0x19
+ *       fdtedit1=/soc/usb3@8A00000/dwc3@8A00000%dr_mode%?peripheral
+ *       fdtedit2=/soc/qcom,gadget_diag@0/%status%?ok
+ *
+ * 2. To delete a property of a node:
+ *       setenv fdtedit0 <node_path>%delete%<property>
+ *    example:
+ *       fdtedit0=/soc/q6v5_wcss@CD00000%delete%?qca,secure
+ *
+ * The last param in both add or delete case, if it is a string, it should
+ * start with '?' else if it is a number, it can be put directly.
+ * check above examples for reference.
+ *
+ * 3. To add 32bit or 64bit array values:
+ *       setenv fdtedit0 <node_path>%<bit_value>?<num_values>?<property_name>%<value1>?<value2>?<value3>?..
+ *       <bit_value> can be 32 / 64;  <num_values> is number of array elements
+ *       to be patched; <property_name> is the actual name of the property to
+ *       be patched; each array value has to be separated by '?'
+ *       for reg = <addr> <size>; <num_values> is 2 in this case
+ *    example:
+ *       setenv fdtedit0 /soc/dbm@0x8AF8000/%32?2?reg%0x8AF8000?0x500
+ *       setenv fdtedit1 /soc/pci@20000000/%32?2?bus-range%0xee?0xee
+ *       setenv fdtedit2 /soc/usb3@8A00000/%32?4?reg%0x8AF8600?0x200?0x8A00000?0xcb00
+ *       setenv fdtedit3 /reserved-memory/tzapp@49B00000/%64?2?reg%0x49A00000?0x500000
+ */
 void parse_fdt_fixup(char* buf, void *blob)
 {
-	int nodeoff, value, ret;
-	char *node, *property, *node_value;
-	bool str = true;
+	int nodeoff, value, ret, num_values, i;
+	char *node, *property, *node_value, *sliced_string;
+	bool if_string = true, bit32 = true;
+	u32 *values32;
+	u64 *values64;
 
+	/* env is split into <node>%<property>%<node_value>. '%' is separator */
 	node = strsep(&buf, "%");
 	property = strsep(&buf, "%");
 	node_value = strsep(&buf, "%");
 
-	debug("node: %s, property: %s, node_value: %s\n",
-			node, property, node_value);
+	debug("node: %s  property: %s  node_value: %s\n", node, property, node_value);
 
+	/* if '?' is present then node_value is string;
+	 * else, node_value is 32bit value
+	 */
 	if (node_value && node_value[0] != '?') {
-		str = false;
+		if_string = false;
 		value = simple_strtoul(node_value, NULL, 10);
 	} else {
+		/* skip '?' */
 		node_value++;
 	}
 
 	nodeoff = fdt_path_offset(blob, node);
 	if (nodeoff < 0) {
-		printf("%s: unable to find node '%s'\n",
-				__func__, node);
+		printf("%s: unable to find node '%s'\n", __func__, node);
 		return;
 	}
 
 	if (!strncmp(property, "delete", strlen("delete"))) {
+		/* handle property deletes */
 		ret = fdt_delprop(blob, nodeoff, node_value);
 		if (ret) {
-			printf("%s: unable to delete %s\n",
-					__func__, node_value);
+			printf("%s: unable to delete %s\n", __func__, node_value);
 			return;
 		}
-	} else if (!str) {
-		ret = fdt_setprop_u32(blob, nodeoff, property,
-				value);
+	} else if (!strncmp(property, "32", strlen("32")) || !strncmp(property, "64", strlen("64"))) {
+		/* if property name starts with '32' or '64', then it is used
+		 * for patching array of 32bit / 64bit values correspondingly.
+		 * 32bit patching is usually used to patch reg = <addr> <size>;
+		 * but could also be used to patch multiple addresses & sizes
+		 * <property> = <addr1> <size1> <addr2> <size2> ..
+		 * 64bit patching is usually used to patch reserved memory nodes
+		 */
+		sliced_string = strsep(&property, "?");
+		if (simple_strtoul(sliced_string, NULL, 10) == 64)
+			bit32 = false;
+
+		/* get the number of array values */
+		sliced_string = strsep(&property, "?");
+		num_values = simple_strtoul(sliced_string, NULL, 10);
+
+		if (bit32 == true) {
+			values32 = malloc(num_values * sizeof(u32));
+
+			for (i = 0; i < num_values; i++)  {
+				sliced_string = strsep(&node_value, "?");
+				values32[i] =  cpu_to_fdt32(simple_strtoul(sliced_string, NULL, 10));
+			}
+
+			ret = fdt_setprop(blob, nodeoff, property, values32, num_values * sizeof(u32));
+			if (ret) {
+				printf("%s: failed to set prop %s\n", __func__, property);
+				return;
+			}
+		} else {
+			values64 = malloc(num_values * sizeof(u64));
+
+			for (i = 0; i < num_values; i++)  {
+				sliced_string = strsep(&node_value, "?");
+				values64[i] =  cpu_to_fdt64(simple_strtoul(sliced_string, NULL, 10));
+			}
+
+			ret = fdt_setprop(blob, nodeoff, property, values64, num_values * sizeof(u64));
+			if (ret) {
+				printf("%s: failed to set prop %s\n", __func__, property);
+				return;
+			}
+		}
+	} else if (!if_string) {
+		/* handle 32bit integer value patching */
+		ret = fdt_setprop_u32(blob, nodeoff, property, value);
 		if (ret) {
-			printf("%s: failed to set prop %s\n",
-					__func__, property);
+			printf("%s: failed to set prop %s\n", __func__, property);
 			return;
 		}
 	} else {
+		/* handle string value patching
+		 * usually used to patch status = "ok"; status = "disabled";
+		 */
 		ret = fdt_setprop(blob, nodeoff, property,
 				node_value,
 				(strlen(node_value) + 1));
 		if (ret) {
-			printf("%s: failed to set prop %s\n",
-					__func__, property);
+			printf("%s: failed to set prop %s\n", __func__, property);
 			return;
 		}
 	}
 }
 
+/* check parse_fdt_fixup for detailed explanation */
 void ipq_fdt_fixup(void *blob)
 {
 	int i, fdteditnum;
