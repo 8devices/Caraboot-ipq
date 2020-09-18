@@ -62,6 +62,7 @@ int get_eth_mac_address(uchar *enetaddr, uint no_of_macs)
 #if defined(CONFIG_ART_COMPRESSED) && (defined(CONFIG_GZIP) || defined(CONFIG_LZMA))
 	void *load_buf, *image_buf;
 	unsigned long img_size;
+	unsigned long desMaxSize;
 #endif
 #endif
 
@@ -100,16 +101,17 @@ int get_eth_mac_address(uchar *enetaddr, uint no_of_macs)
 		image_buf = map_sysmem(CONFIG_COMPRESSED_LOAD_ADDR, 0);
 		load_buf = map_sysmem(CONFIG_COMPRESSED_LOAD_ADDR + 0x100000, 0);
 		img_size = qca_smem_flash_info.flash_block_size * size_blocks;
+		desMaxSize = 0x100000;
 		ret = spi_flash_read(flash, art_offset, img_size, image_buf);
 		if (ret == 0) {
 			ret = -1;
 #ifdef CONFIG_GZIP
-			ret = gunzip(load_buf, img_size, image_buf, &img_size);
+			ret = gunzip(load_buf, desMaxSize, image_buf, &img_size);
 #endif
 #ifdef CONFIG_LZMA
 			if (ret != 0)
 				ret = lzmaBuffToBuffDecompress(load_buf,
-					(SizeT *)&img_size,
+					(SizeT *)&desMaxSize,
 					image_buf,
 					(SizeT)img_size);
 #endif
