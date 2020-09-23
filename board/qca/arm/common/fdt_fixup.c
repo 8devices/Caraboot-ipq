@@ -865,11 +865,6 @@ __weak void fdt_fixup_art_format(void *blob)
 	return;
 }
 
-__weak void fdt_fixup_memory_size(void *blob)
-{
-	return;
-}
-
 __weak void fdt_fixup_bt_debug(void *blob)
 {
 	return;
@@ -1025,10 +1020,6 @@ int ft_board_setup(void *blob, bd_t *bd)
 	|| dts if its 16M profile build.
 	*/
 	fdt_fixup_art_format(blob);
-	/*
-	|| This features fixup customized memory size
-	*/
-	fdt_fixup_memory_size(blob);
 
 #ifdef CONFIG_QCA_MMC
 	board_mmc_deinit();

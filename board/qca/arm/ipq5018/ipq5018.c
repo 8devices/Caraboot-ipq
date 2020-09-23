@@ -1653,18 +1653,6 @@ void fdt_fixup_art_format(void *blob)
 	fdt_add_subnode(blob, nodeoffset, "compressed_art");
 
 }
-
-void fdt_fixup_memory_size(void *blob)
-{
-	int nodeoffset;
-	u64 memory_start = CONFIG_SYS_SDRAM_BASE;
-	u64 memory_size = 0x10000000;
-	nodeoffset = fdt_path_offset(blob, "/memory");
-	if (nodeoffset >= 0)
-		fdt_del_node((void *)blob, nodeoffset);
-	fdt_fixup_memory_banks(blob, &memory_start, &memory_size, 1);
-
-}
 #endif
 
 void run_tzt(void *address)
