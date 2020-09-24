@@ -769,7 +769,7 @@ static int check_and_write_crashdump_nand_flash(
 	uint32_t part_start = nand_cnxt->part_start;
 	uint32_t part_end = nand_cnxt->part_start + nand_cnxt->part_size;
 	unsigned int remaining_len = req_size;
-	unsigned int data_offset = 0;
+	unsigned int write_length, data_offset = 0;
 	loff_t skipoff, skipoff_cmp, *offset;
 	int ret = 0;
 	static int first_erase = 1;
@@ -813,15 +813,20 @@ static int check_and_write_crashdump_nand_flash(
 
 		if( remaining_len > nand->erasesize) {
 
-			ret = nand_write(nand, *offset, &nand->erasesize,
+			skipoff = (*offset & (nand->erasesize - 1));
+
+			write_length = (skipoff != 0) ? (nand->erasesize - skipoff)
+							: (nand->erasesize);
+
+			ret = nand_write(nand, *offset, &write_length,
 				data + data_offset);
 
 			if (ret)
 				return ret;
 
-			remaining_len -= nand->erasesize;
-			*offset += nand->erasesize;
-			data_offset += nand->erasesize;
+			remaining_len -= write_length;
+			*offset += write_length;
+			data_offset += write_length;
 		}
 		else {
 
