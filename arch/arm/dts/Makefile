@@ -84,7 +84,8 @@ dtb-$(CONFIG_ARCH_IPQ6018) += ipq6018-cp01-c1.dtb \
 			ipq6018-cp02-c1.dtb \
 			ipq6018-cp03-c1.dtb \
 			ipq6018-db-cp01.dtb \
-			ipq6018-db-cp02.dtb
+			ipq6018-db-cp02.dtb \
+			ipq6018-8dev-mango.dtb
 
 dtb-$(CONFIG_ARCH_ROCKCHIP) += \
 	rk3288-firefly.dtb \
