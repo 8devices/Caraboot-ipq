@@ -23,6 +23,7 @@
 		usb0 = "/xhci@8a00000";
 		usb1 = "/xhci@7000000";
 		i2c1 = "/i2c@78ba000";
+		mmc = "/sdhci@7804000";
 	};
 	ess-switch {
 		switch_mac_mode = <PORT_WRAPPER_PSGMII>;
