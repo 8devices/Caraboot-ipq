@@ -1047,6 +1047,9 @@ int board_eth_init(bd_t *bis)
 			gmac_cfg[loop].phy_interface_mode = fdtdec_get_uint(gd->fdt_blob,
 					offset, "phy_interface_mode", 0);
 
+			gmac_cfg[loop].phy_external_link = fdtdec_get_uint(gd->fdt_blob,
+					offset, "phy_external_link", 0);
+
 			gmac_cfg[loop].phy_napa_gpio = fdtdec_get_uint(gd->fdt_blob,
 					offset, "napa_gpio", 0);
 			if (gmac_cfg[loop].phy_napa_gpio){

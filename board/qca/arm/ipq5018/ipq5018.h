@@ -490,6 +490,7 @@ typedef struct {
 	int phy_type;
 	u32 mac_pwr;
 	int ipq_swith;
+	int phy_external_link;
 	int switch_port_count;
 	int switch_port_phy_address[S17C_MAX_PORT];
 	const char phy_name[MDIO_NAME_LEN];

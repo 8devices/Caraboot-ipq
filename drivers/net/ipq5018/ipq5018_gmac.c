@@ -38,6 +38,7 @@ phy_info_t *phy_info[IPQ5018_PHY_MAX] = {0};
 
 extern int ipq_mdio_read(int mii_id, int regnum, ushort *data);
 extern int ipq_mdio_write(int mii_id, int regnum, u16 value);
+extern int ipq5018_mdio_write(int mii_id, int regnum, u16 value);
 extern int ipq5018_mdio_read(int mii_id, int regnum, ushort *data);
 extern int ipq_qca8033_phy_init(struct phy_ops **ops, u32 phy_id);
 extern int ipq_qca8081_phy_init(struct phy_ops **ops, u32 phy_id);
@@ -316,9 +317,14 @@ static int ipq5018_s17c_Link_Update(struct ipq_eth_dev *priv)
 			priv->gmac_board_cfg->switch_port_phy_address[i],
 			0x11,
 			NULL);
+
 		if (phy_data == 0x50)
 			continue;
-		status = 0;
+
+		/* Atleast one port should be link up*/
+		if (phy_data & LINK_UP)
+			status = 0;
+
 		printf("Port%d %s ", i + 1, LINK(phy_data));
 
 		switch(SPEED(phy_data)){
@@ -349,22 +355,19 @@ static int ipq5018_phy_link_update(struct eth_device *dev)
 	int speed_clock1 = 0, speed_clock2 = 0;
 	int mode = PORT_WRAPPER_SGMII0_RGMII4;
 
-	if (priv->ipq_swith == 0) {
-		phy_get_ops = priv->ops;
-		if ((phy_get_ops == NULL) ||
-			(phy_get_ops->phy_get_link_status == NULL) ||
-			(phy_get_ops->phy_get_speed == NULL) ||
-			(phy_get_ops->phy_get_duplex == NULL)) {
-			printf ("Link status/Get speed/Get duplex not mapped\n");
-			return -1;
-		}
-	}
+	phy_get_ops = priv->ops;
 
 	if (priv->ipq_swith) {
 		speed_clock1 = 1;
 		speed_clock2 = 0;
 		status = ipq5018_s17c_Link_Update(priv);
-	} else {
+	}
+
+	if (phy_get_ops != NULL &&
+		phy_get_ops->phy_get_link_status != NULL &&
+		phy_get_ops->phy_get_speed != NULL &&
+		phy_get_ops->phy_get_duplex != NULL){
+
 		status = phy_get_ops->phy_get_link_status(priv->mac_unit,
 				priv->phy_address);
 		phy_get_ops->phy_get_speed(priv->mac_unit,
@@ -373,51 +376,53 @@ static int ipq5018_phy_link_update(struct eth_device *dev)
 				priv->phy_address, &duplex);
 
 		switch (speed) {
-			case FAL_SPEED_10:
-				speed_clock1 = 9;
-				speed_clock2 = 9;
-				priv->speed = MII_PORT_SELECT;
-				printf ("eth%d  %s Speed :%d %s duplex\n",
-						priv->mac_unit,
-						lstatus[status], speed,
-						dp[duplex]);
-				break;
-			case FAL_SPEED_100:
-				priv->speed = MII_PORT_SELECT | FES_PORT_SPEED;
-				speed_clock1 = 9;
-				speed_clock2 = 0;
-				printf ("eth%d %s Speed :%d %s duplex\n",
-						priv->mac_unit,
-						lstatus[status], speed,
-						dp[duplex]);
-				break;
-			case FAL_SPEED_1000:
-				priv->speed = SGMII_PORT_SELECT;
-				speed_clock1 = 1;
-				speed_clock2 = 0;
-				printf ("eth%d %s Speed :%d %s duplex\n",
-						priv->mac_unit,
-						lstatus[status], speed,
-						dp[duplex]);
-				break;
-			case FAL_SPEED_2500:
-				priv->speed = SGMII_PORT_SELECT;
-				mode = PORT_WRAPPER_SGMII_PLUS;
-				speed_clock1 = 1;
-				speed_clock2 = 0;
-				printf ("eth%d %s Speed :%d %s duplex\n",
-						priv->mac_unit,
-						lstatus[status], speed,
-						dp[duplex]);
-				break;
-			default:
-				printf("Unknown speed\n");
-				break;
+		case FAL_SPEED_10:
+			speed_clock1 = 9;
+			speed_clock2 = 9;
+			priv->speed = MII_PORT_SELECT;
+			printf ("eth%d  %s Speed :%d %s duplex\n",
+					priv->mac_unit,
+					lstatus[status], speed,
+					dp[duplex]);
+			break;
+		case FAL_SPEED_100:
+			priv->speed = MII_PORT_SELECT | FES_PORT_SPEED;
+			speed_clock1 = 9;
+			speed_clock2 = 0;
+			printf ("eth%d %s Speed :%d %s duplex\n",
+					priv->mac_unit,
+					lstatus[status], speed,
+					dp[duplex]);
+			break;
+		case FAL_SPEED_1000:
+			priv->speed = SGMII_PORT_SELECT;
+			speed_clock1 = 1;
+			speed_clock2 = 0;
+			printf ("eth%d %s Speed :%d %s duplex\n",
+					priv->mac_unit,
+					lstatus[status], speed,
+					dp[duplex]);
+			break;
+		case FAL_SPEED_2500:
+			priv->speed = SGMII_PORT_SELECT;
+			mode = PORT_WRAPPER_SGMII_PLUS;
+			speed_clock1 = 1;
+			speed_clock2 = 0;
+			printf ("eth%d %s Speed :%d %s duplex\n",
+					priv->mac_unit,
+					lstatus[status], speed,
+					dp[duplex]);
+			break;
+		default:
+			printf("Unknown speed\n");
+			break;
 		}
 	}
 
 	if (status) {
 		/* No PHY link is alive */
+		if (priv->ipq_swith == 0 && phy_get_ops == NULL)
+			printf("Link status/Get speed/Get duplex not mapped\n");
 		return -1;
 	}
 
@@ -592,6 +597,118 @@ static void ipq_eth_halt(struct eth_device *dev)
 	ipq_mac_reset(dev);
 }
 
+static int QCA8337_switch_init(ipq_gmac_board_cfg_t *gmac_cfg)
+{
+	for (int port = 0;
+		port < gmac_cfg->switch_port_count;
+		++port) {
+		u32 phy_val;
+		/* phy powerdown */
+		ipq_mdio_write(
+			gmac_cfg->switch_port_phy_address[port],
+			0x0,
+			0x0800
+			);
+		phy_val = ipq_mdio_read(
+				gmac_cfg->switch_port_phy_address[port],
+				0x3d,
+				NULL
+				);
+		phy_val &= ~0x0040;
+		ipq_mdio_write(
+			gmac_cfg->switch_port_phy_address[port],
+			0x3d,
+			phy_val
+			);
+		/*
+		* PHY will stop the tx clock for a while when link is down
+		* en_anychange  debug port 0xb bit13 = 0  //speed up link down tx_clk
+		* sel_rst_80us  debug port 0xb bit10 = 0  //speed up speed mode change to 2'b10 tx_clk
+		*/
+		phy_val = ipq_mdio_read(
+				gmac_cfg->switch_port_phy_address[port],
+				0xb,
+				NULL
+				);
+		phy_val &= ~0x2400;
+		ipq_mdio_write(
+			gmac_cfg->switch_port_phy_address[port],
+			0xb,
+			phy_val
+			);
+		mdelay(100);
+	}
+	if (ipq_athrs17_init(gmac_cfg) != 0){
+		printf("QCA_8337 switch init failed \n");
+		return 0;
+	}
+	for (int port = 0;
+		port < gmac_cfg->switch_port_count;
+		++port) {
+		ipq_mdio_write(
+			gmac_cfg->switch_port_phy_address[port],
+			MII_ADVERTISE,
+			ADVERTISE_ALL | ADVERTISE_PAUSE_CAP | ADVERTISE_PAUSE_ASYM
+			);
+		/* phy reg 0x9, b10,1 = Prefer multi-port device (master) */
+		ipq_mdio_write(
+			gmac_cfg->switch_port_phy_address[port],
+			MII_CTRL1000,
+			(0x0400|ADVERTISE_1000FULL)
+			);
+		ipq_mdio_write(
+			gmac_cfg->switch_port_phy_address[port],
+			MII_BMCR,
+			BMCR_RESET | BMCR_ANENABLE
+			);
+		mdelay(100);
+	}
+	return 1;
+}
+
+static void gephy_mdac_edac_config(ipq_gmac_board_cfg_t *gmac_cfg)
+{
+	uint16_t phy_data;
+	uint32_t phy_dac = PHY_DAC(0x10);
+	uint32_t C45_id = QCA808X_REG_C45_ADDRESS(MPGE_PHY_MMD1_NUM,
+				MPGE_PHY_MMD1_DAC);
+	/*set mdac value*/
+	phy_data = ipq5018_mdio_read(
+			gmac_cfg->phy_addr,
+			C45_id,
+			NULL
+			);
+	phy_data &= ~(MPGE_PHY_MMD1_DAC_MASK);
+	ipq5018_mdio_write(
+		gmac_cfg->phy_addr,
+		C45_id,
+		(phy_data | phy_dac)
+		);
+	mdelay(1);
+	/*set edac value*/
+	phy_data = ipq5018_mdio_read(
+			gmac_cfg->phy_addr,
+			MPGE_PHY_DEBUG_EDAC,
+			NULL
+			);
+	phy_data &= ~(MPGE_PHY_MMD1_DAC_MASK);
+	ipq5018_mdio_write(
+		gmac_cfg->phy_addr,
+		MPGE_PHY_DEBUG_EDAC,
+		(phy_data | phy_dac)
+		);
+	mdelay(1);
+}
+
+static void mdio_init(void)
+{
+	if(ipq5018_sw_mdio_init("IPQ MDIO0"))
+		printf("MDIO Failed to init for GMAC0\n");
+
+	if(ipq_sw_mdio_init("IPQ MDIO1"))
+		printf("MDIO Failed to init for GMAC1\n");
+}
+
 int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 {
 	struct eth_device *dev[CONFIG_IPQ_NO_MACS];
@@ -600,6 +717,9 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 	uint32_t phy_chip_id, phy_chip_id1, phy_chip_id2;
 	int ret;
 	memset(enet_addr, 0, sizeof(enet_addr));
+
+	/* Mdio init */
+	mdio_init();
 
 	/* Getting the MAC address from ART partition */
 	ret = get_eth_mac_address(enet_addr, CONFIG_IPQ_NO_MACS);
@@ -656,80 +776,35 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 		ipq_gmac_macs[i]->gmac_board_cfg = gmac_cfg;
 		ipq_gmac_macs[i]->interface = gmac_cfg->phy_interface_mode;
 		ipq_gmac_macs[i]->phy_type = gmac_cfg->phy_type;
-		ipq_gmac_macs[i]->ipq_swith = gmac_cfg->ipq_swith;
+		ipq_gmac_macs[i]->phy_external_link = gmac_cfg->phy_external_link;
 
 		snprintf((char *)ipq_gmac_macs[i]->phy_name,
 				sizeof(ipq_gmac_macs[i]->phy_name), "IPQ MDIO%d", i);
 
-		phy_chip_id = -1;
-
 		if (gmac_cfg->unit){
-			ret = ipq_sw_mdio_init(ipq_gmac_macs[i]->phy_name);
-				if (ret)
-					goto init_failed;
-			if (ipq_gmac_macs[i]->ipq_swith){
-				/* S17C switch Id */
-				phy_chip_id = S17C;
-				for (int port = 0;
-					port < gmac_cfg->switch_port_count;
-					++port) {
-					u32 phy_val;
-					/* phy powerdown */
-					ipq_mdio_write(port, 0x0, 0x0800);
-					phy_val = ipq_mdio_read(port, 0x3d, NULL);
-					phy_val &= ~0x0040;
-					ipq_mdio_write(port, 0x3d, phy_val);
-
-				/*
-				 * PHY will stop the tx clock for a while when link is down
-				 * en_anychange  debug port 0xb bit13 = 0  //speed up link down tx_clk
-				 * sel_rst_80us  debug port 0xb bit10 = 0  //speed up speed mode change to 2'b10 tx_clk
-				 */
-					phy_val = ipq_mdio_read(port, 0xb, NULL);
-					phy_val &= ~0x2400;
-					ipq_mdio_write(port, 0xb, phy_val);
-					mdelay(100);
-				}
-				if (ipq_athrs17_init(gmac_cfg) != 0){
-					printf("S17C switch init failed port \n");
-				}
-				for (int port = 0;
-					port < gmac_cfg->switch_port_count;
-					++port) {
-					ipq_mdio_write(port, MII_ADVERTISE, ADVERTISE_ALL |
-							ADVERTISE_PAUSE_CAP | ADVERTISE_PAUSE_ASYM);
-					/*
-					 * phy reg 0x9, b10,1 = Prefer multi-port device (master)
-					 */
-					ipq_mdio_write(port, MII_CTRL1000, (0x0400|ADVERTISE_1000FULL));
-					ipq_mdio_write(port, MII_BMCR, BMCR_RESET | BMCR_ANENABLE);
-					mdelay(100);
-				}
-			} else {
-				phy_chip_id1 = ipq_mdio_read(
-						ipq_gmac_macs[i]->phy_address,
-						QCA_PHY_ID1, NULL);
-				phy_chip_id2 = ipq_mdio_read(
-						ipq_gmac_macs[i]->phy_address,
-						QCA_PHY_ID2, NULL);
-				phy_chip_id = (phy_chip_id1 << 16) | phy_chip_id2;
-			}
+			phy_chip_id1 = ipq_mdio_read(
+					ipq_gmac_macs[i]->phy_address,
+					QCA_PHY_ID1,
+					NULL);
+			phy_chip_id2 = ipq_mdio_read(
+					ipq_gmac_macs[i]->phy_address,
+					QCA_PHY_ID2,
+					NULL);
+			phy_chip_id = (phy_chip_id1 << 16) | phy_chip_id2;
 		} else {
-			ret = ipq5018_sw_mdio_init(ipq_gmac_macs[i]->phy_name);
-				if (ret)
-					goto init_failed;
-			phy_chip_id1 = ipq5018_mdio_read(ipq_gmac_macs[i]->phy_address,
-						QCA_PHY_ID1, NULL);
-			phy_chip_id2 = ipq5018_mdio_read(ipq_gmac_macs[i]->phy_address,
-						QCA_PHY_ID2, NULL);
+			phy_chip_id1 = ipq5018_mdio_read(
+					ipq_gmac_macs[i]->phy_address,
+					QCA_PHY_ID1,
+					NULL);
+			phy_chip_id2 = ipq5018_mdio_read(
+					ipq_gmac_macs[i]->phy_address,
+					QCA_PHY_ID2,
+					NULL);
 			phy_chip_id = (phy_chip_id1 << 16) | phy_chip_id2;
 		}
-
 		switch(phy_chip_id) {
 #ifdef CONFIG_QCA8081_PHY
-			/*
-			 * NAPA PHY For GMAC1
-			 */
+			/* NAPA PHY For GMAC1 */
 			case QCA8081_PHY:
 			case QCA8081_1_1_PHY:
 				ipq_gmac_macs[i]->phy_type = QCA8081_1_1_PHY;
@@ -738,19 +813,17 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 					ipq_gmac_macs[i]->phy_address);
 				break;
 #endif
-			/*
-			 * Internel GEPHY only for GMAC0
-			 */
+			/* Internel GEPHY only for GMAC0 */
 			case GEPHY:
 				ipq_gmac_macs[i]->phy_type = GEPHY;
 				ipq_gephy_phy_init(
 					&ipq_gmac_macs[i]->ops,
 					ipq_gmac_macs[i]->phy_address);
+				if(ipq_gmac_macs[i]->phy_external_link)
+					gephy_mdac_edac_config(gmac_cfg);
 				break;
 #ifdef CONFIG_QCA8033_PHY
-			/*
-			 * 1G PHY
-			 */
+			/* 1G PHY */
 			case QCA8033_PHY:
 				ipq_gmac_macs[i]->phy_type = QCA8033_PHY;
 				ipq_qca8033_phy_init(
@@ -758,21 +831,29 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 					ipq_gmac_macs[i]->phy_address);
 				break;
 #endif
-			case S17C:
+			case QCA_8337:
+				if(gmac_cfg->ipq_swith){
+					ipq_gmac_macs[i]->ipq_swith =
+						QCA8337_switch_init(gmac_cfg);
+				}
 				break;
 			default:
-				printf("GMAC%d : Invalid PHY ID \n", i);
+				printf("GMAC%d:Invalid PHY ID \n", i);
 				break;
 		}
-		/*
-		 * Tx/Rx Descriptor initialization
-		 */
+		/* Initialize 8337 switch */
+		if (gmac_cfg->ipq_swith &&
+			ipq_gmac_macs[i]->phy_external_link &&
+			!ipq_gmac_macs[i]->ipq_swith){
+			ipq_gmac_macs[i]->ipq_swith =
+				QCA8337_switch_init(gmac_cfg);
+		}
+		/* Tx/Rx Descriptor initialization */
 		if (ipq_gmac_tx_rx_desc_ring(dev[i]->priv) == -1)
 			goto init_failed;
 
 		eth_register(dev[i]);
 	}
-
 	return 0;
 
 init_failed:

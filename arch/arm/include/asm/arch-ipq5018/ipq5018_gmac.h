@@ -17,14 +17,28 @@
 #include <net.h>
 #include <configs/ipq5018.h>
 
-#define LINK(_data)	(_data & 0x400)? "Up" : "Down"
-#define DUPLEX(_data)	(_data & 0x2000)? "Full duplex" : "Half duplex"
-#define SPEED(_data)	((_data & 0xC000) >> 12)
-#define SPEED_1000M	(1 << 3)
-#define SPEED_100M	(1 << 2)
+#define QCA808X_MII_ADDR_C45			(1<<30)
+#define QCA808X_REG_C45_ADDRESS(dev_type, reg_num) \
+						(QCA808X_MII_ADDR_C45 | \
+						((dev_type & 0x1f) << 16) | \
+						(reg_num & 0xffff))
+#define MPGE_PHY_MMD1_DAC			0x8100
+#define MPGE_PHY_MMD1_NUM			0x1
+#define MPGE_PHY_MMD1_DAC_MASK			0xff00
+#define PHY_DAC(val)				(val<<8)
+#define MPGE_PHY_DEBUG_EDAC			0x4380
+
+#define LINK_UP					0x400
+#define LINK(_data)				(_data & LINK_UP)? "Up" : "Down"
+#define DUPLEX(_data)				(_data & 0x2000)?\
+						"Full duplex" : "Half duplex"
+#define SPEED(_data)				((_data & 0xC000) >> 12)
+#define SPEED_1000M				(1 << 3)
+#define SPEED_100M				(1 << 2)
 
 #define GEPHY					0x004DD0C0
-#define S17C					0x1302
+#define S17C_VERSION				0x1302
+#define QCA_8337				0x004DD036
 
 #define CONFIG_MACRESET_TIMEOUT			(3 * CONFIG_SYS_HZ)
 #define CONFIG_MDIO_TIMEOUT			(3 * CONFIG_SYS_HZ)
@@ -248,6 +262,7 @@ struct ipq_eth_dev {
 	uint			phy_type;
 	uint			mac_ps;
 	uint			ipq_swith;
+	uint			phy_external_link;
 	int			link_printed;
 	u32			padding;
 	ipq_gmac_desc_t		*desc_tx[NO_OF_TX_DESC];

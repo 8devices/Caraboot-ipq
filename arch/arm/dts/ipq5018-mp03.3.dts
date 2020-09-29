@@ -134,6 +134,11 @@
 			unit = <0>;
 			base = <0x39C00000>;
 			phy_address = <7>;
+			phy_external_link = <0>;
+			mac_pwr = <0xaa545>;
+			s17c_switch_enable = <1>;
+			switch_port_count = <4>;
+			switch_phy_address = <0 1 2 3>;
 		};
 		gmac2_cfg {
 			unit = <1>;
