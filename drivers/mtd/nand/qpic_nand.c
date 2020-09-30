@@ -3844,6 +3844,7 @@ nand_result_t qpic_nand_blk_erase(struct mtd_info *mtd, uint32_t page)
 	 * to do it again here.
 	 */
 	cfg.addr0 = page << 16;
+	cfg.addr1 = (page >> 16) & 0xffff;
 	cfg.cmd = 0xA;
 	cfg.cmd |= (QPIC_SPI_WP_SET | QPIC_SPI_HOLD_SET |
 			QPIC_SPI_TRANSFER_MODE_X1);
