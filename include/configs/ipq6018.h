@@ -277,7 +277,7 @@ extern loff_t board_env_size;
 #define CONFIG_BOOTARGS			"console=ttyMSM0,115200n8"
 #define QCA_ROOT_FS_PART_NAME		"rootfs"
 
-#define CONFIG_BOOTDELAY		2
+#define CONFIG_BOOTDELAY		1
 
 #define CONFIG_MTD_DEVICE
 #define CONFIG_CMD_MTDPARTS
@@ -369,5 +369,21 @@ extern loff_t board_env_size;
 #define IPQ_UBI_VOL_WRITE_SUPPORT
 #define CONFIG_IPQ_TZT
 #define CONFIG_IPQ_FDT_FIXUP
+
+#define CONFIG_EXTRA_ENV_SETTINGS								\
+	"bootcmd=run bootlinux\0"								\
+	"bootlinux=run boot1 boot2 boot3 || reset\0"						\
+	"do_recovery=run rec1 rec2 rec3 rec4 rec5 rec6; reset\0"				\
+	"boot1=nand device 1 && setenv mtdids nand1=nand1\0"					\
+	"boot2=setenv mtdparts mtdparts=nand1:0x1b20000@0x4e0000(firmware)\0"			\
+	"boot3=nboot firmware && bootm\0"							\
+	"rec1=echo Doing firmware recovery!\0"							\
+	"rec2=tftpboot ${tftp_loadaddr} ${recovery_file}\0"					\
+	"rec3=nand device 1 && setenv mtdids nand1=nand1\0"					\
+	"rec4=setenv mtdparts mtdparts=nand1:0x1b20000@0x4e0000(firmware)\0"			\
+	"rec5=nand erase.part firmware\0"							\
+	"rec6=nand write ${fileaddr} firmware ${filesize}\0"					\
+	"tftp_loadaddr=0x41000000\0"								\
+	"recovery_file=fwupdate.bin\0"
 
 #endif /* _IPQ6018_H */
