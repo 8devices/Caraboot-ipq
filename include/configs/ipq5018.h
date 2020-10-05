@@ -107,14 +107,15 @@
 
 #define CONFIG_OF_COMBINE			1
 
-#define CONFIG_COMPRESSED_DTB_MAX_SIZE		0x40000
-#define CONFIG_COMPRESSED_DTB_BASE		CONFIG_SYS_TEXT_BASE - CONFIG_COMPRESSED_DTB_MAX_SIZE
 
 #define CONFIG_QCA_SMEM_BASE			0x4AB00000
 
 #define CONFIG_IPQ_FDT_HIGH			0x4A400000
 #define CONFIG_ENV_IS_IN_SPI_FLASH		1
 #define CONFIG_ENV_SECT_SIZE			(64 * 1024)
+
+#define CONFIG_QCA_UBOOT_OFFSET			0xA800000
+#define CONFIG_UBOOT_END_ADDR			0x4AA00000
 
 /*
 * IPQ_TFTP_MIN_ADDR: Starting address of Linux HLOS region.
@@ -321,17 +322,29 @@ extern loff_t board_env_size;
 
 #define NUM_ALT_PARTITION			16
 
-#ifndef CONFIG_IPQ_TINY
+#ifdef CONFIG_IPQ_TINY
+/* undef gzip lib */
+#undef CONFIG_GZIP
+#undef CONFIG_ZLIB
+
+#else
 #define CONFIG_CMD_BOOTZ
 #define CONFIG_CMD_CACHE
-/*
- * Multicore CPU support
- */
+
+/* Multicore CPU support */
 #define CONFIG_SMP_CMD_SUPPORT
-/*
- * Mii command support
- */
+
+/* Mii command support */
 #define CONFIG_CMD_MII
+
+/* compress crash dump support */
+#define CONFIG_CMD_ZIP
+#define CONFIG_GZIP_COMPRESSED
+
+/* Enable DTB compress */
+#define CONFIG_COMPRESSED_DTB_MAX_SIZE		0x40000
+#define CONFIG_COMPRESSED_DTB_BASE		CONFIG_SYS_TEXT_BASE -\
+						CONFIG_COMPRESSED_DTB_MAX_SIZE
 #endif
 
 #define CONFIG_FDT_FIXUP_PARTITIONS
@@ -394,11 +407,10 @@ extern loff_t board_env_size;
 #undef CONFIG_BOOTM_VXWORKS
 
 #ifdef CONFIG_ART_COMPRESSED
-#undef CONFIG_GZIP
-#undef CONFIG_ZLIB
-#undef CONFIG_COMPRESSED_DTB_BASE
 /*
- * CONFIG_COMPRESSED_LOAD_ADDR loads the compressed data for uncompress action
+ * This location use to keep comprssed data for
+ * uncompress process.
+ * default location is CONFIG_SYS_LOAD_ADDR if not defined.
  */
 #define CONFIG_COMPRESSED_LOAD_ADDR (CONFIG_SYS_LOAD_ADDR + (1 << 22))
 #endif
