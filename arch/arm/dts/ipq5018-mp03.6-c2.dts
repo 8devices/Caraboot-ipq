@@ -10,7 +10,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
-#include "ipq5018-mp03.6.dts"
+#include "ipq5018-mp03.6-c1.dts"
 / {
 	model ="QCA, IPQ5018-MP03.6-C2";
 	compatible = "qca,ipq5018", "qca,ipq5018-mp03.6-c2";
