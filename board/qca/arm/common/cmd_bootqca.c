@@ -849,8 +849,11 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	ret = qca_scm_call(SCM_SVC_FUSE, QFPROM_IS_AUTHENTICATE_CMD, &buf, sizeof(char));
 
 	aquantia_phy_reset_init_done();
-
-	if (ret == 0 && buf == 1) {
+	/*
+	|| if atf is enable in env ,do_boot_signedimg is skip.
+	|| Note: This features currently support in ipq50XX.
+	*/
+	if (ret == 0 && buf == 1 && !getenv("atf")) {
 		ret = do_boot_signedimg(cmdtp, flag, argc, argv);
 	} else if (ret == 0 || ret == -EOPNOTSUPP) {
 		ret = do_boot_unsignedimg(cmdtp, flag, argc, argv);
