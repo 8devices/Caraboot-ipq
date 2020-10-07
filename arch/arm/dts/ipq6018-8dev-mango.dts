@@ -28,12 +28,16 @@
 	ess-switch {
 		switch_mac_mode = <PORT_WRAPPER_PSGMII>;
 		switch_mac_mode1 = <PORT_WRAPPER_SGMII_PLUS>;
+		switch_mac_mode1_sfp = <PORT_WRAPPER_SGMII_FIBER>;
 		napa_gpio = <77>;
 		napa_gpio_cnt = <1>;
 		malibu_gpio = <75>;
 		malibu_gpio_cnt = <1>;
 		mdc_mdio_gpio = <64 65>;
 		malibu2port_phy = <1>;
+		sfp_port = <4>;
+		sfp_combo = <1>;
+		sfp_mux_gpio = <49>;
 		port_phyinfo {
 			port@0 {
 				phy_address = <0>;

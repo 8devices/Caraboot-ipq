@@ -25,6 +25,7 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 #define pr_info(fmt, args...) printf(fmt, ##args);
+extern int ipq6018_sfp_combo_select(void);
 /*
  * ipq6018_ppe_gpio_reg_write()
  */
@@ -1213,6 +1214,7 @@ void ipq6018_ppe_interface_mode_init(void)
 {
 	uint32_t mode0, mode1;
 	int node;
+	int sfp_combo = -1, sfp_select = -1;
 
 	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
 	if (node < 0) {
@@ -1226,7 +1228,19 @@ void ipq6018_ppe_interface_mode_init(void)
 		return;
 	}
 
-	mode1 = fdtdec_get_uint(gd->fdt_blob, node, "switch_mac_mode1", -1);
+	if (node >= 0)
+		sfp_combo = fdtdec_get_uint(gd->fdt_blob, node, "sfp_combo", -1);
+
+	if (sfp_combo == 1) {
+		sfp_select = ipq6018_sfp_combo_select();
+		if (sfp_select == 1) /* SFP */
+			mode1 = fdtdec_get_uint(gd->fdt_blob, node, "switch_mac_mode1_sfp", -1);
+		else
+			mode1 = fdtdec_get_uint(gd->fdt_blob, node, "switch_mac_mode1", -1);
+	} else {
+		mode1 = fdtdec_get_uint(gd->fdt_blob, node, "switch_mac_mode1", -1);
+	}
+
 	if (mode1 < 0) {
 		printf("Error: switch_mac_mode1 not specified in dts");
 		return;

@@ -920,6 +920,48 @@ static int get_sgmii_mode(int port_id)
 		return -1;
 }
 
+int ipq6018_sfp_combo_select(void)
+{
+	int val, node, sfp_gpio;
+	char *sgmii_env = NULL;
+	enum mode{SGMII1_GPIO_SELECT, SGMII1_PHY_2_5G, SGMII1_SFP_1G};
+	int sgmii_user_setting = SGMII1_GPIO_SELECT;
+
+	sgmii_env = getenv("sgmii_mode");
+	if (!sgmii_env || strcmp("auto", sgmii_env) == 0)
+		sgmii_user_setting = SGMII1_GPIO_SELECT;
+	else if (strcmp("phy", sgmii_env) == 0)
+		sgmii_user_setting = SGMII1_PHY_2_5G;
+	else if (strcmp("sfp", sgmii_env) == 0)
+		sgmii_user_setting = SGMII1_SFP_1G;
+
+	if (sgmii_user_setting == SGMII1_GPIO_SELECT) {
+		node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
+		if (node < 0) {
+			printf("Can't get SFP GPIO from dts, default to PHY mode\n");
+			sgmii_user_setting = SGMII1_PHY_2_5G;
+			goto out;
+		}
+
+		sfp_gpio = fdtdec_get_uint(gd->fdt_blob, node, "sfp_mux_gpio", -1);
+		if (sfp_gpio < 0) {
+			printf("Can't get SFP GPIO from dts, default to PHY mode\n");
+			sgmii_user_setting = SGMII1_PHY_2_5G;
+			goto out;
+		}
+
+		val = gpio_get_value(sfp_gpio);
+		if (val == 0)
+			sgmii_user_setting = SGMII1_SFP_1G;
+		else
+			sgmii_user_setting = SGMII1_PHY_2_5G;
+	}
+
+out:
+	return (sgmii_user_setting == SGMII1_SFP_1G) ? 1 : 0;
+}
+
+
 static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 {
 	struct ipq6018_eth_dev *priv = eth_dev->priv;
@@ -935,9 +977,13 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 	int mac_speed = 0, speed_clock1 = 0, speed_clock2 = 0;
 	int phy_addr, port_8033 = -1, node, aquantia_port = -1;
 	int sfp_port = -1;
+	int sfp_combo = -1;
+	int sfp_select = 0;
 	int phy_node = -1;
 	int ret_sgmii_mode;
 	int sfp_mode, sgmii_fiber = -1;
+	int force_sfp = 0;
+	int phy_type = 0;
 
 	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
 	if (node >= 0)
@@ -947,7 +993,20 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 		aquantia_port = fdtdec_get_uint(gd->fdt_blob, node, "aquantia_port", -1);
 
 	if (node >= 0)
-		 sfp_port = fdtdec_get_uint(gd->fdt_blob, node, "sfp_port", -1);
+		sfp_port = fdtdec_get_uint(gd->fdt_blob, node, "sfp_port", -1);
+
+	if (node >= 0)
+		sfp_combo = fdtdec_get_uint(gd->fdt_blob, node, "sfp_combo", -1);
+
+	if (sfp_combo == 1) {
+		sfp_select = ipq6018_sfp_combo_select();
+		if (sfp_select == 0) /* PHY */
+			sfp_port = -1; /* Ignore SFP port in DTS */
+		else {
+			force_sfp = 1;
+			printf("Forcing SFP mode port %d\n", sfp_port);
+		}
+	}
 
 	phy_node = fdt_path_offset(gd->fdt_blob, "/ess-switch/port_phyinfo");
 	/*
@@ -960,7 +1019,12 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 		if (i == sfp_port) {
 			status = phy_status_get_from_ppe(i);
 			duplex = FAL_FULL_DUPLEX;
-			sfp_mode = fdtdec_get_uint(gd->fdt_blob, node, "switch_mac_mode1", -1);
+
+			if (force_sfp == 1)
+				sfp_mode = fdtdec_get_uint(gd->fdt_blob, node, "switch_mac_mode1_sfp", -1);
+			else
+				sfp_mode = fdtdec_get_uint(gd->fdt_blob, node, "switch_mac_mode1", -1);
+
 			if (sfp_mode < 0) {
 				printf("\nError: switch_mac_mode1 not specified in dts");
 				return sfp_mode;
@@ -1023,6 +1087,11 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 			continue;
 		}
 
+		if (force_sfp == 1)
+			phy_type = 5;
+		else
+			phy_type = phy_info[i]->phy_type;
+
 		switch (curr_speed[i]) {
 			case FAL_SPEED_10:
 				mac_speed = 0x0;
@@ -1037,7 +1106,7 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 						priv->mac_unit, i, lstatus[status], curr_speed[i],
 						dp[duplex]);
 				if (phy_node >= 0) {
-					if (phy_info[i]->phy_type == QCA8081_PHY_TYPE) {
+					if (phy_type == QCA8081_PHY_TYPE) {
 						set_sgmii_mode(i, 1);
 						if (i == 4)
 							speed_clock1 = 0x309;
@@ -1057,7 +1126,7 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 						priv->mac_unit, i, lstatus[status], curr_speed[i],
 						dp[duplex]);
 				if (phy_node >= 0) {
-					if (phy_info[i]->phy_type == QCA8081_PHY_TYPE) {
+					if (phy_type == QCA8081_PHY_TYPE) {
 						set_sgmii_mode(i, 1);
 						if (i == 4)
 							speed_clock1 = 0x309;
@@ -1077,7 +1146,7 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 						priv->mac_unit, i, lstatus[status], curr_speed[i],
 						dp[duplex]);
 				if (phy_node >= 0) {
-					if (phy_info[i]->phy_type == QCA8081_PHY_TYPE) {
+					if (phy_type == QCA8081_PHY_TYPE) {
 						set_sgmii_mode(i, 1);
 						if (i == 4)
 							speed_clock1 = 0x301;
@@ -1091,7 +1160,7 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 					speed_clock2 = 0x0;
 				}
 				if (phy_node >= 0) {
-					if (phy_info[i]->phy_type == QCA8081_PHY_TYPE) {
+					if (phy_type == QCA8081_PHY_TYPE) {
 						mac_speed = 0x2;
 						set_sgmii_mode(i, 0);
 						if (i == 4)
@@ -1127,7 +1196,7 @@ static int ipq6018_eth_init(struct eth_device *eth_dev, bd_t *this)
 		}
 
 		if (phy_node >= 0) {
-			if (phy_info[i]->phy_type == QCA8081_PHY_TYPE) {
+			if (phy_type == QCA8081_PHY_TYPE) {
 				ret_sgmii_mode = get_sgmii_mode(i);
 				ppe_port_bridge_txmac_set(i + 1, 1);
 				if (ret_sgmii_mode == 1) {
