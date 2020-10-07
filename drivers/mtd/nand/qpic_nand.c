@@ -122,12 +122,6 @@ struct qpic_serial_nand_params *serial_params;
  * An array holding the fixed pattern to compare with
  * training pattern.
  */
-static const unsigned int training_block_64[] = {
-	0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F,
-	0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F,
-	0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F,
-	0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F,
-};
 
 static const unsigned int training_block_128[] = {
 	0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F,
