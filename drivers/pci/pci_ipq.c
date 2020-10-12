@@ -1058,12 +1058,19 @@ static int ipq_pcie_parse_dt(const void *fdt, int id,
 {
 	int err, rst_gpio, node;
 	char name[16];
+	uint32_t cpu_type;
 
 	snprintf(name, sizeof(name), "pci%d", id);
 	node = fdt_path_offset(fdt, name);
 	if (node < 0) {
 		printf("PCI%d is not defined in the device tree\n", id);
 		return node;
+	}
+
+	err = ipq_smem_get_socinfo_cpu_type(&cpu_type);
+	if (!err && cpu_type == 421 /*IPQ6000*/) {
+		printf("PCI%d not available on IPQ6000\n", id);
+		return -1;
 	}
 
 	err = fdt_get_named_resource(fdt, node, "reg", "reg-names", "pci_dbi",

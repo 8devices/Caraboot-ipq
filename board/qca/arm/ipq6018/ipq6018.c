@@ -773,6 +773,23 @@ void ipq_fdt_fixup_usb_device_mode(void *blob)
 		printf("%s: invalid param for usb_mode\n", __func__);
 }
 
+void ipq_fdt_fixup_pcie_support(void *blob)
+{
+	const char *pcie_fixup_env;
+	uint32_t cpu_type;
+	int ret;
+
+	pcie_fixup_env = getenv("pcie_fixup");
+	if (pcie_fixup_env && !strncmp(pcie_fixup_env, "off", sizeof("off")))
+		return;
+
+	ret = ipq_smem_get_socinfo_cpu_type(&cpu_type);
+	if (!ret && cpu_type == 421 /*IPQ6000*/) {
+		parse_fdt_fixup("/soc/pci@20000000%status%?disabled", blob);
+		parse_fdt_fixup("/soc/phy@84000%status%?disabled", blob);
+	}
+}
+
 void enable_caches(void)
 {
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;

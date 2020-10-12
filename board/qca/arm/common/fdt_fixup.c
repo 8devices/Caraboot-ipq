@@ -913,6 +913,7 @@ int ft_board_setup(void *blob, bd_t *bd)
 	fdt_fixup_cpus_node(blob);
 	fdt_low_memory_fixup(blob);
 	fdt_fixup_qpic(blob);
+	ipq_fdt_fixup_pcie_support(blob);
 	s = getenv("dload_warm_reset");
 	if (s)
 		fdt_fixup_set_dload_warm_reset(blob);

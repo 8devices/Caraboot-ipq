@@ -69,6 +69,7 @@ int smem_get_build_version(char *version_name, int buf_size, int index);
 int ipq_smem_get_boot_version(char *version_name, int buf_size);
 int get_current_flash_type(uint32_t *flash_type);
 void ipq_fdt_fixup_usb_device_mode(void *blob);
+void ipq_fdt_fixup_pcie_support(void *blob);
 void fdt_fixup_auto_restart(void *blob);
 int get_soc_version(uint32_t *soc_ver_major, uint32_t *soc_ver_minor);
 unsigned int get_dts_machid(unsigned int machid);
