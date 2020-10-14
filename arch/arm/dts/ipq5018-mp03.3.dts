@@ -126,6 +126,19 @@
 		};
 	};
 
+	usb0: xhci@8a00000 {
+		usb_gpio {
+			pwr_gpio {
+				gpio = <24>;
+				func = <0>;
+				pull = <GPIO_PULL_UP>;
+				oe = <GPIO_OE_ENABLE>;
+				od_en = <GPIO_OD_DISABLE>;
+				drvstr = <GPIO_8MA>;
+			};
+		};
+	};
+
 	gmac_cfg {
 		ext_mdio_gpio = <36 37>;
 		gephy_led = <46>;

@@ -1102,7 +1102,7 @@ void set_flash_secondary_type(qca_smem_flash_info_t *smem)
 #ifdef CONFIG_USB_XHCI_IPQ
 void board_usb_deinit(int id)
 {
-	int nodeoff, ssphy;
+	int nodeoff, ssphy, gpio_node;
 	char node_name[8];
 
 	if(readl(EUD_EUD_EN2))
@@ -1137,6 +1137,24 @@ void board_usb_deinit(int id)
 	/* Deselect the usb phy mux */
 	if (ssphy)
 		writel(0x0, TCSR_USB_PCIE_SEL);
+
+	/* skip gpio pull config if bt_debug is enabled */
+	if(getenv("bt_debug"))
+		return;
+
+	/* deinit USB power GPIO for drive 5V */
+	gpio_node = fdt_subnode_offset(gd->fdt_blob, nodeoff, "usb_gpio");
+	if (gpio_node >= 0){
+		gpio_node = fdt_first_subnode(gd->fdt_blob, gpio_node);
+		if (gpio_node > 0) {
+			int gpio = fdtdec_get_uint(gd->fdt_blob,
+					gpio_node, "gpio", 0);
+			unsigned int *gpio_base =
+				(unsigned int *)GPIO_CONFIG_ADDR(gpio);
+			writel(0xC1, gpio_base);
+		}
+	}
+
 }
 
 static void usb_clock_init(int id, int ssphy)
@@ -1275,7 +1293,7 @@ static void usb_init_phy(int index, int ssphy)
 
 int ipq_board_usb_init(void)
 {
-	int i, nodeoff, ssphy;
+	int i, nodeoff, ssphy, gpio_node;
 	char node_name[8];
 
 	if(readl(EUD_EUD_EN2)) {
@@ -1301,6 +1319,15 @@ int ipq_board_usb_init(void)
 			writel(0x0C804010, USB30_GUCTL);
 		}
 	}
+	/* skip gpio pull config if bt_debug is enabled */
+	if(!getenv("bt_debug")){
+		/* USB power GPIO for drive 5V */
+		gpio_node =
+			fdt_subnode_offset(gd->fdt_blob, nodeoff, "usb_gpio");
+		if (gpio_node >= 0)
+			qca_gpio_init(gpio_node);
+	}
+
 	return 0;
 }
 #endif
@@ -1659,7 +1686,7 @@ void fdt_fixup_bt_debug(void *blob)
 		parse_fdt_fixup("/soc/mdio@90000/%status%?disabled", blob);
 	}
 	parse_fdt_fixup("/soc/serial@78b0000/%status%?ok", blob);
-
+	parse_fdt_fixup("/soc/usb3@8A00000/%delete%device-power-gpio", blob);
 }
 
 #ifdef CONFIG_IPQ_TINY
