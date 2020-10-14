@@ -4511,7 +4511,7 @@ void qpic_nand_init(qpic_nand_cfg_t *qpic_nand_cfg)
 	if (ret) {
 		printf("Error in serial training.\n");
 		printf("switch back to 50MHz with feed back clock bit enabled\n");
-		if (!(readl(QPIC_NAND_CTRL) & BAM_MODE_EN)) {
+		if ((readl(QPIC_NAND_CTRL) & BAM_MODE_EN)) {
 			qpic_reg_write_bam(NAND_QSPI_MSTR_CONFIG,
 				(FB_CLK_BIT | readl(NAND_QSPI_MSTR_CONFIG)));
 			qpic_set_clk_rate(IO_MACRO_CLK_200_MHZ, QPIC_IO_MACRO_CLK,
