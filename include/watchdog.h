@@ -100,4 +100,7 @@ int init_func_watchdog_reset(void);
 #if defined(CONFIG_MPC85xx) && !defined(__ASSEMBLY__)
 	void init_85xx_watchdog(void);
 #endif
+#if defined(CONFIG_ARCH_IPQ6018) && !defined(__ASSEMBLY__)
+	void qcom_watchdog_init(void);
+#endif
 #endif /* _WATCHDOG_H_ */

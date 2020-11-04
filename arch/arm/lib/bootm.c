@@ -25,6 +25,7 @@
 #include <linux/compiler.h>
 #include <bootm.h>
 #include <vxworks.h>
+#include <watchdog.h>
 
 #ifdef CONFIG_ARMV7_NONSEC
 #include <asm/armv7.h>
@@ -316,6 +317,9 @@ static void boot_jump_linux(bootm_headers_t *images, int flag)
 	debug("## Transferring control to Linux (at address %08lx)" \
 		"...\n", (ulong) kernel_entry);
 	bootstage_mark(BOOTSTAGE_ID_RUN_OS);
+#ifdef CONFIG_QCOM_WATCHDOG
+	qcom_watchdog_init();
+#endif
 	announce_and_cleanup(fake);
 
 	if (IMAGE_ENABLE_OF_LIBFDT && images->ft_len)

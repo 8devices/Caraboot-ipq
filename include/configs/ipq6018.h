@@ -368,6 +368,7 @@ extern loff_t board_env_size;
 #define IPQ_UBI_VOL_WRITE_SUPPORT
 #define CONFIG_IPQ_TZT
 #define CONFIG_IPQ_FDT_FIXUP
+#define CONFIG_QCOM_WATCHDOG
 
 #define CONFIG_EXTRA_ENV_SETTINGS								\
 	"bootcmd=run bootlinux\0"								\
