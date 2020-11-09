@@ -425,4 +425,6 @@ extern loff_t board_env_size;
 
 #define INTERNAL_96MHZ
 
+/*#define CONFIG_IPQ_BT_SUPPORT*/
+
 #endif /* _IPQ5018_H */

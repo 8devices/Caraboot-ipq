@@ -588,4 +588,56 @@ typedef enum {
 	SMEM_MAX_SIZE = SMEM_SPI_FLASH_ADDR_LEN + 1,
 } smem_mem_type_t;
 
+#ifdef CONFIG_IPQ_BT_SUPPORT
+#define NVM_SEGMENT_SIZE 243
+#define TLV_REQ_OPCODE 0xFC00
+#define TLV_COMMAND_REQUEST 0x1E
+#define DATA_REMAINING_LENGTH 2
+#define TLV_RESPONSE_PACKET_SIZE 8
+#define TLV_RESPONSE_STATUS_INDEX 6
+
+#define PACKED_STRUCT __attribute__((__packed__))
+
+#define LE_UNALIGNED(x, y)  \
+{                                        \
+	((u8 *)(x))[0] = ((u8)(((u32)(y)) & 0xFF));            \
+	((u8 *)(x))[1] = ((u8)((((u32)(y)) >> 8) & 0xFF));     \
+}
+
+typedef enum
+{
+	ptHCICommandPacket = 0x01,  /* Simple HCI Command Packet    */
+	ptHCIACLDataPacket = 0x02,  /* HCI ACL Data Packet Type.    */
+	ptHCISCODataPacket = 0x03,  /* HCI SCO Data Packet Type.    */
+	ptHCIeSCODataPacket= 0x03,  /* HCI eSCO Data Packet Type.   */
+	ptHCIEventPacket   = 0x04,  /* HCI Event Packet Type.       */
+	ptHCIAdditional    = 0x05   /* Starting Point for Additional*/
+} HCI_PacketType_t;
+
+typedef struct _tlv_download_req
+{
+	u16 opcode;
+	u8 parameter_total_length;
+	u8 command_request;
+	u8 tlv_segment_length;
+	u8 tlv_segment_data[0];
+
+} PACKED_STRUCT tlv_download_req;
+
+typedef struct _tagHCI_Packet_t
+{
+	u8 HCIPacketType;
+	tlv_download_req HCIPayload;
+} PACKED_STRUCT HCI_Packet_t;
+
+typedef enum {
+	BT_WAIT_FOR_START = 0,
+	BT_WAIT_FOR_TX_COMPLETE = 1,
+	BT_WAIT_FOR_STOP = 2,
+} bt_wait;
+
+#define BT_TIMEOUT_US 50000
+
+int bt_init(void);
+#endif
 #endif /* _IPQ5018_CDP_H_ */
