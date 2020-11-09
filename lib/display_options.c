@@ -20,6 +20,10 @@ int display_options (void)
 #else
 	printf ("\n\n%s\n\n", version_string);
 #endif
+	printf("=====================================\n"
+	       "Caraboot "CONFIG_CARABOOT_RELEASE" (IPQ60xx) U-boot\n"
+	       "http://www.8devices.com/\n"
+	       "-------------------------------------\n");
 	return 0;
 }
 
