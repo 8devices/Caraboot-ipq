@@ -318,7 +318,10 @@ static void boot_jump_linux(bootm_headers_t *images, int flag)
 		"...\n", (ulong) kernel_entry);
 	bootstage_mark(BOOTSTAGE_ID_RUN_OS);
 #ifdef CONFIG_QCOM_WATCHDOG
-	qcom_watchdog_init();
+	char *wdt = getenv("wdt_disable");
+	if (!wdt || strcmp(wdt, "true") != 0) {
+		qcom_watchdog_init();
+	}
 #endif
 	announce_and_cleanup(fake);
 
