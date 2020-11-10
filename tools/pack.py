@@ -1599,10 +1599,16 @@ class Pack(object):
 
         if (self.flash_type == "norplusemmc" and flinfo.type == "emmc") or (self.flash_type != "norplusemmc"):
             if flinfo.type == "emmc":
-                script.start_activity("Flashing rootfs_data:")
-                part_info = self.partitions["rootfs_data"]
-                script.erase(part_info.offset, part_info.length)
-                script.finish_activity()
+                srcDir_part = SRC_DIR + "/" + ARCH_NAME + "/flash_partition/" + flinfo.type + "-partition.xml"
+                rpart = ET.parse(srcDir_part)
+                parts = rpart.findall(".//physical_partition[@ref='emmc']/partition")
+                for index in range(len(parts)):
+                        section = parts[index]
+                        if section.attrib['label'] == "rootfs_data":
+                            script.start_activity("Flashing rootfs_data:")
+                            part_info = self.partitions["rootfs_data"]
+                            script.erase(part_info.offset, part_info.length)
+                            script.finish_activity()
             script.end()
 
         if self.flash_type == "norplusemmc" and flinfo.type == "emmc":
