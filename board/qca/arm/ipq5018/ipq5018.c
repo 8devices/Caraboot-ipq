@@ -32,6 +32,12 @@
 #ifdef CONFIG_QPIC_NAND
 #include <asm/arch-qca-common/qpic_nand.h>
 #endif
+#ifdef CONFIG_IPQ_BT_SUPPORT
+#include <malloc.h>
+#include "bt.h"
+#include "bt_binary_array.h"
+#include <linux/compat.h>
+#endif
 
 #define DLOAD_MAGIC_COOKIE	0x10
 
@@ -477,6 +483,180 @@ void fdt_fixup_auto_restart(void *blob)
 	return;
 }
 
+#ifdef CONFIG_IPQ_BT_SUPPORT
+unsigned char hci_reset[] =
+{0x01, 0x03, 0x0c, 0x00};
+
+unsigned char adv_data[] =
+{0x01, 0X08, 0X20, 0X20, 0X1F, 0X0A, 0X09, 0X71,
+ 0X75, 0X61, 0X6c, 0X63, 0X6f, 0X6d, 0X6d, 0X00,
+ 0X00, 0X00, 0X00, 0X00, 0X00, 0X00, 0X00, 0X00,
+ 0X00, 0X00, 0X00, 0X00, 0X00, 0X00, 0X00, 0X00,
+ 0X00, 0X00, 0X00, 0X00};
+
+unsigned char set_interval[] =
+{0X01, 0X06, 0X20, 0X0F, 0X20, 0X00, 0X20, 0X00,
+ 0X00, 0X00, 0X00, 0X00, 0X00, 0X00, 0X00, 0X00,
+ 0X00, 0X07, 0X00};
+
+unsigned char start_beacon[] =
+{0x01, 0x0A, 0x20, 0x01, 0x01};
+
+unsigned char *hci_cmds[] = {
+	hci_reset,
+	adv_data,
+	set_interval,
+	start_beacon
+};
+
+int wait_for_bt_event(struct bt_descriptor *btDesc, u8 bt_wait)
+{
+	int val, timeout = 0;
+
+	do{
+		udelay(10);
+		bt_ipc_worker(btDesc);
+
+		if (bt_wait == BT_WAIT_FOR_START)
+			val = !atomic_read(&btDesc->state);
+		else
+			val = atomic_read(&btDesc->tx_in_progress);
+
+		if (timeout++ >= BT_TIMEOUT_US/10) {
+			printf(" %s timed out \n", __func__);
+			return -ETIMEDOUT;
+		}
+
+	} while (val);
+
+	return 0;
+}
+
+static int initialize_nvm(struct bt_descriptor *btDesc,
+						void *fileaddr, u32 filesize)
+{
+	unsigned char *buffer = fileaddr;
+	int bytes_read = 0, bytes_consumed = 0, ret;
+	HCI_Packet_t *hci_packet = NULL;
+
+	while(bytes_consumed < filesize )
+	{
+		bytes_read = (filesize - bytes_consumed) > NVM_SEGMENT_SIZE ?
+			NVM_SEGMENT_SIZE : filesize - bytes_consumed;
+		/* Constructing a HCI Packet to write NVM Segments to BTSS */
+		hci_packet = (HCI_Packet_t*)malloc(sizeof(HCI_Packet_t) +
+							NVM_SEGMENT_SIZE);
+
+		if(!hci_packet)
+		{
+			printf("Cannot allocate memory to HCI Packet \n");
+			return -ENOMEM;
+		}
+
+		/* Initializing HCI Packet Header */
+		hci_packet->HCIPacketType = ptHCICommandPacket;
+
+		/* Populating TLV Request Packet in HCI */
+		LE_UNALIGNED(&(hci_packet->HCIPayload.opcode), TLV_REQ_OPCODE);
+		LE_UNALIGNED(&(hci_packet->HCIPayload.parameter_total_length),
+				(bytes_read + DATA_REMAINING_LENGTH));
+		hci_packet->HCIPayload.command_request = TLV_COMMAND_REQUEST;
+		hci_packet->HCIPayload.tlv_segment_length = bytes_read;
+		memcpy(hci_packet->HCIPayload.tlv_segment_data, buffer,
+								bytes_read);
+
+		bt_ipc_sendmsg(btDesc, (u8*)hci_packet,
+				sizeof(HCI_Packet_t) + bytes_read);
+
+		free(hci_packet);
+		bytes_consumed += bytes_read;
+		buffer = fileaddr + bytes_consumed;
+
+		ret = wait_for_bt_event(btDesc, BT_WAIT_FOR_TX_COMPLETE);
+		if(ret || *((u8 *)btDesc->buf + TLV_RESPONSE_STATUS_INDEX) != 0)
+		{
+			printf( "\n NVM download failed\n");
+			if (!ret) {
+				kfree(btDesc->buf);
+				btDesc->buf = NULL;
+			}
+			return -EINVAL;
+		}
+		kfree(btDesc->buf);
+		btDesc->buf = NULL;
+	}
+
+	printf("NVM download successful \n");
+	bt_ipc_worker(btDesc);
+	return 0;
+}
+
+int send_bt_hci_cmds(struct bt_descriptor *btDesc)
+{
+	int ret, i;
+	int count = sizeof hci_cmds/ sizeof(unsigned char *);
+
+	for (i = 0; i < count; i++) {
+		bt_ipc_sendmsg(btDesc, hci_cmds[i], sizeof hci_cmds[i]);
+		ret = wait_for_bt_event(btDesc, BT_WAIT_FOR_TX_COMPLETE);
+		if (ret)
+			return ret;
+
+		/*btDesc->buf will have response data with length btDesc->len*/
+		kfree(btDesc->buf);
+		btDesc->buf = NULL;
+	}
+	return 0;
+}
+
+int bt_init(void)
+{
+	struct bt_descriptor *btDesc;
+	int ret;
+
+	btDesc = kzalloc(sizeof(*btDesc), GFP_KERNEL);
+	if (!btDesc)
+		return -ENOMEM;
+
+	bt_ipc_init(btDesc);
+
+	enable_btss_lpo_clk();
+	ret = qti_scm_pas_init_image(PAS_ID, (u32)bt_fw_patchmdt);
+	if (ret) {
+		printf("patch auth failed\n");
+		return ret;
+	}
+
+	printf("patch authenticated successfully\n");
+
+	memcpy((void*)BT_RAM_PATCH, (void*)bt_fw_patchb02,
+					sizeof bt_fw_patchb02);
+
+	ret = qti_pas_and_auth_reset(PAS_ID);
+
+	if (ret) {
+		printf("BT out of reset failed\n");
+		return ret;
+	}
+
+	ret = wait_for_bt_event(btDesc, BT_WAIT_FOR_START);
+	if (ret)
+		return ret;
+
+	ret = initialize_nvm(btDesc, (void*)mpnv10bin, sizeof mpnv10bin);
+	if (ret)
+		return ret;
+
+	ret = wait_for_bt_event(btDesc, BT_WAIT_FOR_START);
+	if (ret)
+		return ret;
+
+	send_bt_hci_cmds(btDesc);
+
+	return 0;
+}
+#endif
+
 void reset_crashdump(void)
 {
 	unsigned int ret = 0;
@@ -588,6 +768,9 @@ void board_nand_init(void)
 	}
 #endif
 
+#ifdef CONFIG_IPQ_BT_SUPPORT
+	bt_init();
+#endif
 #ifdef CONFIG_QCA_SPI
 	int gpio_node;
 	gpio_node = fdt_path_offset(gd->fdt_blob, "/spi/spi_gpio");

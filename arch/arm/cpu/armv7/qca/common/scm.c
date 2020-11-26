@@ -550,6 +550,85 @@ int qca_scm_secure_authenticate(void *cmd_buf, size_t cmd_len)
 
 	return ret;
 }
+
+#ifdef CONFIG_IPQ_BT_SUPPORT
+int qti_scm_otp(u32 peripheral)
+{
+	int ret;
+
+	if (is_scm_armv8())
+	{
+		struct qca_scm_desc desc = {0};
+
+		desc.arginfo = QCA_SCM_ARGS(1);
+		desc.args[0] = peripheral;
+
+		ret = scm_call_64(SCM_SVC_PIL, SCM_CMD_OTP, &desc);
+	}
+	else
+	{
+		u32 cmd = peripheral;
+
+		ret = scm_call(SCM_SVC_PIL, SCM_CMD_OTP, &cmd, sizeof(cmd),
+				NULL, 0);
+	}
+
+	return ret;
+}
+
+int qti_scm_pas_init_image(u32 peripheral, u32 addr)
+{
+	int ret;
+
+	if (is_scm_armv8())
+	{
+		struct qca_scm_desc desc = {0};
+
+		desc.arginfo = QCA_SCM_ARGS(2, SCM_VAL, SCM_IO_WRITE);
+		desc.args[0] = peripheral;
+		desc.args[1] = addr;
+
+		ret = scm_call_64(SCM_SVC_PIL, SCM_PAS_INIT_IMAGE_CMD, &desc);
+	}
+	else
+	{
+		struct {
+			u32 proc;
+			u32 image_addr;
+		} request;
+		request.proc = peripheral;
+		request.image_addr = addr;
+		ret = scm_call(SCM_SVC_PIL, SCM_PAS_INIT_IMAGE_CMD, &request,
+				sizeof(request), NULL, 0);
+	}
+
+	return ret;
+}
+
+int qti_pas_and_auth_reset(u32 peripheral)
+{
+	int ret;
+	u32 cmd = peripheral;
+
+	if (is_scm_armv8())
+	{
+		struct qca_scm_desc desc = {0};
+
+		desc.arginfo = QCA_SCM_ARGS(1);
+		desc.args[0] = peripheral;
+
+		ret = scm_call_64(SCM_SVC_PIL, SCM_PAS_AUTH_AND_RESET_CMD, &desc);
+	}
+	else
+	{
+		ret = scm_call(SCM_SVC_PIL, SCM_PAS_AUTH_AND_RESET_CMD, &cmd, sizeof(cmd),
+				NULL, 0);
+	}
+
+	return ret;
+}
+#endif
+
 #else
 int qca_scm_call(u32 svc_id, u32 cmd_id, void *buf, size_t len)
 {

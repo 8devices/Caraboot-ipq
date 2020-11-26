@@ -35,3 +35,9 @@ void i2c_clock_config(void)
 }
 #endif
 
+#ifdef CONFIG_IPQ_BT_SUPPORT
+void enable_btss_lpo_clk(void)
+{
+	writel(CLK_ENABLE, GCC_BTSS_LPO_CBCR);
+}
+#endif
