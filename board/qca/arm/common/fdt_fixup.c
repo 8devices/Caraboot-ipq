@@ -17,6 +17,7 @@
 #include <jffs2/load_kernel.h>
 #include <fdtdec.h>
 #include <stdlib.h>
+#include "fdt_info.h"
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -875,6 +876,41 @@ __weak void fdt_fixup_qpic(void *blob)
 	return;
 }
 
+void set_mtdids(void)
+{
+	char mtdids[256];
+
+	if (getenv("mtdids") != NULL) {
+		/* mtdids env is already set, nothing to do */
+		return;
+	}
+
+	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
+	if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
+		if (get_which_flash_param("rootfs") ||
+		    ((sfi->flash_secondary_type == SMEM_BOOT_NAND_FLASH) ||
+			(sfi->flash_secondary_type == SMEM_BOOT_QSPI_NAND_FLASH))) {
+
+			snprintf(mtdids, sizeof(mtdids),
+				 "nand%d=nand%d,nand%d=" QCA_SPI_NOR_DEVICE,
+				 is_spi_nand_available(),
+				 is_spi_nand_available(),
+				 CONFIG_SPI_FLASH_INFO_IDX);
+		} else {
+
+			snprintf(mtdids, sizeof(mtdids), "nand%d="
+				QCA_SPI_NOR_DEVICE, CONFIG_SPI_FLASH_INFO_IDX);
+
+		}
+		setenv("mtdids", mtdids);
+	} else if (((sfi->flash_type == SMEM_BOOT_NAND_FLASH) ||
+			(sfi->flash_type == SMEM_BOOT_QSPI_NAND_FLASH))) {
+
+		snprintf(mtdids, sizeof(mtdids), "nand0=nand0");
+		setenv("mtdids", mtdids);
+	}
+}
+
 /*
  * For newer kernel that boot with device tree (3.14+), all of memory is
  * described in the /memory node, including areas that the kernel should not be
@@ -961,6 +997,7 @@ int ft_board_setup(void *blob, bd_t *bd)
 			setenv("mtdparts", mtdparts);
 		}
 
+		set_mtdids();
 		debug("MTDIDS: %s\n", getenv("mtdids"));
 #ifdef CONFIG_IPQ_TINY
 		ipq_nor_fdt_fixup(blob, nodes);
