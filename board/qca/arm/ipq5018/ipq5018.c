@@ -502,11 +502,16 @@ unsigned char set_interval[] =
 unsigned char start_beacon[] =
 {0x01, 0x0A, 0x20, 0x01, 0x01};
 
-unsigned char *hci_cmds[] = {
-	hci_reset,
-	adv_data,
-	set_interval,
-	start_beacon
+struct hci_cmd{
+	unsigned char* data;
+	unsigned int len;
+};
+
+struct hci_cmd hci_cmds[] = {
+	{ hci_reset, sizeof(hci_reset) },
+	{ adv_data, sizeof(adv_data) },
+	{ set_interval, sizeof(set_interval) },
+	{ start_beacon, sizeof(start_beacon) },
 };
 
 int wait_for_bt_event(struct bt_descriptor *btDesc, u8 bt_wait)
@@ -594,10 +599,11 @@ static int initialize_nvm(struct bt_descriptor *btDesc,
 int send_bt_hci_cmds(struct bt_descriptor *btDesc)
 {
 	int ret, i;
-	int count = sizeof hci_cmds/ sizeof(unsigned char *);
+	int count = sizeof hci_cmds/ sizeof(struct hci_cmd);
 
 	for (i = 0; i < count; i++) {
-		bt_ipc_sendmsg(btDesc, hci_cmds[i], sizeof hci_cmds[i]);
+		bt_ipc_sendmsg(btDesc, hci_cmds[i].data, hci_cmds[i].len);
+
 		ret = wait_for_bt_event(btDesc, BT_WAIT_FOR_TX_COMPLETE);
 		if (ret)
 			return ret;
