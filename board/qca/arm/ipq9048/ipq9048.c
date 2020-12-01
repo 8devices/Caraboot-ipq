@@ -1,0 +1,91 @@
+/*
+ * Copyright (c) 2016-2020 The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+#include <common.h>
+#include <asm/global_data.h>
+#include <asm/io.h>
+#include <asm/errno.h>
+#include <environment.h>
+
+#include <asm/arch-qca-common/qpic_nand.h>
+#include <asm/arch-qca-common/gpio.h>
+#include <asm/arch-qca-common/uart.h>
+#include <ipq9048.h>
+
+DECLARE_GLOBAL_DATA_PTR;
+
+void qca_serial_init(struct ipq_serial_platdata *plat)
+{
+	int ret;
+
+	if (plat->gpio_node < 0) {
+		printf("serial_init: unable to find gpio node\n");
+		return;
+	}
+
+	qca_gpio_init(plat->gpio_node);
+	plat->port_id = UART_PORT_ID(plat->reg_base);
+	ret = uart_clock_config(plat);
+	if (ret)
+		printf("UART clock config failed %d\n", ret);
+
+	return;
+}
+
+void reset_crashdump(void)
+{
+	return;
+}
+
+void board_nand_init(void)
+{
+	return;
+}
+void enable_caches(void)
+{
+	icache_enable();
+}
+
+void disable_caches(void)
+{
+	icache_disable();
+}
+
+/**
+ * Set the uuid in bootargs variable for mounting rootfilesystem
+ */
+int set_uuid_bootargs(char *boot_args, char *part_name, int buflen, bool gpt_flag)
+{
+	return 0;
+}
+
+unsigned long timer_read_counter(void)
+{
+	return 0;
+}
+
+void reset_cpu(unsigned long a)
+{
+	while (1);
+}
+
+void reset_board(void)
+{
+	run_command("reset", 0);
+}
+
+void set_flash_secondary_type(qca_smem_flash_info_t *smem)
+{
+	return;
+};
+
