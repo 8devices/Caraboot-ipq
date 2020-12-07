@@ -1409,8 +1409,20 @@ static void usb_clock_init(int id, int ssphy)
 	writel(CLK_ENABLE, GCC_USB0_LFPS_CBCR);
 }
 
-static void usb_init_hsphy(void __iomem *phybase)
+static void usb_init_hsphy(void __iomem *phybase, int ssphy)
 {
+	if (!ssphy) {
+		/*Enable utmi instead of pipe*/
+		writel((readl(USB30_GENERAL_CFG) | PIPE_UTMI_CLK_DIS), USB30_GENERAL_CFG);
+
+		udelay(100);
+
+		writel((readl(USB30_GENERAL_CFG) | PIPE_UTMI_CLK_SEL | PIPE3_PHYSTATUS_SW), USB30_GENERAL_CFG);
+
+		udelay(100);
+
+		writel((readl(USB30_GENERAL_CFG) & ~PIPE_UTMI_CLK_DIS), USB30_GENERAL_CFG);
+	}
 	/* Disable USB PHY Power down */
 	setbits_le32(phybase + 0xA4, 0x1);
 	/* Enable override ctrl */
@@ -1480,7 +1492,7 @@ static void usb_init_phy(int index, int ssphy)
 
 	if (ssphy)
 		usb_init_ssphy((u32 *)USB3PHY_APB_BASE);
-	usb_init_hsphy((u32 *)QUSB2PHY_BASE);
+	usb_init_hsphy((u32 *)QUSB2PHY_BASE, ssphy);
 }
 
 int ipq_board_usb_init(void)

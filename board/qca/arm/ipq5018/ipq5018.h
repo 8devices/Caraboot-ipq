@@ -234,6 +234,10 @@
 #define GUCTL					0x700C12C
 #define FLADJ					0x700C630
 
+#define PIPE_UTMI_CLK_SEL			0x1
+#define PIPE3_PHYSTATUS_SW			(0x1 << 3)
+#define PIPE_UTMI_CLK_DIS			(0x1 << 8)
+
 #define QUSB2PHY_BASE				0x5b000
 
 #define GCC_USB0_LFPS_CFG_SRC_SEL		(0x1 << 8)
