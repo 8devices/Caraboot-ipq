@@ -4515,7 +4515,7 @@ void qpic_nand_init(qpic_nand_cfg_t *qpic_nand_cfg)
 			qpic_reg_write_bam(NAND_QSPI_MSTR_CONFIG,
 				(FB_CLK_BIT | readl(NAND_QSPI_MSTR_CONFIG)));
 			qpic_set_clk_rate(IO_MACRO_CLK_200_MHZ, QPIC_IO_MACRO_CLK,
-					NAND_QSPI_MSTR_CONFIG);
+					GPLL0_CLK_SRC);
 			qpic_reg_write_bam(NAND_FLASH_SPI_CFG, 0x0);
 			qpic_reg_write_bam(NAND_FLASH_SPI_CFG, SPI_CFG_VAL);
 			qpic_reg_write_bam(NAND_FLASH_SPI_CFG,
