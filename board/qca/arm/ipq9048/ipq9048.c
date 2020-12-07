@@ -23,6 +23,7 @@
 #include <ipq9048.h>
 
 DECLARE_GLOBAL_DATA_PTR;
+extern int ipq_spi_init(u16);
 
 void qca_serial_init(struct ipq_serial_platdata *plat)
 {
@@ -49,8 +50,16 @@ void reset_crashdump(void)
 
 void board_nand_init(void)
 {
-	return;
+#ifdef CONFIG_QCA_SPI
+	int gpio_node;
+	gpio_node = fdt_path_offset(gd->fdt_blob, "/spi/spi_gpio");
+	if (gpio_node >= 0) {
+		qca_gpio_init(gpio_node);
+		ipq_spi_init(CONFIG_IPQ_SPI_NOR_INFO_IDX);
+	}
+#endif
 }
+
 void enable_caches(void)
 {
 	icache_enable();
