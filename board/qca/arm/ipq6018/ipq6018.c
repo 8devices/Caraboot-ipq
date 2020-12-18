@@ -1051,7 +1051,7 @@ void set_function_select_as_mdc_mdio(void)
 		for (i = 0; i < mdc_mdio_gpio_cnt; i++) {
 			if (mdc_mdio_gpio[i] >=0) {
 				mdc_mdio_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(mdc_mdio_gpio[i]);
-				writel(0x7, mdc_mdio_gpio_base);
+				writel(0xC7, mdc_mdio_gpio_base);
 			}
 		}
 	}
