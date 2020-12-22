@@ -234,5 +234,10 @@ extern loff_t board_env_size;
  * By default we are disabling it */
 /*#define CONFIG_IPQ_REPORT_L2ERR*/
 
-#endif /* _IPQ9048_H */
+/*
+ * Other commands
+ */
 
+#define CONFIG_CMD_FLASHWRITE
+#define CONFIG_CMD_RUN
+#endif /* _IPQ9048_H */
