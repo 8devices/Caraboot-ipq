@@ -17,6 +17,7 @@
 	model ="QCA, IPQ9048-EMULATION";
 	compatible = "qca,ipq9048", "qca,ipq9048-emulation";
 	machid = <0xf030000>;
+	config_name = "config@1";
 
 	aliases {
 		console = "/serial@78AF000";

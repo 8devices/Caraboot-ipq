@@ -145,4 +145,9 @@ typedef enum {
 
 __weak void qgic_init(void) {}
 __weak void handle_noc_err(void) {}
+extern const char *rsvd_node;
+extern const char *del_node[];
+extern const add_node_t add_fdt_node[];
+int ipq_get_tz_version(char *version_name, int buf_size);
+void ipq_fdt_fixup_socinfo(void *blob);
 #endif /* _IPQ9048_CDP_H_ */

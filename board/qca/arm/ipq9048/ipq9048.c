@@ -98,3 +98,29 @@ void set_flash_secondary_type(qca_smem_flash_info_t *smem)
 	return;
 };
 
+const char *rsvd_node = "/reserved-memory";
+const char *del_node[] = {"uboot",
+			  "sbl",
+			  NULL};
+const add_node_t add_fdt_node[] = {{}};
+
+__weak int ipq_get_tz_version(char *version_name, int buf_size)
+{
+	return 1;
+}
+
+void ipq_fdt_fixup_socinfo(void *blob)
+{
+	return;
+}
+
+void ipq_fdt_fixup_usb_device_mode(void *blob)
+{
+	return;
+}
+
+void fdt_fixup_auto_restart(void *blob)
+{
+	return;
+}
+
