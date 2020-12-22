@@ -240,4 +240,5 @@ extern loff_t board_env_size;
 
 #define CONFIG_CMD_FLASHWRITE
 #define CONFIG_CMD_RUN
+#define CONFIG_IPQ_ELF_AUTH
 #endif /* _IPQ9048_H */
