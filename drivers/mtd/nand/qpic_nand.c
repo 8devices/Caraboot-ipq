@@ -4133,7 +4133,7 @@ static int qpic_execute_serial_training(struct mtd_info *mtd)
 
 	unsigned int start, blk_cnt = 0;
 	unsigned int offset, pageno, curr_freq;
-	int size = sizeof(training_block_128);
+	int i;
 	unsigned int io_macro_freq_tbl[] = {24000000, 100000000, 200000000, 320000000};
 
 	unsigned char *data_buff, trained_phase[TOTAL_NUM_PHASE] = {'\0'};
@@ -4187,15 +4187,16 @@ static int qpic_execute_serial_training(struct mtd_info *mtd)
 		goto err;
 	}
 
-	data_buff = (unsigned char *)malloc(size);
+	data_buff = (unsigned char *)malloc(mtd->writesize);
 	if (!data_buff) {
 		printf("Errorn in allocating memory.\n");
 		ret = -ENOMEM;
 		goto err;
 	}
 	/* prepare clean buffer */
-	memset(data_buff, 0xff, size);
-	memcpy(data_buff, training_block_128, size);
+	memset(data_buff, 0xff, mtd->writesize);
+	for (i = 0; i < mtd->writesize; i += sizeof(training_block_64))
+		memcpy(data_buff + i, training_block_64, sizeof(training_block_64));
 
 	/*write training data to flash */
 	ret = NANDC_RESULT_SUCCESS;
@@ -4207,7 +4208,7 @@ static int qpic_execute_serial_training(struct mtd_info *mtd)
 	memset(dev->pad_oob, 0xFF, dev->oob_per_page);
 
 	ops.mode = MTD_OPS_AUTO_OOB;
-	ops.len = size;
+	ops.len =  mtd->writesize;
 	ops.retlen = 0;
 	ops.ooblen = dev->oob_per_page;
 	ops.oobretlen = 0;
@@ -4224,7 +4225,7 @@ static int qpic_execute_serial_training(struct mtd_info *mtd)
 	/* After write verify the the data with read @ lower frequency
 	 * after that only start serial tarining @ higher frequency
 	 */
-	memset(data_buff, 0xff, size);
+	memset(data_buff, 0xff, mtd->writesize);
 	ops.datbuf = (uint8_t *)data_buff;
 
 	ret = qpic_nand_read_page(mtd, pageno, NAND_CFG, &ops);
@@ -4234,9 +4235,11 @@ static int qpic_execute_serial_training(struct mtd_info *mtd)
 	}
 
 	/* compare original data and read data */
-	if (memcmp(data_buff, training_block_128, size)) {
-		printf("Training data read failed @ lower frequency\n");
-		goto free;
+	for (i = 0; i < mtd->writesize; i += sizeof(training_block_64)) {
+		if (memcmp(data_buff + i, training_block_64, sizeof(training_block_64))) {
+			printf("Training data read failed @ lower frequency\n");
+			goto free;
+		}
 	}
 
 	/* disable feed back clock bit to start serial training */
@@ -4258,7 +4261,7 @@ rettry:
 		/* set the phase */
 		qpic_set_phase(phase);
 
-		memset(data_buff, 0, size);
+		memset(data_buff, 0, mtd->writesize);
 		ops.datbuf = (uint8_t *)data_buff;
 
 		ret = qpic_nand_read_page(mtd, pageno, NAND_CFG, &ops);
@@ -4267,17 +4270,15 @@ rettry:
 			goto free;
 		}
 		/* compare original data and read data */
-		if (memcmp(data_buff, training_block_128, size)) {
-			/* wrong data read on one of miso line
-			 * change the phase value and try again
-			 */
-			phase_failed++;
-		} else {
-			/* we got good phase update the good phase list
-			 */
+		for (i = 0; i < mtd->writesize; i += sizeof(training_block_64)) {
+			if (memcmp(data_buff + i, training_block_64, sizeof(training_block_64))) {
+				phase_failed++;
+				break;
+			}
+		}
+		if (i == mtd->writesize)
 			trained_phase[phase_cnt++] = phase;
 			/*printf("%s : Found good phase %d\n",__func__,phase);*/
-		}
 
 	} while (phase++ < TOTAL_NUM_PHASE);
 
