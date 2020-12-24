@@ -32,9 +32,16 @@
 #ifdef CONFIG_QPIC_NAND
 #include <asm/arch-qca-common/qpic_nand.h>
 #endif
+#ifdef CONFIG_IPQ_BT_SUPPORT
+#include <malloc.h>
+#include "bt.h"
+#include "bt_binary_array.h"
+#include <linux/compat.h>
+#endif
 
 #define DLOAD_MAGIC_COOKIE	0x10
-#define DLOAD_DISABLED		0x40
+
+#define TCSR_SOC_HW_VERSION_REG 0x194D000
 
 ipq_gmac_board_cfg_t gmac_cfg[CONFIG_IPQ_NO_MACS];
 
@@ -44,7 +51,7 @@ DECLARE_GLOBAL_DATA_PTR;
 struct sdhci_host mmc_host;
 #endif
 
-#ifdef CONFIG_IPQ_MTD_NOR
+#ifdef CONFIG_MTD_DEVICE
 extern int ipq_spi_init(u16);
 #endif
 
@@ -80,6 +87,18 @@ struct dumpinfo_t dumpinfo_n[] = {
 	 *				  ------------------------
 	 */
 	{ "EBICS0.BIN", 0x40000000, 0x10000000, 0 },
+	/*
+	 * The below 3 config enable compress crash dump support.
+	 * the RAM region will be split in 3 section and collect based on the
+	 * config as given below. NOT SUPPORT IN  TINY_NOR profile.
+	 * Note : EBICS2.BIN start and size varies dynamically based on RAM size.
+	 *  basically it's seconds half of ram region.
+	*/
+#ifndef CONFIG_IPQ_TINY
+	{ "EBICS2.BIN", 0x60000000, 0x20000000, 0, 0, 0, 0, 1 },
+	{ "EBICS1.BIN", CONFIG_UBOOT_END_ADDR, 0x10000000, 0, 0, 0, 0, 1 },
+	{ "EBICS0.BIN", 0x40000000, CONFIG_QCA_UBOOT_OFFSET, 0, 0, 0, 0, 1 },
+#endif
 	{ "IMEM.BIN", 0x08600000, 0x00001000, 0 },
 	{ "NSSUTCM.BIN", 0x08600658, 0x00030000, 0, 1, 0x2000 },
 	{ "BTRAM.BIN", 0x08600658, 0x00058000, 0, 1, 0x00032000 },
@@ -94,6 +113,11 @@ int dump_entries_n = ARRAY_SIZE(dumpinfo_n);
 struct dumpinfo_t dumpinfo_s[] = {
 	{ "EBICS_S0.BIN", 0x40000000, 0xAC00000, 0 },
 	{ "EBICS_S1.BIN", CONFIG_TZ_END_ADDR, 0x10000000, 0 },
+#ifndef CONFIG_IPQ_TINY
+	{ "EBICS_S2.BIN", CONFIG_TZ_END_ADDR, 0x10000000, 0, 0, 0, 0, 1 },
+	{ "EBICS_S1.BIN", CONFIG_UBOOT_END_ADDR, 0x200000, 0, 0, 0, 0, 1 },
+	{ "EBICS_S0.BIN", 0x40000000, CONFIG_QCA_UBOOT_OFFSET, 0, 0, 0, 0, 1 },
+#endif
 	{ "IMEM.BIN", 0x08600000, 0x00001000, 0 },
 	{ "NSSUTCM.BIN", 0x08600658, 0x00030000, 0, 1, 0x2000 },
 	{ "BTRAM.BIN", 0x08600658, 0x00058000, 0, 1, 0x00032000 },
@@ -357,16 +381,6 @@ __weak int ipq_get_tz_version(char *version_name, int buf_size)
 	return 1;
 }
 
-int apps_iscrashed_crashdump_disabled(void)
-{
-	u32 *dmagic = (u32 *)CONFIG_IPQ5018_DMAGIC_ADDR;
-
-	if (*dmagic == DLOAD_DISABLED)
-		return 1;
-
-	return 0;
-}
-
 int apps_iscrashed(void)
 {
 	u32 *dmagic = (u32 *)CONFIG_IPQ5018_DMAGIC_ADDR;
@@ -468,6 +482,186 @@ void fdt_fixup_auto_restart(void *blob)
 	}
 	return;
 }
+
+#ifdef CONFIG_IPQ_BT_SUPPORT
+unsigned char hci_reset[] =
+{0x01, 0x03, 0x0c, 0x00};
+
+unsigned char adv_data[] =
+{0x01, 0X08, 0X20, 0X20, 0X1F, 0X0A, 0X09, 0X71,
+ 0X75, 0X61, 0X6c, 0X63, 0X6f, 0X6d, 0X6d, 0X00,
+ 0X00, 0X00, 0X00, 0X00, 0X00, 0X00, 0X00, 0X00,
+ 0X00, 0X00, 0X00, 0X00, 0X00, 0X00, 0X00, 0X00,
+ 0X00, 0X00, 0X00, 0X00};
+
+unsigned char set_interval[] =
+{0X01, 0X06, 0X20, 0X0F, 0X20, 0X00, 0X20, 0X00,
+ 0X00, 0X00, 0X00, 0X00, 0X00, 0X00, 0X00, 0X00,
+ 0X00, 0X07, 0X00};
+
+unsigned char start_beacon[] =
+{0x01, 0x0A, 0x20, 0x01, 0x01};
+
+struct hci_cmd{
+	unsigned char* data;
+	unsigned int len;
+};
+
+struct hci_cmd hci_cmds[] = {
+	{ hci_reset, sizeof(hci_reset) },
+	{ adv_data, sizeof(adv_data) },
+	{ set_interval, sizeof(set_interval) },
+	{ start_beacon, sizeof(start_beacon) },
+};
+
+int wait_for_bt_event(struct bt_descriptor *btDesc, u8 bt_wait)
+{
+	int val, timeout = 0;
+
+	do{
+		udelay(10);
+		bt_ipc_worker(btDesc);
+
+		if (bt_wait == BT_WAIT_FOR_START)
+			val = !atomic_read(&btDesc->state);
+		else
+			val = atomic_read(&btDesc->tx_in_progress);
+
+		if (timeout++ >= BT_TIMEOUT_US/10) {
+			printf(" %s timed out \n", __func__);
+			return -ETIMEDOUT;
+		}
+
+	} while (val);
+
+	return 0;
+}
+
+static int initialize_nvm(struct bt_descriptor *btDesc,
+						void *fileaddr, u32 filesize)
+{
+	unsigned char *buffer = fileaddr;
+	int bytes_read = 0, bytes_consumed = 0, ret;
+	HCI_Packet_t *hci_packet = NULL;
+
+	while(bytes_consumed < filesize )
+	{
+		bytes_read = (filesize - bytes_consumed) > NVM_SEGMENT_SIZE ?
+			NVM_SEGMENT_SIZE : filesize - bytes_consumed;
+		/* Constructing a HCI Packet to write NVM Segments to BTSS */
+		hci_packet = (HCI_Packet_t*)malloc(sizeof(HCI_Packet_t) +
+							NVM_SEGMENT_SIZE);
+
+		if(!hci_packet)
+		{
+			printf("Cannot allocate memory to HCI Packet \n");
+			return -ENOMEM;
+		}
+
+		/* Initializing HCI Packet Header */
+		hci_packet->HCIPacketType = ptHCICommandPacket;
+
+		/* Populating TLV Request Packet in HCI */
+		LE_UNALIGNED(&(hci_packet->HCIPayload.opcode), TLV_REQ_OPCODE);
+		LE_UNALIGNED(&(hci_packet->HCIPayload.parameter_total_length),
+				(bytes_read + DATA_REMAINING_LENGTH));
+		hci_packet->HCIPayload.command_request = TLV_COMMAND_REQUEST;
+		hci_packet->HCIPayload.tlv_segment_length = bytes_read;
+		memcpy(hci_packet->HCIPayload.tlv_segment_data, buffer,
+								bytes_read);
+
+		bt_ipc_sendmsg(btDesc, (u8*)hci_packet,
+				sizeof(HCI_Packet_t) + bytes_read);
+
+		free(hci_packet);
+		bytes_consumed += bytes_read;
+		buffer = fileaddr + bytes_consumed;
+
+		ret = wait_for_bt_event(btDesc, BT_WAIT_FOR_TX_COMPLETE);
+		if(ret || *((u8 *)btDesc->buf + TLV_RESPONSE_STATUS_INDEX) != 0)
+		{
+			printf( "\n NVM download failed\n");
+			if (!ret) {
+				kfree(btDesc->buf);
+				btDesc->buf = NULL;
+			}
+			return -EINVAL;
+		}
+		kfree(btDesc->buf);
+		btDesc->buf = NULL;
+	}
+
+	printf("NVM download successful \n");
+	bt_ipc_worker(btDesc);
+	return 0;
+}
+
+int send_bt_hci_cmds(struct bt_descriptor *btDesc)
+{
+	int ret, i;
+	int count = sizeof hci_cmds/ sizeof(struct hci_cmd);
+
+	for (i = 0; i < count; i++) {
+		bt_ipc_sendmsg(btDesc, hci_cmds[i].data, hci_cmds[i].len);
+
+		ret = wait_for_bt_event(btDesc, BT_WAIT_FOR_TX_COMPLETE);
+		if (ret)
+			return ret;
+
+		/*btDesc->buf will have response data with length btDesc->len*/
+		kfree(btDesc->buf);
+		btDesc->buf = NULL;
+	}
+	return 0;
+}
+
+int bt_init(void)
+{
+	struct bt_descriptor *btDesc;
+	int ret;
+
+	btDesc = kzalloc(sizeof(*btDesc), GFP_KERNEL);
+	if (!btDesc)
+		return -ENOMEM;
+
+	bt_ipc_init(btDesc);
+
+	enable_btss_lpo_clk();
+	ret = qti_scm_pas_init_image(PAS_ID, (u32)bt_fw_patchmdt);
+	if (ret) {
+		printf("patch auth failed\n");
+		return ret;
+	}
+
+	printf("patch authenticated successfully\n");
+
+	memcpy((void*)BT_RAM_PATCH, (void*)bt_fw_patchb02,
+					sizeof bt_fw_patchb02);
+
+	ret = qti_pas_and_auth_reset(PAS_ID);
+
+	if (ret) {
+		printf("BT out of reset failed\n");
+		return ret;
+	}
+
+	ret = wait_for_bt_event(btDesc, BT_WAIT_FOR_START);
+	if (ret)
+		return ret;
+
+	ret = initialize_nvm(btDesc, (void*)mpnv10bin, sizeof mpnv10bin);
+	if (ret)
+		return ret;
+
+	ret = wait_for_bt_event(btDesc, BT_WAIT_FOR_START);
+	if (ret)
+		return ret;
+
+	send_bt_hci_cmds(btDesc);
+
+	return 0;
+}
+#endif
 
 void reset_crashdump(void)
 {
@@ -580,12 +774,15 @@ void board_nand_init(void)
 	}
 #endif
 
+#ifdef CONFIG_IPQ_BT_SUPPORT
+	bt_init();
+#endif
 #ifdef CONFIG_QCA_SPI
 	int gpio_node;
 	gpio_node = fdt_path_offset(gd->fdt_blob, "/spi/spi_gpio");
 	if (gpio_node >= 0) {
 		qca_gpio_init(gpio_node);
-#ifdef CONFIG_IPQ_MTD_NOR
+#ifdef CONFIG_MTD_DEVICE
 		ipq_spi_init(CONFIG_IPQ_SPI_NOR_INFO_IDX);
 #endif
 	}
@@ -853,9 +1050,19 @@ static void gmac_reset(void)
 static void cmn_clock_init (void)
 {
 	u32 reg_val = 0;
+#ifdef INTERNAL_96MHZ
+	reg_val = readl(CMN_BLK_PLL_SRC_ADDR);
+	reg_val = ((reg_val & PLL_CTRL_SRC_MASK) |
+			(CMN_BLK_PLL_SRC_SEL_FROM_REG << 0x8));
+	writel(reg_val, CMN_BLK_PLL_SRC_ADDR);
+	reg_val = readl(CMN_BLK_ADDR + 4);
+	reg_val = (reg_val & PLL_REFCLK_DIV_MASK) | PLL_REFCLK_DIV_2;
+	writel(reg_val, CMN_BLK_ADDR + 0x4);
+#else
 	reg_val = readl(CMN_BLK_ADDR + 4);
 	reg_val = (reg_val & FREQUENCY_MASK) | INTERNAL_48MHZ_CLOCK;
 	writel(reg_val, CMN_BLK_ADDR + 0x4);
+#endif
 	reg_val = readl(CMN_BLK_ADDR);
 	reg_val = reg_val | 0x40;
 	writel(reg_val, CMN_BLK_ADDR);
@@ -958,6 +1165,13 @@ static void gcc_clock_enable(void)
 	reg_val |= 0x1;
 	writel(reg_val, GCC_SNOC_GMAC1_AHB_CBCR);
 
+	reg_val = readl(GCC_SNOC_GMAC0_AXI_CBCR);
+	reg_val |= 0x1;
+	writel(reg_val, GCC_SNOC_GMAC0_AXI_CBCR);
+
+	reg_val = readl(GCC_SNOC_GMAC1_AXI_CBCR);
+	reg_val |= 0x1;
+	writel(reg_val, GCC_SNOC_GMAC1_AXI_CBCR);
 }
 
 static void ethernet_clock_enable(void)
@@ -1022,6 +1236,9 @@ int board_eth_init(bd_t *bis)
 			gmac_cfg[loop].phy_interface_mode = fdtdec_get_uint(gd->fdt_blob,
 					offset, "phy_interface_mode", 0);
 
+			gmac_cfg[loop].phy_external_link = fdtdec_get_uint(gd->fdt_blob,
+					offset, "phy_external_link", 0);
+
 			gmac_cfg[loop].phy_napa_gpio = fdtdec_get_uint(gd->fdt_blob,
 					offset, "napa_gpio", 0);
 			if (gmac_cfg[loop].phy_napa_gpio){
@@ -1077,7 +1294,7 @@ void set_flash_secondary_type(qca_smem_flash_info_t *smem)
 #ifdef CONFIG_USB_XHCI_IPQ
 void board_usb_deinit(int id)
 {
-	int nodeoff, ssphy;
+	int nodeoff, ssphy, gpio_node;
 	char node_name[8];
 
 	if(readl(EUD_EUD_EN2))
@@ -1112,6 +1329,24 @@ void board_usb_deinit(int id)
 	/* Deselect the usb phy mux */
 	if (ssphy)
 		writel(0x0, TCSR_USB_PCIE_SEL);
+
+	/* skip gpio pull config if bt_debug is enabled */
+	if(getenv("bt_debug"))
+		return;
+
+	/* deinit USB power GPIO for drive 5V */
+	gpio_node = fdt_subnode_offset(gd->fdt_blob, nodeoff, "usb_gpio");
+	if (gpio_node >= 0){
+		gpio_node = fdt_first_subnode(gd->fdt_blob, gpio_node);
+		if (gpio_node > 0) {
+			int gpio = fdtdec_get_uint(gd->fdt_blob,
+					gpio_node, "gpio", 0);
+			unsigned int *gpio_base =
+				(unsigned int *)GPIO_CONFIG_ADDR(gpio);
+			writel(0xC1, gpio_base);
+		}
+	}
+
 }
 
 static void usb_clock_init(int id, int ssphy)
@@ -1174,8 +1409,20 @@ static void usb_clock_init(int id, int ssphy)
 	writel(CLK_ENABLE, GCC_USB0_LFPS_CBCR);
 }
 
-static void usb_init_hsphy(void __iomem *phybase)
+static void usb_init_hsphy(void __iomem *phybase, int ssphy)
 {
+	if (!ssphy) {
+		/*Enable utmi instead of pipe*/
+		writel((readl(USB30_GENERAL_CFG) | PIPE_UTMI_CLK_DIS), USB30_GENERAL_CFG);
+
+		udelay(100);
+
+		writel((readl(USB30_GENERAL_CFG) | PIPE_UTMI_CLK_SEL | PIPE3_PHYSTATUS_SW), USB30_GENERAL_CFG);
+
+		udelay(100);
+
+		writel((readl(USB30_GENERAL_CFG) & ~PIPE_UTMI_CLK_DIS), USB30_GENERAL_CFG);
+	}
 	/* Disable USB PHY Power down */
 	setbits_le32(phybase + 0xA4, 0x1);
 	/* Enable override ctrl */
@@ -1245,12 +1492,12 @@ static void usb_init_phy(int index, int ssphy)
 
 	if (ssphy)
 		usb_init_ssphy((u32 *)USB3PHY_APB_BASE);
-	usb_init_hsphy((u32 *)QUSB2PHY_BASE);
+	usb_init_hsphy((u32 *)QUSB2PHY_BASE, ssphy);
 }
 
 int ipq_board_usb_init(void)
 {
-	int i, nodeoff, ssphy;
+	int i, nodeoff, ssphy, gpio_node;
 	char node_name[8];
 
 	if(readl(EUD_EUD_EN2)) {
@@ -1276,6 +1523,15 @@ int ipq_board_usb_init(void)
 			writel(0x0C804010, USB30_GUCTL);
 		}
 	}
+	/* skip gpio pull config if bt_debug is enabled */
+	if(!getenv("bt_debug")){
+		/* USB power GPIO for drive 5V */
+		gpio_node =
+			fdt_subnode_offset(gd->fdt_blob, nodeoff, "usb_gpio");
+		if (gpio_node >= 0)
+			qca_gpio_init(gpio_node);
+	}
+
 	return 0;
 }
 #endif
@@ -1584,19 +1840,6 @@ void board_pci_deinit()
 }
 #endif
 
-void fdt_fixup_wcss_rproc_for_atf(void *blob)
-{
-/*
- * Set q6 in non-secure mode only if ATF is enable
- */
-	parse_fdt_fixup("/soc/qcom_q6v5_wcss@CD00000%qcom,nosecure%1", blob);
-	parse_fdt_fixup("/soc/qcom_q6v5_wcss@CD00000%qca,wcss-aon-reset-seq%1", blob);
-/*
- * Set btss in non-secure mode only if ATF is enable
- */
-	parse_fdt_fixup("/soc/bt@7000000%qcom,nosecure%1", blob);
-}
-
 void fdt_fixup_qpic(void *blob)
 {
 	int node_off, ret;
@@ -1633,7 +1876,7 @@ void fdt_fixup_bt_debug(void *blob)
 	if ((gd->bd->bi_arch_number == MACH_TYPE_IPQ5018_AP_MP02_1) ||
 		(gd->bd->bi_arch_number == MACH_TYPE_IPQ5018_DB_MP02_1)) {
 		node = fdt_path_offset(blob, "/soc/pinctrl@1000000/btss_pins");
-		if (node) {
+		if (node >= 0) {
 			phandle = fdtdec_get_int(blob, node, "phandle", 0);
 			snprintf(node_name,
 				sizeof(node_name),
@@ -1643,10 +1886,22 @@ void fdt_fixup_bt_debug(void *blob)
 			parse_fdt_fixup("/soc/bt@7000000%pinctrl-names%?btss_pins", blob);
 			parse_fdt_fixup(node_name, blob);
 		}
+		parse_fdt_fixup("/soc/mdio@90000/%delete%status", blob);
+		parse_fdt_fixup("/soc/mdio@90000/%status%?disabled", blob);
 	}
 	parse_fdt_fixup("/soc/serial@78b0000/%status%?ok", blob);
+	parse_fdt_fixup("/soc/usb3@8A00000/%delete%device-power-gpio", blob);
+}
+
+#ifdef CONFIG_IPQ_TINY
+void fdt_fixup_art_format(void *blob)
+{
+	int nodeoffset;
+	nodeoffset = fdt_path_offset(blob, "/");
+	fdt_add_subnode(blob, nodeoffset, "compressed_art");
 
 }
+#endif
 
 void run_tzt(void *address)
 {
@@ -1705,3 +1960,13 @@ int bring_sec_core_up(unsigned int cpuid, unsigned int entry, unsigned int arg)
 	return 0;
 }
 #endif
+
+int get_soc_hw_version(void)
+{
+	return readl(TCSR_SOC_HW_VERSION_REG);
+}
+
+void sdi_disable(void)
+{
+	qca_scm_sdi();
+}

@@ -128,4 +128,28 @@ int board_mmc_env_init(qca_mmc mmc_host)
 	}
 	return ret;
 }
+
+void set_platform_specific_default_env(void)
+{
+	uint32_t soc_ver_major, soc_ver_minor, soc_version;
+	uint32_t machid;
+	uint32_t soc_hw_version;
+	int ret;
+
+	machid = smem_get_board_platform_type();
+	if (machid != 0)
+		setenv_addr("machid", (void *)machid);
+
+	soc_hw_version = get_soc_hw_version();
+	if (soc_hw_version)
+		setenv_hex("soc_hw_version", (unsigned long)soc_hw_version);
+
+	ret = ipq_smem_get_socinfo_version((uint32_t *)&soc_version);
+	if (!ret) {
+		soc_ver_major = SOCINFO_VERSION_MAJOR(soc_version);
+		soc_ver_minor = SOCINFO_VERSION_MINOR(soc_version);
+		setenv_ulong("soc_version_major", (unsigned long)soc_ver_major);
+		setenv_ulong("soc_version_minor", (unsigned long)soc_ver_minor);
+	}
+}
 #endif

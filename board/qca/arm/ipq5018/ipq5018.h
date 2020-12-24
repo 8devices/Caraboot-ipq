@@ -52,6 +52,13 @@
 #define FREQUENCY_MASK				0xfffffdf0
 #define INTERNAL_48MHZ_CLOCK    		0x7
 
+#define CMN_BLK_PLL_SRC_ADDR			0x0009B028
+#define PLL_CTRL_SRC_MASK			0xfffffcff
+#define PLL_REFCLK_DIV_MASK			0xfffffe0f
+#define PLL_REFCLK_DIV_2			0x20
+#define CMN_BLK_PLL_SRC_SEL_FROM_REG		0x0
+#define CMN_BLK_PLL_SRC_SEL_FROM_LOGIC		0x1
+#define CMN_BLK_PLL_SRC_SEL_FROM_PCS		0x2
 #define TCSR_ETH_LDO_RDY_REG			0x19475C4
 #define TCSR_ETH_LDO_RDY_SIZE			0x4
 #define ETH_LDO_RDY				0x1
@@ -226,6 +233,10 @@
 #define USB30_FLADJ				0x8A0C630
 #define GUCTL					0x700C12C
 #define FLADJ					0x700C630
+
+#define PIPE_UTMI_CLK_SEL			0x1
+#define PIPE3_PHYSTATUS_SW			(0x1 << 3)
+#define PIPE_UTMI_CLK_DIS			(0x1 << 8)
 
 #define QUSB2PHY_BASE				0x5b000
 
@@ -483,6 +494,7 @@ typedef struct {
 	int phy_type;
 	u32 mac_pwr;
 	int ipq_swith;
+	int phy_external_link;
 	int switch_port_count;
 	int switch_port_phy_address[S17C_MAX_PORT];
 	const char phy_name[MDIO_NAME_LEN];
@@ -580,4 +592,56 @@ typedef enum {
 	SMEM_MAX_SIZE = SMEM_SPI_FLASH_ADDR_LEN + 1,
 } smem_mem_type_t;
 
+#ifdef CONFIG_IPQ_BT_SUPPORT
+#define NVM_SEGMENT_SIZE 243
+#define TLV_REQ_OPCODE 0xFC00
+#define TLV_COMMAND_REQUEST 0x1E
+#define DATA_REMAINING_LENGTH 2
+#define TLV_RESPONSE_PACKET_SIZE 8
+#define TLV_RESPONSE_STATUS_INDEX 6
+
+#define PACKED_STRUCT __attribute__((__packed__))
+
+#define LE_UNALIGNED(x, y)  \
+{                                        \
+	((u8 *)(x))[0] = ((u8)(((u32)(y)) & 0xFF));            \
+	((u8 *)(x))[1] = ((u8)((((u32)(y)) >> 8) & 0xFF));     \
+}
+
+typedef enum
+{
+	ptHCICommandPacket = 0x01,  /* Simple HCI Command Packet    */
+	ptHCIACLDataPacket = 0x02,  /* HCI ACL Data Packet Type.    */
+	ptHCISCODataPacket = 0x03,  /* HCI SCO Data Packet Type.    */
+	ptHCIeSCODataPacket= 0x03,  /* HCI eSCO Data Packet Type.   */
+	ptHCIEventPacket   = 0x04,  /* HCI Event Packet Type.       */
+	ptHCIAdditional    = 0x05   /* Starting Point for Additional*/
+} HCI_PacketType_t;
+
+typedef struct _tlv_download_req
+{
+	u16 opcode;
+	u8 parameter_total_length;
+	u8 command_request;
+	u8 tlv_segment_length;
+	u8 tlv_segment_data[0];
+
+} PACKED_STRUCT tlv_download_req;
+
+typedef struct _tagHCI_Packet_t
+{
+	u8 HCIPacketType;
+	tlv_download_req HCIPayload;
+} PACKED_STRUCT HCI_Packet_t;
+
+typedef enum {
+	BT_WAIT_FOR_START = 0,
+	BT_WAIT_FOR_TX_COMPLETE = 1,
+	BT_WAIT_FOR_STOP = 2,
+} bt_wait;
+
+#define BT_TIMEOUT_US 50000
+
+int bt_init(void);
+#endif
 #endif /* _IPQ5018_CDP_H_ */

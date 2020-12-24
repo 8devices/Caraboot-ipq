@@ -31,6 +31,9 @@
 
 #define DLOAD_MAGIC_COOKIE	0x10
 #define DLOAD_DISABLED		0x40
+
+#define TCSR_SOC_HW_VERSION_REG 0x194D000
+
 DECLARE_GLOBAL_DATA_PTR;
 struct sdhci_host mmc_host;
 extern int ipq6018_edma_init(void *cfg);
@@ -1048,7 +1051,7 @@ void set_function_select_as_mdc_mdio(void)
 		for (i = 0; i < mdc_mdio_gpio_cnt; i++) {
 			if (mdc_mdio_gpio[i] >=0) {
 				mdc_mdio_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(mdc_mdio_gpio[i]);
-				writel(0x7, mdc_mdio_gpio_base);
+				writel(0xC7, mdc_mdio_gpio_base);
 			}
 		}
 	}
@@ -1373,4 +1376,9 @@ void fdt_fixup_wcss_rproc_for_atf(void *blob)
 {
 	parse_fdt_fixup("/soc/qcom_q6v5_wcss@CD00000%qcom,nosecure%1", blob);
 	parse_fdt_fixup("/soc/qcom_q6v5_wcss@CD00000%qca,wcss-aon-reset-seq%1", blob);
+}
+
+int get_soc_hw_version(void)
+{
+	return readl(TCSR_SOC_HW_VERSION_REG);
 }

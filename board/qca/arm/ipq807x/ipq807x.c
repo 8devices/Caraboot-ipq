@@ -59,6 +59,9 @@
 #define NOC_ERR_CLR_REG		0xb0002a0
 
 #define DLOAD_MAGIC_COOKIE	0x10
+
+#define TCSR_SOC_HW_VERSION_REG 0x194D000
+
 DECLARE_GLOBAL_DATA_PTR;
 
 #define GCNT_PSHOLD             0x004AB000
@@ -1790,20 +1793,6 @@ void run_tzt(void *address)
 	execute_tzt(address);
 }
 
-void set_platform_specific_default_env(void)
-{
-	uint32_t soc_ver_major, soc_ver_minor, soc_version;
-	int ret;
-
-	ret = ipq_smem_get_socinfo_version((uint32_t *)&soc_version);
-	if (!ret) {
-		soc_ver_major = SOCINFO_VERSION_MAJOR(soc_version);
-		soc_ver_minor = SOCINFO_VERSION_MINOR(soc_version);
-		setenv_ulong("soc_version_major", (unsigned long)soc_ver_major);
-		setenv_ulong("soc_version_minor", (unsigned long)soc_ver_minor);
-	}
-}
-
 void sdi_disable(void)
 {
 	qca_scm_sdi();
@@ -1883,4 +1872,9 @@ void qgic_init(void)
 {
 	qgic_dist_init();
 	qgic_cpu_init();
+}
+
+int get_soc_hw_version(void)
+{
+	return readl(TCSR_SOC_HW_VERSION_REG);
 }

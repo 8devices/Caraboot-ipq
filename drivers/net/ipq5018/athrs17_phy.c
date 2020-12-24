@@ -173,7 +173,7 @@ int athrs17_init_switch(void)
 		data = athrs17_reg_read(S17_MASK_CTRL_REG);
 		i++;
 		if (i == 10){
-			printf("Failed to reset S17C \n");
+			printf("QCA_8337: Failed to reset\n");
 			return -1;
 		}
 	} while (data & S17_MASK_CTRL_SOFT_RET);

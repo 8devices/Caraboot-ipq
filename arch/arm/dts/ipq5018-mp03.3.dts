@@ -126,6 +126,19 @@
 		};
 	};
 
+	usb0: xhci@8a00000 {
+		usb_gpio {
+			pwr_gpio {
+				gpio = <24>;
+				func = <0>;
+				pull = <GPIO_PULL_UP>;
+				oe = <GPIO_OE_ENABLE>;
+				od_en = <GPIO_OD_DISABLE>;
+				drvstr = <GPIO_8MA>;
+			};
+		};
+	};
+
 	gmac_cfg {
 		ext_mdio_gpio = <36 37>;
 		gephy_led = <46>;
@@ -134,6 +147,11 @@
 			unit = <0>;
 			base = <0x39C00000>;
 			phy_address = <7>;
+			phy_external_link = <0>;
+			mac_pwr = <0xaa545>;
+			s17c_switch_enable = <1>;
+			switch_port_count = <4>;
+			switch_phy_address = <0 1 2 3>;
 		};
 		gmac2_cfg {
 			unit = <1>;

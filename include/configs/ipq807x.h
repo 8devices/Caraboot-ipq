@@ -28,6 +28,9 @@
  * #define CONFIG_RUMI
  */
 
+#define CONFIG_CMD_AES
+#define CONFIG_CMD_AES_256
+
 #define CONFIG_BOARD_EARLY_INIT_F
 #define CONFIG_IPQ_NO_RELOC
 #define CONFIG_BOARD_LATE_INIT

@@ -214,9 +214,11 @@ int board_init(void)
 #endif
 	}
 #endif
-	ret = ipq_board_usb_init();
-	if (ret < 0) {
-		printf("WARN: ipq_board_usb_init failed\n");
+	if (sfi->flash_type != SMEM_BOOT_NO_FLASH) {
+		ret = ipq_board_usb_init();
+		if (ret < 0) {
+			printf("WARN: ipq_board_usb_init failed\n");
+		}
 	}
 
 	aquantia_phy_reset_init();
@@ -352,11 +354,17 @@ void board_flash_protect(void)
 }
 #endif
 
+__weak int get_soc_hw_version(void)
+{
+	return 0;
+}
+
 int board_late_init(void)
 {
 	unsigned int machid;
 	uint32_t flash_type;
 	uint32_t soc_ver_major, soc_ver_minor;
+	uint32_t soc_hw_version;
 	int ret;
 	char *s = NULL;
 
@@ -384,6 +392,10 @@ int board_late_init(void)
 		setenv_ulong("soc_version_major", (unsigned long)soc_ver_major);
 		setenv_ulong("soc_version_minor", (unsigned long)soc_ver_minor);
 	}
+
+	soc_hw_version = get_soc_hw_version();
+	if (soc_hw_version)
+		setenv_hex("soc_hw_version", (unsigned long)soc_hw_version);
 #ifdef CONFIG_FLASH_PROTECT
 	board_flash_protect();
 #endif
