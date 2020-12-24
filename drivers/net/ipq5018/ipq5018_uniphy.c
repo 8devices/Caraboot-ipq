@@ -22,6 +22,8 @@
 #include "ipq5018_uniphy.h"
 #include "ipq_phy.h"
 
+static uint32_t cur_mode;
+
 static int ppe_uniphy_calibration(void)
 {
 	int retries = 100, calibration_done = 0;
@@ -59,6 +61,7 @@ static void ppe_gcc_uniphy_soft_reset(void)
 
 static void ppe_uniphy_sgmii_mode_set(uint32_t mode)
 {
+	uint32_t phy_mode = 0x70;
 	writel(UNIPHY_MISC2_REG_SGMII_MODE,
 		PPE_UNIPHY_BASE + UNIPHY_MISC2_REG_OFFSET);
 
@@ -93,14 +96,20 @@ static void ppe_uniphy_sgmii_mode_set(uint32_t mode)
 		case PORT_WRAPPER_SGMII_PLUS:
 			writel((UNIPHY_SG_PLUS_MODE | UNIPHY_PSGMII_MAC_MODE),
 					PPE_UNIPHY_BASE + PPE_UNIPHY_MODE_CONTROL);
+			phy_mode = 0x30;
 			break;
 
 		default:
 			printf("SGMII Config. wrongly");
 			break;
 	}
+	if ((cur_mode == PORT_WRAPPER_SGMII_PLUS) ||
+		(mode == PORT_WRAPPER_SGMII_PLUS)){
+		cur_mode = mode;
+		ppe_gcc_uniphy_soft_reset();
+	}
 
-	ppe_gcc_uniphy_soft_reset();
+	writel(phy_mode, PPE_UNIPHY_BASE + PPE_UNIPHY_ALLREG_DEC_MISC2);
 
 	writel(0x1, GCC_UNIPHY_RX_CBCR);
 	udelay(500);
