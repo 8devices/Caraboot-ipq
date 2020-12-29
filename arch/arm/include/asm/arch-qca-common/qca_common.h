@@ -25,6 +25,10 @@
 #include <asm/arch-ipq6018/clk.h>
 #endif
 
+#ifdef CONFIG_ARCH_IPQ9048
+#include <asm/arch-ipq9048/clk.h>
+#endif
+
 #ifdef CONFIG_ARCH_IPQ807x
 #include <asm/arch-ipq807x/clk.h>
 #endif
