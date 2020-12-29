@@ -758,8 +758,8 @@ class Pack(object):
 	    machid_list.append(machid)
 
 	script.start_if_or("machid", machid_list)
-	script.start_activity("Flashing wifi_fw volume:")
-	script.imxtract("wifi_fw_" + wifi_fw_type + "-" + sha1(fw_filename))
+	script.start_activity("Flashing " + fw_filename[:-13] + ":")
+	script.imxtract(fw_filename[:-13] + "-" + sha1(fw_filename))
 	script.append('flash wifi_fw', fatal=False)
 
 	script.finish_activity()
@@ -837,14 +837,14 @@ class Pack(object):
 	    return 1
 
 	script.start_if_or("machid", machid_list)
-	script.start_activity("Flashing %s_%s:" % ( section_conf, wifi_fw_type ))
+	script.start_activity("Flashing %s:" % ( filename[:-13] ))
 
 	if img_size > 0:
 	    filename_pad = filename + ".padded"
 	    if ((self.flinfo.type == 'nand' or self.flinfo.type == 'emmc') and (size != img_size)):
-		script.imxtract(section_conf + "_" + wifi_fw_type + "-" + sha1(filename_pad))
+		script.imxtract(filename[:-13] + "-" + sha1(filename_pad))
 	    else:
-		script.imxtract(section_conf + "_" + wifi_fw_type + "-" + sha1(filename))
+		script.imxtract(filename[:-13] + "-" + sha1(filename))
 
 	part_size = Pack.norplusnand_rootfs_img_size
 	if part_info == None:
@@ -1551,7 +1551,7 @@ class Pack(object):
 	elif section_conf == "wififw" and self.flash_type in ["nand", "nand-4k", "nand-audio", "nand-audio-4k", "norplusnand", "norplusnand-4k"]:
 	    section_conf = "wififw_ubi"
 	elif section_conf == "wififw" and wifi_fw_type:
-	    section_conf = section_conf + "_" + wifi_fw_type
+	    section_conf = filename[:-13]
 
 	if soc_version:
 	    section_conf = section_conf + "_v" + str(soc_version)
@@ -1564,7 +1564,7 @@ class Pack(object):
 
     def __gen_script_append_images_wififw_ubi_volume(self, fw_filename, wifi_fw_type, images):
 
-	image_info = ImageInfo("wifi_fw_" + wifi_fw_type + "-" + sha1(fw_filename),
+	image_info = ImageInfo(fw_filename[:-13] + "-" + sha1(fw_filename),
 				fw_filename, "firmware")
 	if fw_filename.lower() != "none":
 	    if image_info not in images:
