@@ -128,6 +128,7 @@ int board_mmc_env_init(qca_mmc mmc_host)
 	}
 	return ret;
 }
+#endif
 
 void set_platform_specific_default_env(void)
 {
@@ -152,4 +153,3 @@ void set_platform_specific_default_env(void)
 		setenv_ulong("soc_version_minor", (unsigned long)soc_ver_minor);
 	}
 }
-#endif
