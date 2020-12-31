@@ -37,6 +37,7 @@ obj-$(CONFIG_ARCH_IPQ40xx) += qca_qup_spi_bam.o
 obj-$(CONFIG_ARCH_IPQ807x) += qca_qup_spi_bam.o
 obj-$(CONFIG_ARCH_IPQ6018) += qca_qup_spi_bam.o
 obj-$(CONFIG_ARCH_IPQ5018) += qca_qup_spi_bam.o
+obj-$(CONFIG_ARCH_IPQ9048) += qca_qup_spi_bam.o
 
 obj-$(CONFIG_ARCH_IPQ806x) += ipq_spi.o
 endif

@@ -92,10 +92,8 @@ __weak void sdi_disable(void)
 int board_init(void)
 {
 	int ret;
-#ifndef CONFIG_IPQ9048
 	uint32_t start_blocks;
 	uint32_t size_blocks;
-#endif
 
 #ifdef CONFIG_IPQ_REPORT_L2ERR
         u32 l2esr;
