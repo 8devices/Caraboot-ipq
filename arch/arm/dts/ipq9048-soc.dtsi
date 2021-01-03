@@ -54,6 +54,14 @@
 		};
 	};
 
+	nand: nand-controller@79B0000 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "qcom,qpic-nand-v2.1.1";
+		reg = <0x79B0000 0x10000>;
+		status = "disabled";
+	};
+
 	timer {
 		gcnt_cntcv_lo = <0x4a2000>;
 		gcnt_cntcv_hi = <0x4a2004>;

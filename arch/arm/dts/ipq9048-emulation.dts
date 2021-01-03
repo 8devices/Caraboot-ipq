@@ -21,5 +21,15 @@
 
 	aliases {
 		console = "/serial@78AF000";
+		nand = "/nand-controller@79B0000";
+	};
+
+	timer {
+		gpt_freq_hz = <240000>;
+	};
+
+	nand: nand-controller@79B0000 {
+		status = "okay";
+		nand_gpio {};
 	};
 };

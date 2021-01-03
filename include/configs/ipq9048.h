@@ -18,6 +18,11 @@
 #include <generated/asm-offsets.h>
 #endif
 
+/*
+ * Support for IPQ9048 RUMI
+ */
+#define CONFIG_IPQ9048_RUMI
+
 #define CONFIG_IPQ9048
 
 #define CONFIG_BOARD_EARLY_INIT_F
@@ -138,6 +143,18 @@ extern loff_t board_env_size;
 #define CONFIG_CMD_NAND_YAFFS
 #define CONFIG_SYS_NAND_SELF_INIT
 #define CONFIG_SYS_NAND_ONFI_DETECTION
+
+#define CONFIG_QPIC_SERIAL
+
+#ifdef CONFIG_QPIC_SERIAL
+#ifdef QSPI_SERIAL_DEBUG /* QSPI DEBUG */
+#define qspi_debug(fmt,args...)	printf (fmt ,##args)
+#else
+#define qspi_debug(fmt,args...)
+#endif /* QSPI DEBUG */
+#define CONFIG_PAGE_SCOPE_MULTI_PAGE_READ
+#define CONFIG_QSPI_SERIAL_TRAINING
+#endif
 
 /*
  * Expose SPI driver as a pseudo NAND driver to make use

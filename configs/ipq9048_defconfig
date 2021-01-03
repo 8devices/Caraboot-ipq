@@ -204,6 +204,11 @@ CONFIG_SIMPLE_BUS=y
 #
 
 #
+# Serial NAND
+#
+CONFIG_QPIC_SERIAL=y
+
+#
 # SPI Flash Support
 #
 # CONFIG_SPI_FLASH is not set
