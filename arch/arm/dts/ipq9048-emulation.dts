@@ -22,6 +22,7 @@
 	aliases {
 		console = "/serial@78AF000";
 		nand = "/nand-controller@79B0000";
+		mmc = "/sdhci@7804000";
 	};
 
 	timer {
@@ -31,5 +32,9 @@
 	nand: nand-controller@79B0000 {
 		status = "okay";
 		nand_gpio {};
+	};
+
+	mmc: sdhci@7804000 {
+		compatible = "qcom,sdhci-msm";
 	};
 };

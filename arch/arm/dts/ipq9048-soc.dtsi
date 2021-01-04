@@ -62,6 +62,10 @@
 		status = "disabled";
 	};
 
+	mmc: sdhci@7804000 {
+		compatible = "qcom,sdhci-msm";
+	};
+
 	timer {
 		gcnt_cntcv_lo = <0x4a2000>;
 		gcnt_cntcv_hi = <0x4a2004>;

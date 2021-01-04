@@ -62,6 +62,25 @@
 #define FB_CLK_BIT			(1 << 4)
 #define UPDATE_EN			0x1
 
+/*
+ * GCC-SDCC Registers
+ */
+#define GCC_SDCC1_APPS_CBCR	0x183302C
+#define GCC_SDCC1_APPS_CFG_RCGR	0x1833008
+#define GCC_SDCC1_APPS_CMD_RCGR	0x1833004
+#define GCC_SDCC1_APPS_CFG_RCGR_SRC_SEL	(2 << 8)
+#define GCC_SDCC1_APPS_CFG_RCGR_SRC_DIV	(0xB << 0)
+#define GCC_SDCC1_APPS_M	0x183300C
+#define GCC_SDCC1_APPS_N	0x1833010
+#define GCC_SDCC1_APPS_D	0x1833014
+#define SDCC1_M_VAL		0x1
+#define SDCC1_N_VAL		0xFC
+#define SDCC1_D_VAL		0xFD
+
+#define GCC_SDCC1_BCR		0x1833000
+#define GCC_SDCC1_AHB_CBCR	0x1833034
+
+
 unsigned int __invoke_psci_fn_smc(unsigned int, unsigned int,
 					 unsigned int, unsigned int);
 
@@ -167,6 +186,9 @@ typedef enum {
 	SMEM_LAST_VALID_TYPE = SMEM_SPI_FLASH_ADDR_LEN,
 	SMEM_MAX_SIZE = SMEM_SPI_FLASH_ADDR_LEN + 1,
 } smem_mem_type_t;
+
+#define MSM_SDC1_BASE           0x7800000
+#define MSM_SDC1_SDHCI_BASE     0x7804000
 
 __weak void qgic_init(void) {}
 __weak void handle_noc_err(void) {}

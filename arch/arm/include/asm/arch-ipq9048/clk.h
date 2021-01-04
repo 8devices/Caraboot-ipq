@@ -52,6 +52,10 @@
 #define NOT_N_MINUS_M(n,m)	(~(n - m))
 #define CLOCK_UPDATE_TIMEOUT_US	1000
 
+#define CMD_UPDATE      0x1
+#define ROOT_EN         0x2
+#define CLK_ENABLE      0x1
+
 int uart_clock_config(struct ipq_serial_platdata *plat);
 
 #endif /*IPQ9048_CLK_H*/
