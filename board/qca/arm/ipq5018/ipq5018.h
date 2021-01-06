@@ -640,7 +640,7 @@ typedef enum {
 	BT_WAIT_FOR_STOP = 2,
 } bt_wait;
 
-#define BT_TIMEOUT_US 50000
+#define BT_TIMEOUT_US 500000
 
 int bt_init(void);
 #endif
