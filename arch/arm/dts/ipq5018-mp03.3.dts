@@ -127,6 +127,7 @@
 	};
 
 	usb0: xhci@8a00000 {
+		usb_pwr_gpio = <24>;
 		usb_gpio {
 			pwr_gpio {
 				gpio = <24>;
