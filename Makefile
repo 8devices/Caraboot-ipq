@@ -581,7 +581,11 @@ else
 ifdef CONFIG_ARCH_IPQ6018
 KBUILD_CFLAGS += $(call cc-option,-fstack-protector)
 else
+ifdef CONFIG_ARCH_IPQ9048
+KBUILD_CFLAGS += $(call cc-option,-fstack-protector)
+else
 KBUILD_CFLAGS += $(call cc-option, -fno-stack-protector)
+endif
 endif
 endif
 endif
