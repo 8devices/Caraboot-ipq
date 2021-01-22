@@ -13,6 +13,7 @@ Build
 ```
 git clone git://git.buildroot.net/buildroot
 cd buildroot
+git checkout origin/2018.08.x
 make menuconfig
 ```
 Select options:
@@ -26,6 +27,10 @@ Save and exit.
 Build:
 ```
 make toolchain
+```
+
+```
+sudo apt-get install device-tree-compiler
 ```
 ----
 2) Build Caraboot (U-Boot)
@@ -48,6 +53,14 @@ The bootloader binary will be saved to ```u-boot-mango.mbn```. Use this file to 
 
 Upgrade
 -------
+
+```diff
+- ATTENTION! Bootloader upgrade is a risky operation and should not be performed unless
+- absolutely necessary!
+- If anything goes wrong during this process (power shortage, mistype, bad compile etc.)
+- the board will be BRICKED (broken).
+- Keep in mind that warranty does not cover module if it is damaged due to user's fault.
+```
 
 Make sure that you can reach your TFTP server over ethernet conncetion. Set `ipaddr` and `serverip` environment variables according to you network setup.
 Use these commands to upgrade from u-boot shell:
