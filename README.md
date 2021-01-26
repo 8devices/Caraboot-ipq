@@ -13,7 +13,7 @@ Build
 ```
 git clone git://git.buildroot.net/buildroot
 cd buildroot
-git checkout origin/2018.08.x
+git checkout 2018.08.x
 make menuconfig
 ```
 Select options:
