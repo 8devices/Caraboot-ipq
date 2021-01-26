@@ -13,7 +13,7 @@ Build
 ```
 git clone git://git.buildroot.net/buildroot
 cd buildroot
-git checkout origin/2018.08.x
+git checkout 2018.08.x
 make menuconfig
 ```
 Select options:
@@ -51,8 +51,10 @@ Upgrade
 -------
 
 ```diff
-- ATTENTION! Bootloader upgrade is a risky operation and should not be performed unless absolutely necessary!
-- If anything goes wrong during this process (power shortage, mistype, bad compile etc.) the board will be BRICKED (broken).
+- ATTENTION! Bootloader upgrade is a risky operation and should not be performed unless
+- absolutely necessary!
+- If anything goes wrong during this process (power shortage, mistype, bad compile etc.)
+- the board will be BRICKED (broken).
 - Keep in mind that warranty does not cover module if it is damaged due to user's fault.
 ```
 
