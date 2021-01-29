@@ -182,7 +182,7 @@ void flush_l3_cache(void);
  */
 void save_boot_params_ret(void);
 
-#define isb() __asm__ __volatile__ ("" : : : "memory")
+#define isb() __asm__ __volatile__ ("isb" : : : "memory")
 
 #define nop() __asm__ __volatile__("mov\tr0,r0\t@ nop\n\t");
 
