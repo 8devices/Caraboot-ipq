@@ -866,6 +866,13 @@ __weak void fdt_fixup_art_format(void *blob)
 	return;
 }
 
+#ifdef CONFIG_IPQ_BT_SUPPORT
+__weak void fdt_fixup_bt_running(void *blob)
+{
+	return;
+}
+#endif
+
 __weak void fdt_fixup_bt_debug(void *blob)
 {
 	return;
@@ -1052,6 +1059,10 @@ int ft_board_setup(void *blob, bd_t *bd)
 	if (s) {
 		fdt_fixup_bt_debug(blob);
 	}
+
+#ifdef CONFIG_IPQ_BT_SUPPORT
+	fdt_fixup_bt_running(blob);
+#endif
 	/*
 	|| This features fixup compressed_art in
 	|| dts if its 16M profile build.
