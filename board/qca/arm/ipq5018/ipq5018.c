@@ -484,6 +484,8 @@ void fdt_fixup_auto_restart(void *blob)
 }
 
 #ifdef CONFIG_IPQ_BT_SUPPORT
+int bt_running;
+
 unsigned char hci_reset[] =
 {0x01, 0x03, 0x0c, 0x00};
 
@@ -659,7 +661,15 @@ int bt_init(void)
 
 	send_bt_hci_cmds(btDesc);
 
+	bt_running = 1;
 	return 0;
+}
+
+void fdt_fixup_bt_running(void *blob)
+{
+	if (bt_running) {
+		parse_fdt_fixup("/soc/bt@7000000%qcom,bt-running%1", blob);
+	}
 }
 #endif
 
