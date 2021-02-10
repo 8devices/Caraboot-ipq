@@ -281,4 +281,5 @@ extern loff_t board_env_size;
 #define IPQ_UBI_VOL_WRITE_SUPPORT
 #define CONFIG_IPQ_TZT
 #define CONFIG_IPQ_FDT_FIXUP
+#define CONFIG_ARMV7_PSCI
 #endif /* _IPQ9048_H */

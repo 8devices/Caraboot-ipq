@@ -80,7 +80,7 @@
 #define GCC_SDCC1_BCR		0x1833000
 #define GCC_SDCC1_AHB_CBCR	0x1833034
 
-
+#define PSCI_RESET_SMC_ID	0x84000009
 unsigned int __invoke_psci_fn_smc(unsigned int, unsigned int,
 					 unsigned int, unsigned int);
 

@@ -21,6 +21,8 @@
 #include <asm/arch-qca-common/qpic_nand.h>
 #include <asm/arch-qca-common/gpio.h>
 #include <asm/arch-qca-common/uart.h>
+#include <asm/arch-qca-common/scm.h>
+#include <asm/arch-qca-common/iomap.h>
 #include <ipq9048.h>
 #include <mmc.h>
 #include <sdhci.h>
@@ -46,11 +48,6 @@ void qca_serial_init(struct ipq_serial_platdata *plat)
 	if (ret)
 		printf("UART clock config failed %d\n", ret);
 
-	return;
-}
-
-void reset_crashdump(void)
-{
 	return;
 }
 
@@ -306,8 +303,27 @@ unsigned long timer_read_counter(void)
 	return 0;
 }
 
+void reset_crashdump(void)
+{
+	unsigned int ret = 0;
+	qca_scm_sdi();
+	ret = qca_scm_dload(CLEAR_MAGIC);
+	if (ret)
+		printf ("Error in reseting the Magic cookie\n");
+	return;
+}
+
+void psci_sys_reset(void)
+{
+	__invoke_psci_fn_smc(PSCI_RESET_SMC_ID, 0, 0, 0);
+}
+
 void reset_cpu(unsigned long a)
 {
+	reset_crashdump();
+
+	psci_sys_reset();
+
 	while (1);
 }
 
