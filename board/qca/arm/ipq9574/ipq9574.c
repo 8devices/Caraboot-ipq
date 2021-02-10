@@ -28,6 +28,8 @@
 #include <sdhci.h>
 #include <usb.h>
 
+#define DLOAD_MAGIC_COOKIE	0x10
+#define DLOAD_DISABLED		0x40
 DECLARE_GLOBAL_DATA_PTR;
 struct sdhci_host mmc_host;
 extern int ipq_spi_init(u16);
@@ -668,6 +670,93 @@ const char *del_node[] = {"uboot",
 			  "sbl",
 			  NULL};
 const add_node_t add_fdt_node[] = {{}};
+
+struct dumpinfo_t dumpinfo_n[] = {
+	/* TZ stores the DDR physical address at which it stores the
+	 * APSS regs, UTCM copy dump. We will have the TZ IMEM
+	 * IMEM Addr at which the DDR physical address is stored as
+	 * the start
+	 *     --------------------
+         *     |  DDR phy (start) | ----> ------------------------
+         *     --------------------       | APSS regsave (8k)    |
+         *                                ------------------------
+         *                                |                      |
+	 *                                | 	 UTCM copy	 |
+         *                                |        (192k)        |
+	 *                                |                      |
+         *                                ------------------------
+	 */
+
+	/* Compressed EBICS dump follows descending order
+	 * to use in-memory compression for which destination
+	 * for compression will be address of EBICS2.BIN
+	 *
+	 * EBICS2 - (ddr size / 2) [to] end of ddr
+	 * EBICS1 - uboot end addr [to] (ddr size / 2)
+	 * EBICS0 - ddr start      [to] uboot start addr
+	 */
+
+	{ "EBICS0.BIN", 0x40000000, 0x10000000, 0 },
+	{ "EBICS2.BIN", 0x60000000, 0x20000000, 0, 0, 0, 0, 1 },
+	{ "EBICS1.BIN", CONFIG_UBOOT_END_ADDR, 0x10000000, 0, 0, 0, 0, 1 },
+	{ "EBICS0.BIN", 0x40000000, CONFIG_QCA_UBOOT_OFFSET, 0, 0, 0, 0, 1 },
+	{ "CODERAM.BIN", 0x00200000, 0x00028000, 0 },
+	{ "DATARAM.BIN", 0x00290000, 0x00014000, 0 },
+	{ "MSGRAM.BIN", 0x00060000, 0x00006000, 1 },
+	{ "IMEM.BIN", 0x08600000, 0x00001000, 0 },
+	{ "NSSUTCM.BIN", 0x08600658, 0x00030000, 0, 1, 0x2000 },
+	{ "UNAME.BIN", 0, 0, 0, 0, 0, MINIMAL_DUMP },
+	{ "CPU_INFO.BIN", 0, 0, 0, 0, 0, MINIMAL_DUMP },
+	{ "DMESG.BIN", 0, 0, 0, 0, 0, MINIMAL_DUMP },
+	{ "PT.BIN", 0, 0, 0, 0, 0, MINIMAL_DUMP },
+	{ "WLAN_MOD.BIN", 0, 0, 0, 0, 0, MINIMAL_DUMP },
+};
+int dump_entries_n = ARRAY_SIZE(dumpinfo_n);
+
+/* Compressed dumps:
+ * EBICS_S2 - (ddr start + 256M) [to] end of ddr
+ * EBICS_S1 - uboot end addr     [to] (ddr start + 256M)
+ * EBICS_S0 - ddr start          [to] uboot start addr
+ */
+
+struct dumpinfo_t dumpinfo_s[] = {
+	{ "EBICS_S0.BIN", 0x40000000, 0xA600000, 0 },
+	{ "EBICS_S1.BIN", CONFIG_TZ_END_ADDR, 0x10000000, 0 },
+	{ "EBICS_S2.BIN", 0x50000000, 0x10000000, 0, 0, 0, 0, 1 },
+	{ "EBICS_S1.BIN", CONFIG_UBOOT_END_ADDR, 0x5B00000, 0, 0, 0, 0, 1 },
+	{ "EBICS_S0.BIN", 0x40000000, CONFIG_QCA_UBOOT_OFFSET, 0, 0, 0, 0, 1 },
+	{ "DATARAM.BIN", 0x00290000, 0x00014000, 0 },
+	{ "MSGRAM.BIN", 0x00060000, 0x00006000, 1 },
+	{ "IMEM.BIN", 0x08600000, 0x00001000, 0 },
+	{ "NSSUTCM.BIN", 0x08600658, 0x00030000, 0, 1, 0x2000 },
+	{ "UNAME.BIN", 0, 0, 0, 0, 0, MINIMAL_DUMP },
+	{ "CPU_INFO.BIN", 0, 0, 0, 0, 0, MINIMAL_DUMP },
+	{ "DMESG.BIN", 0, 0, 0, 0, 0, MINIMAL_DUMP },
+	{ "PT.BIN", 0, 0, 0, 0, 0, MINIMAL_DUMP },
+	{ "WLAN_MOD.BIN", 0, 0, 0, 0, 0, MINIMAL_DUMP },
+};
+int dump_entries_s = ARRAY_SIZE(dumpinfo_s);
+
+int apps_iscrashed_crashdump_disabled(void)
+{
+	u32 *dmagic = (u32 *)CONFIG_IPQ9574_DMAGIC_ADDR;
+
+	if (*dmagic == DLOAD_DISABLED)
+		return 1;
+
+	return 0;
+}
+
+int apps_iscrashed(void)
+{
+	u32 *dmagic = (u32 *)CONFIG_IPQ9574_DMAGIC_ADDR;
+
+	if (*dmagic == DLOAD_MAGIC_COOKIE)
+		return 1;
+
+	return 0;
+}
+
 
 __weak int ipq_get_tz_version(char *version_name, int buf_size)
 {

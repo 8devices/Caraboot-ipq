@@ -118,6 +118,9 @@
 #define CONFIG_TZ_END_ADDR		0x4AA00000
 #define CONFIG_SYS_SDRAM_END	((long long)CONFIG_SYS_SDRAM_BASE + gd->ram_size)
 
+#define CONFIG_QCA_UBOOT_OFFSET		0xA100000
+#define CONFIG_UBOOT_END_ADDR		0x4A500000
+
 #ifndef __ASSEMBLY__
 #include <compiler.h>
 extern loff_t board_env_offset;
@@ -286,6 +289,26 @@ extern loff_t board_env_size;
 #define TZ_VERSION				1
 #define RPM_VERSION				3
 #endif
+
+/*
+ * CRASH DUMP ENABLE
+ */
+#define CONFIG_QCA_APPSBL_DLOAD
+#define CONFIG_IPQ9574_DMAGIC_ADDR	0x193D100
+#ifdef CONFIG_QCA_APPSBL_DLOAD
+#define CONFIG_CMD_TFTPPUT
+/* We will be uploading very big files */
+#undef CONFIG_NET_RETRY_COUNT
+#define CONFIG_NET_RETRY_COUNT  500
+
+#define IPQ_TEMP_DUMP_ADDR 0x44000000
+#endif
+
+#define CONFIG_QCA_KERNEL_CRASHDUMP_ADDRESS	*((unsigned int *)0x08600658)
+#define CONFIG_CPU_CONTEXT_DUMP_SIZE		4096
+#define TLV_BUF_OFFSET						244 * 1024
+#define CONFIG_TLV_DUMP_SIZE				12 * 1024
+
 /* L1 cache line size is 64 bytes, L2 cache line size is 128 bytes
  * Cache flush and invalidation based on L1 cache, so the cache line
  * size is configured to 64 */
