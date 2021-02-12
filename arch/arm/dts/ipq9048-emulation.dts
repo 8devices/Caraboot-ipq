@@ -23,6 +23,7 @@
 		console = "/serial@78AF000";
 		nand = "/nand-controller@79B0000";
 		mmc = "/sdhci@7804000";
+		usb0 = "/xhci@8a00000";
 	};
 
 	timer {
@@ -36,5 +37,9 @@
 
 	mmc: sdhci@7804000 {
 		compatible = "qcom,sdhci-msm";
+	};
+
+	xhci@8a00000 {
+		qcom,emulation = <1>;
 	};
 };

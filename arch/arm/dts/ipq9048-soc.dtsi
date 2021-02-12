@@ -66,6 +66,13 @@
 		compatible = "qcom,sdhci-msm";
 	};
 
+	xhci@8a00000 {
+		compatible = "qca,dwc3-ipq";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0x8a00000 0xcd00>;
+	};
+
 	timer {
 		gcnt_cntcv_lo = <0x4a2000>;
 		gcnt_cntcv_hi = <0x4a2004>;
