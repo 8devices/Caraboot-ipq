@@ -24,6 +24,7 @@
 		nand = "/nand-controller@79B0000";
 		mmc = "/sdhci@7804000";
 		usb0 = "/xhci@8a00000";
+		i2c0 = "/i2c@78b6000";
 	};
 
 	timer {
@@ -38,6 +39,33 @@
 	mmc: sdhci@7804000 {
 		compatible = "qcom,sdhci-msm";
 	};
+
+	i2c0: i2c@78b6000 {
+		compatible = "qcom,qup-i2c";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x78b6000 0x600>;
+	        clock-frequency  = <400000>;
+
+		i2c_gpio {
+			gpio1 {
+				gpio = <36>;
+				func = <2>;
+				pull = <GPIO_NO_PULL>;
+				drvstr = <GPIO_8MA>;
+				oe = <GPIO_OE_ENABLE>;
+			};
+
+			gpio2 {
+				gpio = <37>;
+				func = <2>;
+				pull = <GPIO_NO_PULL>;
+				drvstr = <GPIO_8MA>;
+				oe = <GPIO_OE_ENABLE>;
+			};
+		};
+	};
+
 
 	xhci@8a00000 {
 		qcom,emulation = <1>;

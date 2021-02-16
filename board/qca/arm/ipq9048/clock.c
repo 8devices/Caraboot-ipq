@@ -16,6 +16,27 @@
 #include <asm/arch-ipq9048/clk.h>
 #include <asm/errno.h>
 
+#ifdef CONFIG_IPQ9048_I2C
+void i2c_clock_config(void)
+{
+#ifndef CONFIG_IPQ9048_RUMI
+	int cfg;
+
+	/* Configure qup1_i2c_apps_clk_src */
+	cfg = (GCC_BLSP1_QUP1_I2C_APPS_CFG_RCGR_SRC_SEL |
+			GCC_BLSP1_QUP1_I2C_APPS_CFG_RCGR_SRC_DIV);
+	writel(cfg, GCC_BLSP1_QUP1_I2C_APPS_CFG_RCGR);
+
+	writel(CMD_UPDATE, GCC_BLSP1_QUP1_I2C_APPS_CMD_RCGR);
+	mdelay(100);
+	writel(ROOT_EN, GCC_BLSP1_QUP1_I2C_APPS_CMD_RCGR);
+
+	/* Configure CBCR */
+	writel(CLK_ENABLE, GCC_BLSP1_QUP1_I2C_APPS_CBCR);
+#endif
+}
+#endif
+
 static void uart_configure_mux(u8 id)
 {
 	unsigned long cfg_rcgr;

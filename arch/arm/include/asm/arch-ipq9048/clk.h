@@ -16,6 +16,23 @@
 
 #include <asm/arch-qca-common/uart.h>
 
+/* I2C clocks configuration */
+#ifdef CONFIG_IPQ9048_I2C
+
+#define GCC_BLSP1_QUP1_I2C_APPS_CFG_RCGR		0x180201C
+#define GCC_BLSP1_QUP1_I2C_APPS_CFG_RCGR_SRC_SEL	(1 << 8)
+#define GCC_BLSP1_QUP1_I2C_APPS_CFG_RCGR_SRC_DIV	(0x1F << 0)
+
+#define GCC_BLSP1_QUP1_I2C_APPS_CMD_RCGR	0x1802018
+#define GCC_BLSP1_QUP1_I2C_APPS_CBCR		0x1802024
+
+#define CMD_UPDATE	0x1
+#define ROOT_EN		0x2
+#define CLK_ENABLE	0x1
+
+void i2c_clock_config(void);
+#endif
+
 #define GCC_BLSP1_UART1_BCR	0x1802028
 #define GCC_BLSP1_UART2_BCR	0x1803028
 #define GCC_BLSP1_UART3_BCR	0x1804028
