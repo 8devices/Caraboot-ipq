@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015-2017, 2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014, 2015-2017, 2020-2021 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -607,6 +607,7 @@ static const struct udevice_id pcie_ver_ids[] = {
 	{ .compatible = "qcom,ipq807x-pcie", .data = PCIE_V2 },
 	{ .compatible = "qcom,ipq6018-pcie", .data = PCIE_V2 },
 	{ .compatible = "qcom,ipq5018-pcie", .data = PCIE_V2 },
+	{ .compatible = "qcom,ipq9574-pcie", .data = PCIE_V2 },
 	{ },
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018,2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2018,2020-2021 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -156,6 +156,15 @@ extern loff_t board_env_size;
 #define CONFIG_USB_MAX_CONTROLLER_COUNT         1
 #endif
 
+ /*
+ * PCIE Enable
+ */
+#define PCI_MAX_DEVICES				4
+#if defined(CONFIG_PCI_IPQ)
+#define CONFIG_PCI
+#define CONFIG_CMD_PCI
+#define CONFIG_PCI_SCAN_SHOW
+#endif
 
 /*
  * NAND Flash Configs

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2021 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -205,6 +205,11 @@
 #define USB3_PHY_START_CONTROL			0x808
 #define USB3_PHY_SW_RESET			0x800
 #define NOC_HANDSHAKE_FSM_EN		(1 << 15)
+
+#ifdef CONFIG_PCI_IPQ
+void board_pci_init(int id);
+__weak void board_pcie_clock_init(int id) {}
+#endif
 
 unsigned int __invoke_psci_fn_smc(unsigned int, unsigned int,
 					 unsigned int, unsigned int);

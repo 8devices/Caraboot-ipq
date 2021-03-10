@@ -222,6 +222,7 @@ CONFIG_QPIC_SERIAL=y
 # PCI
 #
 # CONFIG_DM_PCI is not set
+CONFIG_PCI_IPQ=y
 
 #
 # Pin controllers
