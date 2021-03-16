@@ -97,6 +97,7 @@ soc_hw_version_ipq40xx = { 0x20050100 };
 soc_hw_version_ipq807x = { 0x200D0100, 0x200D0101, 0x200D0102, 0x200D0200 };
 soc_hw_version_ipq6018 = { 0x20170100 };
 soc_hw_version_ipq5018 = { 0x20180100, 0x20180101 };
+soc_hw_version_ipq9574 = { 0x20190100 };
 
 #
 # Python 2.6 and earlier did not have OrderedDict use the backport
@@ -1146,6 +1147,8 @@ class Pack(object):
             soc_hw_versions = soc_hw_version_ipq6018
 	if ARCH_NAME == "ipq5018" or ARCH_NAME == "ipq5018_64":
             soc_hw_versions = soc_hw_version_ipq5018
+	if ARCH_NAME == "ipq9574" or ARCH_NAME == "ipq9574_64":
+            soc_hw_versions = soc_hw_version_ipq9574
 
         chip_count = 0
         for soc_hw_version in soc_hw_versions:
@@ -2069,7 +2072,7 @@ class Pack(object):
             else:
                 part_info = root.find(".//data[@type='" + ftype.upper() + "_PARAMETER']")
 
-            if ARCH_NAME in ["ipq6018", "ipq5018", "ipq807x"]:
+            if ARCH_NAME in ["ipq6018", "ipq5018", "ipq807x", "ipq9574"]:
                 MODE_APPEND = "_64" if MODE == "64" else ""
 
                 if ftype in ["nand-audio", "nand-audio-4k"]:
@@ -2261,12 +2264,12 @@ class ArgParser(object):
 #Verify Arguments passed by user
 
 # Verify arch type
-	    if ARCH_NAME not in ["ipq40xx", "ipq806x", "ipq807x", "ipq807x_64", "ipq6018", "ipq6018_64", "ipq5018", "ipq5018_64"]:
+	    if ARCH_NAME not in ["ipq40xx", "ipq806x", "ipq807x", "ipq807x_64", "ipq6018", "ipq6018_64", "ipq5018", "ipq5018_64", "ipq9574", "ipq9574_64"]:
 		raise UsageError("Invalid arch type '%s'" % arch)
 
-	    if ARCH_NAME == "ipq807x" or ARCH_NAME == "ipq5018":
+	    if ARCH_NAME == "ipq807x" or ARCH_NAME == "ipq5018" or ARCH_NAME == "ipq9574":
 		MODE = "32"
-	    elif ARCH_NAME == "ipq807x_64" or ARCH_NAME == "ipq5018_64":
+	    elif ARCH_NAME == "ipq807x_64" or ARCH_NAME == "ipq5018_64" or ARCH_NAME == "ipq9574_64":
 		MODE = "64"
 		ARCH_NAME = ARCH_NAME[:-3]
 
@@ -2306,7 +2309,7 @@ class ArgParser(object):
 	print "python pack_hk.py [options] [Value] ..."
 	print
         print "options:"
-        print "  --arch \tARCH_TYPE [ipq40xx/ipq806x/ipq807x/ipq807x_64/ipq6018/ipq6018_64/ipq5018/ipq5018_64]"
+        print "  --arch \tARCH_TYPE [ipq40xx/ipq806x/ipq807x/ipq807x_64/ipq6018/ipq6018_64/ipq5018/ipq5018_64/ipq9574/ipq9574_64]"
 	print
 	print "  --fltype \tFlash Type [nor/tiny-nor/nand/emmc/norplusnand/norplusemmc/tiny-nor-debug]"
         print " \t\tMultiple flashtypes can be passed by a comma separated string"
