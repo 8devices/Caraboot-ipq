@@ -760,7 +760,23 @@ class Pack(object):
 	script.start_if_or("machid", machid_list)
 	script.start_activity("Flashing " + fw_filename[:-13] + ":")
 	script.imxtract(fw_filename[:-13] + "-" + sha1(fw_filename))
-	script.append('flash wifi_fw', fatal=False)
+
+	rootfs_info = self.__get_part_info("rootfs")
+	rootfs_offset = rootfs_info.offset
+	rootfs_len = rootfs_info.length
+
+	wifi_fw_cmd = "setenv mtdids nand0=nand0\n"
+	wifi_fw_cmd += "setenv mtdparts mtdparts=nand0:0x%x@0x%x(rootfs)\n" % (rootfs_len,rootfs_offset)
+	wifi_fw_cmd += "ubi part rootfs\n"
+	img_size = self.__get_img_size(fw_filename)
+	wifi_fw_cmd += "ubi write $fileaddr wifi_fw %x" % img_size
+	script.append(wifi_fw_cmd, fatal=False)
+
+	#Enable the below lines for debugging purpose
+	"""
+	script.append("mtdparts", fatal=False)
+	script.append("ubi info layout", fatal=False)
+	"""
 
 	script.finish_activity()
 	script.end_if()
@@ -1903,7 +1919,7 @@ class Pack(object):
 
         its_fp.write(its_data)
         its_fp.close()
-	
+
         try:
             cmd = [SRC_DIR + "/mkimage", "-f", self.its_fname, self.img_fname]
             ret = subprocess.call(cmd)
