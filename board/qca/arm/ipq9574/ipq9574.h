@@ -11,10 +11,10 @@
  * GNU General Public License for more details.
  */
 
-#ifndef _IPQ9048_CDP_H_
-#define _IPQ9048_CDP_H_
+#ifndef _IPQ9574_CDP_H_
+#define _IPQ9574_CDP_H_
 
-#include <configs/ipq9048.h>
+#include <configs/ipq9574.h>
 #include <asm/u-boot.h>
 #include <asm/arch-qca-common/qca_common.h>
 
@@ -328,4 +328,4 @@ extern const add_node_t add_fdt_node[];
 int ipq_get_tz_version(char *version_name, int buf_size);
 void ipq_fdt_fixup_socinfo(void *blob);
 int ipq_board_usb_init(void);
-#endif /* _IPQ9048_CDP_H_ */
+#endif /* _IPQ9574_CDP_H_ */

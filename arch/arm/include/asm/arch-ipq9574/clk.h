@@ -11,13 +11,13 @@
  * GNU General Public License for more details.
  */
 
-#ifndef IPQ9048_CLK_H
-#define IPQ9048_CLK_H
+#ifndef IPQ9574_CLK_H
+#define IPQ9574_CLK_H
 
 #include <asm/arch-qca-common/uart.h>
 
 /* I2C clocks configuration */
-#ifdef CONFIG_IPQ9048_I2C
+#ifdef CONFIG_IPQ9574_I2C
 
 #define GCC_BLSP1_QUP1_I2C_APPS_CFG_RCGR		0x180201C
 #define GCC_BLSP1_QUP1_I2C_APPS_CFG_RCGR_SRC_SEL	(1 << 8)
@@ -75,4 +75,4 @@ void i2c_clock_config(void);
 
 int uart_clock_config(struct ipq_serial_platdata *plat);
 
-#endif /*IPQ9048_CLK_H*/
+#endif /*IPQ9574_CLK_H*/

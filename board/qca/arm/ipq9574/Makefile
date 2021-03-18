@@ -1,5 +1,5 @@
-ccflags-y += -I$(srctree)/board/qca/arm/ipq9048
-cppflags-y += -I$(srctree)/board/qca/arm/ipq9048
-obj-y	:= ipq9048.o
+ccflags-y += -I$(srctree)/board/qca/arm/ipq9574
+cppflags-y += -I$(srctree)/board/qca/arm/ipq9574
+obj-y	:= ipq9574.o
 obj-y	+= clock.o
 

@@ -12,10 +12,10 @@
  */
 
 /dts-v1/;
-#include "ipq9048-soc.dtsi"
+#include "ipq9574-soc.dtsi"
 / {
-	model ="QCA, IPQ9048-EMULATION";
-	compatible = "qca,ipq9048", "qca,ipq9048-emulation";
+	model ="QCA, IPQ9574-EMULATION";
+	compatible = "qca,ipq9574", "qca,ipq9574-emulation";
 	machid = <0xf030000>;
 	config_name = "config@1";
 

@@ -469,8 +469,8 @@ config ARCH_IPQ6018
 	select SYS_GENERIC_BOARD
 	select QCA_COMMON
 
-config ARCH_IPQ9048
-	bool "QCA, IPQ9048"
+config ARCH_IPQ9574
+	bool "QCA, IPQ9574"
 	select DM
 	select DM_SERIAL
 	select CPU_V7
@@ -868,7 +868,7 @@ source "board/ipq40xx/Kconfig"
 source "board/ipq5018/Kconfig"
 source "board/ipq6018/Kconfig"
 source "board/ipq806x/Kconfig"
-source "board/ipq9048/Kconfig"
+source "board/ipq9574/Kconfig"
 source "board/ipq807x/Kconfig"
 source "board/isee/igep0033/Kconfig"
 source "board/maxbcm/Kconfig"

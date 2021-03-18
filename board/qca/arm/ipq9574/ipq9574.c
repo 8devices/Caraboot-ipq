@@ -23,7 +23,7 @@
 #include <asm/arch-qca-common/uart.h>
 #include <asm/arch-qca-common/scm.h>
 #include <asm/arch-qca-common/iomap.h>
-#include <ipq9048.h>
+#include <ipq9574.h>
 #include <mmc.h>
 #include <sdhci.h>
 #include <usb.h>
@@ -83,7 +83,7 @@ void fdt_fixup_qpic(void *blob)
 #ifdef CONFIG_QPIC_NAND
 void qpic_set_clk_rate(unsigned int clk_rate, int blk_type, int req_clk_src_type)
 {
-#ifndef CONFIG_IPQ9048_RUMI
+#ifndef CONFIG_IPQ9574_RUMI
 	switch (blk_type) {
 		case QPIC_IO_MACRO_CLK:
 			/* select the clk source for IO_PAD_MACRO
@@ -170,7 +170,7 @@ void board_nand_init(void)
 #ifdef CONFIG_QCA_MMC
 void emmc_clock_config(void)
 {
-#ifndef CONFIG_IPQ9048_RUMI
+#ifndef CONFIG_IPQ9574_RUMI
 	int cfg;
 
 	/* Configure sdcc1_apps_clk_src */
@@ -210,7 +210,7 @@ void sdhci_bus_pwr_off(struct sdhci_host *host)
 
 void emmc_clock_disable(void)
 {
-#ifndef CONFIG_IPQ9048_RUMI
+#ifndef CONFIG_IPQ9574_RUMI
 	/* Clear divider */
 	writel(0x0, GCC_SDCC1_MISC);
 #endif
@@ -223,7 +223,7 @@ void board_mmc_deinit(void)
 
 void emmc_clock_reset(void)
 {
-#ifndef CONFIG_IPQ9048_RUMI
+#ifndef CONFIG_IPQ9574_RUMI
 	writel(0x1, GCC_SDCC1_BCR);
 	udelay(10);
 	writel(0x0, GCC_SDCC1_BCR);

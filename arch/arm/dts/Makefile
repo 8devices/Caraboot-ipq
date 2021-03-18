@@ -94,7 +94,7 @@ dtb-$(CONFIG_ARCH_IPQ6018) += ipq6018-cp01-c1.dtb \
 			ipq6018-db-cp01.dtb \
 			ipq6018-db-cp02.dtb
 
-dtb-$(CONFIG_ARCH_IPQ9048) += ipq9048-emulation.dtb
+dtb-$(CONFIG_ARCH_IPQ9574) += ipq9574-emulation.dtb
 
 dtb-$(CONFIG_ARCH_ROCKCHIP) += \
 	rk3288-firefly.dtb \

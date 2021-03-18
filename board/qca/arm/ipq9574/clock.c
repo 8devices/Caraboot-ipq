@@ -13,13 +13,13 @@
 
 #include <common.h>
 #include <asm/io.h>
-#include <asm/arch-ipq9048/clk.h>
+#include <asm/arch-ipq9574/clk.h>
 #include <asm/errno.h>
 
-#ifdef CONFIG_IPQ9048_I2C
+#ifdef CONFIG_IPQ9574_I2C
 void i2c_clock_config(void)
 {
-#ifndef CONFIG_IPQ9048_RUMI
+#ifndef CONFIG_IPQ9574_RUMI
 	int cfg;
 
 	/* Configure qup1_i2c_apps_clk_src */

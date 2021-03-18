@@ -1,15 +1,15 @@
-if ARCH_IPQ9048
+if ARCH_IPQ9574
 
 config SYS_CPU
-       default "ipq9048"
+       default "ipq9574"
 
 config SYS_BOARD
-       default "ipq9048"
+       default "ipq9574"
 
 config SYS_VENDOR
        default "qca/arm"
 
 config SYS_CONFIG_NAME
-       default "ipq9048"
+       default "ipq9574"
 
 endif

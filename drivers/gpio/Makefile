@@ -10,7 +10,7 @@ obj-$(CONFIG_ARCH_IPQ806x) += ipq_gpio.o
 obj-$(CONFIG_ARCH_IPQ40xx) += ipq_gpio.o
 obj-$(CONFIG_ARCH_IPQ5018) += ipq_gpio.o
 obj-$(CONFIG_ARCH_IPQ6018) += ipq_gpio.o
-obj-$(CONFIG_ARCH_IPQ9048) += ipq_gpio.o
+obj-$(CONFIG_ARCH_IPQ9574) += ipq_gpio.o
 ifndef CONFIG_SPL_BUILD
 obj-$(CONFIG_DWAPB_GPIO)	+= dwapb_gpio.o
 obj-$(CONFIG_AXP_GPIO)		+= axp_gpio.o

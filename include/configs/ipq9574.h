@@ -11,19 +11,19 @@
  * GNU General Public License for more details.
  */
 
-#ifndef _IPQ9048_H
-#define _IPQ9048_H
+#ifndef _IPQ9574_H
+#define _IPQ9574_H
 
 #ifndef DO_DEPS_ONLY
 #include <generated/asm-offsets.h>
 #endif
 
 /*
- * Support for IPQ9048 RUMI
+ * Support for IPQ9574 RUMI
  */
-#define CONFIG_IPQ9048_RUMI
+#define CONFIG_IPQ9574_RUMI
 
-#define CONFIG_IPQ9048
+#define CONFIG_IPQ9574
 
 #define CONFIG_BOARD_EARLY_INIT_F
 #define CONFIG_BOARD_LATE_INIT
@@ -33,7 +33,7 @@
 
 #define CONFIG_SYS_NONCACHED_MEMORY     (1 << 20)
 
-#define CONFIG_IPQ9048_UART
+#define CONFIG_IPQ9574_UART
 #define CONFIG_NR_DRAM_BANKS		1
 #define CONFIG_SKIP_LOWLEVEL_INIT
 
@@ -118,7 +118,7 @@ extern loff_t board_env_range;
 extern loff_t board_env_size;
 #endif
 
-#define CONFIG_IPQ9048_ENV		1
+#define CONFIG_IPQ9574_ENV		1
 #define CONFIG_ENV_OFFSET		board_env_offset
 #define CONFIG_ENV_SIZE			CONFIG_ENV_SIZE_MAX
 #define CONFIG_ENV_RANGE		board_env_range
@@ -136,8 +136,8 @@ extern loff_t board_env_size;
 #define HAVE_BLOCK_DEVICE
 #define CONFIG_DOS_PARTITION
 
-#define CONFIG_IPQ9048_I2C 1
-#ifdef CONFIG_IPQ9048_I2C
+#define CONFIG_IPQ9574_I2C 1
+#ifdef CONFIG_IPQ9574_I2C
 #define CONFIG_SYS_I2C_QUP
 #define CONFIG_CMD_I2C
 #define CONFIG_DM_I2C
@@ -318,4 +318,4 @@ extern loff_t board_env_size;
 #define CONFIG_IPQ_TZT
 #define CONFIG_IPQ_FDT_FIXUP
 #define CONFIG_ARMV7_PSCI
-#endif /* _IPQ9048_H */
+#endif /* _IPQ9574_H */
