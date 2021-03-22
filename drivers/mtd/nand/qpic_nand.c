@@ -878,7 +878,7 @@ static void qpic_serial_update_dev_params(struct mtd_info *mtd)
 		mtd->ecc_strength = 8;
 	else
 		mtd->ecc_strength = 4;
-	printf("Serial NAND device Manufature:%s\n",serial_params->name);
+	printf("Serial NAND device Manufacturer:%s\n",serial_params->name);
 	printf("Device Size:%d MiB, Page size:%d, Spare Size:%d, ECC:%d-bit\n",
 		(int)(dev->density >> 20), dev->page_size, mtd->oobsize, mtd->ecc_strength);
 }
