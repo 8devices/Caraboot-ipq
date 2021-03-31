@@ -18,6 +18,30 @@
 #include <asm/u-boot.h>
 #include <asm/arch-qca-common/qca_common.h>
 
+#define CLK_TOGGLE_ENABLE	0x1
+#define GCC_NSS_PPE_RESET	0x01868014
+
+/*
+ * PPE ASSERT and DEASSERT values
+ */
+#define PPE_ASSERT		0xf0000
+#define PPE_DEASSERT		0x0
+
+/*
+ * EDMA HW ASSERT and DEASSERT values
+ */
+#define GCC_EDMA_HW_RESET_ASSERT	0x300000
+#define	GCC_EDMA_HW_RESET_DEASSERT	0x0
+
+/*
+ * NSS Port ASSERT and DEASSERT values
+ */
+#define NSS_PORT1_ASSERT	0x1000003
+#define NSS_PORT2_ASSERT	0x200000c
+#define NSS_PORT3_ASSERT	0x4000030
+#define NSS_PORT4_ASSERT	0x8000300
+#define NSS_PORT5_ASSERT	0x10000c00
+
 #define BLSP1_UART0_BASE	0x078AF000
 #define UART_PORT_ID(reg)	((reg - BLSP1_UART0_BASE) / 0x1000)
 

@@ -290,6 +290,21 @@ extern loff_t board_env_size;
 #define RPM_VERSION				3
 #endif
 
+#define CONFIG_IPQ9574_EDMA		1
+#define CONFIG_IPQ9574_BRIDGED_MODE	1
+#define CONFIG_NET_RETRY_COUNT		5
+#define CONFIG_SYS_RX_ETH_BUFFER	16
+#define CONFIG_CMD_PING
+#define CONFIG_CMD_DHCP
+#define CONFIG_MII
+#define CONFIG_CMD_MII
+#define CONFIG_IPADDR          192.168.10.10
+#define CONFIG_NETMASK         255.255.255.0
+#define CONFIG_SERVERIP        192.168.10.1
+#define CONFIG_CMD_TFTPPUT
+#define CONFIG_IPQ_MDIO			1
+#define CONFIG_IPQ_ETH_INIT_DEFER
+
 /*
  * CRASH DUMP ENABLE
  */
