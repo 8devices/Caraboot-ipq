@@ -676,6 +676,48 @@ __weak int ipq_get_tz_version(char *version_name, int buf_size)
 
 void ipq_fdt_fixup_socinfo(void *blob)
 {
+	uint32_t cpu_type;
+	uint32_t soc_version, soc_version_major, soc_version_minor;
+	int nodeoff, ret;
+
+	nodeoff = fdt_path_offset(blob, "/");
+
+	if (nodeoff < 0) {
+		printf("ipq: fdt fixup cannot find root node\n");
+		return;
+	}
+
+	ret = ipq_smem_get_socinfo_cpu_type(&cpu_type);
+	if (!ret) {
+		ret = fdt_setprop(blob, nodeoff, "cpu_type",
+				  &cpu_type, sizeof(cpu_type));
+		if (ret)
+			printf("%s: cannot set cpu type %d\n", __func__, ret);
+	} else {
+		printf("%s: cannot get socinfo\n", __func__);
+	}
+
+	ret = ipq_smem_get_socinfo_version((uint32_t *)&soc_version);
+	if (!ret) {
+		soc_version_major = SOCINFO_VERSION_MAJOR(soc_version);
+		soc_version_minor = SOCINFO_VERSION_MINOR(soc_version);
+
+		ret = fdt_setprop(blob, nodeoff, "soc_version_major",
+				  &soc_version_major,
+				  sizeof(soc_version_major));
+		if (ret)
+			printf("%s: cannot set soc_version_major %d\n",
+			       __func__, soc_version_major);
+
+		ret = fdt_setprop(blob, nodeoff, "soc_version_minor",
+				  &soc_version_minor,
+				  sizeof(soc_version_minor));
+		if (ret)
+			printf("%s: cannot set soc_version_minor %d\n",
+			       __func__, soc_version_minor);
+	} else {
+		printf("%s: cannot get soc version\n", __func__);
+	}
 	return;
 }
 
