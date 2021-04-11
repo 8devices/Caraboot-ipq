@@ -17,7 +17,7 @@
 	model ="QCA, IPQ9574-EMULATION";
 	compatible = "qca,ipq9574", "qca,ipq9574-emulation";
 	machid = <0xF050000>;
-	config_name = "config@emulation";
+	config_name = "config@emulation-fbc";
 
 	aliases {
 		console = "/serial@78AF000";
