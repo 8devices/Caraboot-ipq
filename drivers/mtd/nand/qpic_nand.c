@@ -4141,6 +4141,7 @@ static int qpic_execute_serial_training(struct mtd_info *mtd)
 	}
 
 	training_offset = ((loff_t) mtd->erasesize * start_blocks);
+	qpic_training_offset = training_offset;
 
 	start = (training_offset >> chip->phys_erase_shift);
 	offset = (start << chip->phys_erase_shift);

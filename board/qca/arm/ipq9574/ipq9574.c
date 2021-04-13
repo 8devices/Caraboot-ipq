@@ -34,7 +34,7 @@ DECLARE_GLOBAL_DATA_PTR;
 struct sdhci_host mmc_host;
 extern int ipq_spi_init(u16);
 
-unsigned int qpic_frequency = 0, qpic_phase = 0;
+unsigned int qpic_frequency = 0, qpic_phase = 0, qpic_training_offset = 0;
 
 void qca_serial_init(struct ipq_serial_platdata *plat)
 {
@@ -57,11 +57,9 @@ void qca_serial_init(struct ipq_serial_platdata *plat)
 void fdt_fixup_qpic(void *blob)
 {
 	int node_off, ret;
-	const char *qpic_node = {"/soc/qpic-nand@79b0000"};
+	const char *qpic_node = {"/soc/nand@79b0000"};
 
-	/* This fixup is for qpic io_macro_clk
-	 * frequency & phase value
-	 */
+	/* This fixup is for passing qpic training offset to HLOS */
 	node_off = fdt_path_offset(blob, qpic_node);
 	if (node_off < 0) {
 		printf("%s: QPIC: unable to find node '%s'\n",
@@ -69,15 +67,9 @@ void fdt_fixup_qpic(void *blob)
 		return;
 	}
 
-	ret = fdt_setprop_u32(blob, node_off, "qcom,iomacromax_clk", qpic_frequency);
+	ret = fdt_setprop_u32(blob, node_off, "qcom,training_offset", qpic_training_offset);
 	if (ret) {
-		printf("%s : Unable to set property 'qcom,iomacromax_clk'\n",__func__);
-		return;
-	}
-
-	ret = fdt_setprop_u32(blob, node_off, "qcom,phase", qpic_phase);
-	if (ret) {
-		printf("%s : Unable to set property 'qcom,phase'\n",__func__);
+		printf("%s : Unable to set property 'qcom,training_offset'\n",__func__);
 		return;
 	}
 }
