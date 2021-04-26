@@ -154,6 +154,13 @@ extern loff_t board_env_size;
 #endif
 
 /*
+ * USB crashdump collection
+ */
+#define CONFIG_FS_FAT
+#define CONFIG_FAT_WRITE
+#define CONFIG_CMD_FAT
+
+/*
  * USB Support
  */
 #define CONFIG_USB_XHCI_IPQ
