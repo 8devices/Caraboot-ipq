@@ -32,6 +32,7 @@
 #define DLOAD_DISABLED		0x40
 DECLARE_GLOBAL_DATA_PTR;
 struct sdhci_host mmc_host;
+extern int ipq9574_edma_init(void *cfg);
 extern int ipq_spi_init(u16);
 
 unsigned int qpic_frequency = 0, qpic_phase = 0, qpic_training_offset = 0;
@@ -627,6 +628,19 @@ void disable_caches(void)
 int set_uuid_bootargs(char *boot_args, char *part_name, int buflen, bool gpt_flag)
 {
 	return 0;
+}
+
+int board_eth_init(bd_t *bis)
+{
+	int ret=0;
+
+	/* eth_clock_enable must be added */
+	ret = ipq9574_edma_init(NULL);
+
+	if (ret != 0)
+		printf("%s: ipq9574_edma_init failed : %d\n", __func__, ret);
+
+	return ret;
 }
 
 unsigned long timer_read_counter(void)
