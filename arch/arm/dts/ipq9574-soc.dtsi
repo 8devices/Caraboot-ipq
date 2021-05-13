@@ -13,6 +13,7 @@
 
 #include "skeleton.dtsi"
 #include <dt-bindings/qcom/gpio-ipq9574.h>
+#include <dt-bindings/qcom/eth-ipq9574.h>
 
 / {
 
