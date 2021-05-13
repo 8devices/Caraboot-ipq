@@ -87,7 +87,13 @@ obj-$(CONFIG_IPQ6018_EDMA) += ipq6018/ipq6018_edma.o
 obj-$(CONFIG_IPQ6018_EDMA) += ipq6018/ipq6018_ppe.o
 obj-$(CONFIG_IPQ6018_EDMA) += ipq6018/ipq6018_uniphy.o
 obj-$(CONFIG_IPQ9574_EDMA) += ipq9574/ipq9574_ppe.o
+
+ifndef CONFIG_IPQ9574_RUMI
+
 obj-$(CONFIG_IPQ9574_EDMA) += ipq9574/ipq9574_uniphy.o
+
+endif
+
 obj-$(CONFIG_IPQ9574_EDMA) += ipq9574/ipq9574_edma.o
 obj-$(CONFIG_IPQ5018_GMAC) += ipq5018/ipq5018_gmac.o
 obj-$(CONFIG_IPQ5018_GMAC) += ipq5018/ipq5018_uniphy.o
