@@ -15,7 +15,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  **************************************************************************
 */
-
 #include <common.h>
 #include <net.h>
 #include <asm-generic/errno.h>
@@ -50,21 +49,22 @@ uchar ipq9574_def_enetaddr[6] = {0x00, 0x03, 0x7F, 0xBA, 0xDB, 0xAD};
 phy_info_t *phy_info[IPQ9574_PHY_MAX] = {0};
 int sgmii_mode[2] = {0};
 
+#ifndef CONFIG_IPQ9574_RUMI
 extern void qca8075_ess_reset(void);
 extern void psgmii_self_test(void);
 extern void clear_self_test_config(void);
 extern int ipq_sw_mdio_init(const char *);
 extern void ipq_qca8075_dump_phy_regs(u32);
-extern int ipq_mdio_read(int mii_id,
-		int regnum, ushort *data);
+extern int ipq_mdio_read(int mii_id, int regnum, ushort *data);
 extern void ipq_qca8075_phy_map_ops(struct phy_ops **ops);
 extern int ipq_qca8075_phy_init(struct phy_ops **ops);
-extern void qca8075_phy_interface_set_mode(uint32_t phy_id,
-		uint32_t mode);
+extern void qca8075_phy_interface_set_mode(uint32_t phy_id, uint32_t mode);
 extern int ipq_qca8033_phy_init(struct phy_ops **ops, u32 phy_id);
 extern int ipq_qca8081_phy_init(struct phy_ops **ops, u32 phy_id);
 extern int ipq_qca_aquantia_phy_init(struct phy_ops **ops, u32 phy_id);
 extern int ipq_board_fw_download(unsigned int phy_addr);
+#endif
+
 static int tftp_acl_our_port;
 
 /*
@@ -105,7 +105,6 @@ uint32_t ipq9574_edma_reg_read(uint32_t reg_off)
  */
 void ipq9574_edma_reg_write(uint32_t reg_off, uint32_t val)
 {
-	pr_debug("%s: reg_off = %x, val =%x\n", __func__, reg_off, val);
 	writel(val, (ipq9574_edma_hw_addr + reg_off));
 }
 
@@ -120,7 +119,6 @@ int ipq9574_edma_alloc_rx_buffer(struct ipq9574_edma_hw *ehw,
 	uint16_t cons, next, counter;
 	struct ipq9574_edma_rxfill_desc *rxfill_desc;
 	uint32_t reg_data;
-	struct ipq9574_edma_rx_preheader *rxph;
 
 	/*
 	 * Read RXFILL ring producer index
@@ -159,21 +157,16 @@ int ipq9574_edma_alloc_rx_buffer(struct ipq9574_edma_hw *ehw,
 		rxfill_desc = IPQ9574_EDMA_RXFILL_DESC(rxfill_ring, next);
 
 		/*
-		 * Make room for Rx preheader
-		 */
-		rxph = (struct ipq9574_edma_rx_preheader *)rxfill_desc->buffer_addr;
-
-		/*
 		 * Fill the opaque value
 		 */
-		rxph->opaque = next;
+		rxfill_desc->rdes2 = next;
 
 		/*
 		 * Save buffer size in RXFILL descriptor
 		 */
-		rxfill_desc->word1 = cpu_to_le32(IPQ9574_EDMA_RX_BUFF_SIZE &
-					 IPQ9574_EDMA_RXFILL_BUF_SIZE_MASK);
-
+		rxfill_desc->rdes1 |= (IPQ9574_EDMA_RX_BUFF_SIZE <<
+				      IPQ9574_EDMA_RXFILL_BUF_SIZE_SHIFT) &
+				      IPQ9574_EDMA_RXFILL_BUF_SIZE_MASK;
 		num_alloc++;
 		next = counter;
 	}
@@ -228,11 +221,11 @@ uint32_t ipq9574_edma_clean_tx(struct ipq9574_edma_hw *ehw,
 
 		txcmpl_desc = IPQ9574_EDMA_TXCMPL_DESC(txcmpl_ring, cons_idx);
 
-		skb = (uchar *)txcmpl_desc->buffer_addr;
+		skb = (uchar *)txcmpl_desc->tdes0;
 
 		if (unlikely(!skb)) {
-			pr_debug("Invalid skb: cons_idx:%u prod_idx:%u status %x\n",
-				cons_idx, prod_idx, txcmpl_desc->status);
+			pr_debug("Invalid skb: cons_idx:%u prod_idx:%u\n",
+				cons_idx, prod_idx);
 		}
 
 		if (++cons_idx == txcmpl_ring->count)
@@ -266,7 +259,6 @@ uint32_t ipq9574_edma_clean_rx(struct ipq9574_edma_common_info *c_info,
 {
 	void *skb;
 	struct ipq9574_edma_rxdesc_desc *rxdesc_desc;
-	struct ipq9574_edma_rx_preheader *rxph;
 	uint16_t prod_idx, cons_idx;
 	int src_port_num;
 	int pkt_length;
@@ -297,25 +289,20 @@ uint32_t ipq9574_edma_clean_rx(struct ipq9574_edma_common_info *c_info,
 
 		rxdesc_desc = IPQ9574_EDMA_RXDESC_DESC(rxdesc_ring, cons_idx);
 
-		skb = (void *)rxdesc_desc->buffer_addr;
-
-		/*
-		 * Get Rx preheader
-		 */
-		rxph = (struct ipq9574_edma_rx_preheader *)skb;
+		skb = (void *)rxdesc_desc->rdes0;
 
 		rx--;
 
 		/*
-		 * Check src_info from Rx preheader
+		 * Check src_info from Rx Descriptor
 		 */
-		if (IPQ9574_EDMA_RXPH_SRC_INFO_TYPE_GET(rxph) ==
+		if (IPQ9574_EDMA_RXPH_SRC_INFO_TYPE_GET(rxdesc_desc->rdes4) ==
 				IPQ9574_EDMA_PREHDR_DSTINFO_PORTID_IND) {
-			src_port_num = rxph->src_info &
+			src_port_num = rxdesc_desc->rdes4 &
 				IPQ9574_EDMA_PREHDR_PORTNUM_BITS;
 		} else {
 			pr_warn("WARN: src_info_type:0x%x. Drop skb:%p\n",
-				IPQ9574_EDMA_RXPH_SRC_INFO_TYPE_GET(rxph),
+				IPQ9574_EDMA_RXPH_SRC_INFO_TYPE_GET(rxdesc_desc->rdes4),
 				skb);
 			goto next_rx_desc;
 		}
@@ -323,8 +310,9 @@ uint32_t ipq9574_edma_clean_rx(struct ipq9574_edma_common_info *c_info,
 		/*
 		 * Get packet length
 		 */
-		pkt_length = rxdesc_desc->status &
-				 IPQ9574_EDMA_RXDESC_PACKET_LEN_MASK;
+		pkt_length = (rxdesc_desc->rdes5 &
+			      IPQ9574_EDMA_RXDESC_PKT_SIZE_MASK) >>
+			      IPQ9574_EDMA_RXDESC_PKT_SIZE_SHIFT;
 
 		if (unlikely((src_port_num < IPQ9574_NSS_DP_START_PHY_PORT)  ||
 			(src_port_num > IPQ9574_NSS_DP_MAX_PHY_PORTS))) {
@@ -336,9 +324,9 @@ uint32_t ipq9574_edma_clean_rx(struct ipq9574_edma_common_info *c_info,
 		cleaned_count++;
 
 		/*
-		 * Remove Rx preheader
+		 * Remove Rx Secondary Descriptor
 		 */
-		skb = skb + IPQ9574_EDMA_RX_PREHDR_SIZE;
+		skb = skb + IPQ9574_EDMA_RX_SEC_DESC_SIZE;
 
 		pr_debug("%s: received pkt %p with length %d\n",
 			__func__, skb, pkt_length);
@@ -444,7 +432,6 @@ static int ipq9574_eth_snd(struct eth_device *dev, void *packet, int length)
 	struct ipq9574_edma_common_info *c_info = priv->c_info;
 	struct ipq9574_edma_hw *ehw = &c_info->hw;
 	struct ipq9574_edma_txdesc_desc *txdesc;
-	struct ipq9574_edma_tx_preheader *txph;
 	struct ipq9574_edma_txdesc_ring *txdesc_ring;
 	uint16_t hw_next_to_use, hw_next_to_clean, chk_idx;
 	uint32_t data;
@@ -481,7 +468,7 @@ static int ipq9574_eth_snd(struct eth_device *dev, void *packet, int length)
 	/*
 	 * Check for available Tx descriptor
 	 */
-	chk_idx = (hw_next_to_use + 1) & (txdesc_ring->count-1);
+	chk_idx = (hw_next_to_use + 1) & (txdesc_ring->count - 1);
 
 	if (chk_idx == hw_next_to_clean) {
 		return NETDEV_TX_BUSY;
@@ -492,55 +479,46 @@ static int ipq9574_eth_snd(struct eth_device *dev, void *packet, int length)
 	 */
 	txdesc = IPQ9574_EDMA_TXDESC_DESC(txdesc_ring, hw_next_to_use);
 
-	txdesc->word1 = 0;
+	skb = (uchar *)txdesc->tdes0;
 
-	skb = (uchar *)txdesc->buffer_addr;
-
-	pr_debug("%s: txdesc->buffer_addr = 0x%x length = %d \
+	pr_debug("%s: txdesc->tdes0 (buffer addr) = 0x%x length = %d \
 			prod_idx = %d cons_idx = %d\n",
-			__func__, txdesc->buffer_addr, length,
+			__func__, txdesc->tdes0, length,
 			hw_next_to_use, hw_next_to_clean);
-
-	/*
-	 * Make room for Tx preheader
-	 */
-	txph = (struct ipq9574_edma_tx_preheader *)skb;
-
-	memset((void *)txph, 0, IPQ9574_EDMA_TX_PREHDR_SIZE);
 
 #ifdef CONFIG_IPQ9574_BRIDGED_MODE
 	/* VP 0x0 share vsi 2 with port 1-4 */
-	txph->src_info = 0x2000;
-	txph->dst_info = 0x0;
+	/* src is 0x2000, dest is 0x0 */
+	txdesc->tdes4 = 0x00002000;
 #else
 	/*
-	 * Populate Tx preheader dst info, port id is macid in dp_dev
+	 * Populate Tx dst info, port id is macid in dp_dev
 	 */
-
-	txph->dst_info = (IPQ9574_EDMA_PREHDR_DSTINFO_PORTID_IND << 8) |
-			(IPQ9574_EDMA_MAC_PORT_NO & 0x0fff);
-
+	txdesc->tdes4 |= (((IPQ9574_EDMA_PREHDR_DSTINFO_PORTID_IND << 8) |
+			(IPQ9574_EDMA_MAC_PORT_NO & 0x0fff)) << 16);
 #endif
 
 	/*
-	 * Set opaque field in preheader
+	 * Set opaque field
 	 */
-	txph->opaque = cpu_to_le32(skb);
+	txdesc->tdes2 = cpu_to_le32(skb);
 
 	/*
 	 * copy the packet
+	 *
 	 */
-	memcpy(skb + IPQ9574_EDMA_TX_PREHDR_SIZE, packet, length);
+	memcpy(skb + IPQ9574_EDMA_TX_SEC_DESC_SIZE, packet, length);
 
 	/*
 	 * Populate Tx descriptor
 	 */
-	txdesc->word1 |= (1 << IPQ9574_EDMA_TXDESC_PREHEADER_SHIFT)
-			| ((IPQ9574_EDMA_TX_PREHDR_SIZE &
-			IPQ9574_EDMA_TXDESC_DATA_OFFSET_MASK)
-			   << IPQ9574_EDMA_TXDESC_DATA_OFFSET_SHIFT);
-	txdesc->word1 |= ((length & IPQ9574_EDMA_TXDESC_DATA_LENGTH_MASK)
-			<< IPQ9574_EDMA_TXDESC_DATA_LENGTH_SHIFT);
+	txdesc->tdes6 |= (1 << IPQ9574_EDMA_TXDESC_PREHEADER_SHIFT) |
+			 ((IPQ9574_EDMA_TX_SEC_DESC_SIZE <<
+			 IPQ9574_EDMA_TXDESC_DATA_OFFSET_SHIFT) &
+			 IPQ9574_EDMA_TXDESC_DATA_OFFSET_MASK);
+
+	txdesc->tdes5 |= ((length << IPQ9574_EDMA_TXDESC_DATA_LENGTH_SHIFT) &
+			  IPQ9574_EDMA_TXDESC_DATA_LENGTH_MASK);
 
 	/*
 	 * Update producer index
@@ -655,8 +633,10 @@ static int ipq9574_edma_setup_ring_resources(struct ipq9574_edma_hw *ehw)
 {
 	struct ipq9574_edma_txcmpl_ring *txcmpl_ring;
 	struct ipq9574_edma_txdesc_ring *txdesc_ring;
+	struct ipq9574_edma_sec_txdesc_ring *sec_txdesc_ring;
 	struct ipq9574_edma_rxfill_ring *rxfill_ring;
 	struct ipq9574_edma_rxdesc_ring *rxdesc_ring;
+	struct ipq9574_edma_sec_rxdesc_ring *sec_rxdesc_ring;
 	struct ipq9574_edma_txdesc_desc *tx_desc;
 	struct ipq9574_edma_rxfill_desc *rxfill_desc;
 	int i, j, index;
@@ -668,7 +648,7 @@ static int ipq9574_edma_setup_ring_resources(struct ipq9574_edma_hw *ehw)
 	 */
 	for (i = 0; i < ehw->rxfill_rings; i++) {
 		rxfill_ring = &ehw->rxfill_ring[i];
-		rxfill_ring->count = IPQ9574_EDMA_RXFILL_RING_SIZE;
+		rxfill_ring->count = EDMA_RING_SIZE;
 		rxfill_ring->id = ehw->rxfill_ring_start + i;
 		rxfill_ring->desc = (void *)noncached_alloc(
 				sizeof(struct ipq9574_edma_rxfill_desc) *
@@ -680,6 +660,10 @@ static int ipq9574_edma_setup_ring_resources(struct ipq9574_edma_hw *ehw)
 			return -ENOMEM;
 		}
 		rxfill_ring->dma = virt_to_phys(rxfill_ring->desc);
+		pr_debug("rxfill ring id = %d, rxfill ring ptr = %p, rxfill ring dma = %u\n",
+			rxfill_ring->id, rxfill_ring->desc, (unsigned int)
+			rxfill_ring->dma);
+
 		rx_buf = (void *)noncached_alloc(PKTSIZE_ALIGN *
 					rxfill_ring->count,
 					CONFIG_SYS_CACHELINE_SIZE);
@@ -692,9 +676,32 @@ static int ipq9574_edma_setup_ring_resources(struct ipq9574_edma_hw *ehw)
 
 		for (j = 0; j < rxfill_ring->count; j++) {
 			rxfill_desc = IPQ9574_EDMA_RXFILL_DESC(rxfill_ring, j);
-			rxfill_desc->buffer_addr = virt_to_phys(rx_buf);
+			rxfill_desc->rdes0 = virt_to_phys(rx_buf);
 			rx_buf += PKTSIZE_ALIGN;
+			pr_debug("Ring %d: rxfill ring dis0 ptr = %p, rxfill ring dis0 dma = %u\n",
+				j, rxfill_desc, (unsigned int)rxfill_desc->rdes0);
 		}
+	}
+
+	/*
+	 * Allocate secondary RxDesc ring descriptors
+	 */
+	for (i = 0; i < ehw->sec_rxdesc_rings; i++) {
+		sec_rxdesc_ring = &ehw->sec_rxdesc_ring[i];
+		sec_rxdesc_ring->count = EDMA_RING_SIZE;
+		sec_rxdesc_ring->id = ehw->sec_rxdesc_ring_start + i;
+		sec_rxdesc_ring->desc = (void *)noncached_alloc(
+				sizeof(struct ipq9574_edma_rx_sec_desc) *
+				sec_rxdesc_ring->count,
+				CONFIG_SYS_CACHELINE_SIZE);
+		if (sec_rxdesc_ring->desc == NULL) {
+			pr_info("%s: sec_rxdesc_ring->desc alloc error\n", __func__);
+			return -ENOMEM;
+		}
+		sec_rxdesc_ring->dma = virt_to_phys(sec_rxdesc_ring->desc);
+		pr_debug("sec rxdesc ring id = %d, sec rxdesc ring ptr = %p, sec rxdesc ring dma = %u\n",
+			sec_rxdesc_ring->id, sec_rxdesc_ring->desc, (unsigned int)
+			sec_rxdesc_ring->dma);
 	}
 
 	/*
@@ -702,7 +709,7 @@ static int ipq9574_edma_setup_ring_resources(struct ipq9574_edma_hw *ehw)
 	 */
 	for (i = 0; i < ehw->rxdesc_rings; i++) {
 		rxdesc_ring = &ehw->rxdesc_ring[i];
-		rxdesc_ring->count = IPQ9574_EDMA_RXDESC_RING_SIZE;
+		rxdesc_ring->count = EDMA_RING_SIZE;
 		rxdesc_ring->id = ehw->rxdesc_ring_start + i;
 
 		/*
@@ -726,6 +733,9 @@ static int ipq9574_edma_setup_ring_resources(struct ipq9574_edma_hw *ehw)
 			return -ENOMEM;
 		}
 		rxdesc_ring->dma = virt_to_phys(rxdesc_ring->desc);
+		pr_debug("rxdesc ring id = %d, rxdesc ring ptr = %p, rxdesc ring dma = %u\n",
+			rxdesc_ring->id, rxdesc_ring->desc, (unsigned int)
+			rxdesc_ring->dma);
 	}
 
 	/*
@@ -733,7 +743,7 @@ static int ipq9574_edma_setup_ring_resources(struct ipq9574_edma_hw *ehw)
 	 */
 	for (i = 0; i < ehw->txcmpl_rings; i++) {
 		txcmpl_ring = &ehw->txcmpl_ring[i];
-		txcmpl_ring->count = IPQ9574_EDMA_TXCMPL_RING_SIZE;
+		txcmpl_ring->count = EDMA_RING_SIZE;
 		txcmpl_ring->id = ehw->txcmpl_ring_start + i;
 		txcmpl_ring->desc = (void *)noncached_alloc(
 				sizeof(struct ipq9574_edma_txcmpl_desc) *
@@ -745,31 +755,55 @@ static int ipq9574_edma_setup_ring_resources(struct ipq9574_edma_hw *ehw)
 			return -ENOMEM;
 		}
 		txcmpl_ring->dma = virt_to_phys(txcmpl_ring->desc);
+		pr_debug("txcmpl ring id = %d, txcmpl ring ptr = %p, txcmpl ring dma = %u\n",
+			txcmpl_ring->id, txcmpl_ring->desc, (unsigned int)
+			txcmpl_ring->dma);
 	}
 
+	/*
+	 * Allocate secondary TxDesc ring descriptors
+	 */
+	for (i = 0; i < ehw->sec_txdesc_rings; i++) {
+		sec_txdesc_ring = &ehw->sec_txdesc_ring[i];
+		sec_txdesc_ring->count = EDMA_RING_SIZE;
+		sec_txdesc_ring->id = ehw->sec_txdesc_ring_start + i;
+		sec_txdesc_ring->desc = (void *)noncached_alloc(
+				sizeof(struct ipq9574_edma_tx_sec_desc) *
+				sec_txdesc_ring->count,
+				CONFIG_SYS_CACHELINE_SIZE);
+		if (sec_txdesc_ring->desc == NULL) {
+			pr_info("%s: sec_txdesc_ring->desc alloc error\n", __func__);
+			return -ENOMEM;
+		}
+		sec_txdesc_ring->dma = virt_to_phys(sec_txdesc_ring->desc);
+		pr_debug("sec txdesc ring id = %d, sec txdesc ring ptr = %p, sec txdesc ring dma = %u\n",
+			sec_txdesc_ring->id, sec_txdesc_ring->desc, (unsigned int)
+			sec_txdesc_ring->dma);
+	}
 
 	/*
 	 * Allocate TxDesc ring descriptors
 	 */
 	for (i = 0; i < ehw->txdesc_rings; i++) {
 		txdesc_ring = &ehw->txdesc_ring[i];
-		txdesc_ring->count = IPQ9574_EDMA_TXDESC_RING_SIZE;
+		txdesc_ring->count = EDMA_RING_SIZE;
 		txdesc_ring->id = ehw->txdesc_ring_start + i;
 		txdesc_ring->desc = (void *)noncached_alloc(
 					sizeof(struct ipq9574_edma_txdesc_desc) *
 					txdesc_ring->count,
 					CONFIG_SYS_CACHELINE_SIZE);
-
 		if (txdesc_ring->desc == NULL) {
 			pr_info("%s: txdesc_ring->desc alloc error\n", __func__);
 			return -ENOMEM;
 		}
-
 		txdesc_ring->dma = virt_to_phys(txdesc_ring->desc);
-		tx_buf = (void *)noncached_alloc(IPQ9574_EDMA_TX_BUF_SIZE *
+		pr_debug("txdesc ring id = %d, txdesc ring ptr = %p, txdesc ring dma = %u\n",
+			txdesc_ring->id, txdesc_ring->desc, (unsigned int)
+			txdesc_ring->dma);
+
+		tx_buf = (void *)noncached_alloc(IPQ9574_EDMA_TX_BUFF_SIZE *
 					txdesc_ring->count,
 					CONFIG_SYS_CACHELINE_SIZE);
-
 		if (tx_buf == NULL) {
 			pr_info("%s: txdesc_ring->desc buffer alloc error\n",
 				 __func__);
@@ -778,15 +812,17 @@ static int ipq9574_edma_setup_ring_resources(struct ipq9574_edma_hw *ehw)
 
 		for (j = 0; j < txdesc_ring->count; j++) {
 			tx_desc = IPQ9574_EDMA_TXDESC_DESC(txdesc_ring, j);
-			tx_desc->buffer_addr = virt_to_phys(tx_buf);
-			tx_buf += IPQ9574_EDMA_TX_BUF_SIZE;
+			tx_desc->tdes0 = virt_to_phys(tx_buf);
+			tx_buf += IPQ9574_EDMA_TX_BUFF_SIZE;
+			pr_debug("Ring %d: txdesc ring dis0 ptr = %p, txdesc ring dis0 dma = %u\n",
+				j, tx_desc, (unsigned int)tx_desc->tdes0);
+
 		}
 	}
 
 	pr_info("%s: successfull\n", __func__);
 
 	return 0;
-
 }
 
 /*
@@ -826,8 +862,8 @@ static void ipq9574_edma_free_desc(struct ipq9574_edma_common_info *c_info)
 		txdesc_ring = &ehw->txdesc_ring[i];
 		if (txdesc_ring->desc) {
 			tx_desc = IPQ9574_EDMA_TXDESC_DESC(txdesc_ring, 0);
-			if (tx_desc->buffer_addr)
-				ipq9574_free_mem((void *)tx_desc->buffer_addr);
+			if (tx_desc->tdes0)
+				ipq9574_free_mem((void *)tx_desc->tdes0);
 			ipq9574_free_mem(txdesc_ring->desc);
 		}
 	}
@@ -904,29 +940,33 @@ static void ipq9574_edma_disable_intr(struct ipq9574_edma_hw *ehw)
 				IPQ9574_EDMA_MASK_INT_DISABLE);
 }
 
+#ifndef CONFIG_IPQ9574_RUMI
 static void set_sgmii_mode(int port_id, int sg_mode)
 {
-	if (port_id == 3)
+	if (port_id == 4)
 		sgmii_mode[0] = sg_mode;
-	else if (port_id == 4)
+	else if (port_id == 5)
 		sgmii_mode[1] = sg_mode;
 }
 
 static int get_sgmii_mode(int port_id)
 {
-	if (port_id == 3)
+	if (port_id == 4)
 		return sgmii_mode[0];
-	else if (port_id == 4)
+	else if (port_id == 5)
 		return sgmii_mode[1];
 	else
 		return -1;
 }
+#endif
 
 static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 {
-	struct ipq9574_eth_dev *priv = eth_dev->priv;
 	int i;
-	u8 status;
+	u8 status = 0;
+	int mac_speed = 0x2;
+#ifndef CONFIG_IPQ9574_RUMI
+	struct ipq9574_eth_dev *priv = eth_dev->priv;
 	struct phy_ops *phy_get_ops;
 	static fal_port_speed_t old_speed[IPQ9574_PHY_MAX] = {[0 ... IPQ9574_PHY_MAX-1] = FAL_SPEED_BUTT};
 	static fal_port_speed_t curr_speed[IPQ9574_PHY_MAX];
@@ -934,7 +974,7 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 	char *lstatus[] = {"up", "Down"};
 	char *dp[] = {"Half", "Full"};
 	int linkup=0;
-	int mac_speed = 0, speed_clock1 = 0, speed_clock2 = 0;
+	int speed_clock1 = 0, speed_clock2 = 0;
 	int phy_addr, port_8033 = -1, node, aquantia_port = -1;
 	int sfp_port = -1;
 	int phy_node = -1;
@@ -952,19 +992,23 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 		 sfp_port = fdtdec_get_uint(gd->fdt_blob, node, "sfp_port", -1);
 
 	phy_node = fdt_path_offset(gd->fdt_blob, "/ess-switch/port_phyinfo");
+#endif
 	/*
 	 * Check PHY link, speed, Duplex on all phys.
 	 * we will proceed even if single link is up
 	 * else we will return with -1;
 	 */
 	for (i =  0; i < IPQ9574_PHY_MAX; i++) {
-
+#ifndef CONFIG_IPQ9574_RUMI
 		if (i == sfp_port) {
 			status = phy_status_get_from_ppe(i);
 			duplex = FAL_FULL_DUPLEX;
-			sfp_mode = fdtdec_get_uint(gd->fdt_blob, node, "switch_mac_mode1", -1);
+			if (i == 4)
+				sfp_mode = fdtdec_get_uint(gd->fdt_blob, node, "switch_mac_mode1", -1);
+			else if (i == 5)
+				sfp_mode = fdtdec_get_uint(gd->fdt_blob, node, "switch_mac_mode2", -1);
 			if (sfp_mode < 0) {
-				printf("\nError: switch_mac_mode1 not specified in dts");
+				printf("\nError: switch_mac_mode not specified in dts");
 				return sfp_mode;
 			}
 			if (sfp_mode == PORT_WRAPPER_SGMII_FIBER) {
@@ -974,7 +1018,6 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 				sgmii_fiber = 0;
 				curr_speed[i] = FAL_SPEED_10000;
 			} else {
-
 				printf("\nError: wrong mode specified for SFP Port");
 				return sfp_mode;
 			}
@@ -1003,11 +1046,14 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 				else
 					phy_addr = i;
 			}
+
 			status = phy_get_ops->phy_get_link_status(priv->mac_unit, phy_addr);
 			phy_get_ops->phy_get_speed(priv->mac_unit, phy_addr, &curr_speed[i]);
 			phy_get_ops->phy_get_duplex(priv->mac_unit, phy_addr, &duplex);
 		}
+#endif
 
+#ifndef CONFIG_IPQ9574_RUMI
 		if (status == 0) {
 			linkup++;
 			if (old_speed[i] == curr_speed[i]) {
@@ -1041,38 +1087,43 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 				if (phy_node >= 0) {
 					if (phy_info[i]->phy_type == QCA8081_PHY_TYPE) {
 						set_sgmii_mode(i, 1);
-						if (i == 4)
-							speed_clock1 = 0x309;
 					}
 				}
 				break;
 			case FAL_SPEED_100:
 				mac_speed = 0x1;
 				if (i == aquantia_port) {
-					speed_clock1 = 0x309;
+					if (i == 4)
+						speed_clock1 = 0x309;
+					else
+						speed_clock1= 0x109;
 					speed_clock2 = 0x4;
-				} else {
+				} else if (i == port_8033) {
 					speed_clock1 = 0x109;
-					speed_clock2 = 0x0;
+				} else {
+					speed_clock1 = 0x101;
 				}
+				if (i == port_8033)
+					speed_clock2 = 0x0;
+				else
+					speed_clock2 = 0x4;
 				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
 						priv->mac_unit, i, lstatus[status], curr_speed[i],
 						dp[duplex]);
 				if (phy_node >= 0) {
 					if (phy_info[i]->phy_type == QCA8081_PHY_TYPE) {
 						set_sgmii_mode(i, 1);
-						if (i == 4)
-							speed_clock1 = 0x309;
 					}
 				}
 				break;
 			case FAL_SPEED_1000:
 				mac_speed = 0x2;
-				if (i == aquantia_port)
-					speed_clock1 = 0x304;
-				else if (i == sfp_port)
-					speed_clock1 = 0x301;
-				else
+				if (i == aquantia_port) {
+					if (i == 4)
+						speed_clock1 = 0x304;
+					else
+						speed_clock1 = 0x104;
+				} else
 					speed_clock1 = 0x101;
 				speed_clock2 = 0x0;
 				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
@@ -1089,8 +1140,13 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 			case FAL_SPEED_2500:
 				if (i == aquantia_port) {
 					mac_speed = 0x4;
-					speed_clock1 = 0x307;
-					speed_clock2 = 0x0;
+					if (i == 4) {
+						speed_clock1 = 0x301;
+						speed_clock2 = 0x3;
+					} else if (i == 5) {
+						speed_clock1 = 0x107;
+						speed_clock2 = 0x0;
+					}
 				}
 				if (phy_node >= 0) {
 					if (phy_info[i]->phy_type == QCA8081_PHY_TYPE) {
@@ -1098,7 +1154,7 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 						set_sgmii_mode(i, 0);
 						if (i == 4)
 							speed_clock1 = 0x301;
-						else if  (i == 3)
+						else if  (i == 5)
 							speed_clock1 = 0x101;
 						speed_clock2 = 0x0;
 					}
@@ -1109,15 +1165,23 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 				break;
 			case FAL_SPEED_5000:
 				mac_speed = 0x5;
-				speed_clock1 = 0x303;
-				speed_clock2 = 0x0;
+				if (i == 4) {
+					speed_clock1 = 0x301;
+					speed_clock2 = 0x1;
+				} else {
+					speed_clock1 = 0x103;
+					speed_clock2 = 0x0;
+				}
 				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
 						priv->mac_unit, i, lstatus[status], curr_speed[i],
 						dp[duplex]);
 				break;
 			case FAL_SPEED_10000:
 				mac_speed = 0x3;
-				speed_clock1 = 0x301;
+				if (i == 4)
+					speed_clock1 = 0x301;
+				else
+					speed_clock1 = 0x101;
 				speed_clock2 = 0x0;
 				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
 						priv->mac_unit, i, lstatus[status], curr_speed[i],
@@ -1135,14 +1199,14 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 				if (ret_sgmii_mode == 1) {
 					if (i == 4)
 						ppe_uniphy_mode_set(0x1, PORT_WRAPPER_SGMII0_RGMII4);
-					else if (i == 3)
-						ppe_uniphy_mode_set(0x0, PORT_WRAPPER_SGMII0_RGMII4);
+					else if (i == 5)
+						ppe_uniphy_mode_set(0x2, PORT_WRAPPER_SGMII0_RGMII4);
 
 				} else if (ret_sgmii_mode == 0) {
 					if (i == 4)
 						ppe_uniphy_mode_set(0x1, PORT_WRAPPER_SGMII_PLUS);
-					else if (i == 3)
-						ppe_uniphy_mode_set(0x0, PORT_WRAPPER_SGMII_PLUS);
+					else if (i == 5)
+						ppe_uniphy_mode_set(0x2, PORT_WRAPPER_SGMII_PLUS);
 				}
 			}
 		}
@@ -1150,10 +1214,16 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 		if (i == sfp_port) {
 			if (sgmii_fiber) {
 				ppe_port_bridge_txmac_set(i + 1, 1);
-				ppe_uniphy_mode_set(0x1, PORT_WRAPPER_SGMII_FIBER);
+				if (i == 4)
+					ppe_uniphy_mode_set(0x1, PORT_WRAPPER_SGMII_FIBER);
+				else if (i == 5)
+					ppe_uniphy_mode_set(0x2, PORT_WRAPPER_SGMII_FIBER);
 				ppe_port_mux_mac_type_set(i + 1, PORT_WRAPPER_SGMII_FIBER);
 			} else {
-				ppe_uniphy_mode_set(0x1, PORT_WRAPPER_10GBASE_R);
+				if (i == 4)
+					ppe_uniphy_mode_set(0x1, PORT_WRAPPER_10GBASE_R);
+				else if (i == 5)
+					ppe_uniphy_mode_set(0x2, PORT_WRAPPER_10GBASE_R);
 				ppe_port_mux_mac_type_set(i + 1, PORT_WRAPPER_10GBASE_R);
 			}
 		}
@@ -1168,12 +1238,18 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 			ipq9574_10g_r_speed_set(i, status);
 		else
 			ipq9574_pqsgmii_speed_set(i, mac_speed, status);
+#else
+		ppe_port_bridge_txmac_set(i + 1, 1);
+		ipq9574_pqsgmii_speed_set(i, mac_speed, status);
+#endif
 	}
 
+#ifndef CONFIG_IPQ9574_RUMI
 	if (linkup <= 0) {
 		/* No PHY link is alive */
 		return -1;
 	}
+#endif
 
 	pr_info("%s: done\n", __func__);
 
@@ -1196,6 +1272,10 @@ static void ipq9574_edma_set_ring_values(struct ipq9574_edma_hw *edma_hw)
 	edma_hw->txdesc_rings = IPQ9574_EDMA_TX_DESC_RING_NOS;
 	edma_hw->txdesc_ring_end = IPQ9574_EDMA_TX_DESC_RING_SIZE;
 
+	edma_hw->sec_txdesc_ring_start = IPQ9574_EDMA_SEC_TX_DESC_RING_START;
+	edma_hw->sec_txdesc_rings = IPQ9574_EDMA_SEC_TX_DESC_RING_NOS;
+	edma_hw->sec_txdesc_ring_end = IPQ9574_EDMA_SEC_TX_DESC_RING_SIZE;
+
 	edma_hw->txcmpl_ring_start = IPQ9574_EDMA_TX_CMPL_RING_START;
 	edma_hw->txcmpl_rings = IPQ9574_EDMA_RX_FILL_RING_NOS;
 	edma_hw->txcmpl_ring_end = IPQ9574_EDMA_TX_CMPL_RING_SIZE;
@@ -1207,6 +1287,10 @@ static void ipq9574_edma_set_ring_values(struct ipq9574_edma_hw *edma_hw)
 	edma_hw->rxdesc_ring_start = IPQ9574_EDMA_RX_DESC_RING_START;
 	edma_hw->rxdesc_rings = IPQ9574_EDMA_RX_DESC_RING_NOS;
 	edma_hw->rxdesc_ring_end = IPQ9574_EDMA_RX_DESC_RING_SIZE;
+
+	edma_hw->sec_rxdesc_ring_start = IPQ9574_EDMA_SEC_RX_DESC_RING_START;
+	edma_hw->sec_rxdesc_rings = IPQ9574_EDMA_SEC_RX_DESC_RING_NOS;
+	edma_hw->sec_rxdesc_ring_end = IPQ9574_EDMA_SEC_RX_DESC_RING_SIZE;
 
 	pr_info("Num rings - TxDesc:%u (%u-%u) TxCmpl:%u (%u-%u)\n",
 		edma_hw->txdesc_rings, edma_hw->txdesc_ring_start,
@@ -1231,7 +1315,6 @@ static int ipq9574_edma_alloc_rings(struct ipq9574_edma_hw *ehw)
 				struct ipq9574_edma_rxfill_ring) *
 				ehw->rxfill_rings),
 				CONFIG_SYS_CACHELINE_SIZE);
-
 	if (!ehw->rxfill_ring) {
 		pr_info("%s: rxfill_ring alloc error\n", __func__);
 		return -ENOMEM;
@@ -1241,9 +1324,17 @@ static int ipq9574_edma_alloc_rings(struct ipq9574_edma_hw *ehw)
 				struct ipq9574_edma_rxdesc_ring) *
 				ehw->rxdesc_rings),
 				CONFIG_SYS_CACHELINE_SIZE);
-
 	if (!ehw->rxdesc_ring) {
 		pr_info("%s: rxdesc_ring alloc error\n", __func__);
+		return -ENOMEM;
+	}
+
+	ehw->sec_rxdesc_ring = (void *)noncached_alloc((sizeof(
+				struct ipq9574_edma_sec_rxdesc_ring) *
+				ehw->sec_rxdesc_rings),
+				CONFIG_SYS_CACHELINE_SIZE);
+	if (!ehw->sec_rxdesc_ring) {
+		pr_info("%s: sec_rxdesc_ring alloc error\n", __func__);
 		return -ENOMEM;
 	}
 
@@ -1256,11 +1347,19 @@ static int ipq9574_edma_alloc_rings(struct ipq9574_edma_hw *ehw)
 		return -ENOMEM;
 	}
 
+	ehw->sec_txdesc_ring = (void *)noncached_alloc((sizeof(
+				struct ipq9574_edma_sec_txdesc_ring) *
+				ehw->sec_txdesc_rings),
+				CONFIG_SYS_CACHELINE_SIZE);
+	if (!ehw->sec_txdesc_ring) {
+		pr_info("%s: txdesc_ring alloc error\n", __func__);
+		return -ENOMEM;
+	}
+
 	ehw->txcmpl_ring = (void *)noncached_alloc((sizeof(
 				struct ipq9574_edma_txcmpl_ring) *
 				ehw->txcmpl_rings),
 				CONFIG_SYS_CACHELINE_SIZE);
-
 	if (!ehw->txcmpl_ring) {
 		pr_info("%s: txcmpl_ring alloc error\n", __func__);
 		return -ENOMEM;
@@ -1301,6 +1400,17 @@ static int ipq9574_edma_init_rings(struct ipq9574_edma_hw *ehw)
 		return ret;
 
 	return 0;
+}
+
+/*
+ * ipq9574_edma_configure_sec_txdesc_ring()
+ *	Configure one secondary TxDesc ring
+ */
+static void ipq9574_edma_configure_sec_txdesc_ring(struct ipq9574_edma_hw *ehw,
+			  struct ipq9574_edma_sec_txdesc_ring *sec_txdesc_ring)
+{
+	ipq9574_edma_reg_write(IPQ9574_EDMA_REG_TXDESC_BA2(sec_txdesc_ring->id),
+			(uint32_t)(sec_txdesc_ring->dma & 0xffffffff));
 }
 
 /*
@@ -1348,7 +1458,7 @@ static void ipq9574_edma_configure_txcmpl_ring(struct ipq9574_edma_hw *ehw,
 					struct ipq9574_edma_txcmpl_ring *txcmpl_ring)
 {
 	uint32_t txcmpl_ugt_thre, low_thre = 0, txcmpl_fc_thre = 0;
-	uint32_t tx_mod_timer;
+	__maybe_unused uint32_t tx_mod_timer;
 
 	/*
 	 * Configure TxCmpl ring base address
@@ -1376,6 +1486,7 @@ static void ipq9574_edma_configure_txcmpl_ring(struct ipq9574_edma_hw *ehw,
 	ipq9574_edma_reg_write(IPQ9574_EDMA_REG_TXCMPL_UGT_THRE(
 				txcmpl_ring->id), txcmpl_ugt_thre);
 
+#ifndef CONFIG_IPQ9574_RUMI
 	tx_mod_timer = (IPQ9574_EDMA_TX_MOD_TIMER &
 			 IPQ9574_EDMA_TX_MOD_TIMER_INIT_MASK) <<
 			 IPQ9574_EDMA_TX_MOD_TIMER_INIT_SHIFT;
@@ -1385,6 +1496,18 @@ static void ipq9574_edma_configure_txcmpl_ring(struct ipq9574_edma_hw *ehw,
 
 	ipq9574_edma_reg_write(IPQ9574_EDMA_REG_TX_INT_CTRL(txcmpl_ring->id),
 							 0x2);
+#endif
+}
+
+/*
+ * ipq9574_edma_configure_sec_rxdesc_ring()
+ *	Configure one secondary RxDesc ring
+ */
+static void ipq9574_edma_configure_sec_rxdesc_ring(struct ipq9574_edma_hw *ehw,
+			  struct ipq9574_edma_sec_rxdesc_ring *sec_rxdesc_ring)
+{
+	ipq9574_edma_reg_write(IPQ9574_EDMA_REG_RXDESC_BA2(sec_rxdesc_ring->id),
+			(uint32_t)(sec_rxdesc_ring->dma & 0xffffffff));
 }
 
 /*
@@ -1425,6 +1548,7 @@ static void ipq9574_edma_configure_rxdesc_ring(struct ipq9574_edma_hw *ehw,
 	ipq9574_edma_reg_write(IPQ9574_EDMA_REG_RXDESC_UGT_THRE(
 				rxdesc_ring->id), data);
 
+#ifndef CONFIG_IPQ9574_RUMI
 	data = (IPQ9574_EDMA_RX_MOD_TIMER_INIT &
 			 IPQ9574_EDMA_RX_MOD_TIMER_INIT_MASK) <<
 			 IPQ9574_EDMA_RX_MOD_TIMER_INIT_SHIFT;
@@ -1437,6 +1561,7 @@ static void ipq9574_edma_configure_rxdesc_ring(struct ipq9574_edma_hw *ehw,
 	 */
 	ipq9574_edma_reg_write(IPQ9574_EDMA_REG_RX_INT_CTRL(
 					rxdesc_ring->id), 0x2);
+#endif
 }
 
 /*
@@ -1473,7 +1598,6 @@ static void ipq9574_edma_configure_rxfill_ring(struct ipq9574_edma_hw *ehw,
 
 	ipq9574_edma_reg_write(IPQ9574_EDMA_REG_RXFILL_UGT_THRE(rxfill_ring->id),
 				rxfill_ugt_thre);
-
 }
 
 
@@ -1492,6 +1616,12 @@ static void ipq9574_edma_configure_rings(struct ipq9574_edma_hw *ehw)
 		ipq9574_edma_configure_txdesc_ring(ehw, &ehw->txdesc_ring[i]);
 
 	/*
+	 * Configure secondary TXDESC ring
+	 */
+	for (i = 0; i < ehw->sec_txdesc_rings; i++)
+		ipq9574_edma_configure_sec_txdesc_ring(ehw, &ehw->sec_txdesc_ring[i]);
+
+	/*
 	 * Configure TXCMPL ring
 	 */
 	for (i = 0; i < ehw->txcmpl_rings; i++)
@@ -1508,6 +1638,12 @@ static void ipq9574_edma_configure_rings(struct ipq9574_edma_hw *ehw)
 	 */
 	for (i = 0; i < ehw->rxdesc_rings; i++)
 		ipq9574_edma_configure_rxdesc_ring(ehw, &ehw->rxdesc_ring[i]);
+
+	/*
+	 * Configure secondary RXDESC ring
+	 */
+	for (i = 0; i < ehw->rxdesc_rings; i++)
+		ipq9574_edma_configure_sec_rxdesc_ring(ehw, &ehw->sec_rxdesc_ring[i]);
 
 	pr_info("%s: successfull\n", __func__);
 }
@@ -1548,13 +1684,15 @@ int ipq9574_edma_hw_init(struct ipq9574_edma_hw *ehw)
 	ehw->rxdesc_intr_mask = IPQ9574_EDMA_RXDESC_INT_MASK_PKT_INT;
 	ehw->txcmpl_intr_mask = IPQ9574_EDMA_TX_INT_MASK_PKT_INT |
 				IPQ9574_EDMA_TX_INT_MASK_UGT_INT;
-	ehw->misc_intr_mask = 0;
-	ehw->rx_payload_offset = IPQ9574_EDMA_RX_PREHDR_SIZE;
+	ehw->misc_intr_mask = 0xff;
+	ehw->rx_payload_offset = IPQ9574_EDMA_RX_SEC_DESC_SIZE;
 
+#ifndef CONFIG_IPQ9574_RUMI
 	/*
 	 * Reset EDMA
 	 */
 	ipq9574_edma_hw_reset();
+#endif
 
 	/*
 	 * Disable interrupts
@@ -1567,11 +1705,78 @@ int ipq9574_edma_hw_init(struct ipq9574_edma_hw *ehw)
 	ipq9574_edma_disable_rings(ehw);
 
 	ret = ipq9574_edma_init_rings(ehw);
-
 	if (ret)
 		return ret;
 
 	ipq9574_edma_configure_rings(ehw);
+
+	/*
+	 * Clear the TXDESC2CMPL_MAP_xx reg before setting up
+	 * the mapping. This register holds TXDESC to TXFILL ring
+	 * mapping.
+	 */
+	ipq9574_edma_reg_write(IPQ9574_EDMA_REG_TXDESC2CMPL_MAP_0, 0);
+	ipq9574_edma_reg_write(IPQ9574_EDMA_REG_TXDESC2CMPL_MAP_1, 0);
+	ipq9574_edma_reg_write(IPQ9574_EDMA_REG_TXDESC2CMPL_MAP_2, 0);
+	ipq9574_edma_reg_write(IPQ9574_EDMA_REG_TXDESC2CMPL_MAP_3, 0);
+	ipq9574_edma_reg_write(IPQ9574_EDMA_REG_TXDESC2CMPL_MAP_4, 0);
+	ipq9574_edma_reg_write(IPQ9574_EDMA_REG_TXDESC2CMPL_MAP_5, 0);
+	desc_index = ehw->txcmpl_ring_start;
+
+	/*
+	 * 6 registers to hold the completion mapping for total 32
+	 * TX desc rings (0-5, 6-11, 12-17, 18-23, 24-29 & rest).
+	 * In each entry 5 bits hold the mapping for a particular TX desc ring.
+	 */
+	for (i = ehw->txdesc_ring_start;
+		i < ehw->txdesc_ring_end; i++) {
+		if ((i >= 0) && (i <= 5))
+			reg = IPQ9574_EDMA_REG_TXDESC2CMPL_MAP_0;
+		else if ((i >= 6) && (i <= 11))
+			reg = IPQ9574_EDMA_REG_TXDESC2CMPL_MAP_1;
+		else if ((i >= 12) && (i <= 17))
+			reg = IPQ9574_EDMA_REG_TXDESC2CMPL_MAP_2;
+		else if ((i >= 18) && (i <= 23))
+			reg = IPQ9574_EDMA_REG_TXDESC2CMPL_MAP_3;
+		else if ((i >= 24) && (i <= 29))
+			reg = IPQ9574_EDMA_REG_TXDESC2CMPL_MAP_4;
+		else
+			reg = IPQ9574_EDMA_REG_TXDESC2CMPL_MAP_5;
+
+		pr_debug("Configure TXDESC:%u to use TXCMPL:%u\n",
+			 i, desc_index);
+
+		/*
+		 * Set the Tx complete descriptor ring number in the mapping
+		 * register.
+		 * E.g. If (txcmpl ring)desc_index = 31, (txdesc ring)i = 28.
+		 * 	reg = IPQ9574_EDMA_REG_TXDESC2CMPL_MAP_4
+		 * 	data |= (desc_index & 0x1F) << ((i % 6) * 5);
+		 * 	data |= (0x1F << 20); - This sets 11111 at 20th bit of
+		 * 	register IPQ9574_EDMA_REG_TXDESC2CMPL_MAP_4
+		 */
+
+		data = ipq9574_edma_reg_read(reg);
+		data |= (desc_index & 0x1F) << ((i % 6) * 5);
+		ipq9574_edma_reg_write(reg, data);
+
+		desc_index++;
+		if (desc_index == ehw->txcmpl_ring_end)
+			desc_index = ehw->txcmpl_ring_start;
+	}
+
+	pr_debug("EDMA_REG_TXDESC2CMPL_MAP_0: 0x%x\n",
+		 ipq9574_edma_reg_read(IPQ9574_EDMA_REG_TXDESC2CMPL_MAP_0));
+	pr_debug("EDMA_REG_TXDESC2CMPL_MAP_1: 0x%x\n",
+		 ipq9574_edma_reg_read(IPQ9574_EDMA_REG_TXDESC2CMPL_MAP_1));
+	pr_debug("EDMA_REG_TXDESC2CMPL_MAP_2: 0x%x\n",
+		 ipq9574_edma_reg_read(IPQ9574_EDMA_REG_TXDESC2CMPL_MAP_2));
+	pr_debug("EDMA_REG_TXDESC2CMPL_MAP_3: 0x%x\n",
+		 ipq9574_edma_reg_read(IPQ9574_EDMA_REG_TXDESC2CMPL_MAP_3));
+	pr_debug("EDMA_REG_TXDESC2CMPL_MAP_4: 0x%x\n",
+		 ipq9574_edma_reg_read(IPQ9574_EDMA_REG_TXDESC2CMPL_MAP_4));
+	pr_debug("EDMA_REG_TXDESC2CMPL_MAP_5: 0x%x\n",
+		 ipq9574_edma_reg_read(IPQ9574_EDMA_REG_TXDESC2CMPL_MAP_5));
 
 	/*
 	 * Set PPE QID to EDMA Rx ring mapping.
@@ -1589,36 +1794,48 @@ int ipq9574_edma_hw_init(struct ipq9574_edma_hw *ehw)
 
 	/*
 	 * Set RXDESC2FILL_MAP_xx reg.
-	 * There are two registers RXDESC2FILL_0 and RXDESC2FILL_1
+	 * There are 3 registers RXDESC2FILL_0, RXDESC2FILL_1 and RXDESC2FILL_2
 	 * 3 bits holds the rx fill ring mapping for each of the
 	 * rx descriptor ring.
 	 */
 	ipq9574_edma_reg_write(IPQ9574_EDMA_REG_RXDESC2FILL_MAP_0, 0);
 	ipq9574_edma_reg_write(IPQ9574_EDMA_REG_RXDESC2FILL_MAP_1, 0);
+	ipq9574_edma_reg_write(IPQ9574_EDMA_REG_RXDESC2FILL_MAP_2, 0);
 
 	for (i = ehw->rxdesc_ring_start;
 			i < ehw->rxdesc_ring_end; i++) {
 		if ((i >= 0) && (i <= 9))
 			reg = IPQ9574_EDMA_REG_RXDESC2FILL_MAP_0;
-		else
+		else if ((i >= 10) && (i <= 19))
 			reg = IPQ9574_EDMA_REG_RXDESC2FILL_MAP_1;
+		else
+			reg = IPQ9574_EDMA_REG_RXDESC2FILL_MAP_2;
 
 		rxdesc_ring = &ehw->rxdesc_ring[i - ehw->rxdesc_ring_start];
 
 		pr_debug("Configure RXDESC:%u to use RXFILL:%u\n",
 				rxdesc_ring->id, rxdesc_ring->rxfill->id);
 
+		/*
+		 * Set the Rx fill descriptor ring number in the mapping
+		 * register.
+		 * E.g. If (rxfill ring)rxdesc_ring->rxfill->id = 7, (rxdesc ring)i = 13.
+		 * 	reg = IPQ9574_EDMA_REG_RXDESC2FILL_MAP_1
+		 * 	data |= (rxdesc_ring->rxfill->id & 0x7) << ((i % 10) * 3);
+		 * 	data |= (0x7 << 9); - This sets 111 at 9th bit of
+		 * 	register IPQ9574_EDMA_REG_RXDESC2FILL_MAP_1
+		 */
 		data = ipq9574_edma_reg_read(reg);
 		data |= (rxdesc_ring->rxfill->id & 0x7) << ((i % 10) * 3);
 		ipq9574_edma_reg_write(reg, data);
 	}
 
-	reg = IPQ9574_EDMA_REG_RXDESC2FILL_MAP_0;
 	pr_debug("EDMA_REG_RXDESC2FILL_MAP_0: 0x%x\n",
-		ipq9574_edma_reg_read(reg));
-	reg = IPQ9574_EDMA_REG_RXDESC2FILL_MAP_1;
+		ipq9574_edma_reg_read(IPQ9574_EDMA_REG_RXDESC2FILL_MAP_0));
 	pr_debug("EDMA_REG_RXDESC2FILL_MAP_1: 0x%x\n",
-		 ipq9574_edma_reg_read(reg));
+		 ipq9574_edma_reg_read(IPQ9574_EDMA_REG_RXDESC2FILL_MAP_1));
+	pr_debug("EDMA_REG_RXDESC2FILL_MAP_2: 0x%x\n",
+		 ipq9574_edma_reg_read(IPQ9574_EDMA_REG_RXDESC2FILL_MAP_2));
 
 	/*
 	 * Enable EDMA
@@ -1660,6 +1877,7 @@ int ipq9574_edma_hw_init(struct ipq9574_edma_hw *ehw)
 	return 0;
 }
 
+#ifndef CONFIG_IPQ9574_RUMI
 void get_phy_address(int offset)
 {
 	int phy_type;
@@ -1671,15 +1889,15 @@ void get_phy_address(int offset)
 	i = 0;
 	for (offset = fdt_first_subnode(gd->fdt_blob, offset); offset > 0;
 	     offset = fdt_next_subnode(gd->fdt_blob, offset)) {
-
 		phy_address = fdtdec_get_uint(gd->fdt_blob,
-							  offset, "phy_address", 0);
+					      offset, "phy_address", 0);
 		phy_type = fdtdec_get_uint(gd->fdt_blob,
-							  offset, "phy_type", 0);
+					   offset, "phy_type", 0);
 		phy_info[i]->phy_address = phy_address;
 		phy_info[i++]->phy_type = phy_type;
 	}
 }
+#endif
 
 int ipq9574_edma_init(void *edma_board_cfg)
 {
@@ -1687,10 +1905,12 @@ int ipq9574_edma_init(void *edma_board_cfg)
 	struct ipq9574_edma_common_info *c_info[IPQ9574_EDMA_DEV];
 	struct ipq9574_edma_hw *hw[IPQ9574_EDMA_DEV];
 	uchar enet_addr[IPQ9574_EDMA_DEV * 6];
-	int i, phy_id;
-	uint32_t phy_chip_id, phy_chip_id1, phy_chip_id2;
+	int i;
 	int ret = -1;
 	ipq9574_edma_board_cfg_t ledma_cfg, *edma_cfg;
+#ifndef CONFIG_IPQ9574_RUMI
+	int phy_id;
+	uint32_t phy_chip_id, phy_chip_id1, phy_chip_id2;
 	static int sw_init_done = 0;
 	int port_8033 = -1, node, phy_addr, aquantia_port = -1;
 	int mode, phy_node = -1;
@@ -1706,11 +1926,12 @@ int ipq9574_edma_init(void *edma_board_cfg)
 	if (phy_node >= 0)
 		get_phy_address(phy_node);
 
-	mode = fdtdec_get_uint(gd->fdt_blob, node, "switch_mac_mode", -1);
+	mode = fdtdec_get_uint(gd->fdt_blob, node, "switch_mac_mode0", -1);
 	if (mode < 0) {
 		printf("Error: switch_mac_mode not specified in dts");
 		return mode;
 	}
+#endif
 
 	memset(c_info, 0, (sizeof(c_info) * IPQ9574_EDMA_DEV));
 	memset(enet_addr, 0, sizeof(enet_addr));
@@ -1787,6 +2008,7 @@ int ipq9574_edma_init(void *edma_board_cfg)
 		ipq9574_edma_dev[i]->c_info = c_info[i];
 		ipq9574_edma_hw_addr = IPQ9574_EDMA_CFG_BASE;
 
+#ifndef CONFIG_IPQ9574_RUMI
 		ret = ipq_sw_mdio_init(edma_cfg->phy_name);
 		if (ret)
 			goto init_failed;
@@ -1840,7 +2062,7 @@ int ipq9574_edma_init(void *edma_board_cfg)
 					ipq_qca8081_phy_init(&ipq9574_edma_dev[i]->ops[phy_id], phy_addr);
 					break;
 #endif
-#ifdef CONFIG_IPQ9574_QCA_AQUANTIA_PHY
+#ifdef CONFIG_QCA_AQUANTIA_PHY
 				case AQUANTIA_PHY_107:
 				case AQUANTIA_PHY_109:
 				case AQUANTIA_PHY_111:
@@ -1856,6 +2078,7 @@ int ipq9574_edma_init(void *edma_board_cfg)
 					break;
 			}
 		}
+#endif
 
 		ret = ipq9574_edma_hw_init(hw[i]);
 
