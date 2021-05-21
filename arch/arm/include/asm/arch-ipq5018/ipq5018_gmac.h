@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020  The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2021  The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -27,6 +27,8 @@
 #define MPGE_PHY_MMD1_DAC_MASK			0xff00
 #define PHY_DAC(val)				(val<<8)
 #define MPGE_PHY_DEBUG_EDAC			0x4380
+#define QCA808X_DEBUG_PORT_ADDRESS               29
+#define QCA808X_DEBUG_PORT_DATA                  30
 
 #define LINK_UP					0x400
 #define LINK(_data)				(_data & LINK_UP)? "Up" : "Down"
