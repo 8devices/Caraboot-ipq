@@ -258,6 +258,22 @@ static struct qpic_serial_nand_params qpic_serial_nand_tbl[] = {
 		.check_quad_config = true,
 		.name = "DS35M1GA",
 	},
+	{
+		.id = { 0xc8, 0x42 },
+		.page_size = 2048,
+		.erase_blk_size = 0x00020000,
+		.pgs_per_blk = 64,
+		.no_of_blocks = 2048,
+		.spare_size = 128,
+		.density = 0x10000000,
+		.otp_region = 0x2000,
+		.no_of_addr_cycle = 0x3,
+		.num_bits_ecc_correctability = 8,
+		.timing_mode_support = 0,
+		.quad_mode = true,
+		.check_quad_config = true,
+		.name = "GD5F2GQ5REYIG",
+	},
 };
 struct qpic_serial_nand_params *serial_params;
 #define MICRON_DEVICE_ID	0x152c152c
