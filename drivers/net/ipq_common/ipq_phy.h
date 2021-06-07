@@ -44,13 +44,14 @@
 #define AQUANTIA_PHY_107			0x03a1b4e2
 #define AQUANTIA_PHY_109			0x03a1b502
 #define AQUANTIA_PHY_111			0x03a1b610
-#define AQUANTIA_PHY_112			0x03a1b660
 #define AQUANTIA_PHY_111B0			0x03a1b612
+#define AQUANTIA_PHY_112			0x03a1b660
 #define AQUANTIA_PHY_112C			0x03a1b792
+#define AQUANTIA_PHY_113C_A0			0x31c31C10
+#define AQUANTIA_PHY_113C_A1			0x31c31C11
 #define AQU_PHY_ADDR				0x7
 #define QCA_PHY_ID1				0x2
 #define QCA_PHY_ID2				0x3
-
 
 /* Phy preferred medium type */
 typedef enum {
