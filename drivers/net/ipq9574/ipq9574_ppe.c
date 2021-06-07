@@ -26,6 +26,12 @@
 #include "ipq_phy.h"
 
 DECLARE_GLOBAL_DATA_PTR;
+#ifdef DEBUG
+#define pr_debug(fmt, args...) printf(fmt, ##args);
+#else
+#define pr_debug(fmt, args...)
+#endif
+
 #define pr_info(fmt, args...) printf(fmt, ##args);
 
 /*
@@ -622,7 +628,7 @@ static void ppe_port_mux_set(int port_id, int port_type, int mode)
 	union port_mux_ctrl_u port_mux_ctrl;
 	int nodeoff;
 
-	printf("\nport id is: %d, port type is %d, mode is %d",
+	pr_debug("\nport id is: %d, port type is %d, mode is %d",
 		port_id, port_type, mode);
 	nodeoff = fdt_path_offset(gd->fdt_blob, "/ess-switch");
 
@@ -636,7 +642,7 @@ static void ppe_port_mux_set(int port_id, int port_type, int mode)
 
 	port_mux_ctrl.val = 0;
 	ipq9574_ppe_reg_read(IPQ9574_PORT_MUX_CTRL, &(port_mux_ctrl.val));
-	printf("\nBEFORE UPDATE: Port MUX CTRL value is %u", port_mux_ctrl.val);
+	pr_debug("\nBEFORE UPDATE: Port MUX CTRL value is %u", port_mux_ctrl.val);
 
 
 	switch (port_id) {
@@ -680,7 +686,7 @@ static void ppe_port_mux_set(int port_id, int port_type, int mode)
 	}
 
 	ipq9574_ppe_reg_write(IPQ9574_PORT_MUX_CTRL, port_mux_ctrl.val);
-	printf("\nAFTER UPDATE: Port MUX CTRL value is %u", port_mux_ctrl.val);
+	pr_debug("\nAFTER UPDATE: Port MUX CTRL value is %u", port_mux_ctrl.val);
 }
 
 void ppe_port_mux_mac_type_set(int port_id, int mode)
