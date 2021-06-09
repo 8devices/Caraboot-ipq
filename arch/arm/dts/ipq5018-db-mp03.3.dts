@@ -55,6 +55,12 @@
 	nand: nand-controller@79B0000 {
 		status = "okay";
 		nand_gpio {
+			qspi_clk {
+				gpio = <9>;
+				func = <2>;
+				od_en = <GPIO_OD_DISABLE>;
+				drvstr = <GPIO_8MA>;
+			};
 			qspi_dat3 {
 				gpio = <4>;
 				func = <2>;
