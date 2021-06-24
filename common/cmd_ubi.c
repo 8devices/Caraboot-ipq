@@ -531,6 +531,19 @@ static int do_ubi(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	if (argc < 2)
 		return CMD_RET_USAGE;
 
+#ifdef CONFIG_QSPI_LAYOUT_SWITCH
+	if (strcmp(argv[1], "exit") == 0)  {
+		if (ubi_initialized) {
+			printf("!! Detaching UBI partition\n");
+			ubi_exit();
+			del_mtd_partitions(ubi_dev.mtd_info);
+			put_mtd_device(ubi_dev.mtd_info);
+			ubi_initialized = 0;
+		}
+		return 0;
+	}
+#endif
+
 	if (strcmp(argv[1], "part") == 0) {
 		const char *vid_header_offset = NULL;
 

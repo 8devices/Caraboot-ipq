@@ -49,6 +49,16 @@ typedef unsigned long addr_t;
 static uint32_t hw_ver;
 unsigned int qpic_training_offset = 0;
 
+#ifdef CONFIG_QSPI_LAYOUT_SWITCH
+enum qpic_nand_layout {
+	QPIC_NAND_LAYOUT_SBL,
+	QPIC_NAND_LAYOUT_LINUX,
+	QPIC_NAND_LAYOUT_MAX
+};
+
+enum qpic_nand_layout qpic_layout = QPIC_NAND_LAYOUT_LINUX;
+#endif
+
 #ifdef CONFIG_QPIC_SERIAL
 static struct qpic_serial_nand_params qpic_serial_nand_tbl[] = {
 	{
@@ -940,6 +950,10 @@ static void qpic_serial_update_dev_params(struct mtd_info *mtd)
 	uint32_t ecc_bits;
 
 	dev->page_size = serial_params->page_size;
+#ifdef CONFIG_QSPI_LAYOUT_SWITCH
+	if (serial_params->page_size == 4096 && qpic_layout == QPIC_NAND_LAYOUT_SBL)
+		dev->page_size = 2048;
+#endif
 	mtd->writesize = dev->page_size;
 	dev->block_size = serial_params->pgs_per_blk * (dev->page_size);
 	mtd->erasesize = dev->block_size;
@@ -4699,8 +4713,19 @@ void qpic_nand_init(qpic_nand_cfg_t *qpic_nand_cfg)
 	buf += mtd->oobsize;
 
 #ifdef CONFIG_QSPI_SERIAL_TRAINING
+
 	/* start serial training here */
+#ifdef CONFIG_QSPI_LAYOUT_SWITCH
+	if (qpic_layout != QPIC_NAND_LAYOUT_SBL)
+		ret = qpic_execute_serial_training(mtd);
+	else {
+		ret = 0;
+		printf("!! Skip serial traning in SBL layout\n");
+	}
+#else
 	ret = qpic_execute_serial_training(mtd);
+#endif
+
 	if (ret) {
 		printf("Error in serial training.\n");
 		printf("switch back to 50MHz with feed back clock bit enabled\n");
@@ -5124,4 +5149,66 @@ void Read_onfi_ParameterPage_DataStructure(unsigned char *ParPage, int size)
 	printf("256-511 bytes are value of bytes 0-255\n");
 	printf("512-767 bytes are value of bytes 0-255\n");
 }
+#endif
+
+#ifdef CONFIG_QSPI_LAYOUT_SWITCH
+static int qpic_nand_deinit(void)
+{
+	int ret = 0;
+	struct mtd_info *mtd = &nand_info[CONFIG_QPIC_NAND_NAND_INFO_IDX];
+	struct qpic_nand_dev *dev = MTD_QPIC_NAND_DEV(mtd);
+
+	if (run_command("ubi exit", 0) != CMD_RET_SUCCESS)
+		return CMD_RET_FAILURE;
+
+#ifdef CONFIG_MTD_DEVICE
+	ret = del_mtd_device(mtd);
+	if (ret < 0)
+		return ret;
+#endif
+
+	dev->cfg0 = 0;
+	dev->cfg1 = 0;
+	dev->ecc_bch_cfg = 0;
+	free(dev->buffers);
+
+	return ret;
+}
+
+static int do_qpic_nand_cmd(cmd_tbl_t *cmdtp, int flag,
+			   int argc, char * const argv[])
+{
+	int ret;
+
+	if (argc != 2 || serial_params->page_size == 2048)
+		return CMD_RET_USAGE;
+
+	if (strcmp(argv[1], "sbl") == 0) {
+		if (qpic_layout == QPIC_NAND_LAYOUT_SBL) {
+			printf("Already in sbl layout\n");
+			return CMD_RET_SUCCESS;
+		}
+		qpic_layout = QPIC_NAND_LAYOUT_SBL;
+	} else if (strcmp(argv[1], "linux") == 0) {
+		if (qpic_layout == QPIC_NAND_LAYOUT_LINUX) {
+			printf("Already in linux layout\n");
+			return CMD_RET_SUCCESS;
+		}
+		qpic_layout = QPIC_NAND_LAYOUT_LINUX;
+	} else
+		return CMD_RET_USAGE;
+
+	ret = qpic_nand_deinit();
+	if (ret < 0)
+		return CMD_RET_FAILURE;
+
+	nand_curr_device = -1;
+	qpic_nand_init(NULL);
+
+	return CMD_RET_SUCCESS;
+}
+
+U_BOOT_CMD(qpic_nand, 2, 1, do_qpic_nand_cmd,
+	   "Switch between SBL and Linux kernel page on 4K NAND Flash.",
+	   "qpic_nand (sbl | linux)");
 #endif
