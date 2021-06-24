@@ -88,6 +88,16 @@
 		compatible = "qcom,spi-qup-v2.7.0";
 		wr_pipe_0 = <12>;
 		rd_pipe_0 = <13>;
+		wr_pipe_1 = <14>;
+		rd_pipe_1 = <15>;
+		wr_pipe_2 = <16>;
+		rd_pipe_2 = <17>;
+		wr_pipe_3 = <18>;
+		rd_pipe_3 = <19>;
+		wr_pipe_4 = <20>;
+		rd_pipe_4 = <21>;
+		wr_pipe_5 = <22>;
+		rd_pipe_5 = <23>;
 		status = "ok";
 		spi_gpio {
 		};

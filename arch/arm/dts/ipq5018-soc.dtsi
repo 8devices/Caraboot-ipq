@@ -37,6 +37,10 @@
 		compatible = "qcom,spi-qup-v2.7.0";
 		wr_pipe_0 = <4>;
 		rd_pipe_0 = <5>;
+		wr_pipe_1 = <6>;
+		rd_pipe_1 = <7>;
+		wr_pipe_2 = <8>;
+		rd_pipe_2 = <9>;
 		status = "ok";
 		spi_gpio {
 			blsp0_spi_clk {

@@ -40,8 +40,8 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-static unsigned int read_pipe[NO_OF_QUPS];
-static unsigned int write_pipe[NO_OF_QUPS];
+static unsigned int read_pipe[CONFIG_IPQ_MAX_BLSP_QUPS];
+static unsigned int write_pipe[CONFIG_IPQ_MAX_BLSP_QUPS];
 static unsigned char qup_pipe_initialized = 0;
 
 static int check_bit_state(uint32_t reg_addr, int bit_num, int val,
@@ -177,7 +177,7 @@ static void qup_pipe_init(void)
 	qup_pipe_initialized = 1;
 	node = fdt_path_offset(gd->fdt_blob, "/spi");
 	if (node >= 0) {
-		for(i = 0; i < NO_OF_QUPS; i++) {
+		for(i = 0; i < CONFIG_IPQ_MAX_BLSP_QUPS; i++) {
 
 		        snprintf(rd_pipe_name, sizeof(rd_pipe_name),
 				"rd_pipe_%01d", i);
@@ -352,18 +352,18 @@ struct spi_slave *spi_setup_slave(unsigned int bus, unsigned int cs,
 	memset(ds, 0, sizeof(struct ipq_spi_slave));
 	/*
 	 * QCA BLSP supports SPI Flash
-	 * on different BLSP0 and BLSP1
+	 * on different BLSP 0 to CONFIG_IPQ_MAX_BLSP_QUPS-1
 	 * with different number of chip selects (CS, channels):
 	*/
-	if ((bus > BLSP1_SPI)
-		|| ((bus == BLSP0_SPI) && (cs > 2))
-		|| ((bus == BLSP1_SPI) && (cs > 0))) {
+	if (bus >= CONFIG_IPQ_MAX_BLSP_QUPS){
 		printf("SPI error: unsupported bus %d "
-			"(Supported busses 0,1 and 2) or chipselect\n", bus);
+		"Supported busses 0 to %d\n", bus, CONFIG_IPQ_MAX_BLSP_QUPS-1);
 		goto err;
 	}
 	ds->slave.bus	= bus;
 	ds->slave.cs	= cs;
+
+	BLSP_SPI_REGISTERS(spi_reg[bus]);
 
 	ds->regs	= &spi_reg[bus];
 
@@ -384,7 +384,7 @@ struct spi_slave *spi_setup_slave(unsigned int bus, unsigned int cs,
 	/* DMA mode */
 	ds->use_dma = CONFIG_QUP_SPI_USE_DMA;
 
-	if (ds->slave.cs == 1 &&
+	if (ds->slave.cs >= 1 &&
 		cs_is_valid(ds->slave.bus, ds->slave.cs)) {
 		/* GPIO Configuration for SPI NAND */
 		blsp_pin_config(ds->slave.bus, ds->slave.cs);
