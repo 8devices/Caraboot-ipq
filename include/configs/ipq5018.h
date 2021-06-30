@@ -329,7 +329,6 @@ extern loff_t board_env_size;
 
 #else
 #define CONFIG_CMD_BOOTZ
-#define CONFIG_CMD_CACHE
 
 /* Multicore CPU support */
 #define CONFIG_SMP_CMD_SUPPORT

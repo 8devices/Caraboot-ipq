@@ -99,6 +99,22 @@ static struct qpic_serial_nand_params qpic_serial_nand_tbl[] = {
 		.name = "GD5F2GQ5REYIH",
 	},
 	{
+		.id = { 0xc8, 0x25 },
+		.page_size = 2048,
+		.erase_blk_size = 0x00020000,
+		.pgs_per_blk = 64,
+		.no_of_blocks = 4096,
+		.spare_size = 64,
+		.density = 0x20000000,
+		.otp_region = 0x2000,
+		.no_of_addr_cycle = 0x3,
+		.num_bits_ecc_correctability = 4,
+		.timing_mode_support = 0,
+		.quad_mode = true,
+		.check_quad_config = true,
+		.name = "GD5F4GQ6REYIHR",
+	},
+	{
 		.id = { 0x2c, 0x15 },
 		.page_size = 2048,
 		.erase_blk_size = 0x00020000,
@@ -114,15 +130,159 @@ static struct qpic_serial_nand_params qpic_serial_nand_tbl[] = {
 		.check_quad_config = false,
 		.name = "MT29F1G01ABBFDWB-IT",
 	},
+	{
+		.id = { 0xef, 0xbc },
+		.page_size = 2048,
+		.erase_blk_size = 0x00020000,
+		.pgs_per_blk = 64,
+		.no_of_blocks = 1024,
+		.spare_size = 64,
+		.density = 0x08000000,
+		.otp_region = 0x5000,
+		.no_of_addr_cycle = 0x3,
+		.num_bits_ecc_correctability = 4,
+		.timing_mode_support = 0,
+		.quad_mode = true,
+		.check_quad_config = true,
+		.name = "W25N01JW",
+	},
+	{
+		.id = { 0xc8, 0x11 },
+		.page_size = 2048,
+		.erase_blk_size = 0x00020000,
+		.pgs_per_blk = 64,
+		.no_of_blocks = 1024,
+		.spare_size = 64,
+		.density = 0x08000000,
+		.otp_region = 0x2000,
+		.no_of_addr_cycle = 0x3,
+		.num_bits_ecc_correctability = 4,
+		.timing_mode_support = 0,
+		.quad_mode = true,
+		.check_quad_config = false,
+		.name = "F50D1G41LB(2M)",
+	},
+	{
+		.id = { 0xc8, 0x41 },
+		.page_size = 2048,
+		.erase_blk_size = 0x00020000,
+		.pgs_per_blk = 64,
+		.no_of_blocks = 2048,
+		.spare_size = 128,
+		.density = 0x08000000,
+		.otp_region = 0x2000,
+		.no_of_addr_cycle = 0x3,
+		.num_bits_ecc_correctability = 8,
+		.timing_mode_support = 0,
+		.quad_mode = true,
+		.check_quad_config = true,
+		.name = "GD5F1GQ5REYIG",
+	},
+	{
+		.id = { 0xc8, 0x21 },
+		.page_size = 2048,
+		.erase_blk_size = 0x00020000,
+		.pgs_per_blk = 64,
+		.no_of_blocks = 1024,
+		.spare_size = 64,
+		.density = 0x08000000,
+		.otp_region = 0x2000,
+		.no_of_addr_cycle = 0x3,
+		.num_bits_ecc_correctability = 4,
+		.timing_mode_support = 0,
+		.quad_mode = true,
+		.check_quad_config = true,
+		.name = "GD5F1GQ5REYIH",
+	},
+	{
+		.id = { 0xef, 0xbf },
+		.page_size = 2048,
+		.erase_blk_size = 0x00020000,
+		.pgs_per_blk = 64,
+		.no_of_blocks = 2048,
+		.spare_size = 64,
+		.density = 0x10000000,
+		.otp_region = 0x2000,
+		.no_of_addr_cycle = 0x3,
+		.num_bits_ecc_correctability = 4,
+		.timing_mode_support = 0,
+		.quad_mode = true,
+		.check_quad_config = true,
+		.name = "W25N02JWZEIF",
+	},
+	{
+		.id = { 0xc2, 0x92 },
+		.page_size = 2048,
+		.erase_blk_size = 0x00020000,
+		.pgs_per_blk = 64,
+		.no_of_blocks = 1024,
+		.spare_size = 64,
+		.density = 0x08000000,
+		.otp_region = 0x2000,
+		.no_of_addr_cycle = 0x3,
+		.num_bits_ecc_correctability = 4,
+		.timing_mode_support = 0,
+		.quad_mode = true,
+		.check_quad_config = true,
+		.name = "MX35UF1GE4AC",
+	},
+	{
+		.id = { 0xc8, 0x51 },
+		.page_size = 2048,
+		.erase_blk_size = 0x00020000,
+		.pgs_per_blk = 64,
+		.no_of_blocks = 2048,
+		.spare_size = 128,
+		.density = 0x10000000,
+		.otp_region = 0xF000,
+		.no_of_addr_cycle = 0x3,
+		.num_bits_ecc_correctability = 8,
+		.timing_mode_support = 0,
+		.quad_mode = true,
+		.check_quad_config = true,
+		.name = "F50D2G41KA-83YIG2V",
+	},
+	{
+		.id = { 0xe5, 0x21 },
+		.page_size = 2048,
+		.erase_blk_size = 0x00020000,
+		.pgs_per_blk = 64,
+		.no_of_blocks = 1024,
+		.spare_size = 64,
+		.density = 0x08000000,
+		.otp_region = 0xF000,
+		.no_of_addr_cycle = 0x3,
+		.num_bits_ecc_correctability = 4,
+		.timing_mode_support = 0,
+		.quad_mode = true,
+		.check_quad_config = true,
+		.name = "DS35M1GA",
+	},
+	{
+		.id = { 0xc8, 0x42 },
+		.page_size = 2048,
+		.erase_blk_size = 0x00020000,
+		.pgs_per_blk = 64,
+		.no_of_blocks = 2048,
+		.spare_size = 128,
+		.density = 0x10000000,
+		.otp_region = 0x2000,
+		.no_of_addr_cycle = 0x3,
+		.num_bits_ecc_correctability = 8,
+		.timing_mode_support = 0,
+		.quad_mode = true,
+		.check_quad_config = true,
+		.name = "GD5F2GQ5REYIG",
+	},
 };
 struct qpic_serial_nand_params *serial_params;
 #define MICRON_DEVICE_ID	0x152c152c
+#define WINBOND_DEVICE_ID	0x0021bcef
 #define CMD3_MASK		0xfff0ffff
 /*
  * An array holding the fixed pattern to compare with
  * training pattern.
  */
-
 static const unsigned int training_block_64[] = {
 	0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F,
 	0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F, 0x0F0F0F0F,
@@ -782,7 +942,7 @@ static void qpic_serial_update_dev_params(struct mtd_info *mtd)
 		mtd->ecc_strength = 8;
 	else
 		mtd->ecc_strength = 4;
-	printf("Serial NAND device Manufature:%s\n",serial_params->name);
+	printf("Serial NAND device Manufacturer:%s\n",serial_params->name);
 	printf("Device Size:%d MiB, Page size:%d, Spare Size:%d, ECC:%d-bit\n",
 		(int)(dev->density >> 20), dev->page_size, mtd->oobsize, mtd->ecc_strength);
 }
@@ -1247,14 +1407,14 @@ int qpic_spi_nand_config(struct mtd_info *mtd)
 			qspi_debug("%s : Quad bit not enabled.\n",__func__);
 			qspi_debug("%s : Issuning set feature command to enable it.\n",
 					__func__);
-
 			/* Enable quad bit */
 			status = qpic_serial_set_feature(mtd, FLASH_SPI_NAND_FR_ADDR,
 			FLASH_SPI_NAND_FR_QUAD_ENABLE);
 			if (status < 0) {
-			printf("%s : Error in enabling Quad bit.\n",__func__);
-			return status;
+				printf("%s : Error in enabling Quad bit.\n",__func__);
+				return status;
 			}
+
 			/* Read status again to know wether Quad bit enabled or not */
 			status = qpic_serial_get_feature(mtd, FLASH_SPI_NAND_FR_ADDR);
 				if (status < 0) {
@@ -1266,16 +1426,39 @@ int qpic_spi_nand_config(struct mtd_info *mtd)
 				qspi_debug("%s:Quad mode not enabled,so use x1 Mode.\n",
 					__func__);
 				dev->quad_mode = false;
-				return 0;
 			} else {
 				qspi_debug("%s: Quad mode enabled. using X4 mode\n",__func__);
-				return 0;
 			}
 		} else {
 			qspi_debug("%s: Quad mode enabled on Opwer on.\n",__func__);
-			return 0;
 		}
 	}
+
+	if (dev->id == WINBOND_DEVICE_ID) {
+		status = qpic_serial_get_feature(mtd, FLASH_SPI_NAND_FR_ADDR);
+		if (status < 0) {
+			printf("%s : Error in getting feature.\n",__func__);
+			return status;
+		}
+
+		if (!((status >> 8) & FLASH_SPI_NAND_FR_BUFF_ENABLE)) {
+			qspi_debug("%s :continous buffer mode disabled\n",
+				__func__);
+			qspi_debug("%s : Issuing set feature command to enable it\n",
+					__func__);
+			status = qpic_serial_set_feature(mtd, FLASH_SPI_NAND_FR_ADDR,
+				(FLASH_SPI_NAND_FR_BUFF_ENABLE | (status >> 8)));
+			if (status < 0) {
+				printf("%s : Error in disabling continous buffer bit.\n",
+						__func__);
+				return status;
+			}
+		} else {
+			qspi_debug("%s : continous buffer mode enabled on power on\n",
+					__func__);
+		}
+	}
+
 	return 0;
 }
 #endif

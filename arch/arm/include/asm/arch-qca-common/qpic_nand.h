@@ -282,6 +282,7 @@
  */
 #define FLASH_SPI_NAND_FR_ADDR		0xB0
 #define FLASH_SPI_NAND_FR_ECC_ENABLE	(1 << 4)
+#define FLASH_SPI_NAND_FR_BUFF_ENABLE	(1 << 3)
 #define FLASH_SPI_NAND_FR_QUAD_ENABLE	0x1
 /* According to GigaDevice data sheet Status Register(0xC0) is:
  *  _________________________________________________

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2019-2020 The Linux Foundation. All rights reserved.
+* Copyright (c) 2019-2021 The Linux Foundation. All rights reserved.
 *
 * This program is free software; you can redistribute it and/or modify
 * it under the terms of the GNU General Public License version 2 and
@@ -685,18 +685,27 @@ static void gephy_mdac_edac_config(ipq_gmac_board_cfg_t *gmac_cfg)
 		(phy_data | phy_dac)
 		);
 	mdelay(1);
-	/*set edac value*/
+	/*
+	|| set edac value debug register write follows indirect
+	|| adressing so first write address in port address and
+	|| write value in data register
+	*/
+	ipq5018_mdio_write(gmac_cfg->phy_addr,
+			QCA808X_DEBUG_PORT_ADDRESS,
+			MPGE_PHY_DEBUG_EDAC);
 	phy_data = ipq5018_mdio_read(
 			gmac_cfg->phy_addr,
-			MPGE_PHY_DEBUG_EDAC,
-			NULL
-			);
+			QCA808X_DEBUG_PORT_DATA,
+			NULL);
+
 	phy_data &= ~(MPGE_PHY_MMD1_DAC_MASK);
-	ipq5018_mdio_write(
-		gmac_cfg->phy_addr,
-		MPGE_PHY_DEBUG_EDAC,
-		(phy_data | phy_dac)
-		);
+
+	ipq5018_mdio_write(gmac_cfg->phy_addr,
+			QCA808X_DEBUG_PORT_ADDRESS,
+			MPGE_PHY_DEBUG_EDAC);
+	ipq5018_mdio_write(gmac_cfg->phy_addr,
+			QCA808X_DEBUG_PORT_DATA,
+			(phy_data | phy_dac));
 	mdelay(1);
 }
 

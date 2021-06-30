@@ -484,6 +484,8 @@ void fdt_fixup_auto_restart(void *blob)
 }
 
 #ifdef CONFIG_IPQ_BT_SUPPORT
+int bt_running;
+
 unsigned char hci_reset[] =
 {0x01, 0x03, 0x0c, 0x00};
 
@@ -659,7 +661,15 @@ int bt_init(void)
 
 	send_bt_hci_cmds(btDesc);
 
+	bt_running = 1;
 	return 0;
+}
+
+void fdt_fixup_bt_running(void *blob)
+{
+	if (bt_running) {
+		parse_fdt_fixup("/soc/bt@7000000%qcom,bt-running%1", blob);
+	}
 }
 #endif
 
@@ -1343,7 +1353,9 @@ void board_usb_deinit(int id)
 					gpio_node, "gpio", 0);
 			unsigned int *gpio_base =
 				(unsigned int *)GPIO_CONFIG_ADDR(gpio);
+			int usb_pwr_gpio = fdtdec_get_int(gd->fdt_blob, nodeoff, "usb_pwr_gpio", 0);
 			writel(0xC1, gpio_base);
+			gpio_set_value(usb_pwr_gpio, GPIO_OUT_LOW);
 		}
 	}
 
@@ -1497,7 +1509,7 @@ static void usb_init_phy(int index, int ssphy)
 
 int ipq_board_usb_init(void)
 {
-	int i, nodeoff, ssphy, gpio_node;
+	int i, nodeoff, ssphy, gpio_node, usb_pwr_gpio;
 	char node_name[8];
 
 	if(readl(EUD_EUD_EN2)) {
@@ -1528,8 +1540,11 @@ int ipq_board_usb_init(void)
 		/* USB power GPIO for drive 5V */
 		gpio_node =
 			fdt_subnode_offset(gd->fdt_blob, nodeoff, "usb_gpio");
-		if (gpio_node >= 0)
+		if (gpio_node >= 0) {
 			qca_gpio_init(gpio_node);
+			usb_pwr_gpio = fdtdec_get_int(gd->fdt_blob, nodeoff, "usb_pwr_gpio", 0);
+			gpio_set_value(usb_pwr_gpio, GPIO_OUT_HIGH);
+		}
 	}
 
 	return 0;

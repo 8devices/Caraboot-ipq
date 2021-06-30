@@ -25,7 +25,6 @@
 		i2c0 = "/i2c@78b6000";
 		gmac_gpio = "/gmac_gpio";
 		usb0 = "/xhci@8a00000";
-		pci0 = "/pci@80000000";
 		pci1 = "/pci@a0000000";
 		nand = "/nand-controller@79B0000";
 	};
@@ -127,6 +126,7 @@
 	};
 
 	usb0: xhci@8a00000 {
+		usb_pwr_gpio = <24>;
 		usb_gpio {
 			pwr_gpio {
 				gpio = <24>;

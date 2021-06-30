@@ -253,7 +253,7 @@ int config_select(unsigned int addr, char *rcmd, int rcmd_size)
 	}
 
 
-	printf("Config not availabale\n");
+	printf("Config not available\n");
 	return -1;
 }
 

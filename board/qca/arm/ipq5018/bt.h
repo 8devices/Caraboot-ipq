@@ -205,4 +205,5 @@ struct ipc_intent {
 extern int bt_ipc_sendmsg(struct bt_descriptor *btDesc, unsigned char *buf, int len );
 extern void bt_ipc_init(struct bt_descriptor *btDesc);
 extern void bt_ipc_worker(struct bt_descriptor *btDesc);
+extern int bt_running;
 #endif /* _BT_H */
