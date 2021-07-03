@@ -35,7 +35,8 @@ struct sdhci_host mmc_host;
 extern int ipq9574_edma_init(void *cfg);
 extern int ipq_spi_init(u16);
 
-unsigned int qpic_frequency = 0, qpic_phase = 0, qpic_training_offset = 0;
+unsigned int qpic_frequency = 0, qpic_phase = 0;
+extern unsigned int qpic_training_offset;
 
 void qca_serial_init(struct ipq_serial_platdata *plat)
 {
