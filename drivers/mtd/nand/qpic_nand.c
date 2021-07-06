@@ -275,6 +275,23 @@ static struct qpic_serial_nand_params qpic_serial_nand_tbl[] = {
 		.check_quad_config = true,
 		.name = "GD5F2GQ5REYIG",
 	},
+	{
+		.id = { 0xc2, 0xb7 },
+		.page_size = 4096,
+		.erase_blk_size = 0x00040000,
+		.pgs_per_blk = 64,
+		.no_of_blocks = 2048,
+		.spare_size = 160,
+		.density = 0x20000000,
+		.otp_region = 0x2000,
+		.no_of_addr_cycle = 0x3,
+		.num_bits_ecc_correctability = 8,
+		.timing_mode_support = 0,
+		.quad_mode = true,
+		.check_quad_config = true,
+		.name = "MX35UF4GE4AD-Z4I",
+	},
+
 };
 struct qpic_serial_nand_params *serial_params;
 #define MICRON_DEVICE_ID	0x152c152c
