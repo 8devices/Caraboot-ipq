@@ -543,8 +543,13 @@
 #define MTD_NAND_CHIP(mtd)			((struct nand_chip *)((mtd)->priv))
 #define MTD_QPIC_NAND_DEV(mtd)			(MTD_NAND_CHIP(mtd)->priv)
 
+#define DATA_DESC_PER_CW_FOR_MULTIPAGE		2
+/* 2K page wiil have 4 CWs abd 4K will have 8 CWs*/
+#define MAX_NO_OF_CWS				8
+
 #ifdef CONFIG_PAGE_SCOPE_MULTI_PAGE_READ
-#define QPIC_BAM_DATA_FIFO_SIZE			512
+#define QPIC_BAM_DATA_FIFO_SIZE			MAX_MULTI_PAGE * MAX_NO_OF_CWS * \
+							DATA_DESC_PER_CW_FOR_MULTIPAGE
 #define QPIC_BAM_CMD_FIFO_SIZE			128
 #define QPIC_BAM_STATUS_FIFO_SIZE		512
 #else
