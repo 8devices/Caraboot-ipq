@@ -680,11 +680,206 @@ int set_uuid_bootargs(char *boot_args, char *part_name, int buflen, bool gpt_fla
 }
 #endif
 
+#ifndef CONFIG_IPQ9574_RUMI
+int get_aquantia_gpio(int aquantia_gpio[2])
+{
+	int aquantia_gpio_cnt = -1, node;
+	int res = -1;
+
+	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
+	if (node >= 0) {
+		aquantia_gpio_cnt = fdtdec_get_uint(gd->fdt_blob, node, "aquantia_gpio_cnt", -1);
+		if (aquantia_gpio_cnt >= 1) {
+			res = fdtdec_get_int_array(gd->fdt_blob, node, "aquantia_gpio",
+						  (u32 *)aquantia_gpio, aquantia_gpio_cnt);
+			if (res >= 0)
+				return aquantia_gpio_cnt;
+		}
+	}
+
+	return res;
+}
+
+int get_napa_gpio(int napa_gpio[2])
+{
+	int napa_gpio_cnt = -1, node;
+	int res = -1;
+
+	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
+	if (node >= 0) {
+		napa_gpio_cnt = fdtdec_get_uint(gd->fdt_blob, node, "napa_gpio_cnt", -1);
+		if (napa_gpio_cnt >= 1) {
+			res = fdtdec_get_int_array(gd->fdt_blob, node, "napa_gpio",
+						  (u32 *)napa_gpio, napa_gpio_cnt);
+			if (res >= 0)
+				return napa_gpio_cnt;
+		}
+	}
+
+	return res;
+}
+
+int get_malibu_gpio(int malibu_gpio[2])
+{
+	int malibu_gpio_cnt = -1, node;
+	int res = -1;
+
+	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
+	if (node >= 0) {
+		malibu_gpio_cnt = fdtdec_get_uint(gd->fdt_blob, node, "malibu_gpio_cnt", -1);
+		if (malibu_gpio_cnt >= 1) {
+			res = fdtdec_get_int_array(gd->fdt_blob, node, "malibu_gpio",
+						  (u32 *)malibu_gpio, malibu_gpio_cnt);
+			if (res >= 0)
+				return malibu_gpio_cnt;
+		}
+	}
+
+	return res;
+}
+
+void aquantia_phy_reset_init(void)
+{
+	int aquantia_gpio[2] = {0}, aquantia_gpio_cnt, i;
+	unsigned int *aquantia_gpio_base;
+
+	aquantia_gpio_cnt = get_aquantia_gpio(aquantia_gpio);
+	if (aquantia_gpio_cnt >= 1) {
+		for (i = 0; i < aquantia_gpio_cnt; i++) {
+			if (aquantia_gpio[i] >= 0) {
+				aquantia_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(aquantia_gpio[i]);
+				writel(0x203, aquantia_gpio_base);
+				gpio_direction_output(aquantia_gpio[i], 0x0);
+			}
+		}
+	}
+}
+
+void napa_phy_reset_init(void)
+{
+	int napa_gpio[2] = {0}, napa_gpio_cnt, i;
+	unsigned int *napa_gpio_base;
+
+	napa_gpio_cnt = get_napa_gpio(napa_gpio);
+	if (napa_gpio_cnt >= 1) {
+		for (i = 0; i < napa_gpio_cnt; i++) {
+			if (napa_gpio[i] >= 0) {
+				napa_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(napa_gpio[i]);
+				writel(0x203, napa_gpio_base);
+				gpio_direction_output(napa_gpio[i], 0x0);
+			}
+		}
+	}
+}
+
+void malibu_phy_reset_init(void)
+{
+	int malibu_gpio[2] = {0}, malibu_gpio_cnt, i;
+	unsigned int *malibu_gpio_base;
+
+	malibu_gpio_cnt = get_malibu_gpio(malibu_gpio);
+	if (malibu_gpio_cnt >= 1) {
+		for (i = 0; i < malibu_gpio_cnt; i++) {
+			if (malibu_gpio[i] >=0) {
+				malibu_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(malibu_gpio[i]);
+				writel(0x203, malibu_gpio_base);
+				gpio_direction_output(malibu_gpio[i], 0x0);
+			}
+		}
+	}
+}
+
+void aquantia_phy_reset_init_done(void)
+{
+	int aquantia_gpio[2] = {0}, aquantia_gpio_cnt, i;
+
+	aquantia_gpio_cnt = get_aquantia_gpio(aquantia_gpio);
+	if (aquantia_gpio_cnt >= 1) {
+		for (i = 0; i < aquantia_gpio_cnt; i++)
+			gpio_set_value(aquantia_gpio[i], 0x1);
+	}
+}
+
+void napa_phy_reset_init_done(void)
+{
+	int napa_gpio[2] = {0}, napa_gpio_cnt, i;
+
+	napa_gpio_cnt = get_napa_gpio(napa_gpio);
+	if (napa_gpio_cnt >= 1) {
+		for (i = 0; i < napa_gpio_cnt; i++)
+			gpio_set_value(napa_gpio[i], 0x1);
+	}
+}
+
+void malibu_phy_reset_init_done(void)
+{
+	int malibu_gpio[2] = {0}, malibu_gpio_cnt, i;
+
+	malibu_gpio_cnt = get_malibu_gpio(malibu_gpio);
+	if (malibu_gpio_cnt >= 1) {
+		for (i = 0; i < malibu_gpio_cnt; i++)
+			gpio_set_value(malibu_gpio[i], 0x1);
+	}
+}
+
+int get_mdc_mdio_gpio(int mdc_mdio_gpio[2])
+{
+	int mdc_mdio_gpio_cnt = 2, node;
+	int res = -1;
+	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
+	if (node >= 0) {
+		res = fdtdec_get_int_array(gd->fdt_blob, node, "mdc_mdio_gpio",
+					   (u32 *)mdc_mdio_gpio, mdc_mdio_gpio_cnt);
+		if (res >= 0)
+			return mdc_mdio_gpio_cnt;
+	}
+
+	return res;
+}
+
+void set_function_select_as_mdc_mdio(void)
+{
+	int mdc_mdio_gpio[2] = {0}, mdc_mdio_gpio_cnt, i;
+	unsigned int *mdc_mdio_gpio_base;
+
+	mdc_mdio_gpio_cnt = get_mdc_mdio_gpio(mdc_mdio_gpio);
+	if (mdc_mdio_gpio_cnt >= 1) {
+		for (i = 0; i < mdc_mdio_gpio_cnt; i++) {
+			if (mdc_mdio_gpio[i] >=0) {
+				mdc_mdio_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(mdc_mdio_gpio[i]);
+				writel(0xC7, mdc_mdio_gpio_base);
+			}
+		}
+	}
+}
+
+void eth_clock_enable(void)
+{
+	/* PPE CLK INIT and NSS PPE ASSERT/DE-ASSERT must be added */
+
+	/* set function select as mdio */
+	set_function_select_as_mdc_mdio();
+
+	/* bring phy out of reset */
+	malibu_phy_reset_init();
+	aquantia_phy_reset_init();
+	napa_phy_reset_init();
+	mdelay(500);
+	malibu_phy_reset_init_done();
+	aquantia_phy_reset_init_done();
+	napa_phy_reset_init_done();
+	mdelay(500);
+}
+#endif
+
 int board_eth_init(bd_t *bis)
 {
 	int ret=0;
 
-	/* eth_clock_enable must be added */
+#ifndef CONFIG_IPQ9574_RUMI
+	eth_clock_enable();
+#endif
+
 	ret = ipq9574_edma_init(NULL);
 
 	if (ret != 0)
