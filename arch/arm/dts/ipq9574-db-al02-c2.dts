@@ -12,7 +12,7 @@
  */
 
 /dts-v1/;
-#include "ipq9574-soc.dtsi"
+#include "ipq9574-db-al02-c1.dts"
 / {
 	machid = <0x1050101>;
 	config_name = "config@db-al02-c2";
