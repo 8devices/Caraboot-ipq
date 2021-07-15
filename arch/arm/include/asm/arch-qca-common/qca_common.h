@@ -104,8 +104,12 @@ int set_uuid_bootargs(char *boot_args, char *part_name, int buflen, bool gpt_fla
 
 int get_eth_mac_address(uchar *enetaddr, uint no_of_macs);
 void set_ethmac_addr(void);
+
+#ifndef CONFIG_IPQ9574_RUMI
 void aquantia_phy_reset_init_done(void);
 void aquantia_phy_reset_init(void);
+#endif
+
 int bring_sec_core_up(unsigned int cpuid, unsigned int entry, unsigned int arg);
 int is_secondary_core_off(unsigned int cpuid);
 int smem_read_cpu_count(void);

@@ -221,7 +221,9 @@ int board_init(void)
 		}
 	}
 
+#ifndef CONFIG_IPQ9574_RUMI
 	aquantia_phy_reset_init();
+#endif
 	disable_audio_clks();
 	ipq_uboot_fdt_fixup();
 	/*
