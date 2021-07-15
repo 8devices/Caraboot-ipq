@@ -238,6 +238,11 @@ __weak void board_pcie_clock_init(int id) {}
 unsigned int __invoke_psci_fn_smc(unsigned int, unsigned int,
 					 unsigned int, unsigned int);
 
+/*
+ * Eud register
+ */
+#define EUD_EUD_EN2				0x7A000
+
 /**
  * Number of RAM partition entries which are usable by APPS.
  */
