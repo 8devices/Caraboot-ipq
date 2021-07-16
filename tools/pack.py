@@ -533,6 +533,9 @@ class Flash_Script(FlashScript):
         else:
             pass
 
+    def switch_layout_qpic(self, layout):
+        self.append("qpic_nand %s" % layout)
+
 its_tmpl = Template("""
 /dts-v1/;
 
@@ -1098,7 +1101,13 @@ class Pack(object):
                 if part_info.which_flash == 0:
                     offset = part_info.offset
                     script.erase(offset, part_info.length)
+                    if ARCH_NAME in ["ipq9574", "ipq9574_64"]:
+                        if self.flash_type == "nand-4k" and section_conf == "sbl1":
+                                script.switch_layout_qpic("sbl")
                     script.write(offset, img_size)
+                    if ARCH_NAME in ["ipq9574", "ipq9574_64"]:
+                        if self.flash_type == "nand-4k" and section_conf == "sbl1":
+                                script.switch_layout_qpic("linux")
                 else:
                     offset = part_info.offset
                     script.nand_write(offset, part_info.length, img_size, spi_nand)
