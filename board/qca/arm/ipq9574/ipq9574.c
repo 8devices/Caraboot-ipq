@@ -30,7 +30,9 @@
 
 #define DLOAD_MAGIC_COOKIE	0x10
 #define DLOAD_DISABLED		0x40
+
 DECLARE_GLOBAL_DATA_PTR;
+
 struct sdhci_host mmc_host;
 extern int ipq9574_edma_init(void *cfg);
 extern int ipq_spi_init(u16);
@@ -76,65 +78,6 @@ void fdt_fixup_qpic(void *blob)
 	}
 }
 
-#ifdef CONFIG_QPIC_NAND
-void qpic_set_clk_rate(unsigned int clk_rate, int blk_type, int req_clk_src_type)
-{
-#ifndef CONFIG_IPQ9574_RUMI
-	switch (blk_type) {
-		case QPIC_IO_MACRO_CLK:
-			/* select the clk source for IO_PAD_MACRO
-			 * clk source wil be either XO = 24MHz. or GPLL0 = 800MHz.
-			 */
-			if (req_clk_src_type == XO_CLK_SRC) {
-				/* default XO clock will enabled
-				 * i.e XO clock = 24MHz.
-				 * so div value will 0.
-				 * Input clock to IO_MACRO will be divided by 4 by default
-				 * by hardware and then taht clock will be go on bus.
-				 * i.e 24/4MHz = 6MHz i.e 6MHz will go onto the bus.
-				 */
-				writel(0x0, GCC_QPIC_IO_MACRO_CFG_RCGR);
-
-			} else if (req_clk_src_type == GPLL0_CLK_SRC) {
-				/* selct GPLL0 clock source 800MHz
-				 * so 800/4 = 200MHz.
-				 * Input clock to IO_MACRO will be divided by 4 by default
-				 * by hardware and then that clock will be go on bus.
-				 * i.e 200/4MHz = 50MHz i.e 50MHz will go onto the bus.
-				 */
-				if (clk_rate == IO_MACRO_CLK_320_MHZ)
-				       writel(0x104, GCC_QPIC_IO_MACRO_CFG_RCGR);
-				else if (clk_rate == IO_MACRO_CLK_266_MHZ)
-					writel(0x105, GCC_QPIC_IO_MACRO_CFG_RCGR);
-				else if (clk_rate == IO_MACRO_CLK_228_MHZ)
-					writel(0x106, GCC_QPIC_IO_MACRO_CFG_RCGR);
-				else if (clk_rate == IO_MACRO_CLK_100_MHZ)
-					writel(0x10F, GCC_QPIC_IO_MACRO_CFG_RCGR);
-				else if (clk_rate == IO_MACRO_CLK_200_MHZ)
-					writel(0x107, GCC_QPIC_IO_MACRO_CFG_RCGR);
-
-			} else {
-				printf("wrong clk src selection requested.\n");
-			}
-
-			/* Enablle update bit to update the new configuration */
-			writel((UPDATE_EN | readl(GCC_QPIC_IO_MACRO_CMD_RCGR)),
-					GCC_QPIC_IO_MACRO_CMD_RCGR);
-
-			/* Enable the QPIC_IO_MACRO_CLK */
-			writel(0x1, GCC_QPIC_IO_MACRO_CBCR);
-
-		       break;
-		case QPIC_CORE_CLK:
-		       /* To DO if needed for QPIC core clock setting */
-		       break;
-		default:
-		       printf("wrong qpic block type\n");
-		       break;
-	}
-#endif
-}
-#endif
 
 void qpic_emulation_set_clk(void)
 {
@@ -175,29 +118,6 @@ void board_nand_init(void)
 }
 
 #ifdef CONFIG_QCA_MMC
-void emmc_clock_config(void)
-{
-#ifndef CONFIG_IPQ9574_RUMI
-	int cfg;
-
-	/* Configure sdcc1_apps_clk_src */
-	cfg = (GCC_SDCC1_APPS_CFG_RCGR_SRC_SEL
-			| GCC_SDCC1_APPS_CFG_RCGR_SRC_DIV);
-	writel(cfg, GCC_SDCC1_APPS_CFG_RCGR);
-	writel(SDCC1_M_VAL, GCC_SDCC1_APPS_M);
-	writel(SDCC1_N_VAL, GCC_SDCC1_APPS_N);
-	writel(SDCC1_D_VAL, GCC_SDCC1_APPS_D);
-	writel(CMD_UPDATE, GCC_SDCC1_APPS_CMD_RCGR);
-	mdelay(100);
-	writel(ROOT_EN, GCC_SDCC1_APPS_CMD_RCGR);
-
-	/* Configure CBCRs */
-	writel(readl(GCC_SDCC1_APPS_CBCR) | CLK_ENABLE, GCC_SDCC1_APPS_CBCR);
-	udelay(10);
-	writel(readl(GCC_SDCC1_AHB_CBCR) | CLK_ENABLE, GCC_SDCC1_AHB_CBCR);
-#endif
-}
-
 void mmc_iopad_config(struct sdhci_host *host)
 {
 	u32 val;
@@ -215,26 +135,13 @@ void sdhci_bus_pwr_off(struct sdhci_host *host)
 	sdhci_writeb(host,(val & (~SDHCI_POWER_ON)), SDHCI_POWER_CONTROL);
 }
 
-void emmc_clock_disable(void)
-{
-#ifndef CONFIG_IPQ9574_RUMI
-	/* Clear divider */
-	writel(0x0, GCC_SDCC1_MISC);
-#endif
-}
-
 void board_mmc_deinit(void)
 {
-	emmc_clock_disable();
-}
-
-void emmc_clock_reset(void)
-{
-#ifndef CONFIG_IPQ9574_RUMI
-	writel(0x1, GCC_SDCC1_BCR);
-	udelay(10);
-	writel(0x0, GCC_SDCC1_BCR);
-#endif
+/*
+ * since we do not have misc register in ipq9574
+ * so simply return from this function
+ */
+	return;
 }
 
 int board_mmc_init(bd_t *bis)
@@ -255,10 +162,9 @@ int board_mmc_init(bd_t *bis)
 	mmc_host.cfg.part_type = PART_TYPE_EFI;
 	mmc_host.quirks = SDHCI_QUIRK_BROKEN_VOLTAGE;
 
-	emmc_clock_disable();
 	emmc_clock_reset();
 	udelay(10);
-	emmc_clock_config();
+	emmc_clock_init();
 
 	if (add_sdhci(&mmc_host, 200000000, 400000)) {
 		printf("add_sdhci fail!\n");
@@ -297,62 +203,15 @@ void board_usb_deinit(int id)
 
 	/* Enable USB PHY Power down */
 	setbits_le32(USB30_PHY_1_QUSB2PHY_BASE + 0xB4, 0x1);
-	/* Disable clocks */
-	writel(0x8000, GCC_USB0_PHY_CFG_AHB_CBCR);
-	writel(0xcff0, GCC_USB0_MASTER_CBCR);
-	writel(0, GCC_USB0_SLEEP_CBCR);
-	writel(0, GCC_USB0_MOCK_UTMI_CBCR);
-	writel(0, GCC_USB0_AUX_CBCR);
+
+	usb_clock_deinit();
+
 	/* GCC_QUSB2_0_PHY_BCR */
 	set_mdelay_clearbits_le32(GCC_QUSB2_0_PHY_BCR, 0x1, 10);
 	/* GCC_USB0_PHY_BCR */
 	set_mdelay_clearbits_le32(GCC_USB0_PHY_BCR, 0x1, 10);
 	/* GCC Reset USB BCR */
 	set_mdelay_clearbits_le32(GCC_USB_BCR, 0x1, 10);
-}
-
-static void usb_clock_init(int id)
-{
-	int cfg;
-	/* Configure usb0_master_clk_src */
-	cfg = (GCC_USB0_MASTER_CFG_RCGR_SRC_SEL |
-		GCC_USB0_MASTER_CFG_RCGR_SRC_DIV);
-	writel(cfg, GCC_USB0_MASTER_CFG_RCGR);
-	writel(CMD_UPDATE, GCC_USB0_MASTER_CMD_RCGR);
-	mdelay(100);
-	writel(ROOT_EN, GCC_USB0_MASTER_CMD_RCGR);
-
-	/* Configure usb0_mock_utmi_clk_src */
-	cfg = (GCC_USB_MOCK_UTMI_SRC_SEL |
-		GCC_USB_MOCK_UTMI_SRC_DIV);
-	writel(cfg, GCC_USB0_MOCK_UTMI_CFG_RCGR);
-	writel(UTMI_M, GCC_USB0_MOCK_UTMI_M);
-	writel(UTMI_N, GCC_USB0_MOCK_UTMI_N);
-	writel(UTMI_D, GCC_USB0_MOCK_UTMI_D);
-	writel(CMD_UPDATE, GCC_USB0_MOCK_UTMI_CMD_RCGR);
-	mdelay(100);
-	writel(ROOT_EN, GCC_USB0_MOCK_UTMI_CMD_RCGR);
-
-	/* Configure usb0_aux_clk_src */
-	cfg = (GCC_USB0_AUX_CFG_SRC_SEL |
-		GCC_USB0_AUX_CFG_SRC_DIV);
-	writel(cfg, GCC_USB0_AUX_CFG_RCGR);
-	writel(AUX_M, GCC_USB0_AUX_M);
-	writel(AUX_N, GCC_USB0_AUX_N);
-	writel(AUX_D, GCC_USB0_AUX_D);
-	writel(CMD_UPDATE, GCC_USB0_AUX_CMD_RCGR);
-	mdelay(100);
-	writel(ROOT_EN, GCC_USB0_AUX_CMD_RCGR);
-
-	/* Configure CBCRs */
-	writel((readl(GCC_USB0_MASTER_CBCR) | CLK_ENABLE),
-					GCC_USB0_MASTER_CBCR);
-	writel(CLK_ENABLE, GCC_USB0_SLEEP_CBCR);
-	writel(CLK_ENABLE, GCC_USB0_MOCK_UTMI_CBCR);
-	writel((CLK_ENABLE | NOC_HANDSHAKE_FSM_EN),
-					GCC_USB0_PHY_CFG_AHB_CBCR);
-	writel(CLK_ENABLE, GCC_USB0_AUX_CBCR);
-	writel(CLK_ENABLE, GCC_USB0_PIPE_CBCR);
 }
 
 static void usb_init_hsphy(void __iomem *phybase)
@@ -562,7 +421,7 @@ void ipq_fdt_fixup_usb_device_mode(void *blob)
 #ifdef CONFIG_PCI_IPQ
 void board_pci_init(int id)
 {
-	int node, gpio_node;
+	int node, gpio_node, pci_no;
 	char name[16];
 
 	snprintf(name, sizeof(name), "pci%d", id);
@@ -576,12 +435,15 @@ void board_pci_init(int id)
 	if (gpio_node >= 0)
 		qca_gpio_init(gpio_node);
 
+	pci_no = fdtdec_get_int(gd->fdt_blob, node, "id", 0);
+	pcie_v2_clock_init(pci_no);
+
 	return;
 }
 
 void board_pci_deinit()
 {
-	int node, gpio_node, i, err;
+	int node, gpio_node, i, err, pci_no;
 	char name[16];
 	struct fdt_resource parf;
 	struct fdt_resource pci_phy;
@@ -607,7 +469,8 @@ void board_pci_deinit()
 		gpio_node = fdt_subnode_offset(gd->fdt_blob, node, "pci_gpio");
 		if (gpio_node >= 0)
 			qca_gpio_deinit(gpio_node);
-
+		pci_no = fdtdec_get_int(gd->fdt_blob, node, "id", 0);
+		pcie_v2_clock_deinit(pci_no);
 	}
 
 	return ;
