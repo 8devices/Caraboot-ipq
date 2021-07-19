@@ -12,6 +12,7 @@
  *
  */
 #include <common.h>
+#include <asm/global_data.h>
 #include <net.h>
 #include <asm-generic/errno.h>
 #include <asm/io.h>
@@ -22,8 +23,10 @@
 #include <asm/arch-ipq9574/edma_regs.h>
 #include "ipq9574_edma.h"
 #include "ipq9574_uniphy.h"
+#include <fdtdec.h>
 #include "ipq_phy.h"
 
+DECLARE_GLOBAL_DATA_PTR;
 extern int ipq_mdio_write(int mii_id,
 		int regnum, u16 value);
 extern int ipq_mdio_read(int mii_id,
@@ -73,59 +76,152 @@ static int ppe_uniphy_calibration(uint32_t uniphy_index)
 	return 0;
 }
 
-static void ppe_gcc_uniphy_xpcs_reset(uint32_t uniphy_index, bool enable)
+static void ppe_uniphy_reset(enum uniphy_reset_type rst_type, bool enable)
 {
-	uint32_t reg_value;
+	uint32_t mode, node;
+	uint32_t reg_val, reg_val1;
 
-	reg_value = readl(GCC_UNIPHY0_MISC + (uniphy_index * GCC_UNIPHY_REG_INC));
-
-	if(enable)
-		reg_value |= GCC_UNIPHY_USXGMII_XPCS_RESET;
-	else
-		reg_value &= ~GCC_UNIPHY_USXGMII_XPCS_RESET;
-
-	writel(reg_value, GCC_UNIPHY0_MISC + (uniphy_index * GCC_UNIPHY_REG_INC));
-}
-
-static void ppe_gcc_uniphy_soft_reset(uint32_t uniphy_index)
-{
-	uint32_t reg_value;
-
-	reg_value = readl(GCC_UNIPHY0_MISC + (uniphy_index * GCC_UNIPHY_REG_INC));
-
-	if (uniphy_index == 0)
-		reg_value |= GCC_UNIPHY_PSGMII_SOFT_RESET;
-	else
-		reg_value |= GCC_UNIPHY_SGMII_SOFT_RESET;
-
-	writel(reg_value, GCC_UNIPHY0_MISC + (uniphy_index * GCC_UNIPHY_REG_INC));
-
-	udelay(500);
-
-	if (uniphy_index == 0)
-		reg_value &= ~GCC_UNIPHY_PSGMII_SOFT_RESET;
-	else
-		reg_value &= ~GCC_UNIPHY_SGMII_SOFT_RESET;
-
-	writel(reg_value, GCC_UNIPHY0_MISC + (uniphy_index * GCC_UNIPHY_REG_INC));
+	switch(rst_type) {
+		case UNIPHY0_SOFT_RESET:
+			node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
+			if (node < 0) {
+				printf("\nError: ess-switch not specified in dts");
+				return;
+			}
+			mode = fdtdec_get_uint(gd->fdt_blob, node, "switch_mac_mode1", -1);
+			if (mode < 0) {
+				printf("\nError: switch_mac_mode1 not specified in dts");
+				return;
+			}
+			reg_val = readl(GCC_UNIPHY0_MISC);
+			reg_val1 = readl(NSS_CC_UNIPHY_MISC_RESET);
+			if (mode == EPORT_WRAPPER_MAX) {
+				if (enable) {
+					reg_val |= 0x1;
+					reg_val1 |= 0xffc000;
+				} else {
+					reg_val &= ~0x1;
+					reg_val1 &= ~0xffc000;
+				}
+			} else {
+				if (enable) {
+					reg_val |= 0x1;
+					reg_val1 |= 0xff0000;
+				} else {
+					reg_val &= ~0x1;
+					reg_val1 &= ~0xff0000;
+				}
+			}
+			writel(reg_val, GCC_UNIPHY0_MISC);
+			writel(reg_val1, NSS_CC_UNIPHY_MISC_RESET);
+			break;
+		case UNIPHY0_XPCS_RESET:
+			reg_val = readl(GCC_UNIPHY0_MISC);
+			if (enable)
+				reg_val |= 0x4;
+			else
+				reg_val &= ~0x4;
+			writel(reg_val, GCC_UNIPHY0_MISC);
+			break;
+		case UNIPHY1_SOFT_RESET:
+			reg_val = readl(GCC_UNIPHY0_MISC + GCC_UNIPHY_REG_INC);
+			reg_val1 = readl(NSS_CC_UNIPHY_MISC_RESET);
+			if (enable) {
+				reg_val |= 0x1;
+				reg_val1 |= 0xC000;
+			} else {
+				reg_val &= ~0x1;
+				reg_val1 &= ~0xC000;
+			}
+			writel(reg_val, GCC_UNIPHY0_MISC + GCC_UNIPHY_REG_INC);
+			writel(reg_val1, NSS_CC_UNIPHY_MISC_RESET);
+			break;
+		case UNIPHY1_XPCS_RESET:
+			reg_val = readl(GCC_UNIPHY0_MISC + GCC_UNIPHY_REG_INC);
+			if (enable)
+				reg_val |= 0x4;
+			else
+				reg_val &= ~0x4;
+			writel(reg_val, GCC_UNIPHY0_MISC + GCC_UNIPHY_REG_INC);
+			break;
+		case UNIPHY2_SOFT_RESET:
+			reg_val = readl(GCC_UNIPHY0_MISC + (2 * GCC_UNIPHY_REG_INC));
+			reg_val1 = readl(NSS_CC_UNIPHY_MISC_RESET);
+			if (enable) {
+				reg_val |= 0x1;
+				reg_val1 |= 0x3000;
+			} else {
+				reg_val &= ~0x1;
+				reg_val1 &= ~0x3000;
+			}
+			writel(reg_val, GCC_UNIPHY0_MISC + (2 * GCC_UNIPHY_REG_INC));
+			writel(reg_val1, NSS_CC_UNIPHY_MISC_RESET);
+			break;
+		case UNIPHY2_XPCS_RESET:
+			reg_val = readl(GCC_UNIPHY0_MISC + (2 * GCC_UNIPHY_REG_INC));
+			if (enable)
+				reg_val |= 0x4;
+			else
+				reg_val &= ~0x4;
+			writel(reg_val, GCC_UNIPHY0_MISC + (2 * GCC_UNIPHY_REG_INC));
+			break;
+		default:
+			break;
+	}
 }
 
 static void ppe_uniphy_psgmii_mode_set(uint32_t uniphy_index)
 {
-	ppe_gcc_uniphy_xpcs_reset(uniphy_index, true);
+	if (uniphy_index == 0)
+		ppe_uniphy_reset(UNIPHY0_XPCS_RESET, true);
+	else if (uniphy_index == 1)
+		ppe_uniphy_reset(UNIPHY1_XPCS_RESET, true);
+	else
+		ppe_uniphy_reset(UNIPHY2_XPCS_RESET, true);
+
 	writel(0x220, PPE_UNIPHY_BASE + (uniphy_index * PPE_UNIPHY_REG_INC)
 			+ PPE_UNIPHY_MODE_CONTROL);
-	ppe_gcc_uniphy_soft_reset(uniphy_index);
+
+	if (uniphy_index == 0) {
+		ppe_uniphy_reset(UNIPHY0_SOFT_RESET, true);
+		udelay(500);
+		ppe_uniphy_reset(UNIPHY0_SOFT_RESET, false);
+	} else if (uniphy_index == 1) {
+		ppe_uniphy_reset(UNIPHY1_SOFT_RESET, true);
+		udelay(500);
+		ppe_uniphy_reset(UNIPHY1_SOFT_RESET, false);
+	} else {
+		ppe_uniphy_reset(UNIPHY2_SOFT_RESET, true);
+		udelay(500);
+		ppe_uniphy_reset(UNIPHY2_SOFT_RESET, false);
+	}
 	ppe_uniphy_calibration(uniphy_index);
 	qca8075_phy_serdes_reset(0);
 }
 
 static void ppe_uniphy_qsgmii_mode_set(uint32_t uniphy_index)
 {
-	ppe_gcc_uniphy_xpcs_reset(uniphy_index, true);
+	if (uniphy_index == 0)
+		ppe_uniphy_reset(UNIPHY0_XPCS_RESET, true);
+	else if (uniphy_index == 1)
+		ppe_uniphy_reset(UNIPHY1_XPCS_RESET, true);
+	else
+		ppe_uniphy_reset(UNIPHY2_XPCS_RESET, true);
 	writel(0x120, PPE_UNIPHY_BASE + (uniphy_index * PPE_UNIPHY_REG_INC)
 			+ PPE_UNIPHY_MODE_CONTROL);
-	ppe_gcc_uniphy_soft_reset(uniphy_index);
+	if (uniphy_index == 0) {
+		ppe_uniphy_reset(UNIPHY0_SOFT_RESET, true);
+		udelay(500);
+		ppe_uniphy_reset(UNIPHY0_SOFT_RESET, false);
+	} else if (uniphy_index == 1) {
+		ppe_uniphy_reset(UNIPHY1_SOFT_RESET, true);
+		udelay(500);
+		ppe_uniphy_reset(UNIPHY1_SOFT_RESET, false);
+	} else {
+		ppe_uniphy_reset(UNIPHY2_SOFT_RESET, true);
+		udelay(500);
+		ppe_uniphy_reset(UNIPHY2_SOFT_RESET, false);
+	}
 }
 
 static void ppe_uniphy_sgmii_mode_set(uint32_t uniphy_index, uint32_t mode)
@@ -139,18 +235,23 @@ static void ppe_uniphy_sgmii_mode_set(uint32_t uniphy_index, uint32_t mode)
 	writel(UNIPHY_PLL_RESET_REG_DEFAULT_VALUE, PPE_UNIPHY_BASE +
 		(uniphy_index * PPE_UNIPHY_REG_INC) + UNIPHY_PLL_RESET_REG_OFFSET);
 	mdelay(500);
-	ppe_gcc_uniphy_xpcs_reset(uniphy_index, true);
+	if (uniphy_index == 0)
+		ppe_uniphy_reset(UNIPHY0_XPCS_RESET, true);
+	else if (uniphy_index == 1)
+		ppe_uniphy_reset(UNIPHY1_XPCS_RESET, true);
+	else
+		ppe_uniphy_reset(UNIPHY2_XPCS_RESET, true);
 
-	if (uniphy_index == 0) {
-		writel(0x0, GCC_UNIPHY0_PORT4_RX_CBCR);
-		writel(0x0, GCC_UNIPHY0_PORT4_TX_CBCR);
-		writel(0x0, GCC_NSS_PORT4_RX_CBCR);
-		writel(0x0, GCC_NSS_PORT4_TX_CBCR);
-	} else {
-		writel(0x0, GCC_UNIPHY1_PORT5_RX_CBCR);
-		writel(0x0, GCC_UNIPHY1_PORT5_TX_CBCR);
-		writel(0x0, GCC_NSS_PORT5_RX_CBCR);
-		writel(0x0, GCC_NSS_PORT5_RX_CBCR);
+	if (uniphy_index == 1) {
+		writel(0x0, NSS_CC_UNIPHY_PORT1_RX_CBCR + 3*0x8);
+		writel(0x0, NSS_CC_UNIPHY_PORT1_RX_CBCR + 0x4 + 3*0x8);
+		writel(0x0, NSS_CC_PORT1_RX_CBCR + 3*0x8);
+		writel(0x0, NSS_CC_PORT1_RX_CBCR + 0x4 + 3*0x8);
+	} else if (uniphy_index == 2) {
+		writel(0x0, NSS_CC_UNIPHY_PORT1_RX_CBCR + 4*0x8);
+		writel(0x0, NSS_CC_UNIPHY_PORT1_RX_CBCR + 0x4 + 4*8);
+		writel(0x0, NSS_CC_PORT1_RX_CBCR + 4*0x8);
+		writel(0x0, NSS_CC_PORT1_RX_CBCR + 0x4 + 4*0x8);
 	}
 
 	switch (mode) {
@@ -176,18 +277,30 @@ static void ppe_uniphy_sgmii_mode_set(uint32_t uniphy_index, uint32_t mode)
 			break;
 	}
 
-	ppe_gcc_uniphy_soft_reset(uniphy_index);
-
 	if (uniphy_index == 0) {
-		writel(0x1, GCC_UNIPHY0_PORT4_RX_CBCR);
-		writel(0x1, GCC_UNIPHY0_PORT4_TX_CBCR);
-		writel(0x1, GCC_NSS_PORT4_RX_CBCR);
-		writel(0x1, GCC_NSS_PORT4_TX_CBCR);
+		ppe_uniphy_reset(UNIPHY0_SOFT_RESET, true);
+		udelay(500);
+		ppe_uniphy_reset(UNIPHY0_SOFT_RESET, false);
+	} else if (uniphy_index == 1) {
+		ppe_uniphy_reset(UNIPHY1_SOFT_RESET, true);
+		udelay(500);
+		ppe_uniphy_reset(UNIPHY1_SOFT_RESET, false);
 	} else {
-		writel(0x1, GCC_UNIPHY1_PORT5_RX_CBCR);
-		writel(0x1, GCC_UNIPHY1_PORT5_TX_CBCR);
-		writel(0x1, GCC_NSS_PORT5_RX_CBCR);
-		writel(0x1, GCC_NSS_PORT5_RX_CBCR);
+		ppe_uniphy_reset(UNIPHY2_SOFT_RESET, true);
+		udelay(500);
+		ppe_uniphy_reset(UNIPHY2_SOFT_RESET, false);
+	}
+
+	if (uniphy_index == 1) {
+		writel(0x1, NSS_CC_UNIPHY_PORT1_RX_CBCR + 3*0x8);
+		writel(0x1, NSS_CC_UNIPHY_PORT1_RX_CBCR + 0x4 + 3*0x8);
+		writel(0x1, NSS_CC_PORT1_RX_CBCR + 3*0x8);
+		writel(0x1, NSS_CC_PORT1_RX_CBCR + 0x4 + 3*0x8);
+	} else if (uniphy_index == 2) {
+		writel(0x1, NSS_CC_UNIPHY_PORT1_RX_CBCR + 4*0x8);
+		writel(0x1, NSS_CC_UNIPHY_PORT1_RX_CBCR + 0x4 + 4*8);
+		writel(0x1, NSS_CC_PORT1_RX_CBCR + 4*0x8);
+		writel(0x1, NSS_CC_PORT1_RX_CBCR + 0x4 + 4*0x8);
 	}
 
 	ppe_uniphy_calibration(uniphy_index);
@@ -211,14 +324,40 @@ static int ppe_uniphy_10g_r_linkup(uint32_t uniphy_index)
 
 static void ppe_uniphy_10g_r_mode_set(uint32_t uniphy_index)
 {
-	ppe_gcc_uniphy_xpcs_reset(uniphy_index, true);
+	if (uniphy_index == 0)
+		ppe_uniphy_reset(UNIPHY0_XPCS_RESET, true);
+	else if (uniphy_index == 1)
+		ppe_uniphy_reset(UNIPHY1_XPCS_RESET, true);
+	else
+		ppe_uniphy_reset(UNIPHY2_XPCS_RESET, true);
+
 	writel(0x1021, PPE_UNIPHY_BASE + (uniphy_index * PPE_UNIPHY_REG_INC)
 			 + PPE_UNIPHY_MODE_CONTROL);
 	writel(0x1C0, PPE_UNIPHY_BASE + (uniphy_index * PPE_UNIPHY_REG_INC)
 			 + UNIPHY_INSTANCE_LINK_DETECT);
-	ppe_gcc_uniphy_soft_reset(uniphy_index);
+
+	if (uniphy_index == 0) {
+		ppe_uniphy_reset(UNIPHY0_SOFT_RESET, true);
+		udelay(500);
+		ppe_uniphy_reset(UNIPHY0_SOFT_RESET, false);
+	} else if (uniphy_index == 1) {
+		ppe_uniphy_reset(UNIPHY1_SOFT_RESET, true);
+		udelay(500);
+		ppe_uniphy_reset(UNIPHY1_SOFT_RESET, false);
+	} else {
+		ppe_uniphy_reset(UNIPHY2_SOFT_RESET, true);
+		udelay(500);
+		ppe_uniphy_reset(UNIPHY2_SOFT_RESET, false);
+	}
+
 	ppe_uniphy_calibration(uniphy_index);
-	ppe_gcc_uniphy_xpcs_reset(uniphy_index, false);
+
+	if (uniphy_index == 0)
+		ppe_uniphy_reset(UNIPHY0_XPCS_RESET, false);
+	else if (uniphy_index == 1)
+		ppe_uniphy_reset(UNIPHY1_XPCS_RESET, false);
+	else
+		ppe_uniphy_reset(UNIPHY2_XPCS_RESET, false);
 }
 
 
@@ -234,12 +373,40 @@ static void ppe_uniphy_usxgmii_mode_set(uint32_t uniphy_index)
 	writel(UNIPHY_PLL_RESET_REG_DEFAULT_VALUE, PPE_UNIPHY_BASE +
 		(uniphy_index * PPE_UNIPHY_REG_INC) + UNIPHY_PLL_RESET_REG_OFFSET);
 	mdelay(500);
-	ppe_gcc_uniphy_xpcs_reset(uniphy_index, true);
+
+	if (uniphy_index == 0)
+		ppe_uniphy_reset(UNIPHY0_XPCS_RESET, true);
+	else if (uniphy_index == 1)
+		ppe_uniphy_reset(UNIPHY1_XPCS_RESET, true);
+	else
+		ppe_uniphy_reset(UNIPHY2_XPCS_RESET, true);
+
 	writel(0x1021, PPE_UNIPHY_BASE + (uniphy_index * PPE_UNIPHY_REG_INC)
 			 + PPE_UNIPHY_MODE_CONTROL);
-	ppe_gcc_uniphy_soft_reset(uniphy_index);
+
+	if (uniphy_index == 0) {
+		ppe_uniphy_reset(UNIPHY0_SOFT_RESET, true);
+		udelay(500);
+		ppe_uniphy_reset(UNIPHY0_SOFT_RESET, false);
+	} else if (uniphy_index == 1) {
+		ppe_uniphy_reset(UNIPHY1_SOFT_RESET, true);
+		udelay(500);
+		ppe_uniphy_reset(UNIPHY1_SOFT_RESET, false);
+	} else {
+		ppe_uniphy_reset(UNIPHY2_SOFT_RESET, true);
+		udelay(500);
+		ppe_uniphy_reset(UNIPHY2_SOFT_RESET, false);
+	}
+
 	ppe_uniphy_calibration(uniphy_index);
-	ppe_gcc_uniphy_xpcs_reset(uniphy_index, false);
+
+	if (uniphy_index == 0)
+		ppe_uniphy_reset(UNIPHY0_XPCS_RESET, false);
+	else if (uniphy_index == 1)
+		ppe_uniphy_reset(UNIPHY1_XPCS_RESET, false);
+	else
+		ppe_uniphy_reset(UNIPHY2_XPCS_RESET, false);
+
 	ppe_uniphy_10g_r_linkup(uniphy_index);
 	reg_value = csr1_read(uniphy_index, VR_XS_PCS_DIG_CTRL1_ADDRESS);
 	reg_value |= USXG_EN;
