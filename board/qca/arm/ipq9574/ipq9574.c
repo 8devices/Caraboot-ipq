@@ -616,13 +616,15 @@ void aquantia_phy_reset_init(void)
 {
 	int aquantia_gpio[2] = {0}, aquantia_gpio_cnt, i;
 	unsigned int *aquantia_gpio_base;
+	uint32_t cfg;
 
 	aquantia_gpio_cnt = get_aquantia_gpio(aquantia_gpio);
 	if (aquantia_gpio_cnt >= 1) {
 		for (i = 0; i < aquantia_gpio_cnt; i++) {
 			if (aquantia_gpio[i] >= 0) {
 				aquantia_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(aquantia_gpio[i]);
-				writel(0x2C3, aquantia_gpio_base);
+				cfg = GPIO_OE | GPIO_DRV_8_MA | GPIO_PULL_UP;
+				writel(cfg, aquantia_gpio_base);
 			}
 		}
 	}
@@ -632,13 +634,15 @@ void qca808x_phy_reset_init(void)
 {
 	int qca808x_gpio[2] = {0}, qca808x_gpio_cnt, i;
 	unsigned int *qca808x_gpio_base;
+	uint32_t cfg;
 
 	qca808x_gpio_cnt = get_qca808x_gpio(qca808x_gpio);
 	if (qca808x_gpio_cnt >= 1) {
 		for (i = 0; i < qca808x_gpio_cnt; i++) {
 			if (qca808x_gpio[i] >= 0) {
 				qca808x_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(qca808x_gpio[i]);
-				writel(0x2C3, qca808x_gpio_base);
+				cfg = GPIO_OE | GPIO_DRV_8_MA | GPIO_PULL_UP;
+				writel(cfg, qca808x_gpio_base);
 			}
 		}
 	}
@@ -648,13 +652,15 @@ void qca807x_phy_reset_init(void)
 {
 	int qca807x_gpio[2] = {0}, qca807x_gpio_cnt, i;
 	unsigned int *qca807x_gpio_base;
+	uint32_t cfg;
 
 	qca807x_gpio_cnt = get_qca807x_gpio(qca807x_gpio);
 	if (qca807x_gpio_cnt >= 1) {
 		for (i = 0; i < qca807x_gpio_cnt; i++) {
 			if (qca807x_gpio[i] >=0) {
 				qca807x_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(qca807x_gpio[i]);
-				writel(0x2C3, qca807x_gpio_base);
+				cfg = GPIO_OE | GPIO_DRV_8_MA | GPIO_PULL_UP;
+				writel(cfg, qca807x_gpio_base);
 			}
 		}
 	}
@@ -712,16 +718,20 @@ void set_function_select_as_mdc_mdio(void)
 {
 	int mdc_mdio_gpio[2] = {0}, mdc_mdio_gpio_cnt, i;
 	unsigned int *mdc_mdio_gpio_base;
+	uint32_t cfg;
 
 	mdc_mdio_gpio_cnt = get_mdc_mdio_gpio(mdc_mdio_gpio);
 	if (mdc_mdio_gpio_cnt >= 1) {
 		for (i = 0; i < mdc_mdio_gpio_cnt; i++) {
 			if (mdc_mdio_gpio[i] >=0) {
 				mdc_mdio_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(mdc_mdio_gpio[i]);
-				if (i == 0)
-					writel(0xC4, mdc_mdio_gpio_base);
-				else
-					writel(0xC7, mdc_mdio_gpio_base);
+				if (i == 0) {
+					cfg = GPIO_DRV_8_MA | MDC_MDIO_FUNC_SEL | GPIO_NO_PULL;
+					writel(cfg, mdc_mdio_gpio_base);
+				} else {
+					cfg = GPIO_DRV_8_MA | MDC_MDIO_FUNC_SEL | GPIO_PULL_UP;
+					writel(cfg, mdc_mdio_gpio_base);
+				}
 			}
 		}
 	}
