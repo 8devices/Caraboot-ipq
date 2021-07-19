@@ -974,22 +974,23 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 	char *lstatus[] = {"up", "Down"};
 	char *dp[] = {"Half", "Full"};
 	int linkup=0;
-	int speed_clock1 = 0, speed_clock2 = 0;
-	int phy_addr, port_8033 = -1, node, aquantia_port = -1;
-	int sfp_port = -1;
-	int phy_node = -1;
-	int ret_sgmii_mode;
-	int sfp_mode, sgmii_fiber = -1;
+	int clk[4] = {0};
+	int phy_addr, node, aquantia_port[2] = {-1}, aquantia_port_cnt = -1;
+	int phy_node = -1, res = -1;
+	int sgmii_mode;
 
 	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
-	if (node >= 0)
-		port_8033 = fdtdec_get_uint(gd->fdt_blob, node, "8033_port", -1);
 
-	if (node >= 0)
-		aquantia_port = fdtdec_get_uint(gd->fdt_blob, node, "aquantia_port", -1);
+	if (node >= 0) {
+		aquantia_port_cnt = fdtdec_get_uint(gd->fdt_blob, node, "aquantia_port_cnt", -1);
 
-	if (node >= 0)
-		 sfp_port = fdtdec_get_uint(gd->fdt_blob, node, "sfp_port", -1);
+		if (aquantia_port_cnt >= 1) {
+			res = fdtdec_get_int_array(gd->fdt_blob, node, "aquantia_port",
+					  (u32 *)aquantia_port, aquantia_port_cnt);
+			if (res < 0)
+				printf("Error: Aquantia port details not provided in DT");
+		}
+	}
 
 	phy_node = fdt_path_offset(gd->fdt_blob, "/ess-switch/port_phyinfo");
 #endif
@@ -1000,60 +1001,34 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 	 */
 	for (i =  0; i < IPQ9574_PHY_MAX; i++) {
 #ifndef CONFIG_IPQ9574_RUMI
-		if (i == sfp_port) {
-			status = phy_status_get_from_ppe(i);
-			duplex = FAL_FULL_DUPLEX;
-			if (i == 4)
-				sfp_mode = fdtdec_get_uint(gd->fdt_blob, node, "switch_mac_mode1", -1);
-			else if (i == 5)
-				sfp_mode = fdtdec_get_uint(gd->fdt_blob, node, "switch_mac_mode2", -1);
-			if (sfp_mode < 0) {
-				printf("\nError: switch_mac_mode not specified in dts");
-				return sfp_mode;
-			}
-			if (sfp_mode == PORT_WRAPPER_SGMII_FIBER) {
-				sgmii_fiber = 1;
-				curr_speed[i] = FAL_SPEED_1000;
-			} else if (sfp_mode == PORT_WRAPPER_10GBASE_R) {
-				sgmii_fiber = 0;
-				curr_speed[i] = FAL_SPEED_10000;
-			} else {
-				printf("\nError: wrong mode specified for SFP Port");
-				return sfp_mode;
-			}
-		} else {
-			if (!priv->ops[i]) {
-				printf ("Phy ops not mapped\n");
-				continue;
-			}
-			phy_get_ops = priv->ops[i];
-
-			if (!phy_get_ops->phy_get_link_status ||
-					!phy_get_ops->phy_get_speed ||
-					!phy_get_ops->phy_get_duplex) {
-				printf ("Link status/Get speed/Get duplex not mapped\n");
-				return -1;
-			}
-
-			if (phy_node >= 0) {
-				phy_addr = phy_info[i]->phy_address;
-			} else {
-
-				if (i == port_8033)
-					phy_addr = QCA8033_PHY_ADDR;
-				else if (i == aquantia_port)
-					phy_addr = AQU_PHY_ADDR;
-				else
-					phy_addr = i;
-			}
-
-			status = phy_get_ops->phy_get_link_status(priv->mac_unit, phy_addr);
-			phy_get_ops->phy_get_speed(priv->mac_unit, phy_addr, &curr_speed[i]);
-			phy_get_ops->phy_get_duplex(priv->mac_unit, phy_addr, &duplex);
+		if (!priv->ops[i]) {
+			printf ("Phy ops not mapped\n");
+			continue;
 		}
-#endif
+		phy_get_ops = priv->ops[i];
 
-#ifndef CONFIG_IPQ9574_RUMI
+		if (!phy_get_ops->phy_get_link_status ||
+				!phy_get_ops->phy_get_speed ||
+				!phy_get_ops->phy_get_duplex) {
+			printf ("Error:Link status/Get speed/Get duplex not mapped\n");
+			return -1;
+		}
+
+		if (phy_node >= 0) {
+			/*
+			 * For each ethernet port, one node should be added
+			 * inside port_phyinfo with appropriate phy address
+			 */
+			phy_addr = phy_info[i]->phy_address;
+		} else {
+			printf ("Error:Phy addresses not configured in DT\n");
+			return -1;
+		}
+
+		status = phy_get_ops->phy_get_link_status(priv->mac_unit, phy_addr);
+		phy_get_ops->phy_get_speed(priv->mac_unit, phy_addr, &curr_speed[i]);
+		phy_get_ops->phy_get_duplex(priv->mac_unit, phy_addr, &duplex);
+
 		if (status == 0) {
 			linkup++;
 			if (old_speed[i] == curr_speed[i]) {
@@ -1071,92 +1046,124 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 			continue;
 		}
 
+		/*
+		 * Note: If the current port link is up and its speed is
+		 * different from its initially configured speed, only then
+		 * below re-configuration is done.
+		 *
+		 * These conditions are checked above and if any of it
+		 * fails, then no config is done for that eth port.
+		 */
 		switch (curr_speed[i]) {
 			case FAL_SPEED_10:
 				mac_speed = 0x0;
-				if (i == aquantia_port) {
-					printf("10M speed not supported\n");
-					ppe_port_bridge_txmac_set(i + 1, status);
-					continue;
+				clk[0] = 0x209;
+				clk[1] = 0x9;
+				clk[2] = 0x309;
+				clk[3] = 0x9;
+				if (i == aquantia_port[0] || i == aquantia_port[1]) {
+					clk[1] = 0x18;
+					clk[3] = 0x18;
+					if (i == 4) {
+						clk[0] = 0x413;
+						clk[2] = 0x513;
+					} else {
+						clk[0] = 0x213;
+						clk[2] = 0x313;
+					}
 				}
-				speed_clock1 = 0x109;
-				speed_clock2 = 0x9;
-				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
-						priv->mac_unit, i, lstatus[status], curr_speed[i],
-						dp[duplex]);
 				if (phy_node >= 0) {
 					if (phy_info[i]->phy_type == QCA8081_PHY_TYPE) {
 						set_sgmii_mode(i, 1);
+						if (i == 4) {
+							clk[0] = 0x409;
+							clk[2] = 0x509;
+						}
 					}
 				}
+				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
+						priv->mac_unit, i, lstatus[status], curr_speed[i],
+						dp[duplex]);
 				break;
 			case FAL_SPEED_100:
 				mac_speed = 0x1;
-				if (i == aquantia_port) {
-					if (i == 4)
-						speed_clock1 = 0x309;
-					else
-						speed_clock1= 0x109;
-					speed_clock2 = 0x4;
-				} else if (i == port_8033) {
-					speed_clock1 = 0x109;
-				} else {
-					speed_clock1 = 0x101;
+				clk[0] = 0x209;
+				clk[1] = 0x0;
+				clk[2] = 0x309;
+				clk[3] = 0x0;
+				if (i == aquantia_port[0] || i == aquantia_port[1]) {
+					clk[1] = 0x4;
+					clk[3] = 0x4;
+					if (i == 4) {
+						clk[0] = 0x409;
+						clk[2] = 0x509;
+					}
 				}
-				if (i == port_8033)
-					speed_clock2 = 0x0;
-				else
-					speed_clock2 = 0x4;
-				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
-						priv->mac_unit, i, lstatus[status], curr_speed[i],
-						dp[duplex]);
 				if (phy_node >= 0) {
 					if (phy_info[i]->phy_type == QCA8081_PHY_TYPE) {
 						set_sgmii_mode(i, 1);
+						if (i == 4) {
+							clk[0] = 0x409;
+							clk[2] = 0x509;
+						}
 					}
 				}
+				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
+						priv->mac_unit, i, lstatus[status], curr_speed[i],
+						dp[duplex]);
 				break;
 			case FAL_SPEED_1000:
 				mac_speed = 0x2;
-				if (i == aquantia_port) {
-					if (i == 4)
-						speed_clock1 = 0x304;
-					else
-						speed_clock1 = 0x104;
-				} else
-					speed_clock1 = 0x101;
-				speed_clock2 = 0x0;
-				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
-						priv->mac_unit, i, lstatus[status], curr_speed[i],
-						dp[duplex]);
+				clk[0] = 0x201;
+				clk[1] = 0x0;
+				clk[2] = 0x301;
+				clk[3] = 0x0;
+				if (i == aquantia_port[0] || i == aquantia_port[1]) {
+					if (i == 4) {
+						clk[0] = 0x404;
+						clk[2] = 0x504;
+					} else {
+						clk[0] = 0x204;
+						clk[2] = 0x304;
+					}
+				}
 				if (phy_node >= 0) {
 					if (phy_info[i]->phy_type == QCA8081_PHY_TYPE) {
 						set_sgmii_mode(i, 1);
-						if (i == 4)
-							speed_clock1 = 0x301;
+						if (i == 4) {
+							clk[0] = 0x401;
+							clk[2] = 0x501;
+						}
 					}
 				}
+				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
+						priv->mac_unit, i, lstatus[status], curr_speed[i],
+						dp[duplex]);
 				break;
 			case FAL_SPEED_2500:
-				if (i == aquantia_port) {
+				clk[1] = 0x0;
+				clk[3] = 0x0;
+				if (i == aquantia_port[0] || i == aquantia_port[1]) {
 					mac_speed = 0x4;
 					if (i == 4) {
-						speed_clock1 = 0x301;
-						speed_clock2 = 0x3;
-					} else if (i == 5) {
-						speed_clock1 = 0x107;
-						speed_clock2 = 0x0;
+						clk[0] = 0x407;
+						clk[2] = 0x507;
+					} else {
+						clk[0] = 0x207;
+						clk[2] = 0x307;
 					}
 				}
 				if (phy_node >= 0) {
 					if (phy_info[i]->phy_type == QCA8081_PHY_TYPE) {
 						mac_speed = 0x2;
 						set_sgmii_mode(i, 0);
-						if (i == 4)
-							speed_clock1 = 0x301;
-						else if  (i == 5)
-							speed_clock1 = 0x101;
-						speed_clock2 = 0x0;
+						if (i == 4) {
+							clk[0] = 0x401;
+							clk[2] = 0x501;
+						} else {
+							clk[0] = 0x201;
+							clk[2] = 0x301;
+						}
 					}
 				}
 				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
@@ -1165,12 +1172,14 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 				break;
 			case FAL_SPEED_5000:
 				mac_speed = 0x5;
+				clk[1] = 0x0;
+				clk[3] = 0x0;
 				if (i == 4) {
-					speed_clock1 = 0x301;
-					speed_clock2 = 0x1;
+					clk[0] = 0x403;
+					clk[2] = 0x503;
 				} else {
-					speed_clock1 = 0x103;
-					speed_clock2 = 0x0;
+					clk[0] = 0x203;
+					clk[2] = 0x303;
 				}
 				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
 						priv->mac_unit, i, lstatus[status], curr_speed[i],
@@ -1178,11 +1187,15 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 				break;
 			case FAL_SPEED_10000:
 				mac_speed = 0x3;
-				if (i == 4)
-					speed_clock1 = 0x301;
-				else
-					speed_clock1 = 0x101;
-				speed_clock2 = 0x0;
+				clk[1] = 0x0;
+				clk[3] = 0x0;
+				if (i == 4) {
+					clk[0] = 0x401;
+					clk[2] = 0x501;
+				} else {
+					clk[0] = 0x201;
+					clk[2] = 0x301;
+				}
 				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
 						priv->mac_unit, i, lstatus[status], curr_speed[i],
 						dp[duplex]);
@@ -1194,15 +1207,15 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 
 		if (phy_node >= 0) {
 			if (phy_info[i]->phy_type == QCA8081_PHY_TYPE) {
-				ret_sgmii_mode = get_sgmii_mode(i);
+				sgmii_mode = get_sgmii_mode(i);
 				ppe_port_bridge_txmac_set(i + 1, 1);
-				if (ret_sgmii_mode == 1) {
+				if (sgmii_mode == 1) { /* SGMII Mode */
 					if (i == 4)
 						ppe_uniphy_mode_set(0x1, PORT_WRAPPER_SGMII0_RGMII4);
 					else if (i == 5)
 						ppe_uniphy_mode_set(0x2, PORT_WRAPPER_SGMII0_RGMII4);
 
-				} else if (ret_sgmii_mode == 0) {
+				} else if (sgmii_mode == 0) { /* SGMII Plus Mode */
 					if (i == 4)
 						ppe_uniphy_mode_set(0x1, PORT_WRAPPER_SGMII_PLUS);
 					else if (i == 5)
@@ -1211,31 +1224,12 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 			}
 		}
 
-		if (i == sfp_port) {
-			if (sgmii_fiber) {
-				ppe_port_bridge_txmac_set(i + 1, 1);
-				if (i == 4)
-					ppe_uniphy_mode_set(0x1, PORT_WRAPPER_SGMII_FIBER);
-				else if (i == 5)
-					ppe_uniphy_mode_set(0x2, PORT_WRAPPER_SGMII_FIBER);
-				ppe_port_mux_mac_type_set(i + 1, PORT_WRAPPER_SGMII_FIBER);
-			} else {
-				if (i == 4)
-					ppe_uniphy_mode_set(0x1, PORT_WRAPPER_10GBASE_R);
-				else if (i == 5)
-					ppe_uniphy_mode_set(0x2, PORT_WRAPPER_10GBASE_R);
-				ppe_port_mux_mac_type_set(i + 1, PORT_WRAPPER_10GBASE_R);
-			}
-		}
-
-		ipq9574_speed_clock_set(i, speed_clock1, speed_clock2);
+		ipq9574_speed_clock_set(i, clk);
 
 		ipq9574_port_mac_clock_reset(i);
 
-		if (i == aquantia_port)
+		if (i == aquantia_port[0] || i == aquantia_port[1])
 			ipq9574_uxsgmii_speed_set(i, mac_speed, duplex, status);
-		else if (i == sfp_port && sgmii_fiber == 0)
-			ipq9574_10g_r_speed_set(i, status);
 		else
 			ipq9574_pqsgmii_speed_set(i, mac_speed, status);
 #else
@@ -1912,15 +1906,21 @@ int ipq9574_edma_init(void *edma_board_cfg)
 	int phy_id;
 	uint32_t phy_chip_id, phy_chip_id1, phy_chip_id2;
 	static int sw_init_done = 0;
-	int port_8033 = -1, node, phy_addr, aquantia_port = -1;
-	int mode, phy_node = -1;
+	int node, phy_addr, aquantia_port[2] = {-1}, aquantia_port_cnt = -1;
+	int mode, phy_node = -1, res = -1;
 
 	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
-	if (node >= 0)
-		port_8033 = fdtdec_get_uint(gd->fdt_blob, node, "8033_port", -1);
 
-	if (node >= 0)
-		aquantia_port = fdtdec_get_uint(gd->fdt_blob, node, "aquantia_port", -1);
+	if (node >= 0) {
+		aquantia_port_cnt = fdtdec_get_uint(gd->fdt_blob, node, "aquantia_port_cnt", -1);
+
+		if (aquantia_port_cnt >= 1) {
+			res = fdtdec_get_int_array(gd->fdt_blob, node, "aquantia_port",
+					  (u32 *)aquantia_port, aquantia_port_cnt);
+			if (res < 0)
+				printf("Error: Aquantia port details not provided in DT");
+		}
+	}
 
 	phy_node = fdt_path_offset(gd->fdt_blob, "/ess-switch/port_phyinfo");
 	if (phy_node >= 0)
@@ -1928,7 +1928,7 @@ int ipq9574_edma_init(void *edma_board_cfg)
 
 	mode = fdtdec_get_uint(gd->fdt_blob, node, "switch_mac_mode0", -1);
 	if (mode < 0) {
-		printf("Error: switch_mac_mode not specified in dts");
+		printf("Error:switch_mac_mode not specified in dts");
 		return mode;
 	}
 #endif
@@ -2017,18 +2017,14 @@ int ipq9574_edma_init(void *edma_board_cfg)
 			if (phy_node >= 0) {
 				phy_addr = phy_info[phy_id]->phy_address;
 			} else {
-				if (phy_id == port_8033)
-					phy_addr = QCA8033_PHY_ADDR;
-				else if (phy_id == aquantia_port)
-					phy_addr = AQU_PHY_ADDR;
-				else
-					phy_addr = phy_id;
+				printf ("Error:Phy addresses not configured in DT\n");
+				goto init_failed;
 			}
 
 			phy_chip_id1 = ipq_mdio_read(phy_addr, QCA_PHY_ID1, NULL);
 			phy_chip_id2 = ipq_mdio_read(phy_addr, QCA_PHY_ID2, NULL);
 			phy_chip_id = (phy_chip_id1 << 16) | phy_chip_id2;
-			if (phy_id == aquantia_port) {
+			if (phy_id == aquantia_port[0] || phy_id == aquantia_port[1]) {
 				phy_chip_id1 = ipq_mdio_read(phy_addr, (1<<30) |(1<<16) | QCA_PHY_ID1, NULL);
 				phy_chip_id2 = ipq_mdio_read(phy_addr, (1<<30) |(1<<16) | QCA_PHY_ID2, NULL);
 				phy_chip_id = (phy_chip_id1 << 16) | phy_chip_id2;

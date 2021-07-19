@@ -19,7 +19,7 @@
 #define __IPQ9574_EDMA__
 
 #define IPQ9574_NSS_DP_START_PHY_PORT   1
-#define IPQ9574_NSS_DP_MAX_PHY_PORTS    6
+#define IPQ9574_NSS_DP_MAX_PHY_PORTS    7
 
 #define IPQ9574_EDMA_BUF_SIZE		2000
 #define IPQ9574_EDMA_DEVICE_NODE_NAME	"edma"
@@ -400,7 +400,7 @@ typedef struct {
 
 extern void ipq9574_ppe_provision_init(void);
 extern void ipq9574_port_mac_clock_reset(int port);
-extern void ipq9574_speed_clock_set(int port, int speed_clock1, int speed_clock2);
+extern void ipq9574_speed_clock_set(int port, int clk[4]);
 extern void ipq9574_pqsgmii_speed_set(int port, int speed, int status);
 extern void ipq9574_uxsgmii_speed_set(int port, int speed, int duplex, int status);
 extern void ppe_port_mux_mac_type_set(int port_id, int mode);
