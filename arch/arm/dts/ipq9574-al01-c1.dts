@@ -161,8 +161,8 @@
 		switch_mac_mode = <PORT_WRAPPER_PSGMII>;
 		switch_mac_mode1 = <PORT_WRAPPER_MAX>; /* Unused */
 		switch_mac_mode2 = <PORT_WRAPPER_USXGMII>;
-		malibu_gpio = <60>;
-		malibu_gpio_cnt = <1>;
+		qca807x_gpio = <60>;
+		qca807x_gpio_cnt = <1>;
 		aquantia_gpio = <36>;
 		aquantia_gpio_cnt = <1>;
 		aquantia_port = <5>;
@@ -171,23 +171,23 @@
 		port_phyinfo {
 			port@0 {
 				phy_address = <16>;
-				phy_type = <MALIBU_PHY_TYPE>;
+				phy_type = <QCA807x_PHY_TYPE>;
 			};
 			port@1 {
 				phy_address = <17>;
-				phy_type = <MALIBU_PHY_TYPE>;
+				phy_type = <QCA807x_PHY_TYPE>;
 			};
 			port@2 {
 				phy_address = <18>;
-				phy_type = <MALIBU_PHY_TYPE>;
+				phy_type = <QCA807x_PHY_TYPE>;
 			};
 			port@3 {
 				phy_address = <19>;
-				phy_type = <MALIBU_PHY_TYPE>;
+				phy_type = <QCA807x_PHY_TYPE>;
 			};
 			port@4 {
 				phy_address = <20>;
-				phy_type = <MALIBU_PHY_TYPE>;
+				phy_type = <QCA807x_PHY_TYPE>;
 			};
 			port@5 {
 				phy_address = <0>;
