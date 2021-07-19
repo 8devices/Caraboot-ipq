@@ -20,24 +20,24 @@
 	config_name = "config@al02-c1";
 
 	aliases {
-		console = "/serial@78AF000";
+		console = "/serial@78B1000";
 		usb0 = "/xhci@8a00000";
 		pci0 = "/pci@20000000";
 		pci1 = "/pci@18000000";
 		nand = "/nand-controller@79B0000";
 	};
 
-	console: serial@78AF000 {
+	console: serial@78B1000 {
 		status = "ok";
 		serial_gpio {
-			blsp2_uart_rx {
+			blsp1_uart2_rx {
 				gpio = <34>;
 				func = <1>;
 				pull = <GPIO_NO_PULL>;
 				drvstr = <GPIO_8MA>;
 				od_en = <GPIO_OD_DISABLE>;
 			};
-			blsp2_uart_tx {
+			blsp1_uart2_tx {
 				gpio = <35>;
 				func = <1>;
 				pull = <GPIO_NO_PULL>;
