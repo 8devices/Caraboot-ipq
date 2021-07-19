@@ -295,11 +295,13 @@ void usb_clock_init(int id)
 	/* Configure CBCRs */
 	writel((readl(GCC_USB0_MASTER_CBCR) | CLK_ENABLE),
 				GCC_USB0_MASTER_CBCR);
-	writel(CLK_ENABLE, GCC_USB0_SLEEP_CBCR);
+	writel(CLK_ENABLE, GCC_ANOC_USB_AXI_CBCR);
+	writel(CLK_ENABLE, GCC_SNOC_USB_CBCR);
 	writel(CLK_ENABLE, GCC_USB0_MOCK_UTMI_CBCR);
+	writel(CLK_ENABLE, GCC_USB0_SLEEP_CBCR);
+	writel(CLK_ENABLE, GCC_USB0_AUX_CBCR);
 	writel((CLK_ENABLE | NOC_HANDSHAKE_FSM_EN),
 				GCC_USB0_PHY_CFG_AHB_CBCR);
-	writel(CLK_ENABLE, GCC_USB0_AUX_CBCR);
 	writel(CLK_ENABLE, GCC_USB0_PIPE_CBCR);
 #endif
 }
@@ -314,6 +316,8 @@ void usb_clock_deinit(void)
 	writel(0, GCC_USB0_SLEEP_CBCR);
 	writel(0, GCC_USB0_MOCK_UTMI_CBCR);
 	writel(0, GCC_USB0_AUX_CBCR);
+	writel(0, GCC_ANOC_USB_AXI_CBCR);
+	writel(0, GCC_SNOC_USB_CBCR);
 #endif
 }
 #endif

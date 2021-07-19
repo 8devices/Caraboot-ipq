@@ -142,6 +142,8 @@ void i2c_clock_config(void);
 #define GCC_USB0_PHY_BCR			0x182C06C
 #define GCC_USB3PHY_0_PHY_BCR			0x182C070
 #define GCC_USB0_PHY_PIPE_MISC			0x182C074
+#define GCC_SNOC_USB_CBCR			0x182E058
+#define GCC_ANOC_USB_AXI_CBCR			0x182E084
 
 #define AUX_M					0x0
 #define AUX_N					0x0
@@ -149,12 +151,12 @@ void i2c_clock_config(void);
 #define SW_COLLAPSE_ENABLE			(1 << 0)
 #define SW_OVERRIDE_ENABLE			(1 << 2)
 #define GCC_USB0_MASTER_CFG_RCGR_SRC_SEL	(1 << 8)
-#define GCC_USB0_MASTER_CFG_RCGR_SRC_DIV	(0xb << 0)
-#define GCC_USB_MOCK_UTMI_SRC_SEL		(0 << 8)
-#define GCC_USB_MOCK_UTMI_SRC_DIV		(1 << 0)
+#define GCC_USB0_MASTER_CFG_RCGR_SRC_DIV	(0x7 << 0)
+#define GCC_USB_MOCK_UTMI_SRC_SEL		(1 << 8)
+#define GCC_USB_MOCK_UTMI_SRC_DIV		(0x13 << 0)
 #define UTMI_M					0x1
-#define UTMI_N					0xf7
-#define UTMI_D					0xf6
+#define UTMI_N					0xFFFE
+#define UTMI_D					0xFFFD
 #define GCC_USB0_AUX_CFG_MODE_DUAL_EDGE 	(2 << 12)
 #define GCC_USB0_AUX_CFG_SRC_SEL		(0 << 8)
 #define GCC_USB0_AUX_CFG_SRC_DIV		(0 << 0)
