@@ -163,6 +163,7 @@
 		aquantia_gpio = <37>;
 		aquantia_gpio_cnt = <1>;
 		aquantia_port = <4 5>;
+		aquantia_port_cnt = <2>;
 		malibu_gpio = <60>;
 		malibu_gpio_cnt = <1>;
 		mdc_mdio_gpio = <38 39>;

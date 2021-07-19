@@ -166,6 +166,7 @@
 		aquantia_gpio = <36>;
 		aquantia_gpio_cnt = <1>;
 		aquantia_port = <5>;
+		aquantia_port_cnt = <1>;
 		napa_gpio = <57>;
 		napa_gpio_cnt = <1>;
 		mdc_mdio_gpio = <38 39>;
