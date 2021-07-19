@@ -25,19 +25,13 @@
 #include <net.h>
 #include <miiphy.h>
 
-#define NSS_CC_PORT1_RX_CMD_RCGR		0x39B28110
-#define NSS_CC_PORT1_RX_CFG_RCGR		0x39B28114
-#define GCC_NSS_PORT1_RX_MISC			0x01868400
-
-#define IPQ9574_PPE_BASE_ADDR			0x3a000000
-#define IPQ9574_PPE_REG_SIZE			0x1000000
-
 #define PORT1					1
 #define PORT2					2
 #define PORT3					3
 #define PORT4					4
 #define PORT5					5
 #define PORT6					6
+#define PORT7					7
 
 #define IPQ9574_PORT5_MUX_PCS_UNIPHY0		0x0
 #define IPQ9574_PORT5_MUX_PCS_UNIPHY1		0x1
@@ -132,6 +126,7 @@ union ipo_action_u {
 
 #define PORT_PHY_STATUS_ADDRESS			0x44
 #define PORT_PHY_STATUS_PORT5_1_OFFSET		16
+#define PORT_PHY_STATUS_PORT6_OFFSET		16
 
 #define IPQ9574_PPE_IPE_L3_BASE_ADDR		0x200000
 #define IPQ9574_PPE_L3_VP_PORT_TBL_ADDR		(IPQ9574_PPE_IPE_L3_BASE_ADDR + 0x4000)

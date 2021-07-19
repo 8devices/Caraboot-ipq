@@ -194,61 +194,125 @@ void ppe_port_bridge_txmac_set(int port_id, int status)
  */
 void ipq9574_port_mac_clock_reset(int port)
 {
+	int reg_val, reg_val1;
+
+	reg_val = readl(NSS_CC_PPE_RESET_ADDR);
+	reg_val1 = readl(NSS_CC_UNIPHY_MISC_RESET);
 	switch(port) {
 		case 0:
-			writel(NSS_PORT1_ASSERT, GCC_NSS_PPE_RESET);
+			/* Assert */
+			reg_val |= GCC_PPE_PORT1_MAC_ARES;
+			reg_val1 |= GCC_PORT1_ARES;
+			writel(reg_val, NSS_CC_PPE_RESET_ADDR);
+			writel(reg_val1, NSS_CC_UNIPHY_MISC_RESET);
 			mdelay(150);
-			writel(PPE_DEASSERT, GCC_NSS_PPE_RESET);
+			/* De-Assert */
+			reg_val = readl(NSS_CC_PPE_RESET_ADDR);
+			reg_val1 = readl(NSS_CC_UNIPHY_MISC_RESET);
+			reg_val &= ~GCC_PPE_PORT1_MAC_ARES;
+			reg_val1 &= ~GCC_PORT1_ARES;
 			break;
 		case 1:
-			writel(NSS_PORT2_ASSERT, GCC_NSS_PPE_RESET);
+			/* Assert */
+			reg_val |= GCC_PPE_PORT1_MAC_ARES;
+			reg_val1 |= GCC_PORT1_ARES;
+			writel(reg_val, NSS_CC_PPE_RESET_ADDR);
+			writel(reg_val1, NSS_CC_UNIPHY_MISC_RESET);
 			mdelay(150);
-			writel(PPE_DEASSERT, GCC_NSS_PPE_RESET);
+			/* De-Assert */
+			reg_val = readl(NSS_CC_PPE_RESET_ADDR);
+			reg_val1 = readl(NSS_CC_UNIPHY_MISC_RESET);
+			reg_val &= ~GCC_PPE_PORT1_MAC_ARES;
+			reg_val1 &= ~GCC_PORT1_ARES;
 			break;
 		case 2:
-			writel(NSS_PORT3_ASSERT, GCC_NSS_PPE_RESET);
+			/* Assert */
+			reg_val |= GCC_PPE_PORT1_MAC_ARES;
+			reg_val1 |= GCC_PORT1_ARES;
+			writel(reg_val, NSS_CC_PPE_RESET_ADDR);
+			writel(reg_val1, NSS_CC_UNIPHY_MISC_RESET);
 			mdelay(150);
-			writel(PPE_DEASSERT, GCC_NSS_PPE_RESET);
+			/* De-Assert */
+			reg_val = readl(NSS_CC_PPE_RESET_ADDR);
+			reg_val1 = readl(NSS_CC_UNIPHY_MISC_RESET);
+			reg_val &= ~GCC_PPE_PORT1_MAC_ARES;
+			reg_val1 &= ~GCC_PORT1_ARES;
 			break;
 		case 3:
-			writel(NSS_PORT4_ASSERT, GCC_NSS_PPE_RESET);
+			/* Assert */
+			reg_val |= GCC_PPE_PORT1_MAC_ARES;
+			reg_val1 |= GCC_PORT1_ARES;
+			writel(reg_val, NSS_CC_PPE_RESET_ADDR);
+			writel(reg_val1, NSS_CC_UNIPHY_MISC_RESET);
 			mdelay(150);
-			writel(PPE_DEASSERT, GCC_NSS_PPE_RESET);
+			/* De-Assert */
+			reg_val = readl(NSS_CC_PPE_RESET_ADDR);
+			reg_val1 = readl(NSS_CC_UNIPHY_MISC_RESET);
+			reg_val &= ~GCC_PPE_PORT1_MAC_ARES;
+			reg_val1 &= ~GCC_PORT1_ARES;
 			break;
 		case 4:
-			writel(NSS_PORT5_ASSERT, GCC_NSS_PPE_RESET);
+			/* Assert */
+			reg_val |= GCC_PPE_PORT1_MAC_ARES;
+			reg_val1 |= GCC_PORT1_ARES;
+			writel(reg_val, NSS_CC_PPE_RESET_ADDR);
+			writel(reg_val1, NSS_CC_UNIPHY_MISC_RESET);
 			mdelay(150);
-			writel(PPE_DEASSERT, GCC_NSS_PPE_RESET);
+			/* De-Assert */
+			reg_val = readl(NSS_CC_PPE_RESET_ADDR);
+			reg_val1 = readl(NSS_CC_UNIPHY_MISC_RESET);
+			reg_val &= ~GCC_PPE_PORT1_MAC_ARES;
+			reg_val1 &= ~GCC_PORT1_ARES;
+			break;
+		case 5:
+			/* Assert */
+			reg_val |= GCC_PPE_PORT1_MAC_ARES;
+			reg_val1 |= GCC_PORT1_ARES;
+			writel(reg_val, NSS_CC_PPE_RESET_ADDR);
+			writel(reg_val1, NSS_CC_UNIPHY_MISC_RESET);
+			mdelay(150);
+			/* De-Assert */
+			reg_val = readl(NSS_CC_PPE_RESET_ADDR);
+			reg_val1 = readl(NSS_CC_UNIPHY_MISC_RESET);
+			reg_val &= ~GCC_PPE_PORT1_MAC_ARES;
+			reg_val1 &= ~GCC_PORT1_ARES;
+			break;
+		default:
 			break;
 	}
+	writel(reg_val, NSS_CC_PPE_RESET_ADDR);
+	writel(reg_val1, NSS_CC_UNIPHY_MISC_RESET);
 }
 
-void ipq9574_speed_clock_set(int port, int speed_clock1, int speed_clock2)
+void ipq9574_speed_clock_set(int port_id, int clk[4])
 {
 	int i;
-	uint32_t reg_value;
+	int reg_val[6];
 
-	for (i = 0; i < 2; i++)
+	for (i = 0; i < 6; i++)
 	{
-		/* gcc port first clock divider */
-		reg_value = 0;
-		reg_value = readl(NSS_CC_PORT1_RX_CFG_RCGR + i*0xc + port*0x10);
-		reg_value &= ~0x71f;
-		reg_value |= speed_clock1;
-		writel(reg_value, NSS_CC_PORT1_RX_CFG_RCGR + i*0xc + port*0x10);
-		/* gcc port second clock divider */
-		reg_value = 0;
-		reg_value = readl(GCC_NSS_PORT1_RX_MISC + i*0xc + port*0x10);
-		reg_value &= ~0xf;
-		reg_value |= speed_clock2;
-		writel(reg_value, GCC_NSS_PORT1_RX_MISC + i*0xc + port*0x10);
-		/* update above clock configuration */
-		reg_value = 0;
-		reg_value = readl(NSS_CC_PORT1_RX_CMD_RCGR + i*0xc + port*0x10);
-		reg_value &= ~0x1;
-		reg_value |= 0x1;
-		writel(reg_value, NSS_CC_PORT1_RX_CMD_RCGR + i*0xc + port*0x10);
+		reg_val[i] = readl(NSS_CC_PORT1_RX_CMD_RCGR + (i * 0x4) + (port_id * 0x18));
 	}
+	reg_val[0] &= ~0x1;
+	reg_val[1] &= ~0x71f;
+	reg_val[2] &= ~0x1ff;
+	reg_val[3] &= ~0x1;
+	reg_val[4] &= ~0x71f;
+	reg_val[5] &= ~0x1ff;
+
+	reg_val[1] |= clk[0];
+	reg_val[2] |= clk[1];
+	reg_val[4] |= clk[2];
+	reg_val[5] |= clk[3];
+
+	/* Port Rx direction speed clock cfg */
+	writel(reg_val[1], NSS_CC_PORT1_RX_CMD_RCGR + 0x4 + (port_id * 0x18));
+	writel(reg_val[2], NSS_CC_PORT1_RX_CMD_RCGR + 0x8 + (port_id * 0x18));
+	writel(reg_val[0] | 0x1 , NSS_CC_PORT1_RX_CMD_RCGR + (port_id * 0x18));
+	/* Port Tx direction speed clock cfg */
+	writel(reg_val[4], NSS_CC_PORT1_RX_CMD_RCGR + 0x10 + (port_id * 0x18));
+	writel(reg_val[5], NSS_CC_PORT1_RX_CMD_RCGR + 0x14 + (port_id * 0x18));
+	writel(reg_val[3] | 0x1, NSS_CC_PORT1_RX_CMD_RCGR + 0xc + (port_id * 0x18));
 }
 
 int phy_status_get_from_ppe(int port_id)
@@ -258,6 +322,8 @@ int phy_status_get_from_ppe(int port_id)
 	ipq9574_ppe_reg_read(PORT_PHY_STATUS_ADDRESS, &reg_field);
 	if (port_id == (PORT5 - PPE_UNIPHY_INSTANCE1))
 		reg_field >>= PORT_PHY_STATUS_PORT5_1_OFFSET;
+	else
+		reg_field >>= PORT_PHY_STATUS_PORT6_OFFSET;
 
 	return ((reg_field >> 7) & 0x1) ? 0 : 1;
 }
@@ -350,8 +416,14 @@ void ipq9574_10g_r_speed_set(int port, int status)
 {
 	uint32_t uniphy_index;
 
-	/* Setting the speed only for PORT5 */
-	uniphy_index = PPE_UNIPHY_INSTANCE1;
+	/* Setting the speed only for PORT5 and PORT6 */
+	if (port == (PORT5 - PPE_UNIPHY_INSTANCE1))
+		uniphy_index = PPE_UNIPHY_INSTANCE1;
+	else if (port == (PORT6 - PPE_UNIPHY_INSTANCE1))
+		uniphy_index = PPE_UNIPHY_INSTANCE2;
+	else
+		return;
+
 	ppe_xgmac_10g_r_speed_set(uniphy_index - 1);
 	ppe_port_bridge_txmac_set(port + 1, status);
 	ppe_port_txmac_status_set(uniphy_index - 1);
@@ -364,8 +436,14 @@ void ipq9574_uxsgmii_speed_set(int port, int speed, int duplex,
 {
 	uint32_t uniphy_index;
 
-	/* Setting the speed only for PORT5 */
-	uniphy_index = PPE_UNIPHY_INSTANCE1;
+	/* Setting the speed only for PORT5 and PORT6 */
+	if (port == (PORT5 - PPE_UNIPHY_INSTANCE1))
+		uniphy_index = PPE_UNIPHY_INSTANCE1;
+	else if (port == (PORT6 - PPE_UNIPHY_INSTANCE1))
+		uniphy_index = PPE_UNIPHY_INSTANCE2;
+	else
+		return;
+
 	ppe_uniphy_usxgmii_autoneg_completed(uniphy_index);
 	ppe_uniphy_usxgmii_speed_set(uniphy_index, speed);
 	ppe_xgmac_speed_set(uniphy_index - 1, speed);
@@ -626,11 +704,12 @@ static void ppe_port_mux_set(int port_id, int port_type, int mode)
 {
 	uint32_t mux_mac_type = 0;
 	union port_mux_ctrl_u port_mux_ctrl;
-	int nodeoff;
+	int node;
+	uint32_t mode1;
 
 	pr_debug("\nport id is: %d, port type is %d, mode is %d",
 		port_id, port_type, mode);
-	nodeoff = fdt_path_offset(gd->fdt_blob, "/ess-switch");
+	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
 
 	if (port_type == PORT_GMAC_TYPE)
 		mux_mac_type = IPQ9574_PORT_MUX_MAC_TYPE;
@@ -665,12 +744,12 @@ static void ppe_port_mux_set(int port_id, int port_type, int mode)
 		case PORT5:
 			port_mux_ctrl.bf.port5_mac_sel = mux_mac_type;
 			/*
-			 * uniphy0_port5 = <1> should be added in DT if port5
-			 * is part of uniphy 0, otherwise it will be assumed
-			 * to be part of uniphy1.
+			 * If port 5 is part of uniphy0, then uniphy1 should be
+			 * given as 0xFF (EPORT_WRAPPER_MAX) in DT since uniphy1
+			 * will not be used in that case
 			 */
-			if (fdtdec_get_int(gd->fdt_blob, nodeoff,
-					   "uniphy0_port5", 0))
+			mode1 = fdtdec_get_uint(gd->fdt_blob, node, "switch_mac_mode1", -1);
+			if (mode1 == EPORT_WRAPPER_MAX)
 				port_mux_ctrl.bf.port5_pcs_sel =
 						IPQ9574_PORT5_MUX_PCS_UNIPHY0;
 			else
@@ -748,9 +827,6 @@ void ipq9574_ppe_interface_mode_init(void)
 #endif
 
 	/*
-	 * uniphy0_port5 = <1> should be added in DT if port5
-	 * is part of uniphy 0, otherwise it will be assumed
-	 * to be part of uniphy1.
 	 *
 	 * Port 1-4 are used mac type as GMAC by default but
 	 * Port5 and Port6 can be used as GMAC or XGMAC.
@@ -759,7 +835,7 @@ void ipq9574_ppe_interface_mode_init(void)
 	ppe_port_mux_mac_type_set(PORT2, mode0);
 	ppe_port_mux_mac_type_set(PORT3, mode0);
 	ppe_port_mux_mac_type_set(PORT4, mode0);
-	if (fdtdec_get_int(gd->fdt_blob, node, "uniphy0_port5", 0))
+	if (mode1 == EPORT_WRAPPER_MAX)
 		ppe_port_mux_mac_type_set(PORT5, mode0);
 	else
 		ppe_port_mux_mac_type_set(PORT5, mode1);
