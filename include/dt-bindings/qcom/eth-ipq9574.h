@@ -39,8 +39,8 @@
 #define PORT_WRAPPER_MAX		0xFF
 
 /* ETH PHY Types */
-#define MALIBU_PHY_TYPE			0x1
-#define QCA8081_PHY_TYPE		0x2
+#define QCA807x_PHY_TYPE		0x1
+#define QCA808x_PHY_TYPE		0x2
 #define AQ_PHY_TYPE			0x3
 #define QCA8033_PHY_TYPE		0x4
 #define SFP_PHY_TYPE			0x5

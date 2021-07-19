@@ -574,38 +574,38 @@ int get_aquantia_gpio(int aquantia_gpio[2])
 	return res;
 }
 
-int get_napa_gpio(int napa_gpio[2])
+int get_qca808x_gpio(int qca808x_gpio[2])
 {
-	int napa_gpio_cnt = -1, node;
+	int qca808x_gpio_cnt = -1, node;
 	int res = -1;
 
 	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
 	if (node >= 0) {
-		napa_gpio_cnt = fdtdec_get_uint(gd->fdt_blob, node, "napa_gpio_cnt", -1);
-		if (napa_gpio_cnt >= 1) {
-			res = fdtdec_get_int_array(gd->fdt_blob, node, "napa_gpio",
-						  (u32 *)napa_gpio, napa_gpio_cnt);
+		qca808x_gpio_cnt = fdtdec_get_uint(gd->fdt_blob, node, "qca808x_gpio_cnt", -1);
+		if (qca808x_gpio_cnt >= 1) {
+			res = fdtdec_get_int_array(gd->fdt_blob, node, "qca808x_gpio",
+						  (u32 *)qca808x_gpio, qca808x_gpio_cnt);
 			if (res >= 0)
-				return napa_gpio_cnt;
+				return qca808x_gpio_cnt;
 		}
 	}
 
 	return res;
 }
 
-int get_malibu_gpio(int malibu_gpio[2])
+int get_qca807x_gpio(int qca807x_gpio[2])
 {
-	int malibu_gpio_cnt = -1, node;
+	int qca807x_gpio_cnt = -1, node;
 	int res = -1;
 
 	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
 	if (node >= 0) {
-		malibu_gpio_cnt = fdtdec_get_uint(gd->fdt_blob, node, "malibu_gpio_cnt", -1);
-		if (malibu_gpio_cnt >= 1) {
-			res = fdtdec_get_int_array(gd->fdt_blob, node, "malibu_gpio",
-						  (u32 *)malibu_gpio, malibu_gpio_cnt);
+		qca807x_gpio_cnt = fdtdec_get_uint(gd->fdt_blob, node, "qca807x_gpio_cnt", -1);
+		if (qca807x_gpio_cnt >= 1) {
+			res = fdtdec_get_int_array(gd->fdt_blob, node, "qca807x_gpio",
+						  (u32 *)qca807x_gpio, qca807x_gpio_cnt);
 			if (res >= 0)
-				return malibu_gpio_cnt;
+				return qca807x_gpio_cnt;
 		}
 	}
 
@@ -629,35 +629,35 @@ void aquantia_phy_reset_init(void)
 	}
 }
 
-void napa_phy_reset_init(void)
+void qca808x_phy_reset_init(void)
 {
-	int napa_gpio[2] = {0}, napa_gpio_cnt, i;
-	unsigned int *napa_gpio_base;
+	int qca808x_gpio[2] = {0}, qca808x_gpio_cnt, i;
+	unsigned int *qca808x_gpio_base;
 
-	napa_gpio_cnt = get_napa_gpio(napa_gpio);
-	if (napa_gpio_cnt >= 1) {
-		for (i = 0; i < napa_gpio_cnt; i++) {
-			if (napa_gpio[i] >= 0) {
-				napa_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(napa_gpio[i]);
-				writel(0x203, napa_gpio_base);
-				gpio_direction_output(napa_gpio[i], 0x0);
+	qca808x_gpio_cnt = get_qca808x_gpio(qca808x_gpio);
+	if (qca808x_gpio_cnt >= 1) {
+		for (i = 0; i < qca808x_gpio_cnt; i++) {
+			if (qca808x_gpio[i] >= 0) {
+				qca808x_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(qca808x_gpio[i]);
+				writel(0x203, qca808x_gpio_base);
+				gpio_direction_output(qca808x_gpio[i], 0x0);
 			}
 		}
 	}
 }
 
-void malibu_phy_reset_init(void)
+void qca807x_phy_reset_init(void)
 {
-	int malibu_gpio[2] = {0}, malibu_gpio_cnt, i;
-	unsigned int *malibu_gpio_base;
+	int qca807x_gpio[2] = {0}, qca807x_gpio_cnt, i;
+	unsigned int *qca807x_gpio_base;
 
-	malibu_gpio_cnt = get_malibu_gpio(malibu_gpio);
-	if (malibu_gpio_cnt >= 1) {
-		for (i = 0; i < malibu_gpio_cnt; i++) {
-			if (malibu_gpio[i] >=0) {
-				malibu_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(malibu_gpio[i]);
-				writel(0x203, malibu_gpio_base);
-				gpio_direction_output(malibu_gpio[i], 0x0);
+	qca807x_gpio_cnt = get_qca807x_gpio(qca807x_gpio);
+	if (qca807x_gpio_cnt >= 1) {
+		for (i = 0; i < qca807x_gpio_cnt; i++) {
+			if (qca807x_gpio[i] >=0) {
+				qca807x_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(qca807x_gpio[i]);
+				writel(0x203, qca807x_gpio_base);
+				gpio_direction_output(qca807x_gpio[i], 0x0);
 			}
 		}
 	}
@@ -674,25 +674,25 @@ void aquantia_phy_reset_init_done(void)
 	}
 }
 
-void napa_phy_reset_init_done(void)
+void qca808x_phy_reset_init_done(void)
 {
-	int napa_gpio[2] = {0}, napa_gpio_cnt, i;
+	int qca808x_gpio[2] = {0}, qca808x_gpio_cnt, i;
 
-	napa_gpio_cnt = get_napa_gpio(napa_gpio);
-	if (napa_gpio_cnt >= 1) {
-		for (i = 0; i < napa_gpio_cnt; i++)
-			gpio_set_value(napa_gpio[i], 0x1);
+	qca808x_gpio_cnt = get_qca808x_gpio(qca808x_gpio);
+	if (qca808x_gpio_cnt >= 1) {
+		for (i = 0; i < qca808x_gpio_cnt; i++)
+			gpio_set_value(qca808x_gpio[i], 0x1);
 	}
 }
 
-void malibu_phy_reset_init_done(void)
+void qca807x_phy_reset_init_done(void)
 {
-	int malibu_gpio[2] = {0}, malibu_gpio_cnt, i;
+	int qca807x_gpio[2] = {0}, qca807x_gpio_cnt, i;
 
-	malibu_gpio_cnt = get_malibu_gpio(malibu_gpio);
-	if (malibu_gpio_cnt >= 1) {
-		for (i = 0; i < malibu_gpio_cnt; i++)
-			gpio_set_value(malibu_gpio[i], 0x1);
+	qca807x_gpio_cnt = get_qca807x_gpio(qca807x_gpio);
+	if (qca807x_gpio_cnt >= 1) {
+		for (i = 0; i < qca807x_gpio_cnt; i++)
+			gpio_set_value(qca807x_gpio[i], 0x1);
 	}
 }
 
@@ -901,13 +901,13 @@ void eth_clock_enable(void)
 	set_function_select_as_mdc_mdio();
 
 	/* Bring PHY out of RESET */
-	malibu_phy_reset_init();
+	qca807x_phy_reset_init();
 	aquantia_phy_reset_init();
-	napa_phy_reset_init();
+	qca808x_phy_reset_init();
 	mdelay(500);
-	malibu_phy_reset_init_done();
+	qca807x_phy_reset_init_done();
 	aquantia_phy_reset_init_done();
-	napa_phy_reset_init_done();
+	qca808x_phy_reset_init_done();
 	mdelay(500);
 }
 #endif
