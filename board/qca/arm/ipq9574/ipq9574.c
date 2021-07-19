@@ -622,8 +622,7 @@ void aquantia_phy_reset_init(void)
 		for (i = 0; i < aquantia_gpio_cnt; i++) {
 			if (aquantia_gpio[i] >= 0) {
 				aquantia_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(aquantia_gpio[i]);
-				writel(0x203, aquantia_gpio_base);
-				gpio_direction_output(aquantia_gpio[i], 0x0);
+				writel(0x2C3, aquantia_gpio_base);
 			}
 		}
 	}
@@ -639,8 +638,7 @@ void qca808x_phy_reset_init(void)
 		for (i = 0; i < qca808x_gpio_cnt; i++) {
 			if (qca808x_gpio[i] >= 0) {
 				qca808x_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(qca808x_gpio[i]);
-				writel(0x203, qca808x_gpio_base);
-				gpio_direction_output(qca808x_gpio[i], 0x0);
+				writel(0x2C3, qca808x_gpio_base);
 			}
 		}
 	}
@@ -656,8 +654,7 @@ void qca807x_phy_reset_init(void)
 		for (i = 0; i < qca807x_gpio_cnt; i++) {
 			if (qca807x_gpio[i] >=0) {
 				qca807x_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(qca807x_gpio[i]);
-				writel(0x203, qca807x_gpio_base);
-				gpio_direction_output(qca807x_gpio[i], 0x0);
+				writel(0x2C3, qca807x_gpio_base);
 			}
 		}
 	}
@@ -721,7 +718,10 @@ void set_function_select_as_mdc_mdio(void)
 		for (i = 0; i < mdc_mdio_gpio_cnt; i++) {
 			if (mdc_mdio_gpio[i] >=0) {
 				mdc_mdio_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(mdc_mdio_gpio[i]);
-				writel(0xC7, mdc_mdio_gpio_base);
+				if (i == 0)
+					writel(0xC4, mdc_mdio_gpio_base);
+				else
+					writel(0xC7, mdc_mdio_gpio_base);
 			}
 		}
 	}
