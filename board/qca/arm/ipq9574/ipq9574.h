@@ -75,6 +75,24 @@
 #define NSS_CC_PORT_SPEED_DIVIDER		0x39B28110
 #define NSS_CC_PPE_FREQUENCY_RCGR		0x39B28204
 
+#define GPIO_DRV_2_MA				0x0 << 6
+#define GPIO_DRV_4_MA				0x1 << 6
+#define GPIO_DRV_6_MA				0x2 << 6
+#define GPIO_DRV_8_MA				0x3 << 6
+#define GPIO_DRV_10_MA				0x4 << 6
+#define GPIO_DRV_12_MA				0x5 << 6
+#define GPIO_DRV_14_MA				0x6 << 6
+#define GPIO_DRV_16_MA				0x7 << 6
+
+#define GPIO_OE					0x1 << 9
+
+#define GPIO_NO_PULL				0x0
+#define GPIO_PULL_DOWN				0x1
+#define GPIO_KEEPER				0x2
+#define GPIO_PULL_UP				0x3
+
+#define MDC_MDIO_FUNC_SEL			0x1 << 2
+
 #define BLSP1_UART0_BASE			0x078AF000
 #define UART_PORT_ID(reg)			((reg - BLSP1_UART0_BASE) / 0x1000)
 
