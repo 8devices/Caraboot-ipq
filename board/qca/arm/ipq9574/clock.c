@@ -160,22 +160,58 @@ void qpic_set_clk_rate(unsigned int clk_rate, int blk_type, int req_clk_src_type
 void pcie_v2_clock_init(int pcie_id)
 {
 #ifndef CONFIG_IPQ9574_RUMI
-	int cfg;
+	int cfg, div;
 
 	/* Configure pcie_aux_clk_src */
 	cfg = (GCC_PCIE_AUX_CFG_RCGR_SRC_SEL | GCC_PCIE_AUX_CFG_RCGR_SRC_DIV);
-	writel(cfg, GCC_PCIE_REG(GCC_PCIE_AUX_CFG_RCGR, pcie_id));
-	writel(CMD_UPDATE, GCC_PCIE_REG(GCC_PCIE_AUX_CMD_RCGR, pcie_id));
+	writel(cfg, GCC_PCIE_REG(GCC_PCIE_AUX_CFG_RCGR, 0));
+	writel(0x1, GCC_PCIE_REG(GCC_PCIE_AUX_M, 0));
+	writel(0xFFFE, GCC_PCIE_REG(GCC_PCIE_AUX_N, 0));
+	writel(0xFFFD, GCC_PCIE_REG(GCC_PCIE_AUX_D, 0));
+	writel(CMD_UPDATE, GCC_PCIE_REG(GCC_PCIE_AUX_CMD_RCGR, 0));
 	mdelay(100);
-	writel(ROOT_EN, GCC_PCIE_REG(GCC_PCIE_AUX_CMD_RCGR, pcie_id));
+	writel(ROOT_EN, GCC_PCIE_REG(GCC_PCIE_AUX_CMD_RCGR, 0));
+
+	/* Configure pcie_axi_m__clk_src */
+	if ((pcie_id == 2) || (pcie_id == 3))
+		div = GCC_PCIE_AXI_M_CFG_RCGR_SRC_DIV_LANE2;
+	else
+		dive = GCC_PCIE_AXI_M_CFG_RCGR_SRC_DIV_LANE1;
+
+	cfg = (GCC_PCIE_AXI_M_CFG_RCGR_SRC_SEL | div);
+	writel(cfg, GCC_PCIE_REG(GCC_PCIE_AXI_M_CFG_RCGR, pcie_id));
+	writel(CMD_UPDATE, GCC_PCIE_REG(GCC_PCIE_AXI_M_CMD_RCGR, pcie_id));
+	mdelay(100);
+	writel(ROOT_EN, GCC_PCIE_REG(GCC_PCIE_AXI_M_CMD_RCGR, pcie_id));
+
+	/* Configure pcie_axi_s__clk_src */
+	cfg = (GCC_PCIE_AXI_S_CFG_RCGR_SRC_SEL | GCC_PCIE_AXI_S_CFG_RCGR_SRC_DIV);
+	writel(cfg, GCC_PCIE_REG(GCC_PCIE_AXI_S_CFG_RCGR, pcie_id));
+	writel(CMD_UPDATE, GCC_PCIE_REG(GCC_PCIE_AXI_S_CMD_RCGR, pcie_id));
+	mdelay(100);
+	writel(ROOT_EN, GCC_PCIE_REG(GCC_PCIE_AXI_S_CMD_RCGR, pcie_id));
 
 	/* Configure CBCRs */
 	writel(CLK_ENABLE, GCC_PCIE_REG(GCC_PCIE_AHB_CBCR, pcie_id));
 	writel(CLK_ENABLE, GCC_PCIE_REG(GCC_PCIE_AXI_M_CBCR, pcie_id));
 	writel(CLK_ENABLE, GCC_PCIE_REG(GCC_PCIE_AXI_S_CBCR, pcie_id));
-	writel(CLK_ENABLE, GCC_PCIE_REG(GCC_PCIE_AUX_CBCR, pcie_id));
-	writel(PIPE_CLK_ENABLE, GCC_PCIE_REG(GCC_PCIE_PIPE_CBCR, pcie_id));
+	writel(CLK_ENABLE, GCC_SNOC_PCIE0_1LANE_S_CBCR + (0x4 * pcie_id));
+	switch(pcie_id){
+	case 0:
+		writel(CLK_ENABLE, GCC_ANOC_PCIE0_1LANE_M_CBCR);
+	break;
+	case 1:
+		writel(CLK_ENABLE, GCC_ANOC_PCIE1_1LANE_M_CBCR);
+	break;
+	case 2:
+		writel(CLK_ENABLE, GCC_ANOC_PCIE2_2LANE_M_CBCR);
+	break;
+	case 3:
+		writel(CLK_ENABLE, GCC_ANOC_PCIE3_2LANE_M_CBCR);
+	break;
+	}
 	writel(CLK_ENABLE, GCC_PCIE_REG(GCC_PCIE_AXI_S_BRIDGE_CBCR, pcie_id));
+	writel(PIPE_CLK_ENABLE, GCC_PCIE_REG(GCC_PCIE_PIPE_CBCR, pcie_id));
 
 	/* Configure pcie_rchng_clk_src */
 	cfg = (GCC_PCIE_RCHNG_CFG_RCGR_SRC_SEL
@@ -184,6 +220,8 @@ void pcie_v2_clock_init(int pcie_id)
 	writel(CMD_UPDATE, GCC_PCIE_REG(GCC_PCIE_RCHNG_CMD_RCGR, pcie_id));
 	mdelay(100);
 	writel(ROOT_EN, GCC_PCIE_REG(GCC_PCIE_RCHNG_CMD_RCGR, pcie_id));
+
+	writel(CLK_ENABLE, GCC_PCIE_REG(GCC_PCIE_AUX_CBCR, pcie_id));
 #endif
 }
 
@@ -200,6 +238,21 @@ void pcie_v2_clock_deinit(int pcie_id)
 	writel(0x0, GCC_PCIE_REG(GCC_PCIE_AXI_S_BRIDGE_CBCR, pcie_id));
 	writel(0x0, GCC_PCIE_REG(GCC_PCIE_RCHNG_CFG_RCGR, pcie_id));
 	writel(0x0, GCC_PCIE_REG(GCC_PCIE_RCHNG_CMD_RCGR, pcie_id));
+	writel(0x0, GCC_SNOC_PCIE0_1LANE_S_CBCR + (0x4 * pcie_id));
+	switch(pcie_id){
+	case 0:
+		writel(0x0, GCC_ANOC_PCIE0_1LANE_M_CBCR);
+	break;
+	case 1:
+		writel(0x0, GCC_ANOC_PCIE1_1LANE_M_CBCR);
+	break;
+	case 2:
+		writel(0x0, GCC_ANOC_PCIE2_2LANE_M_CBCR);
+	break;
+	case 3:
+		writel(0x0, GCC_ANOC_PCIE3_2LANE_M_CBCR);
+	break;
+	}
 #endif
 }
 #endif
