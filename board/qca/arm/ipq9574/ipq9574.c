@@ -917,21 +917,22 @@ void eth_clock_enable(void)
 }
 #endif
 
+#ifdef CONFIG_IPQ9574_EDMA
 int board_eth_init(bd_t *bis)
 {
-	int ret=0;
+	int ret = 0;
 
 #ifndef CONFIG_IPQ9574_RUMI
 	eth_clock_enable();
 #endif
 
 	ret = ipq9574_edma_init(NULL);
-
 	if (ret != 0)
 		printf("%s: ipq9574_edma_init failed : %d\n", __func__, ret);
 
 	return ret;
 }
+#endif
 
 unsigned long timer_read_counter(void)
 {
