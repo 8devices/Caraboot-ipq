@@ -45,6 +45,17 @@
 		};
 	};
 
+	serial@78B1000 {
+		compatible = "qca,ipq-uartdm";
+		reg = <0x78B1000 0x200>;
+		id = <2>;
+		bit_rate = <0xff>;
+		status = "ok";
+		m_value = <36>;
+		n_value = <15625>;
+		d_value = <15625>;
+	};
+
 	spi {
 		compatible = "qcom,spi-qup-v2.7.0";
 		wr_pipe_0 = <12>;
