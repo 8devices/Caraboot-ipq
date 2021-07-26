@@ -176,7 +176,7 @@ void pcie_v2_clock_init(int pcie_id)
 	if ((pcie_id == 2) || (pcie_id == 3))
 		div = GCC_PCIE_AXI_M_CFG_RCGR_SRC_DIV_LANE2;
 	else
-		dive = GCC_PCIE_AXI_M_CFG_RCGR_SRC_DIV_LANE1;
+		div = GCC_PCIE_AXI_M_CFG_RCGR_SRC_DIV_LANE1;
 
 	cfg = (GCC_PCIE_AXI_M_CFG_RCGR_SRC_SEL | div);
 	writel(cfg, GCC_PCIE_REG(GCC_PCIE_AXI_M_CFG_RCGR, pcie_id));
