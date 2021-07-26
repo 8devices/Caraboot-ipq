@@ -110,6 +110,5 @@
 		switch_mac_mode0 = <PORT_WRAPPER_SGMII0_RGMII4>;
 		switch_mac_mode1 = <PORT_WRAPPER_SGMII0_RGMII4>;
 		switch_mac_mode2 = <PORT_WRAPPER_SGMII0_RGMII4>;
-		uniphy0_port5 = <1>;
 	};
 };

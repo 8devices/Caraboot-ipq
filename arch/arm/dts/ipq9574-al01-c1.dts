@@ -158,7 +158,7 @@
 	};
 
 	ess-switch {
-		switch_mac_mode = <PORT_WRAPPER_PSGMII>;
+		switch_mac_mode0 = <PORT_WRAPPER_PSGMII>;
 		switch_mac_mode1 = <PORT_WRAPPER_MAX>; /* Unused */
 		switch_mac_mode2 = <PORT_WRAPPER_USXGMII>;
 		qca807x_gpio = <60>;

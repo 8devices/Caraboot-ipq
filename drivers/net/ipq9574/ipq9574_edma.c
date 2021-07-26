@@ -677,6 +677,9 @@ static int ipq9574_edma_setup_ring_resources(struct ipq9574_edma_hw *ehw)
 		for (j = 0; j < rxfill_ring->count; j++) {
 			rxfill_desc = IPQ9574_EDMA_RXFILL_DESC(rxfill_ring, j);
 			rxfill_desc->rdes0 = virt_to_phys(rx_buf);
+			rxfill_desc->rdes1 = 0;
+			rxfill_desc->rdes2 = 0;
+			rxfill_desc->rdes3 = 0;
 			rx_buf += PKTSIZE_ALIGN;
 			pr_debug("Ring %d: rxfill ring dis0 ptr = %p, rxfill ring dis0 dma = %u\n",
 				j, rxfill_desc, (unsigned int)rxfill_desc->rdes0);
@@ -813,6 +816,13 @@ static int ipq9574_edma_setup_ring_resources(struct ipq9574_edma_hw *ehw)
 		for (j = 0; j < txdesc_ring->count; j++) {
 			tx_desc = IPQ9574_EDMA_TXDESC_DESC(txdesc_ring, j);
 			tx_desc->tdes0 = virt_to_phys(tx_buf);
+			tx_desc->tdes1 = 0;
+			tx_desc->tdes2 = 0;
+			tx_desc->tdes3 = 0;
+			tx_desc->tdes4 = 0;
+			tx_desc->tdes5 = 0;
+			tx_desc->tdes6 = 0;
+			tx_desc->tdes7 = 0;
 			tx_buf += IPQ9574_EDMA_TX_BUFF_SIZE;
 			pr_debug("Ring %d: txdesc ring dis0 ptr = %p, txdesc ring dis0 dma = %u\n",
 				j, tx_desc, (unsigned int)tx_desc->tdes0);
@@ -1928,7 +1938,7 @@ int ipq9574_edma_init(void *edma_board_cfg)
 
 	mode = fdtdec_get_uint(gd->fdt_blob, node, "switch_mac_mode0", -1);
 	if (mode < 0) {
-		printf("Error:switch_mac_mode not specified in dts");
+		printf("Error:switch_mac_mode0 not specified in dts");
 		return mode;
 	}
 #endif
@@ -2072,6 +2082,7 @@ int ipq9574_edma_init(void *edma_board_cfg)
 					break;
 #endif
 				default:
+					printf("\nphy id not matching, calling default qca807x ops");
 					ipq_qca8075_phy_map_ops(&ipq9574_edma_dev[i]->ops[phy_id]);
 					break;
 			}

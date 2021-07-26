@@ -735,7 +735,6 @@ void set_function_select_as_mdc_mdio(void)
 void eth_clock_enable(void)
 {
 	int reg_val, reg_val1, mode, i;
-	int gcc_pll_base = 0x0009B780;
 	int node;
 
 	/* Clock init */
@@ -773,7 +772,7 @@ void eth_clock_enable(void)
 	/* SYSNOC frequency 343M */
 	reg_val = readl(0x182E004 + 4);
 	reg_val &= ~0x7ff;
-	writel(reg_val | 206, 0x182E004 + 4);
+	writel(reg_val | 0x206, 0x182E004 + 4);
 	/* Update Config */
 	reg_val = readl(0x182E004);
 	writel(reg_val | 0x1, 0x182E004);
@@ -852,21 +851,6 @@ void eth_clock_enable(void)
 	writel(0x2, NSS_CC_PORT5_RX_CMD_RCGR);
 	writel(0x1, NSS_CC_PORT5_TX_CMD_RCGR);
 	writel(0x2, NSS_CC_PORT5_TX_CMD_RCGR);
-
-	/* CMN BLK init */
-	reg_val = readl(gcc_pll_base + 4);
-	/* CMN BLK Mode: INTERNAL_48MHZ */
-	reg_val = (reg_val&0xfffffdf0) | 0x7;
-	writel(reg_val, gcc_pll_base + 0x4);
-	reg_val = readl(gcc_pll_base);
-	reg_val = reg_val | 0x40;
-	writel(reg_val, gcc_pll_base);
-	mdelay(1);
-	reg_val = reg_val & (~0x40);
-	writel(reg_val, gcc_pll_base);
-	mdelay(1);
-	writel(0xbf, gcc_pll_base);
-	mdelay(1);
 
 	/* Uniphy Port5 clock source set */
 	reg_val = readl(NSS_CC_PORT_SPEED_DIVIDER + 0x64);
