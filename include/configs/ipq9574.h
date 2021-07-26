@@ -18,11 +18,6 @@
 #include <generated/asm-offsets.h>
 #endif
 
-/*
- * Support for IPQ9574 RUMI
- */
-#define CONFIG_IPQ9574_RUMI
-
 #define CONFIG_IPQ9574
 
 #define CONFIG_BOARD_EARLY_INIT_F
