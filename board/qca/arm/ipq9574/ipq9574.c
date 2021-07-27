@@ -738,6 +738,21 @@ void eth_clock_enable(void)
 	int node;
 
 	/* Clock init */
+	/* Enable required NSSNOC clocks */
+	writel(readl(GCC_MEM_NOC_NSSNOC_CLK) | GCC_CBCR_CLK_ENABLE,
+		GCC_MEM_NOC_NSSNOC_CLK);
+	writel(readl(GCC_NSSCFG_CLK) | GCC_CBCR_CLK_ENABLE, GCC_NSSCFG_CLK);
+	writel(readl(GCC_NSSNOC_ATB_CLK) | GCC_CBCR_CLK_ENABLE,
+		GCC_NSSNOC_ATB_CLK);
+	writel(readl(GCC_NSSNOC_MEM_NOC_1_CLK) | GCC_CBCR_CLK_ENABLE,
+		GCC_NSSNOC_MEM_NOC_1_CLK);
+	writel(readl(GCC_NSSNOC_MEMNOC_CLK) | GCC_CBCR_CLK_ENABLE,
+		GCC_NSSNOC_MEMNOC_CLK);
+	writel(readl(GCC_NSSNOC_QOSGEN_REF_CLK) | GCC_CBCR_CLK_ENABLE,
+		GCC_NSSNOC_QOSGEN_REF_CLK);
+	writel(readl(GCC_NSSNOC_TIMEOUT_REF_CLK) | GCC_CBCR_CLK_ENABLE,
+		GCC_NSSNOC_TIMEOUT_REF_CLK);
+
 	/* Frequency init */
 	/* GCC NSS frequency 100M */
 	reg_val = readl(0x39B28104 + 4);
