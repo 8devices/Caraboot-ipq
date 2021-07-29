@@ -148,12 +148,19 @@ int board_mmc_init(bd_t *bis)
 {
 	int node;
 	int ret = 0;
+	int gpio_node;
+
 	qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
 
 	node = fdt_path_offset(gd->fdt_blob, "mmc");
 	if (node < 0) {
 		printf("sdhci: Node Not found, skipping initialization\n");
 		return -1;
+	}
+
+	gpio_node = fdt_path_offset(gd->fdt_blob, "/sdhci@7804000/mmc_gpio");
+	if (gpio_node >= 0) {
+		qca_gpio_init(gpio_node);
 	}
 
 	mmc_host.ioaddr = (void *)MSM_SDC1_SDHCI_BASE;
