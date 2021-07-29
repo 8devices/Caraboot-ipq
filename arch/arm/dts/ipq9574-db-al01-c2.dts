@@ -30,63 +30,63 @@
 			emmc_dat7 {
 				gpio = <0>;
 				func = <1>;
-				pull = <GPIO_NO_PULL>;
+				pull = <GPIO_PULL_UP>;
 				od_en = <GPIO_OD_DISABLE>;
 				drvstr = <GPIO_8MA>;
 			};
 			emmc_dat6 {
 				gpio = <1>;
 				func = <1>;
-				pull = <GPIO_NO_PULL>;
+				pull = <GPIO_PULL_UP>;
 				od_en = <GPIO_OD_DISABLE>;
 				drvstr = <GPIO_8MA>;
 			};
 			emmc_dat5 {
 				gpio = <2>;
 				func = <1>;
-				pull = <GPIO_NO_PULL>;
+				pull = <GPIO_PULL_UP>;
 				od_en = <GPIO_OD_DISABLE>;
 				drvstr = <GPIO_8MA>;
 			};
 			emmc_dat4 {
 				gpio = <3>;
 				func = <1>;
-				pull = <GPIO_NO_PULL>;
+				pull = <GPIO_PULL_UP>;
 				od_en = <GPIO_OD_DISABLE>;
 				drvstr = <GPIO_8MA>;
 			};
 			emmc_dat3 {
 				gpio = <6>;
 				func = <1>;
-				pull = <GPIO_NO_PULL>;
+				pull = <GPIO_PULL_UP>;
 				od_en = <GPIO_OD_DISABLE>;
 				drvstr = <GPIO_8MA>;
 			};
 			emmc_dat2 {
 				gpio = <7>;
 				func = <1>;
-				pull = <GPIO_NO_PULL>;
+				pull = <GPIO_PULL_UP>;
 				od_en = <GPIO_OD_DISABLE>;
 				drvstr = <GPIO_8MA>;
 			};
 			emmc_dat1 {
 				gpio = <8>;
 				func = <1>;
-				pull = <GPIO_NO_PULL>;
+				pull = <GPIO_PULL_UP>;
 				od_en = <GPIO_OD_DISABLE>;
 				drvstr = <GPIO_8MA>;
 			};
 			emmc_dat0 {
 				gpio = <9>;
 				func = <1>;
-				pull = <GPIO_NO_PULL>;
+				pull = <GPIO_PULL_UP>;
 				od_en = <GPIO_OD_DISABLE>;
 				drvstr = <GPIO_8MA>;
 			};
 			emmc_cmd{
 				gpio = <4>;
 				func = <1>;
-				pull = <GPIO_NO_PULL>;
+				pull = <GPIO_PULL_UP>;
 				od_en = <GPIO_OD_DISABLE>;
 				drvstr = <GPIO_8MA>;
 			};
@@ -100,7 +100,7 @@
 			emmc_rclk{
 				gpio = <10>;
 				func = <1>;
-				pull = <GPIO_NO_PULL>;
+				pull = <GPIO_PULL_DOWN>;
 				od_en = <GPIO_OD_DISABLE>;
 				drvstr = <GPIO_8MA>;
 			};
