@@ -65,6 +65,14 @@
 		};
 	};
 
+	i2c0: i2c@78BA000 {
+		compatible = "qcom,qup-i2c";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x78BA000 0x600>;
+	        clock-frequency  = <400000>;
+	};
+
 	nand: nand-controller@79B0000 {
 		#address-cells = <1>;
 		#size-cells = <0>;
