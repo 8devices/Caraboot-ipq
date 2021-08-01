@@ -12,4 +12,7 @@ config SYS_VENDOR
 config SYS_CONFIG_NAME
        default "ipq9574"
 
+config IPQ9574_QCA_AQUANTIA_PHY
+	bool "Enable Aquantia PHY support for ipq6018"
+
 endif

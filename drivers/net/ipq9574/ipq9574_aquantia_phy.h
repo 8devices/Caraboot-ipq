@@ -12,6 +12,8 @@
  *
  */
 
+#define AQ_ETHPHYFW_IMAGE_SIZE	0x80000
+
 #define AQUANTIA_MII_ADDR_C45  (1<<30)
 #define AQUANTIA_REG_ADDRESS(dev_ad, reg_num) (AQUANTIA_MII_ADDR_C45 |\
 				((dev_ad & 0x1f) << 16) | (reg_num & 0xFFFF))

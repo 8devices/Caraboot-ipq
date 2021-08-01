@@ -57,7 +57,7 @@ extern int ipq_mdio_read(int mii_id,
 		int regnum, ushort *data);
 
 extern int ipq_sw_mdio_init(const char *);
-extern void eth_clock_enable(void);
+extern void ipq9574_eth_initialize(void);
 static int program_ethphy_fw(unsigned int phy_addr,
 			 uint32_t load_addr,uint32_t file_size );
 static qca_smem_flash_info_t *sfi = &qca_smem_flash_info;
@@ -175,6 +175,9 @@ int ipq_qca_aquantia_phy_init(struct phy_ops **ops, u32 phy_id)
 	aq_phy_ops->phy_get_duplex = aq_phy_get_duplex;
 	*ops = aq_phy_ops;
 
+	phy_data = aq_phy_reg_read(0x0, phy_id, AQUANTIA_REG_ADDRESS(AQUANTIA_MMD_PHY_XS_REGISTERS,
+			AQUANTIA_PHY_XS_USX_TRANSMIT));
+
 	phy_data = aq_phy_reg_read(0x0, phy_id, AQUANTIA_REG_ADDRESS(1, QCA_PHY_ID1));
 	printf ("PHY ID1: 0x%x\n", phy_data);
 	phy_data = aq_phy_reg_read(0x0, phy_id, AQUANTIA_REG_ADDRESS(1, QCA_PHY_ID2));
@@ -199,6 +202,9 @@ int ipq_qca_aquantia_phy_init(struct phy_ops **ops, u32 phy_id)
 	phy_data |= AQUANTIA_AUTO_AND_ALARMS_INTR_MASK;
 	aq_phy_reg_write(0x0, phy_id, AQUANTIA_REG_ADDRESS(AQUANTIA_MMD_GLOABLE_REGISTERS,
 			AQUANTIA_GLOBAL_INTR_VENDOR_MASK), phy_data);
+
+	phy_data = aq_phy_reg_read(0x0, phy_id, AQUANTIA_REG_ADDRESS(AQUANTIA_MMD_PHY_XS_REGISTERS,
+			AQUANTIA_PHY_XS_USX_TRANSMIT));
 	return 0;
 }
 
@@ -243,6 +249,10 @@ int ipq_board_fw_download(unsigned int phy_addr)
 		if (debug) {
 			printf("Using MMC device\n");
 		}
+	} else if (sfi->flash_type == SMEM_BOOT_QSPI_NAND_FLASH) {
+		if (debug) {
+			printf("Using qspi nand device 0\n");
+		}
 	} else {
 		printf("Unsupported BOOT flash type\n");
 		return -1;
@@ -256,24 +266,30 @@ int ipq_board_fw_download(unsigned int phy_addr)
 	}
 
 	if ((sfi->flash_type == SMEM_BOOT_NAND_FLASH) ||
+	    (sfi->flash_type == SMEM_BOOT_QSPI_NAND_FLASH) ||
 	    (sfi->flash_type == SMEM_BOOT_SPI_FLASH)) {
-		ethphyfw_load_addr = (uint *)malloc(ethphyfw.size);
+		ethphyfw_load_addr = (uint *)malloc(AQ_ETHPHYFW_IMAGE_SIZE);
+		/* We only need memory equivalent to max size ETHPHYFW
+		 * which is currently assumed as 512 KB.
+		 */
 		if (ethphyfw_load_addr == NULL) {
-			printf("ETHPHYFW Loading failed\n");
+			printf("ETHPHYFW Loading failed, size = %llu\n",
+			       ethphyfw.size);
 			return -1;
 		} else {
-			memset(ethphyfw_load_addr, 0, ethphyfw.size);
+			memset(ethphyfw_load_addr, 0, AQ_ETHPHYFW_IMAGE_SIZE);
 		}
 	}
 
-	if (sfi->flash_type == SMEM_BOOT_NAND_FLASH) {
+	if ((sfi->flash_type == SMEM_BOOT_NAND_FLASH) ||
+	    (sfi->flash_type == SMEM_BOOT_QSPI_NAND_FLASH)) {
 		/*
 		 * Kernel is in a separate partition
 		 */
 		snprintf(runcmd, sizeof(runcmd),
 			 /* NOR is treated as psuedo NAND */
 			 "nand read 0x%p 0x%llx 0x%llx && ",
-			 ethphyfw_load_addr, ethphyfw.offset, ethphyfw.size);
+			 ethphyfw_load_addr, ethphyfw.offset, (long long unsigned int) AQ_ETHPHYFW_IMAGE_SIZE);
 
 		if (debug)
 			printf("%s", runcmd);
@@ -285,7 +301,7 @@ int ipq_board_fw_download(unsigned int phy_addr)
 	} else if (sfi->flash_type == SMEM_BOOT_SPI_FLASH) {
 		snprintf(runcmd, sizeof(runcmd),
 			 "sf probe && " "sf read 0x%p 0x%llx 0x%llx && ",
-			 ethphyfw_load_addr, ethphyfw.offset, ethphyfw.size);
+			 ethphyfw_load_addr, ethphyfw.offset, (long long unsigned int) AQ_ETHPHYFW_IMAGE_SIZE);
 
 		if (debug)
 			printf("%s", runcmd);
@@ -303,7 +319,8 @@ int ipq_board_fw_download(unsigned int phy_addr)
 		ethphyfw_load_addr = (uint *)malloc(((uint)disk_info.size) *
 						    ((uint)disk_info.blksz));
 		if (ethphyfw_load_addr == NULL) {
-			printf("ETHPHYFW Loading failed\n");
+			printf("ETHPHYFW Loading failed, size = %lu\n",
+			      ((long unsigned int)(uint)disk_info.size) * ((uint)disk_info.blksz));
 			return -1;
 		} else {
 			memset(ethphyfw_load_addr, 0,
@@ -387,7 +404,7 @@ static int program_ethphy_fw(unsigned int phy_addr, uint32_t load_addr, uint32_t
 		printf("CRC check failed on phy fw file\n");
 		return 0;
 	} else {
-		printf ("CRC check good on phy fw file (0x%04X)\n",computed_crc);
+		printf("CRC check good on phy fw file (0x%04X)\n",computed_crc);
 	}
 
 	daisy_chain_dis = aq_phy_reg_read(0x0, phy_addr, AQUANTIA_REG_ADDRESS(0x1e, 0xc452));
@@ -578,7 +595,7 @@ static int do_load_fw(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	}
 
 	miiphy_init();
-	eth_clock_enable();
+	ipq9574_eth_initialize();
 	ipq_sw_mdio_init("IPQ MDIO0");
 	ipq_board_fw_download(phy_addr);
 	return 0;
