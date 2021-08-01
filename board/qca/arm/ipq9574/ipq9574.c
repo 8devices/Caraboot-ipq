@@ -744,97 +744,145 @@ void set_function_select_as_mdc_mdio(void)
 	}
 }
 
-void eth_clock_enable(void)
+void nssnoc_init(void)
 {
-	int reg_val, reg_val1, mode, i;
-	int node;
-
-	/* Clock init */
 	/* Enable required NSSNOC clocks */
 	writel(readl(GCC_MEM_NOC_NSSNOC_CLK) | GCC_CBCR_CLK_ENABLE,
 		GCC_MEM_NOC_NSSNOC_CLK);
+
 	writel(readl(GCC_NSSCFG_CLK) | GCC_CBCR_CLK_ENABLE, GCC_NSSCFG_CLK);
+
 	writel(readl(GCC_NSSNOC_ATB_CLK) | GCC_CBCR_CLK_ENABLE,
 		GCC_NSSNOC_ATB_CLK);
+
 	writel(readl(GCC_NSSNOC_MEM_NOC_1_CLK) | GCC_CBCR_CLK_ENABLE,
 		GCC_NSSNOC_MEM_NOC_1_CLK);
+
 	writel(readl(GCC_NSSNOC_MEMNOC_CLK) | GCC_CBCR_CLK_ENABLE,
 		GCC_NSSNOC_MEMNOC_CLK);
+
 	writel(readl(GCC_NSSNOC_QOSGEN_REF_CLK) | GCC_CBCR_CLK_ENABLE,
 		GCC_NSSNOC_QOSGEN_REF_CLK);
+
 	writel(readl(GCC_NSSNOC_TIMEOUT_REF_CLK) | GCC_CBCR_CLK_ENABLE,
 		GCC_NSSNOC_TIMEOUT_REF_CLK);
+}
 
-	/* Frequency init */
+void frequency_init(void)
+{
+	unsigned int nss_cc_cfg_addr;
+	unsigned int gcc_uniphy_sys_addr;
+	unsigned int gcc_pcnoc_addr;
+	unsigned int gcc_sysnoc_addr;
+	unsigned int reg_val;
+
 	/* GCC NSS frequency 100M */
-	reg_val = readl(0x39B28104 + 4);
+	nss_cc_cfg_addr = 0x39B28104;
+	reg_val = readl(nss_cc_cfg_addr + 4);
 	reg_val &= ~0x7ff;
-	writel(reg_val | 0x20f, 0x39B28104 + 4);
-	reg_val = readl(0x39B28104);
-	writel(reg_val | 0x1, 0x39B28104);
+	writel(reg_val | 0x20f, nss_cc_cfg_addr + 4);
+
+	reg_val = readl(nss_cc_cfg_addr);
+	writel(reg_val | 0x1, nss_cc_cfg_addr);
 
 	/* GCC CC PPE frequency 353M */
 	reg_val = readl(NSS_CC_PPE_FREQUENCY_RCGR + 4);
 	reg_val &= ~0x7ff;
 	writel(reg_val | 0x101, NSS_CC_PPE_FREQUENCY_RCGR + 4);
+
 	reg_val = readl(NSS_CC_PPE_FREQUENCY_RCGR);
 	writel(reg_val | 0x1, NSS_CC_PPE_FREQUENCY_RCGR);
 
 	/* Uniphy SYS 24M */
-	reg_val = readl(0x1817090 + 4);
+	gcc_uniphy_sys_addr = 0x1817090;
+	reg_val = readl(gcc_uniphy_sys_addr + 4);
 	reg_val &= ~0x7ff;
-	writel(reg_val | 0x1, 0x1817090 + 4);
+	writel(reg_val | 0x1, gcc_uniphy_sys_addr + 4);
 	/* Update Config */
-	reg_val = readl(0x1817090);
-	writel(reg_val | 0x1, 0x1817090);
+	reg_val = readl(gcc_uniphy_sys_addr);
+	writel(reg_val | 0x1, gcc_uniphy_sys_addr);
 
 	/* PCNOC frequency for Uniphy AHB 100M */
-	reg_val = readl(0x1831004 + 4);
+	gcc_pcnoc_addr = 0x1831004;
+	reg_val = readl(gcc_pcnoc_addr + 4);
 	reg_val &= ~0x7ff;
-	writel(reg_val | 0x10F, 0x1831004 + 4);
+	writel(reg_val | 0x10F, gcc_pcnoc_addr + 4);
 	/* Update Config */
-	reg_val = readl(0x1831004);
-	writel(reg_val | 0x1, 0x1831004);
+	reg_val = readl(gcc_pcnoc_addr);
+	writel(reg_val | 0x1, gcc_pcnoc_addr);
 
 	/* SYSNOC frequency 343M */
-	reg_val = readl(0x182E004 + 4);
+	gcc_sysnoc_addr = 0x182E004;
+	reg_val = readl(gcc_sysnoc_addr + 4);
 	reg_val &= ~0x7ff;
-	writel(reg_val | 0x206, 0x182E004 + 4);
+	writel(reg_val | 0x206, gcc_sysnoc_addr + 4);
 	/* Update Config */
-	reg_val = readl(0x182E004);
-	writel(reg_val | 0x1, 0x182E004);
+	reg_val = readl(gcc_sysnoc_addr);
+	writel(reg_val | 0x1, gcc_sysnoc_addr);
+}
+
+void fixed_nss_csr_clock_init(void)
+{
+	unsigned int gcc_nss_csr_addr;
+	unsigned int reg_val;
 
 	/* NSS CSR and NSSNOC CSR Clock init */
-	reg_val = readl(0x39B281D0);
-	writel(reg_val | GCC_CBCR_CLK_ENABLE, 0x39B281D0);
+	gcc_nss_csr_addr = 0x39B281D0;
+	reg_val = readl(gcc_nss_csr_addr);
+	writel(reg_val | GCC_CBCR_CLK_ENABLE, gcc_nss_csr_addr);
 	/* NSSNOC CSR */
-	reg_val = readl(0x39B281D0 + 4);
-	writel(reg_val | GCC_CBCR_CLK_ENABLE, 0x39B281D0 + 4);
+	reg_val = readl(gcc_nss_csr_addr + 0x4);
+	writel(reg_val | GCC_CBCR_CLK_ENABLE, gcc_nss_csr_addr + 0x4);
+}
+
+void fixed_sys_clock_init(void)
+{
+	unsigned int reg_val;
 
 	/* SYS Clock init */
 	/* Enable AHB and SYS clk of CMN */
 	reg_val = readl(GCC_CMN_BLK_ADDR + GCC_CMN_BLK_AHB_CBCR_OFFSET);
 	writel(reg_val | GCC_CBCR_CLK_ENABLE,
 	       GCC_CMN_BLK_ADDR + GCC_CMN_BLK_AHB_CBCR_OFFSET);
+
 	reg_val = readl(GCC_CMN_BLK_ADDR + GCC_CMN_BLK_SYS_CBCR_OFFSET);
 	writel(reg_val | GCC_CBCR_CLK_ENABLE,
 	       GCC_CMN_BLK_ADDR + GCC_CMN_BLK_SYS_CBCR_OFFSET);
+}
+
+void fixed_uniphy_clock_init(void)
+{
+	int i;
+	unsigned int reg_val;
 
 	/* Uniphy AHB AND SYS CBCR init */
 	for (i = 0; i < 3; i++) {
 		reg_val = readl(GCC_UNIPHY_SYS_ADDR + i*0x10);
 		writel(reg_val | GCC_CBCR_CLK_ENABLE,
 		      GCC_UNIPHY_SYS_ADDR + i*0x10);
+
 		reg_val = readl((GCC_UNIPHY_SYS_ADDR + 0x4) + i*0x10);
 		writel(reg_val | GCC_CBCR_CLK_ENABLE,
 		      (GCC_UNIPHY_SYS_ADDR + 0x4) + i*0x10);
 	}
+}
+
+void port_mac_clock_init(void)
+{
+	int i;
+	unsigned int reg_val;
 
 	/* Port Mac Clock init */
 	for (i = 0; i < 6; i++) {
 		reg_val = readl(GCC_PORT_MAC_ADDR + i*0x4);
 		writel(reg_val | GCC_CBCR_CLK_ENABLE, GCC_PORT_MAC_ADDR + i*0x4);
 	}
+}
+
+void cfg_clock_init(void)
+{
+	int i;
+	unsigned int reg_val;
 
 	/* CFG Clock init */
 	for (i = 0; i < 8; i++) {
@@ -844,42 +892,113 @@ void eth_clock_enable(void)
 	}
 	reg_val = readl(NSS_CC_PPE_SWITCH_BTQ_ADDR);
 	writel(reg_val | GCC_CBCR_CLK_ENABLE, NSS_CC_PPE_SWITCH_BTQ_ADDR);
+}
+
+void mdio_clock_init(void)
+{
+	unsigned int reg_val;
 
 	/* MDIO Clock init */
 	reg_val = readl(GCC_MDIO_AHB_CBCR_ADDR);
 	writel(reg_val | GCC_CBCR_CLK_ENABLE, GCC_MDIO_AHB_CBCR_ADDR);
+}
+
+void noc_clock_init(void)
+{
+	unsigned int reg_val;
 
 	/* NOC Clock init */
 	reg_val = readl(GCC_NSSNOC_SNOC_CBCR);
 	writel(reg_val | GCC_CBCR_CLK_ENABLE, GCC_NSSNOC_SNOC_CBCR);
+
 	reg_val = readl(GCC_NSSNOC_SNOC_1_CBCR);
 	writel(reg_val | GCC_CBCR_CLK_ENABLE, GCC_NSSNOC_SNOC_1_CBCR);
+
 	reg_val = readl(GCC_MEM_NOC_SNOC_AXI_CBCR);
 	writel(reg_val | GCC_CBCR_CLK_ENABLE, GCC_MEM_NOC_SNOC_AXI_CBCR);
+
 	reg_val = readl(GCC_IMEM_AXI_CBCR);
 	writel(reg_val | GCC_CBCR_CLK_ENABLE, GCC_IMEM_AXI_CBCR);
+}
 
-	/* Enable mac clock */
-	for (i = 0; i < 6; i++) {
-		reg_val = readl(NSS_CC_PORT1_RX_CBCR + i*0x8);
-		writel(reg_val | GCC_CBCR_CLK_ENABLE, NSS_CC_PORT1_RX_CBCR + i*0x8);
-		reg_val = readl(NSS_CC_PORT1_RX_CBCR + 0x4 + i*0x8);
-		writel(reg_val | GCC_CBCR_CLK_ENABLE, NSS_CC_PORT1_RX_CBCR + 0x4 + i*0x8);
+void fixed_clock_init(void)
+{
+	frequency_init();
+
+	fixed_nss_csr_clock_init();
+
+	fixed_sys_clock_init();
+
+	fixed_uniphy_clock_init();
+
+	port_mac_clock_init();
+
+	cfg_clock_init();
+
+	mdio_clock_init();
+
+	noc_clock_init();
+}
+
+void uniphy_clock_enable(enum uniphy_clk_type clk_type, bool enable)
+{
+	unsigned int reg_val, i;
+
+	i  = clk_type;
+
+	if (clk_type <= NSS_PORT6_TX_CLK_E) {
+		reg_val = readl(NSS_CC_PORT1_RX_CBCR + i*0x4);
+		if (enable)
+			reg_val |= GCC_CBCR_CLK_ENABLE;
+		else
+			reg_val &= ~GCC_CBCR_CLK_ENABLE;
+		writel(reg_val, (NSS_CC_PORT1_RX_CBCR + i*0x4));
+	} else {
+		if (i >= UNIPHY1_PORT5_RX_CLK_E) {
+			i = i - 2;
+		}
+		reg_val = readl(NSS_CC_UNIPHY_PORT1_RX_CBCR + (i - 12)*0x4);
+		if (enable)
+			reg_val |= GCC_CBCR_CLK_ENABLE;
+		else
+			reg_val &= ~GCC_CBCR_CLK_ENABLE;
+		writel(reg_val, (NSS_CC_UNIPHY_PORT1_RX_CBCR + (i - 12)*0x4));
 	}
+}
 
-	/* Enable Uniphy clock */
-	for (i = 0; i < 6; i++) {
-		reg_val = readl(NSS_CC_UNIPHY_PORT1_RX_CBCR + i*0x8);
-		writel(reg_val | GCC_CBCR_CLK_ENABLE, NSS_CC_UNIPHY_PORT1_RX_CBCR + i*0x8);
-		reg_val = readl(NSS_CC_UNIPHY_PORT1_RX_CBCR + 0x4 + i*0x8);
-		writel(reg_val | GCC_CBCR_CLK_ENABLE, NSS_CC_UNIPHY_PORT1_RX_CBCR + 0x4 + i*0x8);
-	}
-	writel(0x1, NSS_CC_PORT5_RX_CMD_RCGR);
-	writel(0x2, NSS_CC_PORT5_RX_CMD_RCGR);
-	writel(0x1, NSS_CC_PORT5_TX_CMD_RCGR);
-	writel(0x2, NSS_CC_PORT5_TX_CMD_RCGR);
+void uniphy_clk_init(void)
+{
+	int i;
+	/* Uniphy clock enable */
+	for (i = NSS_PORT1_RX_CLK_E; i < PORT5_RX_SRC_E; i++)
+		uniphy_clock_enable(i, true);
+}
 
-	/* Uniphy Port5 clock source set */
+void cmnblk_init(void)
+{
+	uint32_t gcc_pll_base, reg_val;
+
+	gcc_pll_base = CMN_BLK_ADDR;
+	reg_val = readl(gcc_pll_base + 4);
+	reg_val = (reg_val & FREQUENCY_MASK) | INTERNAL_48MHZ_CLOCK;
+	writel(reg_val, gcc_pll_base + 0x4);
+	reg_val = readl(gcc_pll_base);
+	reg_val = reg_val | 0x40;
+	writel(reg_val, gcc_pll_base);
+	mdelay(1);
+	reg_val = reg_val & (~0x40);
+	writel(reg_val, gcc_pll_base);
+	mdelay(1);
+	writel(0xbf, gcc_pll_base);
+	mdelay(1);
+	writel(0xff, gcc_pll_base);
+	mdelay(1);
+}
+
+void uniphy_port5_clock_source_set(void)
+{
+	int reg_val, reg_val1, node, mode;
+
 	reg_val = readl(NSS_CC_PORT_SPEED_DIVIDER + 0x64);
 	reg_val1 = readl(NSS_CC_PORT_SPEED_DIVIDER + 0x70);
 
@@ -893,30 +1012,33 @@ void eth_clock_enable(void)
 		printf("\nError: switch_mac_mode1 not specified in dts");
 		return;
 	}
-	if (mode == 0xFF) { /* PORT_WRAPPER_MAX */
+	if (mode == PORT_WRAPPER_MAX) { /* PORT_WRAPPER_MAX */
 		reg_val |= 0x200;
 		reg_val1 |= 0x300;
 	} else {
 		reg_val |= 0x400;
-		reg_val |= 0x500;
+		reg_val1 |= 0x500;
 	}
 
 	writel(reg_val, NSS_CC_PORT_SPEED_DIVIDER + 0x64);
 	writel(0x1, NSS_CC_PORT_SPEED_DIVIDER + 0x60);
 	writel(reg_val1, NSS_CC_PORT_SPEED_DIVIDER + 0x70);
 	writel(0x1, NSS_CC_PORT_SPEED_DIVIDER + 0x6c);
+}
 
-	/* PPE Clock init and NSS PPE Assert/De-assert */
+void nss_ppe_reset(void)
+{
+	unsigned int reg_val;
+
 	reg_val = readl(NSS_CC_PPE_RESET_ADDR);
 	writel(reg_val | 0x1e0000, NSS_CC_PPE_RESET_ADDR);
 	mdelay(500);
 	writel(reg_val & (~0x1e0000), NSS_CC_PPE_RESET_ADDR);
 	mdelay(100);
+}
 
-	/* Set function select as MDI */
-	set_function_select_as_mdc_mdio();
-
-	/* Bring PHY out of RESET */
+void bring_phy_out_of_reset(void)
+{
 	qca807x_phy_reset_init();
 	aquantia_phy_reset_init();
 	qca808x_phy_reset_init();
@@ -926,6 +1048,31 @@ void eth_clock_enable(void)
 	qca808x_phy_reset_init_done();
 	mdelay(500);
 }
+
+void eth_clock_init(void)
+{
+	nssnoc_init();
+
+	fixed_clock_init();
+
+	uniphy_clk_init();
+
+	cmnblk_init();
+
+	uniphy_port5_clock_source_set();
+}
+
+void ipq9574_eth_initialize(void)
+{
+	eth_clock_init();
+
+	nss_ppe_reset();
+
+	set_function_select_as_mdc_mdio();
+
+	bring_phy_out_of_reset();
+}
+
 #endif
 
 #ifdef CONFIG_IPQ9574_EDMA
@@ -934,7 +1081,7 @@ int board_eth_init(bd_t *bis)
 	int ret = 0;
 
 #ifndef CONFIG_IPQ9574_RUMI
-	eth_clock_enable();
+	ipq9574_eth_initialize();
 #endif
 
 	ret = ipq9574_edma_init(NULL);
