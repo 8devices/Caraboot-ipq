@@ -1012,7 +1012,7 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 	for (i =  0; i < IPQ9574_PHY_MAX; i++) {
 #ifndef CONFIG_IPQ9574_RUMI
 		if (!priv->ops[i]) {
-			printf ("Phy ops not mapped\n");
+			printf("Phy ops not mapped\n");
 			continue;
 		}
 		phy_get_ops = priv->ops[i];
@@ -1020,7 +1020,7 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 		if (!phy_get_ops->phy_get_link_status ||
 				!phy_get_ops->phy_get_speed ||
 				!phy_get_ops->phy_get_duplex) {
-			printf ("Error:Link status/Get speed/Get duplex not mapped\n");
+			printf("Error:Link status/Get speed/Get duplex not mapped\n");
 			return -1;
 		}
 
@@ -1031,7 +1031,7 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 			 */
 			phy_addr = phy_info[i]->phy_address;
 		} else {
-			printf ("Error:Phy addresses not configured in DT\n");
+			printf("Error:Phy addresses not configured in DT\n");
 			return -1;
 		}
 
@@ -1042,7 +1042,7 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 		if (status == 0) {
 			linkup++;
 			if (old_speed[i] == curr_speed[i]) {
-				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
+				printf("eth%d PHY%d %s Speed :%d %s duplex\n",
 					priv->mac_unit, i, lstatus[status], curr_speed[i],
 					dp[duplex]);
 				continue;
@@ -1050,7 +1050,7 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 				old_speed[i] = curr_speed[i];
 			}
 		} else {
-			printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
+			printf("eth%d PHY%d %s Speed :%d %s duplex\n",
 				priv->mac_unit, i, lstatus[status], curr_speed[i],
 				dp[duplex]);
 			continue;
@@ -1091,7 +1091,7 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 						}
 					}
 				}
-				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
+				printf("eth%d PHY%d %s Speed :%d %s duplex\n",
 						priv->mac_unit, i, lstatus[status], curr_speed[i],
 						dp[duplex]);
 				break;
@@ -1118,7 +1118,7 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 						}
 					}
 				}
-				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
+				printf("eth%d PHY%d %s Speed :%d %s duplex\n",
 						priv->mac_unit, i, lstatus[status], curr_speed[i],
 						dp[duplex]);
 				break;
@@ -1146,7 +1146,7 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 						}
 					}
 				}
-				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
+				printf("eth%d PHY%d %s Speed :%d %s duplex\n",
 						priv->mac_unit, i, lstatus[status], curr_speed[i],
 						dp[duplex]);
 				break;
@@ -1176,7 +1176,7 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 						}
 					}
 				}
-				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
+				printf("eth%d PHY%d %s Speed :%d %s duplex\n",
 						priv->mac_unit, i, lstatus[status], curr_speed[i],
 						dp[duplex]);
 				break;
@@ -1191,7 +1191,7 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 					clk[0] = 0x203;
 					clk[2] = 0x303;
 				}
-				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
+				printf("eth%d PHY%d %s Speed :%d %s duplex\n",
 						priv->mac_unit, i, lstatus[status], curr_speed[i],
 						dp[duplex]);
 				break;
@@ -1206,7 +1206,7 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 					clk[0] = 0x201;
 					clk[2] = 0x301;
 				}
-				printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
+				printf("eth%d PHY%d %s Speed :%d %s duplex\n",
 						priv->mac_unit, i, lstatus[status], curr_speed[i],
 						dp[duplex]);
 				break;
@@ -1221,15 +1221,15 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 				ppe_port_bridge_txmac_set(i + 1, 1);
 				if (sgmii_mode == 1) { /* SGMII Mode */
 					if (i == 4)
-						ppe_uniphy_mode_set(0x1, PORT_WRAPPER_SGMII0_RGMII4);
+						ppe_uniphy_mode_set(0x1, EPORT_WRAPPER_SGMII0_RGMII4);
 					else if (i == 5)
-						ppe_uniphy_mode_set(0x2, PORT_WRAPPER_SGMII0_RGMII4);
+						ppe_uniphy_mode_set(0x2, EPORT_WRAPPER_SGMII0_RGMII4);
 
 				} else if (sgmii_mode == 0) { /* SGMII Plus Mode */
 					if (i == 4)
-						ppe_uniphy_mode_set(0x1, PORT_WRAPPER_SGMII_PLUS);
+						ppe_uniphy_mode_set(0x1, EPORT_WRAPPER_SGMII_PLUS);
 					else if (i == 5)
-						ppe_uniphy_mode_set(0x2, PORT_WRAPPER_SGMII_PLUS);
+						ppe_uniphy_mode_set(0x2, EPORT_WRAPPER_SGMII_PLUS);
 				}
 			}
 		}
@@ -2027,7 +2027,7 @@ int ipq9574_edma_init(void *edma_board_cfg)
 			if (phy_node >= 0) {
 				phy_addr = phy_info[phy_id]->phy_address;
 			} else {
-				printf ("Error:Phy addresses not configured in DT\n");
+				printf("Error:Phy addresses not configured in DT\n");
 				goto init_failed;
 			}
 
@@ -2039,6 +2039,8 @@ int ipq9574_edma_init(void *edma_board_cfg)
 				phy_chip_id2 = ipq_mdio_read(phy_addr, (1<<30) |(1<<16) | QCA_PHY_ID2, NULL);
 				phy_chip_id = (phy_chip_id1 << 16) | phy_chip_id2;
 			}
+			pr_debug("phy_id is: 0x%x, phy_chip_id1 = 0x%x, phy_chip_id2 = 0x%x, phy_chip_id = 0x%x\n",
+				 phy_id, phy_chip_id1, phy_chip_id2, phy_chip_id);
 			switch(phy_chip_id) {
 				case QCA8075_PHY_V1_0_5P:
 				case QCA8075_PHY_V1_1_5P:
@@ -2052,9 +2054,9 @@ int ipq9574_edma_init(void *edma_board_cfg)
 						ipq_qca8075_phy_map_ops(&ipq9574_edma_dev[i]->ops[phy_id]);
 					}
 
-					if (mode == PORT_WRAPPER_PSGMII)
+					if (mode == EPORT_WRAPPER_PSGMII)
 						qca8075_phy_interface_set_mode(0x0, 0x0);
-					else if ( mode == PORT_WRAPPER_QSGMII)
+					else if (mode == EPORT_WRAPPER_QSGMII)
 						qca8075_phy_interface_set_mode(0x0, 0x4);
 					break;
 #ifdef CONFIG_QCA8033_PHY
@@ -2068,7 +2070,7 @@ int ipq9574_edma_init(void *edma_board_cfg)
 					ipq_qca8081_phy_init(&ipq9574_edma_dev[i]->ops[phy_id], phy_addr);
 					break;
 #endif
-#ifdef CONFIG_QCA_AQUANTIA_PHY
+#ifdef CONFIG_IPQ9574_QCA_AQUANTIA_PHY
 				case AQUANTIA_PHY_107:
 				case AQUANTIA_PHY_109:
 				case AQUANTIA_PHY_111:
@@ -2077,7 +2079,10 @@ int ipq9574_edma_init(void *edma_board_cfg)
 				case AQUANTIA_PHY_112C:
 				case AQUANTIA_PHY_113C_A0:
 				case AQUANTIA_PHY_113C_A1:
+				case AQUANTIA_PHY_113C_B0:
+				case AQUANTIA_PHY_113C_B1:
 					ipq_board_fw_download(phy_addr);
+					mdelay(100);
 					ipq_qca_aquantia_phy_init(&ipq9574_edma_dev[i]->ops[phy_id], phy_addr);
 					break;
 #endif
