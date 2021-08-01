@@ -255,19 +255,19 @@ static void ppe_uniphy_sgmii_mode_set(uint32_t uniphy_index, uint32_t mode)
 	}
 
 	switch (mode) {
-		case PORT_WRAPPER_SGMII_FIBER:
+		case EPORT_WRAPPER_SGMII_FIBER:
 			writel(0x400, PPE_UNIPHY_BASE + (uniphy_index * PPE_UNIPHY_REG_INC)
 					 + PPE_UNIPHY_MODE_CONTROL);
 			break;
 
-		case PORT_WRAPPER_SGMII0_RGMII4:
-		case PORT_WRAPPER_SGMII1_RGMII4:
-		case PORT_WRAPPER_SGMII4_RGMII4:
+		case EPORT_WRAPPER_SGMII0_RGMII4:
+		case EPORT_WRAPPER_SGMII1_RGMII4:
+		case EPORT_WRAPPER_SGMII4_RGMII4:
 			writel(0x420, PPE_UNIPHY_BASE + (uniphy_index * PPE_UNIPHY_REG_INC)
 					 + PPE_UNIPHY_MODE_CONTROL);
 			break;
 
-		case PORT_WRAPPER_SGMII_PLUS:
+		case EPORT_WRAPPER_SGMII_PLUS:
 			writel(0x820, PPE_UNIPHY_BASE + (uniphy_index * PPE_UNIPHY_REG_INC)
 					 + PPE_UNIPHY_MODE_CONTROL);
 			break;
@@ -386,17 +386,19 @@ static void ppe_uniphy_usxgmii_mode_set(uint32_t uniphy_index)
 
 	if (uniphy_index == 0) {
 		ppe_uniphy_reset(UNIPHY0_SOFT_RESET, true);
-		udelay(500);
+		mdelay(100);
 		ppe_uniphy_reset(UNIPHY0_SOFT_RESET, false);
 	} else if (uniphy_index == 1) {
 		ppe_uniphy_reset(UNIPHY1_SOFT_RESET, true);
-		udelay(500);
+		mdelay(100);
 		ppe_uniphy_reset(UNIPHY1_SOFT_RESET, false);
 	} else {
 		ppe_uniphy_reset(UNIPHY2_SOFT_RESET, true);
-		udelay(500);
+		mdelay(100);
 		ppe_uniphy_reset(UNIPHY2_SOFT_RESET, false);
 	}
+
+	mdelay(100);
 
 	ppe_uniphy_calibration(uniphy_index);
 
@@ -425,23 +427,23 @@ static void ppe_uniphy_usxgmii_mode_set(uint32_t uniphy_index)
 void ppe_uniphy_mode_set(uint32_t uniphy_index, uint32_t mode)
 {
 	switch(mode) {
-		case PORT_WRAPPER_PSGMII:
+		case EPORT_WRAPPER_PSGMII:
 			ppe_uniphy_psgmii_mode_set(uniphy_index);
 			break;
-		case PORT_WRAPPER_QSGMII:
+		case EPORT_WRAPPER_QSGMII:
 			ppe_uniphy_qsgmii_mode_set(uniphy_index);
 			break;
-		case PORT_WRAPPER_SGMII0_RGMII4:
-		case PORT_WRAPPER_SGMII1_RGMII4:
-		case PORT_WRAPPER_SGMII4_RGMII4:
-		case PORT_WRAPPER_SGMII_PLUS:
-		case PORT_WRAPPER_SGMII_FIBER:
+		case EPORT_WRAPPER_SGMII0_RGMII4:
+		case EPORT_WRAPPER_SGMII1_RGMII4:
+		case EPORT_WRAPPER_SGMII4_RGMII4:
+		case EPORT_WRAPPER_SGMII_PLUS:
+		case EPORT_WRAPPER_SGMII_FIBER:
 			ppe_uniphy_sgmii_mode_set(uniphy_index, mode);
 			break;
-		case PORT_WRAPPER_USXGMII:
+		case EPORT_WRAPPER_USXGMII:
 			ppe_uniphy_usxgmii_mode_set(uniphy_index);
 			break;
-		case PORT_WRAPPER_10GBASE_R:
+		case EPORT_WRAPPER_10GBASE_R:
 			ppe_uniphy_10g_r_mode_set(uniphy_index);
 			break;
 		default:
