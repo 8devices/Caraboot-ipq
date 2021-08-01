@@ -293,6 +293,7 @@ extern loff_t board_env_size;
 #endif
 
 #define CONFIG_IPQ9574_EDMA		1
+#ifdef CONFIG_IPQ9574_EDMA
 #define CONFIG_IPQ9574_BRIDGED_MODE	1
 #define CONFIG_NET_RETRY_COUNT		5
 #define CONFIG_SYS_RX_ETH_BUFFER	128
@@ -306,6 +307,7 @@ extern loff_t board_env_size;
 #define CONFIG_CMD_TFTPPUT
 #define CONFIG_IPQ_MDIO			1
 #define CONFIG_IPQ_ETH_INIT_DEFER
+#endif
 
 /*
  * CRASH DUMP ENABLE
