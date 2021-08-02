@@ -31,7 +31,6 @@
 #define PORT4					4
 #define PORT5					5
 #define PORT6					6
-#define PORT7					7
 
 #define IPQ9574_PORT5_MUX_PCS_UNIPHY0		0x0
 #define IPQ9574_PORT5_MUX_PCS_UNIPHY1		0x1

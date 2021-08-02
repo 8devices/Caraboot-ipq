@@ -23,6 +23,7 @@
 #include <asm/arch-ipq9574/edma_regs.h>
 #include "ipq9574_edma.h"
 #include "ipq9574_uniphy.h"
+#include "ipq9574_ppe.h"
 #include <fdtdec.h>
 #include "ipq_phy.h"
 
@@ -243,15 +244,15 @@ static void ppe_uniphy_sgmii_mode_set(uint32_t uniphy_index, uint32_t mode)
 		ppe_uniphy_reset(UNIPHY2_XPCS_RESET, true);
 
 	if (uniphy_index == 1) {
-		writel(0x0, NSS_CC_UNIPHY_PORT1_RX_CBCR + 3*0x8);
-		writel(0x0, NSS_CC_UNIPHY_PORT1_RX_CBCR + 0x4 + 3*0x8);
-		writel(0x0, NSS_CC_PORT1_RX_CBCR + 3*0x8);
-		writel(0x0, NSS_CC_PORT1_RX_CBCR + 0x4 + 3*0x8);
+		writel(0x0, NSS_CC_UNIPHY_PORT1_RX_CBCR + (PORT5 - 1) * 0x8);
+		writel(0x0, NSS_CC_UNIPHY_PORT1_RX_CBCR + 0x4 + (PORT5 - 1) * 0x8);
+		writel(0x0, NSS_CC_PORT1_RX_CBCR + (PORT5 - 1) * 0x8);
+		writel(0x0, NSS_CC_PORT1_RX_CBCR + 0x4 + (PORT5 - 1) * 0x8);
 	} else if (uniphy_index == 2) {
-		writel(0x0, NSS_CC_UNIPHY_PORT1_RX_CBCR + 4*0x8);
-		writel(0x0, NSS_CC_UNIPHY_PORT1_RX_CBCR + 0x4 + 4*8);
-		writel(0x0, NSS_CC_PORT1_RX_CBCR + 4*0x8);
-		writel(0x0, NSS_CC_PORT1_RX_CBCR + 0x4 + 4*0x8);
+		writel(0x0, NSS_CC_UNIPHY_PORT1_RX_CBCR + (PORT6 - 1) * 0x8);
+		writel(0x0, NSS_CC_UNIPHY_PORT1_RX_CBCR + 0x4 + (PORT6 - 1) * 8);
+		writel(0x0, NSS_CC_PORT1_RX_CBCR + (PORT6 - 1) * 0x8);
+		writel(0x0, NSS_CC_PORT1_RX_CBCR + 0x4 + (PORT6 - 1) * 0x8);
 	}
 
 	switch (mode) {
@@ -292,15 +293,15 @@ static void ppe_uniphy_sgmii_mode_set(uint32_t uniphy_index, uint32_t mode)
 	}
 
 	if (uniphy_index == 1) {
-		writel(0x1, NSS_CC_UNIPHY_PORT1_RX_CBCR + 3*0x8);
-		writel(0x1, NSS_CC_UNIPHY_PORT1_RX_CBCR + 0x4 + 3*0x8);
-		writel(0x1, NSS_CC_PORT1_RX_CBCR + 3*0x8);
-		writel(0x1, NSS_CC_PORT1_RX_CBCR + 0x4 + 3*0x8);
+		writel(0x1, NSS_CC_UNIPHY_PORT1_RX_CBCR + (PORT5 - 1) * 0x8);
+		writel(0x1, NSS_CC_UNIPHY_PORT1_RX_CBCR + 0x4 + (PORT5 - 1) * 0x8);
+		writel(0x1, NSS_CC_PORT1_RX_CBCR + (PORT5 - 1) * 0x8);
+		writel(0x1, NSS_CC_PORT1_RX_CBCR + 0x4 + (PORT5 - 1) * 0x8);
 	} else if (uniphy_index == 2) {
-		writel(0x1, NSS_CC_UNIPHY_PORT1_RX_CBCR + 4*0x8);
-		writel(0x1, NSS_CC_UNIPHY_PORT1_RX_CBCR + 0x4 + 4*8);
-		writel(0x1, NSS_CC_PORT1_RX_CBCR + 4*0x8);
-		writel(0x1, NSS_CC_PORT1_RX_CBCR + 0x4 + 4*0x8);
+		writel(0x1, NSS_CC_UNIPHY_PORT1_RX_CBCR + (PORT6 - 1) * 0x8);
+		writel(0x1, NSS_CC_UNIPHY_PORT1_RX_CBCR + 0x4 + (PORT6 - 1) * 8);
+		writel(0x1, NSS_CC_PORT1_RX_CBCR + (PORT6 - 1) * 0x8);
+		writel(0x1, NSS_CC_PORT1_RX_CBCR + 0x4 + (PORT6 - 1) * 0x8);
 	}
 
 	ppe_uniphy_calibration(uniphy_index);
@@ -386,19 +387,17 @@ static void ppe_uniphy_usxgmii_mode_set(uint32_t uniphy_index)
 
 	if (uniphy_index == 0) {
 		ppe_uniphy_reset(UNIPHY0_SOFT_RESET, true);
-		mdelay(100);
+		udelay(500);
 		ppe_uniphy_reset(UNIPHY0_SOFT_RESET, false);
 	} else if (uniphy_index == 1) {
 		ppe_uniphy_reset(UNIPHY1_SOFT_RESET, true);
-		mdelay(100);
+		udelay(500);
 		ppe_uniphy_reset(UNIPHY1_SOFT_RESET, false);
 	} else {
 		ppe_uniphy_reset(UNIPHY2_SOFT_RESET, true);
-		mdelay(100);
+		udelay(500);
 		ppe_uniphy_reset(UNIPHY2_SOFT_RESET, false);
 	}
-
-	mdelay(100);
 
 	ppe_uniphy_calibration(uniphy_index);
 

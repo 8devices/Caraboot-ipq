@@ -475,7 +475,7 @@ void ipq9574_pqsgmii_speed_set(int port, int speed, int status)
 	ppe_port_bridge_txmac_set(port + 1, status);
 	ipq9574_ppe_reg_write(IPQ9574_PPE_MAC_SPEED + (0x200 * port), speed);
 	ipq9574_ppe_reg_write(IPQ9574_PPE_MAC_ENABLE + (0x200 * port), 0x73);
-	ipq9574_ppe_reg_write(IPQ9574_PPE_MAC_MIB_CTL + (0x200 * port), 0x5);
+	ipq9574_ppe_reg_write(IPQ9574_PPE_MAC_MIB_CTL + (0x200 * port), 0x1);
 }
 
 /*

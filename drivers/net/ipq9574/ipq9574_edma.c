@@ -50,11 +50,7 @@ phy_info_t *phy_info[IPQ9574_PHY_MAX] = {0};
 int sgmii_mode[2] = {0};
 
 #ifndef CONFIG_IPQ9574_RUMI
-extern void qca8075_ess_reset(void);
-extern void psgmii_self_test(void);
-extern void clear_self_test_config(void);
 extern int ipq_sw_mdio_init(const char *);
-extern void ipq_qca8075_dump_phy_regs(u32);
 extern int ipq_mdio_read(int mii_id, int regnum, ushort *data);
 extern void ipq_qca8075_phy_map_ops(struct phy_ops **ops);
 extern int ipq_qca8075_phy_init(struct phy_ops **ops);
@@ -71,24 +67,6 @@ static int tftp_acl_our_port;
  * EDMA hardware instance
  */
 static u32 ipq9574_edma_hw_addr;
-
-void ipq9574_edma_dump_data(uchar *data, int len)
-{
-	int i;
-
-	if (data == NULL)
-		return;
-
-	pr_info("data address = 0x%x, len = %d \n", (unsigned int)data, len);
-
-	for (i = 0; i < len; i++) {
-		if ((i % 16) == 0)
-			printf("\n");
-		pr_info("%02x ", (unsigned int)data[i]);
-	}
-
-	pr_info("\n\n");
-}
 
 /*
  * ipq9574_edma_reg_read()
@@ -1658,9 +1636,9 @@ static void ipq9574_edma_configure_rings(struct ipq9574_edma_hw *ehw)
  */
 void ipq9574_edma_hw_reset(void)
 {
-	writel(GCC_EDMA_HW_RESET_ASSERT, GCC_NSS_PPE_RESET);
+	writel(NSS_CC_EDMA_HW_RESET_ASSERT, NSS_CC_PPE_RESET_ADDR);
 	udelay(100);
-	writel(GCC_EDMA_HW_RESET_DEASSERT, GCC_NSS_PPE_RESET);
+	writel(NSS_CC_EDMA_HW_RESET_DEASSERT, NSS_CC_PPE_RESET_ADDR);
 	udelay(100);
 }
 
