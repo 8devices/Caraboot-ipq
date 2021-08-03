@@ -621,7 +621,7 @@ int get_qca807x_gpio(int qca807x_gpio[2])
 
 void aquantia_phy_reset_init(void)
 {
-	int aquantia_gpio[2] = {0}, aquantia_gpio_cnt, i;
+	int aquantia_gpio[2] = {-1, -1}, aquantia_gpio_cnt, i;
 	unsigned int *aquantia_gpio_base;
 	uint32_t cfg;
 
@@ -639,7 +639,7 @@ void aquantia_phy_reset_init(void)
 
 void qca808x_phy_reset_init(void)
 {
-	int qca808x_gpio[2] = {0}, qca808x_gpio_cnt, i;
+	int qca808x_gpio[2] = {-1, -1}, qca808x_gpio_cnt, i;
 	unsigned int *qca808x_gpio_base;
 	uint32_t cfg;
 
@@ -657,7 +657,7 @@ void qca808x_phy_reset_init(void)
 
 void qca807x_phy_reset_init(void)
 {
-	int qca807x_gpio[2] = {0}, qca807x_gpio_cnt, i;
+	int qca807x_gpio[2] = {-1, -1}, qca807x_gpio_cnt, i;
 	unsigned int *qca807x_gpio_base;
 	uint32_t cfg;
 
@@ -675,7 +675,7 @@ void qca807x_phy_reset_init(void)
 
 void aquantia_phy_reset_init_done(void)
 {
-	int aquantia_gpio[2] = {0}, aquantia_gpio_cnt, i;
+	int aquantia_gpio[2] = {-1, -1}, aquantia_gpio_cnt, i;
 
 	aquantia_gpio_cnt = get_aquantia_gpio(aquantia_gpio);
 	if (aquantia_gpio_cnt >= 1) {
@@ -686,7 +686,7 @@ void aquantia_phy_reset_init_done(void)
 
 void qca808x_phy_reset_init_done(void)
 {
-	int qca808x_gpio[2] = {0}, qca808x_gpio_cnt, i;
+	int qca808x_gpio[2] = {-1, -1}, qca808x_gpio_cnt, i;
 
 	qca808x_gpio_cnt = get_qca808x_gpio(qca808x_gpio);
 	if (qca808x_gpio_cnt >= 1) {
@@ -697,7 +697,7 @@ void qca808x_phy_reset_init_done(void)
 
 void qca807x_phy_reset_init_done(void)
 {
-	int qca807x_gpio[2] = {0}, qca807x_gpio_cnt, i;
+	int qca807x_gpio[2] = {-1, -1}, qca807x_gpio_cnt, i;
 
 	qca807x_gpio_cnt = get_qca807x_gpio(qca807x_gpio);
 	if (qca807x_gpio_cnt >= 1) {
@@ -723,7 +723,7 @@ int get_mdc_mdio_gpio(int mdc_mdio_gpio[2])
 
 void set_function_select_as_mdc_mdio(void)
 {
-	int mdc_mdio_gpio[2] = {0}, mdc_mdio_gpio_cnt, i;
+	int mdc_mdio_gpio[2] = {-1, -1}, mdc_mdio_gpio_cnt, i;
 	unsigned int *mdc_mdio_gpio_base;
 	uint32_t cfg;
 
