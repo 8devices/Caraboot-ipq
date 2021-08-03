@@ -102,6 +102,7 @@ obj-$(CONFIG_IPQ5018_GMAC) += ipq5018/athrs17_phy.o
 obj-$(CONFIG_IPQ_MDIO) += ipq_common/ipq_mdio.o
 obj-$(CONFIG_GEPHY) += ipq_common/ipq_gephy.o
 obj-$(CONFIG_QCA8075_PHY) += ipq_common/ipq_qca8075.o
+obj-$(CONFIG_IPQ9574_QCA8075_PHY) += ipq9574/ipq9574_qca8075.o
 obj-$(CONFIG_QCA8033_PHY) += ipq_common/ipq_qca8033.o
 obj-$(CONFIG_QCA8081_PHY) += ipq_common/ipq_qca8081.o
 obj-$(CONFIG_QCA_AQUANTIA_PHY) += ipq807x/ipq807x_aquantia_phy.o
