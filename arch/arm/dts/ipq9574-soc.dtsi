@@ -45,6 +45,34 @@
 		};
 	};
 
+	serial@78B2000 {
+		compatible = "qca,ipq-uartdm";
+		reg = <0x78B2000 0x200>;
+		id = <2>;
+		bit_rate = <0xff>;
+		status = "ok";
+		m_value = <36>;
+		n_value = <15625>;
+		d_value = <15625>;
+		serial_gpio {
+			gpio1 {
+				gpio = <17>;
+				func = <2>;
+				pull = <GPIO_NO_PULL>;
+				drvstr = <GPIO_8MA>;
+				oe = <GPIO_OE_ENABLE>;
+			};
+
+			gpio2 {
+				gpio = <18>;
+				func = <2>;
+				pull = <GPIO_NO_PULL>;
+				drvstr = <GPIO_8MA>;
+				oe = <GPIO_OE_ENABLE>;
+			};
+		};
+	};
+
 	serial@78B1000 {
 		compatible = "qca,ipq-uartdm";
 		reg = <0x78B1000 0x200>;
