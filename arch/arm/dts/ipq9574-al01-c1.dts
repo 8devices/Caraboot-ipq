@@ -22,7 +22,6 @@
 	aliases {
 		console = "/serial@78B1000";
 		uart2 = "/serial@78B2000";
-		mmc = "/sdhci@7804000";
 		usb0 = "/xhci@8a00000";
 		pci0 = "/pci@28000000";
 		pci1 = "/pci@10000000";
