@@ -209,14 +209,10 @@
 				phy_type = <QCA807x_PHY_TYPE>;
 			};
 			port@4 {
-				phy_address = <20>;
-				phy_type = <QCA807x_PHY_TYPE>;
-			};
-			port@5 {
 				phy_address = <8>;
 				phy_type = <AQ_PHY_TYPE>;
 			};
-			port@6 {
+			port@5 {
 				phy_address = <28>;
 				phy_type = <QCA808x_PHY_TYPE>;
 			};
