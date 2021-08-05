@@ -561,7 +561,6 @@ int set_uuid_bootargs(char *boot_args, char *part_name, int buflen, bool gpt_fla
 }
 #endif
 
-#ifndef CONFIG_IPQ9574_RUMI
 int get_aquantia_gpio(int aquantia_gpio[2])
 {
 	int aquantia_gpio_cnt = -1, node;
@@ -974,6 +973,14 @@ void uniphy_clk_init(void)
 		uniphy_clock_enable(i, true);
 }
 
+void uniphy_clk_deinit(void)
+{
+	int i;
+	/* Uniphy clock enable */
+	for (i = NSS_PORT1_RX_CLK_E; i < PORT5_RX_SRC_E; i++)
+		uniphy_clock_enable(i, false);
+}
+
 void cmnblk_init(void)
 {
 	uint32_t gcc_pll_base, reg_val;
@@ -1073,16 +1080,12 @@ void ipq9574_eth_initialize(void)
 	bring_phy_out_of_reset();
 }
 
-#endif
-
 #ifdef CONFIG_IPQ9574_EDMA
 int board_eth_init(bd_t *bis)
 {
 	int ret = 0;
 
-#ifndef CONFIG_IPQ9574_RUMI
 	ipq9574_eth_initialize();
-#endif
 
 	ret = ipq9574_edma_init(NULL);
 	if (ret != 0)

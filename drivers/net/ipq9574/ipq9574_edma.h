@@ -21,23 +21,27 @@
 #define IPQ9574_NSS_DP_START_PHY_PORT   1
 #define IPQ9574_NSS_DP_MAX_PHY_PORTS    6
 
-#define IPQ9574_EDMA_BUF_SIZE		2000
 #define IPQ9574_EDMA_DEVICE_NODE_NAME	"edma"
-#define IPQ9574_EDMA_RX_BUFF_SIZE	(IPQ9574_EDMA_BUF_SIZE \
-						+ IPQ9574_EDMA_RX_SEC_DESC_SIZE)
+
+/* Number of descriptors in each ring is defined with below macro */
+#define EDMA_RING_SIZE			128
+
+/* Number of byte in a descriptor is defined with below macros for each of
+ * the rings respectively */
+#define IPQ9574_EDMA_TXDESC_DESC_SIZE	(sizeof(struct ipq9574_edma_txdesc_desc))
+#define IPQ9574_EDMA_TXCMPL_DESC_SIZE	(sizeof(struct ipq9574_edma_txcmpl_desc))
+#define IPQ9574_EDMA_RXDESC_DESC_SIZE	(sizeof(struct ipq9574_edma_rxdesc_desc))
+#define IPQ9574_EDMA_RXFILL_DESC_SIZE	(sizeof(struct ipq9574_edma_rxfill_desc))
 #define IPQ9574_EDMA_RX_SEC_DESC_SIZE	(sizeof(struct ipq9574_edma_rx_sec_desc))
 #define IPQ9574_EDMA_TX_SEC_DESC_SIZE	(sizeof(struct ipq9574_edma_tx_sec_desc))
 
-#define EDMA_RING_SIZE			128
-#define IPQ9574_EDMA_TXDESC_RING_SIZE	32
-#define IPQ9574_EDMA_TXCMPL_RING_SIZE	16
-#define IPQ9574_EDMA_RXDESC_RING_SIZE	32
-#define IPQ9574_EDMA_RXFILL_RING_SIZE	16
-
 #define IPQ9574_EDMA_START_GMACS	IPQ9574_NSS_DP_START_PHY_PORT
 #define IPQ9574_EDMA_MAX_GMACS		IPQ9574_NSS_DP_MAX_PHY_PORTS
-#define IPQ9574_EDMA_TX_BUFF_SIZE	(1540 + IPQ9574_EDMA_TX_SEC_DESC_SIZE)
 
+#define IPQ9574_EDMA_TX_BUFF_SIZE	1572
+#define IPQ9574_EDMA_RX_BUFF_SIZE	2048
+
+/* Max number of rings of each type is defined with below macro */
 #define IPQ9574_EDMA_MAX_TXCMPL_RINGS	32	/* Max TxCmpl rings */
 #define IPQ9574_EDMA_MAX_RXDESC_RINGS	24	/* Max RxDesc rings */
 #define IPQ9574_EDMA_MAX_RXFILL_RINGS	8	/* Max RxFill rings */
@@ -54,17 +58,19 @@
 #define IPQ9574_EDMA_TX_QUEUE		1
 #define IPQ9574_EDMA_RX_QUEUE		1
 
+/* Only 1 ring of each type will be used in U-Boot which is defined with
+ * below macros */
 #define IPQ9574_EDMA_TX_DESC_RING_START	23
 #define IPQ9574_EDMA_TX_DESC_RING_NOS	1
 #define IPQ9574_EDMA_TX_DESC_RING_SIZE	\
 (IPQ9574_EDMA_TX_DESC_RING_START + IPQ9574_EDMA_TX_DESC_RING_NOS)
 
-#define IPQ9574_EDMA_SEC_TX_DESC_RING_START	23
+#define IPQ9574_EDMA_SEC_TX_DESC_RING_START	31
 #define IPQ9574_EDMA_SEC_TX_DESC_RING_NOS	1
 #define IPQ9574_EDMA_SEC_TX_DESC_RING_SIZE	\
 (IPQ9574_EDMA_SEC_TX_DESC_RING_START + IPQ9574_EDMA_SEC_TX_DESC_RING_NOS)
 
-#define IPQ9574_EDMA_TX_CMPL_RING_START	23
+#define IPQ9574_EDMA_TX_CMPL_RING_START	31
 #define IPQ9574_EDMA_TX_CMPL_RING_NOS	1
 #define IPQ9574_EDMA_TX_CMPL_RING_SIZE	\
 (IPQ9574_EDMA_TX_CMPL_RING_START + IPQ9574_EDMA_TX_CMPL_RING_NOS)
