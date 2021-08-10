@@ -32,7 +32,7 @@ extern int ipq_mdio_write(int mii_id,
 		int regnum, u16 value);
 extern int ipq_mdio_read(int mii_id,
 		int regnum, ushort *data);
-extern void qca8075_phy_serdes_reset(u32 phy_id);
+extern void ipq9574_qca8075_phy_serdes_reset(u32 phy_id);
 
 void csr1_write(int phy_id, int addr, int  value)
 {
@@ -197,7 +197,7 @@ static void ppe_uniphy_psgmii_mode_set(uint32_t uniphy_index)
 		ppe_uniphy_reset(UNIPHY2_SOFT_RESET, false);
 	}
 	ppe_uniphy_calibration(uniphy_index);
-	qca8075_phy_serdes_reset(0);
+	ipq9574_qca8075_phy_serdes_reset(0x10);
 }
 
 static void ppe_uniphy_qsgmii_mode_set(uint32_t uniphy_index)

@@ -52,9 +52,9 @@ int sgmii_mode[2] = {0};
 #ifndef CONFIG_IPQ9574_RUMI
 extern int ipq_sw_mdio_init(const char *);
 extern int ipq_mdio_read(int mii_id, int regnum, ushort *data);
-extern void ipq_qca8075_phy_map_ops(struct phy_ops **ops);
-extern int ipq_qca8075_phy_init(struct phy_ops **ops);
-extern void qca8075_phy_interface_set_mode(uint32_t phy_id, uint32_t mode);
+extern void ipq9574_qca8075_phy_map_ops(struct phy_ops **ops);
+extern int ipq9574_qca8075_phy_init(struct phy_ops **ops, u32 phy_id);
+extern void ipq9574_qca8075_phy_interface_set_mode(uint32_t phy_id, uint32_t mode);
 extern int ipq_qca8033_phy_init(struct phy_ops **ops, u32 phy_id);
 extern int ipq_qca8081_phy_init(struct phy_ops **ops, u32 phy_id);
 extern int ipq_qca_aquantia_phy_init(struct phy_ops **ops, u32 phy_id);
@@ -963,7 +963,7 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 	char *dp[] = {"Half", "Full"};
 	int linkup=0;
 	int clk[4] = {0};
-	int phy_addr, node, aquantia_port[2] = {-1}, aquantia_port_cnt = -1;
+	int phy_addr, node, aquantia_port[2] = {-1, -1}, aquantia_port_cnt = -1;
 	int phy_node = -1, res = -1;
 	int sgmii_mode;
 
@@ -1215,7 +1215,6 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 		ipq9574_speed_clock_set(i, clk);
 
 		ipq9574_port_mac_clock_reset(i);
-
 		if (i == aquantia_port[0] || i == aquantia_port[1])
 			ipq9574_uxsgmii_speed_set(i, mac_speed, duplex, status);
 		else
@@ -1894,7 +1893,7 @@ int ipq9574_edma_init(void *edma_board_cfg)
 	int phy_id;
 	uint32_t phy_chip_id, phy_chip_id1, phy_chip_id2;
 	static int sw_init_done = 0;
-	int node, phy_addr, aquantia_port[2] = {-1}, aquantia_port_cnt = -1;
+	int node, phy_addr, aquantia_port[2] = {-1, -1}, aquantia_port_cnt = -1;
 	int mode, phy_node = -1, res = -1;
 
 	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
@@ -2017,25 +2016,24 @@ int ipq9574_edma_init(void *edma_board_cfg)
 				phy_chip_id2 = ipq_mdio_read(phy_addr, (1<<30) |(1<<16) | QCA_PHY_ID2, NULL);
 				phy_chip_id = (phy_chip_id1 << 16) | phy_chip_id2;
 			}
-			pr_debug("phy_id is: 0x%x, phy_chip_id1 = 0x%x, phy_chip_id2 = 0x%x, phy_chip_id = 0x%x\n",
-				 phy_id, phy_chip_id1, phy_chip_id2, phy_chip_id);
+			pr_debug("phy_id is: 0x%x, phy_addr = 0x%x, phy_chip_id1 = 0x%x, phy_chip_id2 = 0x%x, phy_chip_id = 0x%x\n",
+				 phy_id, phy_addr, phy_chip_id1, phy_chip_id2, phy_chip_id);
 			switch(phy_chip_id) {
 				case QCA8075_PHY_V1_0_5P:
 				case QCA8075_PHY_V1_1_5P:
 				case QCA8075_PHY_V1_1_2P:
-
 					if (!sw_init_done) {
-						if (ipq_qca8075_phy_init(&ipq9574_edma_dev[i]->ops[phy_id]) == 0) {
+						if (ipq9574_qca8075_phy_init(&ipq9574_edma_dev[i]->ops[phy_id], phy_addr) == 0) {
 							sw_init_done = 1;
 						}
 					} else {
-						ipq_qca8075_phy_map_ops(&ipq9574_edma_dev[i]->ops[phy_id]);
+						ipq9574_qca8075_phy_map_ops(&ipq9574_edma_dev[i]->ops[phy_id]);
 					}
 
 					if (mode == EPORT_WRAPPER_PSGMII)
-						qca8075_phy_interface_set_mode(0x0, 0x0);
+						ipq9574_qca8075_phy_interface_set_mode(phy_addr, 0x0);
 					else if (mode == EPORT_WRAPPER_QSGMII)
-						qca8075_phy_interface_set_mode(0x0, 0x4);
+						ipq9574_qca8075_phy_interface_set_mode(phy_addr, 0x4);
 					break;
 #ifdef CONFIG_QCA8033_PHY
 				case QCA8033_PHY:
@@ -2065,8 +2063,8 @@ int ipq9574_edma_init(void *edma_board_cfg)
 					break;
 #endif
 				default:
-					printf("\nphy id not matching, calling default qca807x ops");
-					ipq_qca8075_phy_map_ops(&ipq9574_edma_dev[i]->ops[phy_id]);
+					printf("\nphy chip id: 0x%x id not matching for phy id: 0x%x",
+						phy_chip_id, phy_id);
 					break;
 			}
 		}
