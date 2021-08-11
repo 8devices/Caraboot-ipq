@@ -450,7 +450,7 @@ void board_pci_init(int id)
 
 void board_pci_deinit()
 {
-	int node, gpio_node, i, err, pci_no;
+	int node, gpio_node, i, err, pci_no, is_x2;
 	char name[16];
 	struct fdt_resource parf;
 	struct fdt_resource pci_phy;
@@ -471,12 +471,19 @@ void board_pci_deinit()
 		if (err < 0)
 			continue;
 
-		writel(0x1, pci_phy.start + 800);
-		writel(0x0, pci_phy.start + 804);
+		pci_no = fdtdec_get_int(gd->fdt_blob, node, "id", 0);
+		if ((pci_no == 0) || (pci_no == 1))
+			is_x2 = 0;
+		else
+			is_x2 = 1;
+
+		writel(0x1, pci_phy.start + (0x800 + (0x800 * is_x2)));
+		writel(0x0, pci_phy.start + (0x804 + (0x800 * is_x2)));
+
 		gpio_node = fdt_subnode_offset(gd->fdt_blob, node, "pci_gpio");
 		if (gpio_node >= 0)
 			qca_gpio_deinit(gpio_node);
-		pci_no = fdtdec_get_int(gd->fdt_blob, node, "id", 0);
+
 		pcie_v2_clock_deinit(pci_no);
 	}
 
