@@ -561,6 +561,7 @@ int set_uuid_bootargs(char *boot_args, char *part_name, int buflen, bool gpt_fla
 }
 #endif
 
+#ifdef CONFIG_IPQ9574_EDMA
 int get_aquantia_gpio(int aquantia_gpio[2])
 {
 	int aquantia_gpio_cnt = -1, node;
@@ -1080,7 +1081,6 @@ void ipq9574_eth_initialize(void)
 	bring_phy_out_of_reset();
 }
 
-#ifdef CONFIG_IPQ9574_EDMA
 int board_eth_init(bd_t *bis)
 {
 	int ret = 0;

@@ -219,7 +219,7 @@ int board_init(void)
 		printf("WARN: ipq_board_usb_init failed\n");
 	}
 
-#ifndef CONFIG_IPQ9574_RUMI
+#ifdef CONFIG_IPQ9574_EDMA
 	aquantia_phy_reset_init();
 #endif
 	disable_audio_clks();
