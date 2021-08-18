@@ -949,6 +949,12 @@ int ipq_board_usb_init(void)
 	int i;
 	unsigned int ipq_base;
 
+	uint32_t flash_type;
+
+	/*Return if it is recovery path*/
+	if (ipq_smem_get_boot_flash(&flash_type) < 0)
+		return -1;
+
 	/* Configure the usb core clock */
 	usb_ss_core_clock_config(0, 1, 5, 32);
 	/* Configure the usb core clock */

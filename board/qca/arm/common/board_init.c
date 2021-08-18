@@ -214,11 +214,9 @@ int board_init(void)
 #endif
 	}
 #endif
-	if (sfi->flash_type != SMEM_BOOT_NO_FLASH) {
-		ret = ipq_board_usb_init();
-		if (ret < 0) {
-			printf("WARN: ipq_board_usb_init failed\n");
-		}
+	ret = ipq_board_usb_init();
+	if (ret < 0) {
+		printf("WARN: ipq_board_usb_init failed\n");
 	}
 
 #ifndef CONFIG_IPQ9574_RUMI
