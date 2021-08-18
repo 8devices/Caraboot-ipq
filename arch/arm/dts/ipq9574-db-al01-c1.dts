@@ -184,7 +184,7 @@
 		qca807x_gpio_cnt = <1>;
 		aquantia_gpio = <36>;
 		aquantia_gpio_cnt = <1>;
-		aquantia_port = <5>;
+		aquantia_port = <4>;
 		aquantia_port_cnt = <1>;
 		qca808x_gpio = <57>;
 		qca808x_gpio_cnt = <1>;
