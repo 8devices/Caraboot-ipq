@@ -460,6 +460,8 @@ void ipq9574_uxsgmii_speed_set(int port, int speed, int duplex,
 	ppe_uniphy_usxgmii_autoneg_completed(uniphy_index);
 	ppe_uniphy_usxgmii_speed_set(uniphy_index, speed);
 	ppe_xgmac_speed_set(port, speed);
+	uniphy_clk_init();
+	mdelay(150);
 	ppe_uniphy_usxgmii_duplex_set(uniphy_index, duplex);
 	ppe_uniphy_usxgmii_port_reset(uniphy_index);
 	ppe_port_bridge_txmac_set(port + 1, status);
