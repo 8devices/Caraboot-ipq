@@ -34,6 +34,11 @@
 
 #define CONFIG_SYS_BOOTM_LEN		0x4000000
 
+/* Enable DTB compress */
+#define CONFIG_COMPRESSED_DTB_MAX_SIZE		0x40000
+#define CONFIG_COMPRESSED_DTB_BASE		CONFIG_SYS_TEXT_BASE -\
+						CONFIG_COMPRESSED_DTB_MAX_SIZE
+
 /*
  * Size of malloc() pool
  */
