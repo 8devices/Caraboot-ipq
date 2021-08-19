@@ -966,20 +966,12 @@ void uniphy_clock_enable(enum uniphy_clk_type clk_type, bool enable)
 	}
 }
 
-void uniphy_clk_init(void)
+void uniphy_clk_init(bool enable)
 {
 	int i;
 	/* Uniphy clock enable */
 	for (i = NSS_PORT1_RX_CLK_E; i < PORT5_RX_SRC_E; i++)
-		uniphy_clock_enable(i, true);
-}
-
-void uniphy_clk_deinit(void)
-{
-	int i;
-	/* Uniphy clock enable */
-	for (i = NSS_PORT1_RX_CLK_E; i < PORT5_RX_SRC_E; i++)
-		uniphy_clock_enable(i, false);
+		uniphy_clock_enable(i, enable);
 }
 
 void cmnblk_init(void)
@@ -1063,7 +1055,7 @@ void eth_clock_init(void)
 
 	fixed_clock_init();
 
-	uniphy_clk_init();
+	uniphy_clk_init(true);
 
 	cmnblk_init();
 

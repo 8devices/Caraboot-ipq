@@ -49,7 +49,6 @@ uchar ipq9574_def_enetaddr[6] = {0x00, 0x03, 0x7F, 0xBA, 0xDB, 0xAD};
 phy_info_t *phy_info[IPQ9574_PHY_MAX] = {0};
 int sgmii_mode[2] = {0};
 
-extern void uniphy_clk_deinit(void);
 extern int ipq_sw_mdio_init(const char *);
 extern int ipq_mdio_read(int mii_id, int regnum, ushort *data);
 extern void ipq9574_qca8075_phy_map_ops(struct phy_ops **ops);
@@ -1190,10 +1189,6 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 				}
 			}
 		}
-
-		uniphy_clk_deinit();
-
-		mdelay(150);
 
 		ipq9574_speed_clock_set(i, clk);
 
