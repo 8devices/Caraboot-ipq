@@ -941,11 +941,13 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 	fal_port_duplex_t duplex;
 	char *lstatus[] = {"up", "Down"};
 	char *dp[] = {"Half", "Full"};
-	int linkup=0;
+	int linkup = 0;
 	int clk[4] = {0};
-	int phy_addr, node, aquantia_port[2] = {-1, -1}, aquantia_port_cnt = -1;
+	int phy_addr = -1, node = -1;
+	int aquantia_port[2] = {-1, -1}, aquantia_port_cnt = -1;
+	int sfp_port[2] = {-1, -1}, sfp_port_cnt = -1;
+	int sgmii_mode = -1, sfp_mode = -1, sgmii_fiber = -1;
 	int phy_node = -1, res = -1;
-	int sgmii_mode;
 
 	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
 
@@ -956,7 +958,16 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 			res = fdtdec_get_int_array(gd->fdt_blob, node, "aquantia_port",
 					  (u32 *)aquantia_port, aquantia_port_cnt);
 			if (res < 0)
-				printf("Error: Aquantia port details not provided in DT");
+				printf("Error: Aquantia port details not provided in DT\n");
+		}
+
+		sfp_port_cnt = fdtdec_get_uint(gd->fdt_blob, node, "sfp_port_cnt", -1);
+
+		if (sfp_port_cnt >= 1) {
+			res = fdtdec_get_int_array(gd->fdt_blob, node, "sfp_port",
+					(u32 *)sfp_port, sfp_port_cnt);
+			if (res < 0)
+				printf("Error: SFP port details not provided in DT\n");
 		}
 	}
 
@@ -967,33 +978,68 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 	 * else we will return with -1;
 	 */
 	for (i =  0; i < IPQ9574_PHY_MAX; i++) {
-		if (!priv->ops[i]) {
-			printf("Phy ops not mapped\n");
-			continue;
-		}
-		phy_get_ops = priv->ops[i];
-
-		if (!phy_get_ops->phy_get_link_status ||
-				!phy_get_ops->phy_get_speed ||
-				!phy_get_ops->phy_get_duplex) {
-			printf("Error:Link status/Get speed/Get duplex not mapped\n");
-			return -1;
-		}
-
-		if (phy_node >= 0) {
-			/*
-			 * For each ethernet port, one node should be added
-			 * inside port_phyinfo with appropriate phy address
+		if (i == sfp_port[0] || i == sfp_port[1]) {
+			status = phy_status_get_from_ppe(i);
+			duplex = FAL_FULL_DUPLEX;
+			/* SFP Port can be enabled in USXGMII0 or USXGMII1 i.e
+			 * SFP Port can be port5 or port6 (with port id - 4 or 5).
+			 * Port5 (port id - 4) -> Serdes1
+			 * Port6 (port id - 5) -> Serdes2
 			 */
-			phy_addr = phy_info[i]->phy_address;
+			if (i == 4) {
+				sfp_mode = fdtdec_get_uint(gd->fdt_blob, node, "switch_mac_mode1", -1);
+				if (sfp_mode < 0) {
+					printf("Error: switch_mac_mode1 not specified in dts\n");
+					return sfp_mode;
+				}
+			} else if (i == 5) {
+				sfp_mode = fdtdec_get_uint(gd->fdt_blob, node, "switch_mac_mode2", -1);
+				if (sfp_mode < 0) {
+					printf("Error: switch_mac_mode2 not specified in dts\n");
+					return sfp_mode;
+				}
+			} else {
+				printf("Error: SFP Port can be enabled in USXGMII0 or USXGMII1 (Port5 or Port6) only in ipq9574 platform\n");
+			}
+			if (sfp_mode == EPORT_WRAPPER_SGMII_FIBER) {
+				sgmii_fiber = 1;
+				curr_speed[i] = FAL_SPEED_1000;
+			} else if (sfp_mode == EPORT_WRAPPER_10GBASE_R) {
+				sgmii_fiber = 0;
+				curr_speed[i] = FAL_SPEED_10000;
+			} else {
+				printf("Error: Wrong mode specified for SFP Port in DT\n");
+				return sfp_mode;
+			}
 		} else {
-			printf("Error:Phy addresses not configured in DT\n");
-			return -1;
-		}
+			if (!priv->ops[i]) {
+				printf("Phy ops not mapped\n");
+				continue;
+			}
+			phy_get_ops = priv->ops[i];
 
-		status = phy_get_ops->phy_get_link_status(priv->mac_unit, phy_addr);
-		phy_get_ops->phy_get_speed(priv->mac_unit, phy_addr, &curr_speed[i]);
-		phy_get_ops->phy_get_duplex(priv->mac_unit, phy_addr, &duplex);
+			if (!phy_get_ops->phy_get_link_status ||
+					!phy_get_ops->phy_get_speed ||
+					!phy_get_ops->phy_get_duplex) {
+				printf("Error:Link status/Get speed/Get duplex not mapped\n");
+				return -1;
+			}
+
+			if (phy_node >= 0) {
+				/*
+				 * For each ethernet port, one node should be added
+				 * inside port_phyinfo with appropriate phy address
+				 */
+				phy_addr = phy_info[i]->phy_address;
+			} else {
+				printf("Error:Phy addresses not configured in DT\n");
+				return -1;
+			}
+
+			status = phy_get_ops->phy_get_link_status(priv->mac_unit, phy_addr);
+			phy_get_ops->phy_get_speed(priv->mac_unit, phy_addr, &curr_speed[i]);
+			phy_get_ops->phy_get_duplex(priv->mac_unit, phy_addr, &duplex);
+		}
 
 		if (status == 0) {
 			linkup++;
@@ -1091,6 +1137,11 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 					} else {
 						clk[0] = 0x204;
 						clk[2] = 0x304;
+					}
+				} else if (i == sfp_port[0] || i == sfp_port[1]) {
+					if (i == 4) {
+						clk[0] = 0x401;
+						clk[2] = 0x501;
 					}
 				}
 				if (phy_node >= 0) {
@@ -1190,12 +1241,31 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 			}
 		}
 
+		if (i == sfp_port[0] || i == sfp_port[1]) {
+			if (sgmii_fiber) {
+				ppe_port_bridge_txmac_set(i + 1, 1);
+				if (i == 4)
+					ppe_uniphy_mode_set(0x1, EPORT_WRAPPER_SGMII_FIBER);
+				else
+					ppe_uniphy_mode_set(0x2, EPORT_WRAPPER_SGMII_FIBER);
+				ppe_port_mux_mac_type_set(i + 1, EPORT_WRAPPER_SGMII_FIBER);
+			} else {
+				if (i == 4)
+					ppe_uniphy_mode_set(0x1, EPORT_WRAPPER_10GBASE_R);
+				else
+					ppe_uniphy_mode_set(0x2, EPORT_WRAPPER_10GBASE_R);
+				ppe_port_mux_mac_type_set(i + 1, EPORT_WRAPPER_10GBASE_R);
+			}
+		}
+
 		ipq9574_speed_clock_set(i, clk);
 
 		ipq9574_port_mac_clock_reset(i);
 
 		if (i == aquantia_port[0] || i == aquantia_port[1])
 			ipq9574_uxsgmii_speed_set(i, mac_speed, duplex, status);
+		else if (i == sfp_port[0] || i == sfp_port[1])
+			ipq9574_10g_r_speed_set(i, status);
 		else
 			ipq9574_pqsgmii_speed_set(i, mac_speed, status);
 	}
@@ -1962,8 +2032,9 @@ int ipq9574_edma_init(void *edma_board_cfg)
 					break;
 #endif
 				default:
-					printf("\nphy chip id: 0x%x id not matching for phy id: 0x%x",
-						phy_chip_id, phy_id);
+					if (phy_info[phy_id]->phy_type != SFP_PHY_TYPE)
+						printf("\nphy chip id: 0x%x id not matching for phy id: 0x%x",
+							phy_chip_id, phy_id);
 					break;
 			}
 		}

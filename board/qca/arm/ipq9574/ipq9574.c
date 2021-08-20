@@ -602,6 +602,27 @@ int set_uuid_bootargs(char *boot_args, char *part_name, int buflen, bool gpt_fla
 #endif
 
 #ifdef CONFIG_IPQ9574_EDMA
+int get_sfp_gpio(int sfp_gpio[2])
+{
+	int sfp_gpio_cnt = -1, node;
+	int res = -1;
+
+	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
+	if (node >= 0) {
+		sfp_gpio_cnt = fdtdec_get_uint(gd->fdt_blob, node, "sfp_gpio_cnt", -1);
+		if (sfp_gpio_cnt >= 1) {
+			res = fdtdec_get_int_array(gd->fdt_blob, node, "sfp_gpio",
+						  (u32 *)sfp_gpio, sfp_gpio_cnt);
+			if (res >= 0)
+				return sfp_gpio_cnt;
+		}
+	}
+
+	return res;
+}
+
+
+
 int get_aquantia_gpio(int aquantia_gpio[2])
 {
 	int aquantia_gpio_cnt = -1, node;
@@ -657,6 +678,24 @@ int get_qca807x_gpio(int qca807x_gpio[2])
 	}
 
 	return res;
+}
+
+void sfp_reset_init(void)
+{
+	int sfp_gpio[2] = {-1, -1}, sfp_gpio_cnt, i;
+	unsigned int *sfp_gpio_base;
+	uint32_t cfg;
+
+	sfp_gpio_cnt = get_sfp_gpio(sfp_gpio);
+	if (sfp_gpio_cnt >= 1) {
+		for (i = 0; i < sfp_gpio_cnt; i++) {
+			if (sfp_gpio[i] >= 0) {
+				sfp_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(sfp_gpio[i]);
+				cfg = GPIO_OE | GPIO_DRV_8_MA | GPIO_PULL_UP;
+				writel(cfg, sfp_gpio_base);
+			}
+		}
+	}
 }
 
 void aquantia_phy_reset_init(void)
@@ -1079,6 +1118,7 @@ void bring_phy_out_of_reset(void)
 	qca807x_phy_reset_init();
 	aquantia_phy_reset_init();
 	qca808x_phy_reset_init();
+	sfp_reset_init();
 	mdelay(500);
 	qca807x_phy_reset_init_done();
 	aquantia_phy_reset_init_done();
