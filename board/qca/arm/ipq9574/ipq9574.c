@@ -361,7 +361,7 @@ static void usb_init_phy(int index)
 	clrbits_le32(GCC_USB0_PHY_BCR, 0x1);
 
 	/* Config user control register */
-	writel(0x0c80c010, USB30_1_GUCTL);
+	writel(0x0a40c010, USB30_1_GUCTL);
 	writel(0x0a87f0a0, USB30_1_FLADJ);
 
 	/* GCC_QUSB2_0_PHY_BCR */
