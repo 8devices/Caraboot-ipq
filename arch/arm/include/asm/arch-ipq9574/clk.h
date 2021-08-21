@@ -152,8 +152,8 @@ void i2c_clock_config(void);
 #define SW_OVERRIDE_ENABLE			(1 << 2)
 #define GCC_USB0_MASTER_CFG_RCGR_SRC_SEL	(1 << 8)
 #define GCC_USB0_MASTER_CFG_RCGR_SRC_DIV	(0x7 << 0)
-#define GCC_USB_MOCK_UTMI_SRC_SEL		(1 << 8)
-#define GCC_USB_MOCK_UTMI_SRC_DIV		(0x13 << 0)
+#define GCC_USB_MOCK_UTMI_SRC_SEL		(0 << 8)
+#define GCC_USB_MOCK_UTMI_SRC_DIV		(0x1 << 0)
 #define UTMI_M					0x1
 #define UTMI_N					0xFFFE
 #define UTMI_D					0xFFFD
