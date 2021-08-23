@@ -14,8 +14,6 @@
 /dts-v1/;
 #include "ipq9574-soc.dtsi"
 / {
-	model ="QCA, IPQ9574-EMULATION";
-	compatible = "qca,ipq9574", "qca,ipq9574-emulation";
 	machid = <0xF050000>;
 	config_name = "config@emulation-fbc";
 
