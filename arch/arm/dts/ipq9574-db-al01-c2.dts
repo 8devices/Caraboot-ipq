@@ -14,8 +14,6 @@
 /dts-v1/;
 #include "ipq9574-db-al01-c1.dts"
 / {
-	model ="QCA, IPQ9574/DB-AL01-C2";
-	compatible = "qca,ipq9574", "qca,ipq9574-db-al01-c2";
 	machid = <0x1050100>;
 	config_name = "config@db-al01-c2";
 
