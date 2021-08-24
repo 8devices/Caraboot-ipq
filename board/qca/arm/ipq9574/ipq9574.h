@@ -261,6 +261,18 @@ unsigned int __invoke_psci_fn_smc(unsigned int, unsigned int,
  */
 #define EUD_EUD_EN2				0x7A000
 
+/*
+ * SKU
+ */
+#define QFPROM_CORR_FEATURE_CONFIG_ROW1_MSB	0xA401C
+
+#define PCIE_0_CLOCK_DISABLE_BIT		2
+#define PCIE_1_CLOCK_DISABLE_BIT		3
+#define PCIE_2_CLOCK_DISABLE_BIT		4
+#define PCIE_3_CLOCK_DISABLE_BIT		5
+
+int ipq_validate_qfrom_fuse(unsigned int reg_add, int pos);
+
 /**
  * Number of RAM partition entries which are usable by APPS.
  */

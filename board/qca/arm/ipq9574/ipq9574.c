@@ -425,7 +425,35 @@ void ipq_fdt_fixup_usb_device_mode(void *blob)
 		printf("%s: invalid param for usb_mode\n", __func__);
 }
 
+int ipq_validate_qfrom_fuse(unsigned int reg_add, int pos)
+{
+	return (readl(reg_add) & (1 << pos));
+}
+
 #ifdef CONFIG_PCI_IPQ
+int ipq_sku_pci_validation(int pci_id)
+{
+	int pos = 0;
+
+	switch(pci_id){
+	case 0:
+		pos = PCIE_0_CLOCK_DISABLE_BIT;
+	break;
+	case 1:
+		pos = PCIE_1_CLOCK_DISABLE_BIT;
+	break;
+	case 2:
+		pos = PCIE_2_CLOCK_DISABLE_BIT;
+	break;
+	case 3:
+		pos = PCIE_3_CLOCK_DISABLE_BIT;
+	break;
+	}
+
+	return ipq_validate_qfrom_fuse(
+			QFPROM_CORR_FEATURE_CONFIG_ROW1_MSB, pos);
+}
+
 void board_pci_init(int id)
 {
 	int node, gpio_node, pci_no;
@@ -438,11 +466,16 @@ void board_pci_init(int id)
 		return;
 	}
 
+	pci_no = fdtdec_get_int(gd->fdt_blob, node, "id", 0);
+
+	if (ipq_sku_pci_validation(pci_no)){
+		printf("PCIe%d disabled \n", pci_no);
+	}
+
 	gpio_node = fdt_subnode_offset(gd->fdt_blob, node, "pci_gpio");
 	if (gpio_node >= 0)
 		qca_gpio_init(gpio_node);
 
-	pci_no = fdtdec_get_int(gd->fdt_blob, node, "id", 0);
 	pcie_v2_clock_init(pci_no);
 
 	return;
