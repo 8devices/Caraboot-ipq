@@ -16,4 +16,52 @@
 / {
 	machid = <0x1050201>;
 	config_name = "config@db-al02-c3";
+
+	aliases {
+		i2c0 = "/i2c@78B9000";
+	};
+
+	i2c@78B9000 {
+		compatible = "qcom,qup-i2c";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x78B9000 0x600>;
+	        clock-frequency  = <400000>;
+		i2c_gpio {
+			gpio1 {
+				gpio = <50>;
+				func = <2>;
+				pull = <GPIO_PULL_UP>;
+				drvstr = <GPIO_8MA>;
+				oe = <GPIO_OE_ENABLE>;
+			};
+
+			gpio2 {
+				gpio = <51>;
+				func = <2>;
+				pull = <GPIO_PULL_UP>;
+				drvstr = <GPIO_8MA>;
+				oe = <GPIO_OE_ENABLE>;
+			};
+		};
+	};
+
+	ess-switch {
+		/* Overriding port5 configuration to support SFP instead
+		 * of QCA808x.
+		 */
+		/delete-property/qca808x_gpio;
+		/delete-property/qca808x_gpio_cnt;
+		switch_mac_mode1 = <PORT_WRAPPER_10GBASE_R>;
+		sfp_gpio = <61>;
+		sfp_gpio_cnt = <1>;
+		sfp_port = <4>;
+		sfp_port_cnt = <1>;
+		port_phy_info {
+			port@4 {
+				/delete-property/phy_address;
+				phy_type = <SFP_PHY_TYPE>;
+			};
+		};
+	};
 };
