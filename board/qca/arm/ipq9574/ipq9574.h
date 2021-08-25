@@ -261,14 +261,19 @@ unsigned int __invoke_psci_fn_smc(unsigned int, unsigned int,
 #define EUD_EUD_EN2				0x7A000
 
 /*
- * SKU
+ * QFPROM Register for SKU Validation
  */
 #define QFPROM_CORR_FEATURE_CONFIG_ROW1_MSB	0xA401C
+#define QFPROM_CORR_FEATURE_CONFIG_ROW2_MSB	0xA4024
 
 #define PCIE_0_CLOCK_DISABLE_BIT		2
 #define PCIE_1_CLOCK_DISABLE_BIT		3
 #define PCIE_2_CLOCK_DISABLE_BIT		4
 #define PCIE_3_CLOCK_DISABLE_BIT		5
+
+#define UNIPHY_0_DISABLE_BIT			23
+#define UNIPHY_1_DISABLE_BIT			24
+#define UNIPHY_2_DISABLE_BIT			25
 
 int ipq_validate_qfrom_fuse(unsigned int reg_add, int pos);
 

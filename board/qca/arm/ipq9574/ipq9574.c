@@ -430,6 +430,28 @@ int ipq_validate_qfrom_fuse(unsigned int reg_add, int pos)
 	return (readl(reg_add) & (1 << pos));
 }
 
+int is_uniphy_enabled(int uniphy_index)
+{
+	int bit = 0;
+
+	switch(uniphy_index) {
+		case 0:
+			bit = UNIPHY_0_DISABLE_BIT;
+			break;
+		case 1:
+			bit = UNIPHY_1_DISABLE_BIT;
+			break;
+		case 2:
+			bit = UNIPHY_2_DISABLE_BIT;
+			break;
+		default:
+			printf("In ipq9574: Max 3 Uniphy's can be supported\n");
+			break;
+	}
+	return !ipq_validate_qfrom_fuse(
+			QFPROM_CORR_FEATURE_CONFIG_ROW2_MSB, bit);
+}
+
 #ifdef CONFIG_PCI_IPQ
 int ipq_sku_pci_validation(int pci_id)
 {
