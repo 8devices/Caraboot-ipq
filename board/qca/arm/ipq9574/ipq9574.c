@@ -453,11 +453,11 @@ int is_uniphy_enabled(int uniphy_index)
 }
 
 #ifdef CONFIG_PCI_IPQ
-int ipq_sku_pci_validation(int pci_id)
+int ipq_sku_pci_validation(int id)
 {
 	int pos = 0;
 
-	switch(pci_id){
+	switch(id){
 	case 0:
 		pos = PCIE_0_CLOCK_DISABLE_BIT;
 	break;

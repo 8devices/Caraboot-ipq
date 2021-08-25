@@ -1413,6 +1413,11 @@ void pcie_v0_linkup(struct ipq_pcie *pcie, int id)
 
 }
 
+__weak int ipq_sku_pci_validation(int id)
+{
+	return 0;
+}
+
 static int ipq_pcie_parse_dt(const void *fdt, int id,
 			       struct ipq_pcie *pcie)
 {
@@ -1424,6 +1429,11 @@ static int ipq_pcie_parse_dt(const void *fdt, int id,
 	if (node < 0) {
 		printf("PCI%d is not defined in the device tree\n", id);
 		return node;
+	}
+
+	if (ipq_sku_pci_validation(id)){
+		printf("PCI%d is disabled\n", id);
+		return 1;
 	}
 
 	err = fdt_get_named_resource(fdt, node, "reg", "reg-names", "pci_dbi",
