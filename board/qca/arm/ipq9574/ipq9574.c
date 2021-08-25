@@ -956,9 +956,6 @@ void noc_clock_init(void)
 
 	reg_val = readl(GCC_MEM_NOC_SNOC_AXI_CBCR);
 	writel(reg_val | GCC_CBCR_CLK_ENABLE, GCC_MEM_NOC_SNOC_AXI_CBCR);
-
-	reg_val = readl(GCC_IMEM_AXI_CBCR);
-	writel(reg_val | GCC_CBCR_CLK_ENABLE, GCC_IMEM_AXI_CBCR);
 }
 
 void fixed_clock_init(void)
