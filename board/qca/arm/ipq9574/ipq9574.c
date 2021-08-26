@@ -40,6 +40,8 @@ extern int ipq_spi_init(u16);
 unsigned int qpic_frequency = 0, qpic_phase = 0;
 extern unsigned int qpic_training_offset;
 
+extern	int qca_scm_dpr(u32, u32, void *, size_t);
+
 void qca_serial_init(struct ipq_serial_platdata *plat)
 {
 	int ret;
@@ -1448,3 +1450,49 @@ void ipq_uboot_fdt_fixup(void)
 	}
 	return;
 }
+
+int do_dpr(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+{
+	int ret;
+	char *loadaddr;
+	uint32_t dpr_status = 0;
+	struct dpr {
+		uint32_t address;
+		uint32_t status;
+	} dpr;
+
+	if (argc > 2) {
+		return CMD_RET_USAGE;
+	}
+
+	if (argc == 2){
+		dpr.address = simple_strtoul(argv[1], NULL, 16);
+	} else {
+		loadaddr = getenv("fileaddr");
+
+		if (loadaddr == NULL) {
+			printf("No Arguments provided\n");
+			printf("Command format: dpr_execute <address>\n");
+			return CMD_RET_USAGE;
+		}
+		if (loadaddr != NULL)
+			dpr.address = simple_strtoul(loadaddr, NULL, 16);
+	}
+
+	dpr.status = (uint32_t)&dpr_status;
+
+	ret = qca_scm_dpr(SCM_SVC_FUSE, TME_DPR_PROCESSING,
+			&dpr, sizeof(dpr));
+
+	if (ret || dpr_status){
+		printf("%s: Error in DPR Processing (%d, %d)\n",
+			__func__, ret, dpr_status);
+	} else {
+		printf("DPR Process sucessful\n");
+	}
+	return ret;
+}
+
+U_BOOT_CMD(dpr_execute, 2, 0, do_dpr,
+		"Debug Policy Request processing\n",
+		"dpr_execute [address] - Processing dpr\n");
