@@ -478,7 +478,7 @@ int ipq_sku_pci_validation(int pci_id)
 
 void board_pci_init(int id)
 {
-	int node, gpio_node, pci_no;
+	int node, gpio_node;
 	char name[16];
 
 	snprintf(name, sizeof(name), "pci%d", id);
@@ -488,24 +488,18 @@ void board_pci_init(int id)
 		return;
 	}
 
-	pci_no = fdtdec_get_int(gd->fdt_blob, node, "id", 0);
-
-	if (ipq_sku_pci_validation(pci_no)){
-		printf("PCIe%d disabled \n", pci_no);
-	}
-
 	gpio_node = fdt_subnode_offset(gd->fdt_blob, node, "pci_gpio");
 	if (gpio_node >= 0)
 		qca_gpio_init(gpio_node);
 
-	pcie_v2_clock_init(pci_no);
+	pcie_v2_clock_init(id);
 
 	return;
 }
 
 void board_pci_deinit()
 {
-	int node, gpio_node, i, err, pci_no, is_x2;
+	int node, gpio_node, i, err, is_x2;
 	char name[16];
 	struct fdt_resource parf;
 	struct fdt_resource pci_phy;
@@ -517,17 +511,18 @@ void board_pci_deinit()
 			printf("Could not find PCI%d in device tree\n", i);
 			continue;
 		}
-		err = fdt_get_named_resource(gd->fdt_blob, node, "reg", "reg-names", "parf",
-				&parf);
+		err = fdt_get_named_resource(gd->fdt_blob, node, "reg",
+				"reg-names", "parf", &parf);
+
 		writel(0x0, parf.start + 0x358);
 		writel(0x1, parf.start + 0x40);
-		err = fdt_get_named_resource(gd->fdt_blob, node, "reg", "reg-names", "pci_phy",
-				     &pci_phy);
+
+		err = fdt_get_named_resource(gd->fdt_blob, node, "reg",
+				"reg-names", "pci_phy", &pci_phy);
 		if (err < 0)
 			continue;
 
-		pci_no = fdtdec_get_int(gd->fdt_blob, node, "id", 0);
-		if ((pci_no == 0) || (pci_no == 1))
+		if ((i == 0) || (i == 1))
 			is_x2 = 0;
 		else
 			is_x2 = 1;
@@ -539,7 +534,7 @@ void board_pci_deinit()
 		if (gpio_node >= 0)
 			qca_gpio_deinit(gpio_node);
 
-		pcie_v2_clock_deinit(pci_no);
+		pcie_v2_clock_deinit(i);
 	}
 
 	return ;
