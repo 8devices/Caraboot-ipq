@@ -23,6 +23,8 @@
 		usb0 = "/xhci@8a00000";
 		pci0 = "/pci@20000000";
 		pci1 = "/pci@18000000";
+		pci2 = "/pci@28000000";
+		pci3 = "/pci@10000000";
 		nand = "/nand-controller@79B0000";
 		i2c0 = "/i2c@78B8000";
 	};
@@ -169,6 +171,36 @@
 				gpio = <32>;
 				func = <0>;
 				pull = <GPIO_PULL_UP>;
+				oe = <GPIO_OD_ENABLE>;
+				od_en = <GPIO_OD_DISABLE>;
+				drvstr = <GPIO_8MA>;
+			};
+		};
+	};
+
+	pci2: pci@28000000 {
+		status = "ok";
+		perst_gpio = <23>;
+		pci_gpio {
+			pci_rst {
+				gpio = <23>;
+				func = <0>;
+				pull = <GPIO_PULL_UP>;
+				oe = <GPIO_OD_ENABLE>;
+				od_en = <GPIO_OD_DISABLE>;
+				drvstr = <GPIO_8MA>;
+			};
+		};
+	};
+
+	pci3: pci@10000000 {
+		status = "ok";
+		perst_gpio = <26>;
+		pci_gpio {
+			pci_rst {
+				gpio = <26>;
+				func = <0>;
+				pull = <GPIO_PULL_DOWN>;
 				oe = <GPIO_OD_ENABLE>;
 				od_en = <GPIO_OD_DISABLE>;
 				drvstr = <GPIO_8MA>;
