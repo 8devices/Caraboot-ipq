@@ -24,7 +24,7 @@
 		pci0 = "/pci@20000000";
 		pci1 = "/pci@18000000";
 		nand = "/nand-controller@79B0000";
-		i2c0 = "/i2c@78BA000";
+		i2c0 = "/i2c@78B8000";
 	};
 
 	console: serial@78B1000 {
