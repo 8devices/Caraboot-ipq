@@ -32,6 +32,7 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define pr_info(fmt, args...) printf(fmt, ##args);
 
+extern int is_uniphy_enabled(int uniphy_index);
 extern void uniphy_port5_clock_source_set(void);
 
 /*
@@ -857,10 +858,12 @@ void ipq9574_ppe_interface_mode_init(void)
 	if (mode1 == EPORT_WRAPPER_MAX) {
 		ppe_port_mux_mac_type_set(PORT5, mode0);
 		uniphy_port5_clock_source_set();
-	} else {
+	} else if (is_uniphy_enabled(PPE_UNIPHY_INSTANCE1)) {
 		ppe_port_mux_mac_type_set(PORT5, mode1);
 	}
-	ppe_port_mux_mac_type_set(PORT6, mode2);
+	if (is_uniphy_enabled(PPE_UNIPHY_INSTANCE2)) {
+		ppe_port_mux_mac_type_set(PORT6, mode2);
+	}
 }
 
 /*

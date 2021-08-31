@@ -425,7 +425,57 @@ void ipq_fdt_fixup_usb_device_mode(void *blob)
 		printf("%s: invalid param for usb_mode\n", __func__);
 }
 
+int ipq_validate_qfrom_fuse(unsigned int reg_add, int pos)
+{
+	return (readl(reg_add) & (1 << pos));
+}
+
+int is_uniphy_enabled(int uniphy_index)
+{
+	int bit = 0;
+
+	switch(uniphy_index) {
+		case 0:
+			bit = UNIPHY_0_DISABLE_BIT;
+			break;
+		case 1:
+			bit = UNIPHY_1_DISABLE_BIT;
+			break;
+		case 2:
+			bit = UNIPHY_2_DISABLE_BIT;
+			break;
+		default:
+			printf("In ipq9574: Max 3 Uniphy's can be supported\n");
+			break;
+	}
+	return !ipq_validate_qfrom_fuse(
+			QFPROM_CORR_FEATURE_CONFIG_ROW2_MSB, bit);
+}
+
 #ifdef CONFIG_PCI_IPQ
+int ipq_sku_pci_validation(int pci_id)
+{
+	int pos = 0;
+
+	switch(pci_id){
+	case 0:
+		pos = PCIE_0_CLOCK_DISABLE_BIT;
+	break;
+	case 1:
+		pos = PCIE_1_CLOCK_DISABLE_BIT;
+	break;
+	case 2:
+		pos = PCIE_2_CLOCK_DISABLE_BIT;
+	break;
+	case 3:
+		pos = PCIE_3_CLOCK_DISABLE_BIT;
+	break;
+	}
+
+	return ipq_validate_qfrom_fuse(
+			QFPROM_CORR_FEATURE_CONFIG_ROW1_MSB, pos);
+}
+
 void board_pci_init(int id)
 {
 	int node, gpio_node, pci_no;
@@ -438,11 +488,16 @@ void board_pci_init(int id)
 		return;
 	}
 
+	pci_no = fdtdec_get_int(gd->fdt_blob, node, "id", 0);
+
+	if (ipq_sku_pci_validation(pci_no)){
+		printf("PCIe%d disabled \n", pci_no);
+	}
+
 	gpio_node = fdt_subnode_offset(gd->fdt_blob, node, "pci_gpio");
 	if (gpio_node >= 0)
 		qca_gpio_init(gpio_node);
 
-	pci_no = fdtdec_get_int(gd->fdt_blob, node, "id", 0);
 	pcie_v2_clock_init(pci_no);
 
 	return;
@@ -569,6 +624,27 @@ int set_uuid_bootargs(char *boot_args, char *part_name, int buflen, bool gpt_fla
 #endif
 
 #ifdef CONFIG_IPQ9574_EDMA
+int get_sfp_gpio(int sfp_gpio[2])
+{
+	int sfp_gpio_cnt = -1, node;
+	int res = -1;
+
+	node = fdt_path_offset(gd->fdt_blob, "/ess-switch");
+	if (node >= 0) {
+		sfp_gpio_cnt = fdtdec_get_uint(gd->fdt_blob, node, "sfp_gpio_cnt", -1);
+		if (sfp_gpio_cnt >= 1) {
+			res = fdtdec_get_int_array(gd->fdt_blob, node, "sfp_gpio",
+						  (u32 *)sfp_gpio, sfp_gpio_cnt);
+			if (res >= 0)
+				return sfp_gpio_cnt;
+		}
+	}
+
+	return res;
+}
+
+
+
 int get_aquantia_gpio(int aquantia_gpio[2])
 {
 	int aquantia_gpio_cnt = -1, node;
@@ -624,6 +700,24 @@ int get_qca807x_gpio(int qca807x_gpio[2])
 	}
 
 	return res;
+}
+
+void sfp_reset_init(void)
+{
+	int sfp_gpio[2] = {-1, -1}, sfp_gpio_cnt, i;
+	unsigned int *sfp_gpio_base;
+	uint32_t cfg;
+
+	sfp_gpio_cnt = get_sfp_gpio(sfp_gpio);
+	if (sfp_gpio_cnt >= 1) {
+		for (i = 0; i < sfp_gpio_cnt; i++) {
+			if (sfp_gpio[i] >= 0) {
+				sfp_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(sfp_gpio[i]);
+				cfg = GPIO_OE | GPIO_DRV_8_MA | GPIO_PULL_UP;
+				writel(cfg, sfp_gpio_base);
+			}
+		}
+	}
 }
 
 void aquantia_phy_reset_init(void)
@@ -923,9 +1017,6 @@ void noc_clock_init(void)
 
 	reg_val = readl(GCC_MEM_NOC_SNOC_AXI_CBCR);
 	writel(reg_val | GCC_CBCR_CLK_ENABLE, GCC_MEM_NOC_SNOC_AXI_CBCR);
-
-	reg_val = readl(GCC_IMEM_AXI_CBCR);
-	writel(reg_val | GCC_CBCR_CLK_ENABLE, GCC_IMEM_AXI_CBCR);
 }
 
 void fixed_clock_init(void)
@@ -1049,6 +1140,7 @@ void bring_phy_out_of_reset(void)
 	qca807x_phy_reset_init();
 	aquantia_phy_reset_init();
 	qca808x_phy_reset_init();
+	sfp_reset_init();
 	mdelay(500);
 	qca807x_phy_reset_init_done();
 	aquantia_phy_reset_init_done();

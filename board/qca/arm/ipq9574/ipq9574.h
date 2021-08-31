@@ -62,7 +62,6 @@
 #define GCC_NSSNOC_SNOC_CBCR			0x1817028
 #define GCC_NSSNOC_SNOC_1_CBCR			0x181707C
 #define GCC_MEM_NOC_SNOC_AXI_CBCR		0x1819018
-#define GCC_IMEM_AXI_CBCR			0x180E004
 #define NSS_CC_UNIPHY_PORT1_RX_ADDR		0x39B28904
 #define NSS_CC_PPE_RESET_ADDR			0x39B28A08
 #define NSS_CC_UNIPHY_MISC_RESET		0x39B28A24
@@ -260,6 +259,23 @@ unsigned int __invoke_psci_fn_smc(unsigned int, unsigned int,
  * Eud register
  */
 #define EUD_EUD_EN2				0x7A000
+
+/*
+ * QFPROM Register for SKU Validation
+ */
+#define QFPROM_CORR_FEATURE_CONFIG_ROW1_MSB	0xA401C
+#define QFPROM_CORR_FEATURE_CONFIG_ROW2_MSB	0xA4024
+
+#define PCIE_0_CLOCK_DISABLE_BIT		2
+#define PCIE_1_CLOCK_DISABLE_BIT		3
+#define PCIE_2_CLOCK_DISABLE_BIT		4
+#define PCIE_3_CLOCK_DISABLE_BIT		5
+
+#define UNIPHY_0_DISABLE_BIT			23
+#define UNIPHY_1_DISABLE_BIT			24
+#define UNIPHY_2_DISABLE_BIT			25
+
+int ipq_validate_qfrom_fuse(unsigned int reg_add, int pos);
 
 /**
  * Number of RAM partition entries which are usable by APPS.

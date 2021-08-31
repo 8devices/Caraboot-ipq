@@ -27,6 +27,8 @@
 #include <fdtdec.h>
 #include "ipq_phy.h"
 
+extern int is_uniphy_enabled(int uniphy_index);
+
 DECLARE_GLOBAL_DATA_PTR;
 extern int ipq_mdio_write(int mii_id,
 		int regnum, u16 value);
@@ -436,6 +438,11 @@ static void ppe_uniphy_usxgmii_mode_set(uint32_t uniphy_index)
 
 void ppe_uniphy_mode_set(uint32_t uniphy_index, uint32_t mode)
 {
+	if (!is_uniphy_enabled(uniphy_index)) {
+		printf("Uniphy %u is disabled\n", uniphy_index);
+		return;
+	}
+
 	switch(mode) {
 		case EPORT_WRAPPER_PSGMII:
 			ppe_uniphy_psgmii_mode_set(uniphy_index);
