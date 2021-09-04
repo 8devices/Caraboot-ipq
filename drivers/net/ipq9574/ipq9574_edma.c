@@ -2033,8 +2033,8 @@ int ipq9574_edma_init(void *edma_board_cfg)
 #endif
 				default:
 					if (phy_info[phy_id]->phy_type != SFP_PHY_TYPE)
-						printf("\nphy chip id: 0x%x id not matching for phy id: 0x%x",
-							phy_chip_id, phy_id);
+						printf("\nphy chip id: 0x%x id not matching for phy id: 0x%x with phy_type: 0x%x and phy address: 0x%x",
+							phy_chip_id, phy_id, phy_info[phy_id]->phy_type, phy_info[phy_id]->phy_address);
 					break;
 			}
 		}
