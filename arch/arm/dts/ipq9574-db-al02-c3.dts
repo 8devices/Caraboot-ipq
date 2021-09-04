@@ -57,7 +57,7 @@
 		sfp_gpio_cnt = <1>;
 		sfp_port = <4>;
 		sfp_port_cnt = <1>;
-		port_phy_info {
+		port_phyinfo {
 			port@4 {
 				/delete-property/phy_address;
 				phy_type = <SFP_PHY_TYPE>;
