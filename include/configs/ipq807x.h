@@ -275,6 +275,8 @@ extern loff_t board_env_size;
 
 #define CONFIG_FDT_FIXUP_PARTITIONS
 
+#define CONFIG_IPQ_FDT_FIXUP
+
 /*
  * USB Support
  */

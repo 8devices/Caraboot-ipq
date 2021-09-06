@@ -883,6 +883,11 @@ __weak void fdt_fixup_qpic(void *blob)
 	return;
 }
 
+__weak void fdt_fixup_sdx65_gpio(void *blob)
+{
+	return;
+}
+
 void set_mtdids(void)
 {
 	char mtdids[256];
@@ -1073,6 +1078,8 @@ int ft_board_setup(void *blob, bd_t *bd)
 #ifdef CONFIG_QCA_MMC
 	board_mmc_deinit();
 #endif
+
+	fdt_fixup_sdx65_gpio(blob);
 	return 0;
 }
 

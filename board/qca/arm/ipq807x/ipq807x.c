@@ -921,6 +921,7 @@ void board_pci_init(int id)
 		pcie_v2_clock_init(id);
 	else
 		pcie_clock_init(id);
+
 	return;
 }
 
@@ -978,6 +979,37 @@ void board_pci_deinit()
 	return ;
 }
 #endif
+
+int sdx65_attached(void)
+{
+	const char *sdx65_env = getenv("x65_attached");
+	int sdx65_available = 0;
+
+	if (sdx65_env != NULL && strncmp(sdx65_env, "1", sizeof("1")) == 0) {
+		printf("sdx65_attached env is set to 1\n");
+		sdx65_available = 1;
+		return sdx65_available;
+	}
+
+	return sdx65_available;
+}
+
+void fdt_fixup_sdx65_gpio(void *blob)
+{
+	unsigned int machid = gd->bd->bi_arch_number;
+	if (machid != 0x08010400)
+		return;
+
+	if (sdx65_attached() == 0)
+		return;
+
+	parse_fdt_fixup("/soc/pci@20000000/%add%x65_attached", blob);
+	parse_fdt_fixup("/soc/pci@20000000/%x65_attached%1", blob);
+	parse_fdt_fixup("/soc/pci@20000000/pcie0_rp/qcom,mhi@0/%mdm2ap%21", blob);
+	parse_fdt_fixup("/soc/pci@20000000/pcie0_rp/qcom,mhi@0/%ap2mdm%45", blob);
+	parse_fdt_fixup("/soc/pinctrl@1000000/ap2mdm_status/%pins%?gpio45", blob);
+	parse_fdt_fixup("/soc/pinctrl@1000000/mdm2ap_e911_status/%pins%?gpio22", blob);
+}
 
 #ifdef CONFIG_USB_XHCI_IPQ
 void board_usb_deinit(int id)
