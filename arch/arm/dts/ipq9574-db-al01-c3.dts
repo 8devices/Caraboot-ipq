@@ -26,7 +26,7 @@
 		switch_mac_mode2 = <PORT_WRAPPER_USXGMII>;
 		aquantia_port = <4 5>;
 		aquantia_port_cnt = <2>;
-		port_phy_info {
+		port_phyinfo {
 			port@5 {
 				phy_address = <0>;
 				phy_type = <AQ_PHY_TYPE>;
