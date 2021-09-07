@@ -80,26 +80,6 @@
 		};
 	};
 
-	i2c0: i2c@78BA000 {
-		i2c_gpio {
-			gpio1 {
-				gpio = <48>;
-				func = <1>;
-				pull = <GPIO_PULL_UP>;
-				drvstr = <GPIO_8MA>;
-				oe = <GPIO_OE_ENABLE>;
-			};
-
-			gpio2 {
-				gpio = <49>;
-				func = <1>;
-				pull = <GPIO_PULL_UP>;
-				drvstr = <GPIO_8MA>;
-				oe = <GPIO_OE_ENABLE>;
-			};
-		};
-	};
-
 	nand: nand-controller@79B0000 {
 		status = "okay";
 		nand_gpio {
