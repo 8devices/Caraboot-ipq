@@ -163,11 +163,13 @@ void pcie_v2_clock_init(int pcie_id)
 	int cfg, div;
 
 	/* Configure pcie_aux_clk_src */
-	cfg = (GCC_PCIE_AUX_CFG_RCGR_SRC_SEL | GCC_PCIE_AUX_CFG_RCGR_SRC_DIV);
+	cfg = (GCC_PCIE_AUX_CFG_RCGR_MN_MODE |
+		GCC_PCIE_AUX_CFG_RCGR_SRC_SEL |
+		GCC_PCIE_AUX_CFG_RCGR_SRC_DIV);
 	writel(cfg, GCC_PCIE_REG(GCC_PCIE_AUX_CFG_RCGR, 0));
 	writel(0x1, GCC_PCIE_REG(GCC_PCIE_AUX_M, 0));
-	writel(0xFFFE, GCC_PCIE_REG(GCC_PCIE_AUX_N, 0));
-	writel(0xFFFD, GCC_PCIE_REG(GCC_PCIE_AUX_D, 0));
+	writel(0xFFFC, GCC_PCIE_REG(GCC_PCIE_AUX_N, 0));
+	writel(0xFFFB, GCC_PCIE_REG(GCC_PCIE_AUX_D, 0));
 	writel(CMD_UPDATE, GCC_PCIE_REG(GCC_PCIE_AUX_CMD_RCGR, 0));
 	mdelay(100);
 	writel(ROOT_EN, GCC_PCIE_REG(GCC_PCIE_AUX_CMD_RCGR, 0));
@@ -228,7 +230,7 @@ void pcie_v2_clock_init(int pcie_id)
 void pcie_v2_clock_deinit(int pcie_id)
 {
 #ifndef CONFIG_IPQ9574_RUMI
-	writel(0x0, GCC_PCIE_REG(GCC_PCIE_AUX_CMD_RCGR, pcie_id));
+	writel(0x0, GCC_PCIE_REG(GCC_PCIE_AUX_CMD_RCGR, 0));
 	mdelay(100);
 	writel(0x0, GCC_PCIE_REG(GCC_PCIE_AHB_CBCR, pcie_id));
 	writel(0x0, GCC_PCIE_REG(GCC_PCIE_AXI_M_CBCR, pcie_id));
