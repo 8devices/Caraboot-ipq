@@ -470,6 +470,28 @@ int qca_scm_fuseipq(u32 svc_id, u32 cmd_id, void *buf, size_t len)
 	return ret;
 }
 
+int qca_scm_part_info(void *cmd_buf,
+			size_t cmd_len)
+{
+	int ret = 0;
+
+	if (is_scm_armv8())
+	{
+		struct qca_scm_desc desc = {0};
+		desc.arginfo = QCA_SCM_ARGS(1, SCM_VAL);
+		/* args[0] has the part info id */
+		desc.args[0] = * ((unsigned int *)cmd_buf);
+		ret = scm_call_64(SCM_SVC_BOOT, PART_INFO_CMD, &desc);
+	}
+	else
+	{
+		ret = scm_call(SCM_SVC_BOOT, PART_INFO_CMD, cmd_buf, cmd_len,
+				NULL, 0);
+	}
+
+	return ret;
+}
+
 int qca_scm_auth_kernel(void *cmd_buf,
 			size_t cmd_len)
 {
@@ -635,6 +657,10 @@ int qca_scm_call(u32 svc_id, u32 cmd_id, void *buf, size_t len)
 	return 0;
 }
 int qca_scm_fuseipq(u32 svc_id, u32 cmd_id, void *buf, size_t len)
+{
+	return 0;
+}
+int qca_scm_part_info(void *cmd_buf, size_t cmd_len)
 {
 	return 0;
 }

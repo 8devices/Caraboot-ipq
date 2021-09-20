@@ -373,4 +373,5 @@ extern loff_t board_env_size;
 #define CONFIG_IPQ_TZT
 #define CONFIG_IPQ_FDT_FIXUP
 #define CONFIG_ARMV7_PSCI
+#define CONFIG_VERSION_ROLLBACK_PARTITION_INFO
 #endif /* _IPQ9574_H */
