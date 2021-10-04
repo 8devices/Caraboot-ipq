@@ -430,6 +430,45 @@ void reset_cpu(unsigned long a)
 	while(1);
 }
 
+
+int sdx65_attached(void);
+
+int get_ap2mdm_gpio(void)
+{
+	int ap2mdm_gpio = -1, node;
+
+	node = fdt_path_offset(gd->fdt_blob, "/sdx-gpio");
+	if (node >= 0) {
+		if(sdx65_attached())
+			ap2mdm_gpio = fdtdec_get_uint(gd->fdt_blob, node, "x65-ap2mdm", -1);
+		else
+			ap2mdm_gpio = fdtdec_get_uint(gd->fdt_blob, node, "x55-ap2mdm", -1);
+	} else
+		return node;
+
+	return ap2mdm_gpio;
+}
+
+void indicate_sdx_device(void)
+{
+	int ap2mdm_gpio;
+	unsigned int *ap2mdm_gpio_base;
+
+	unsigned int machid = gd->bd->bi_arch_number;
+	if (machid != 0x08010400)
+		return;
+
+	ap2mdm_gpio = get_ap2mdm_gpio();
+	if(ap2mdm_gpio >= 0) {
+		/* Enabling OE in gpio cfg reg */
+		ap2mdm_gpio_base = (unsigned int *)GPIO_CONFIG_ADDR(ap2mdm_gpio);
+		writel(0x2c0, ap2mdm_gpio_base);
+		/* Indicate SDx by writing low to ap2mdm */
+		gpio_set_value(ap2mdm_gpio, 0x0);
+	}
+
+}
+
 void reset_board(void)
 {
 	run_command("reset", 0);

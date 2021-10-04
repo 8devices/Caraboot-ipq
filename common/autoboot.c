@@ -366,6 +366,8 @@ __weak int apps_iscrashed_crashdump_disabled(void)
 	return 0;
 }
 
+__weak void indicate_sdx_device(void) {}
+
 void autoboot_command(const char *s)
 {
 	debug("### main_loop: bootcmd=\"%s\"\n", s ? s : "<UNDEFINED>");
@@ -377,6 +379,7 @@ void autoboot_command(const char *s)
 	 */
 	if (apps_iscrashed()) {
 		printf("Crashdump magic found, initializing dump activity..\n");
+		indicate_sdx_device();
 		s = getenv("dump_to_flash");
 		if (!s) {
 			s = getenv("dump_minimal");

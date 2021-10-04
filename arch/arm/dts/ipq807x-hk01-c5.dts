@@ -31,6 +31,10 @@
 		aquantia_port = <5>;
 		aquantia_gpio = <44>;
 	};
+	sdx-gpio {
+		x55-ap2mdm = <26>;
+		x65-ap2mdm = <45>;
+	};
 
 };
 
