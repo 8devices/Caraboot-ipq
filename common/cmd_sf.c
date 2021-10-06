@@ -267,7 +267,7 @@ static int do_spi_flash_read_write(int argc, char * const argv[])
 	int ret = 1;
 	int dev = 0;
 	loff_t offset, len, maxsize;
-	unsigned long sram_end = CONFIG_SYS_SDRAM_BASE + gd->ram_size;
+	u64 sram_end = CONFIG_SYS_SDRAM_BASE + (u64)gd->ram_size;
 
 	if (argc < 3)
 		return -1;

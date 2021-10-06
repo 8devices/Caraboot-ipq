@@ -47,6 +47,7 @@ struct nand_onfi_para_page onfi_para;
 typedef unsigned long addr_t;
 
 static uint32_t hw_ver;
+unsigned int qpic_training_offset = 0;
 
 #ifdef CONFIG_QPIC_SERIAL
 static struct qpic_serial_nand_params qpic_serial_nand_tbl[] = {
@@ -4341,6 +4342,7 @@ static int qpic_execute_serial_training(struct mtd_info *mtd)
 	}
 
 	training_offset = ((loff_t) mtd->erasesize * start_blocks);
+	qpic_training_offset = training_offset;
 
 	start = (training_offset >> chip->phys_erase_shift);
 	offset = (start << chip->phys_erase_shift);

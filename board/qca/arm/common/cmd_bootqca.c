@@ -35,6 +35,11 @@
 #define ELF_HDR_PLUS_PHDR_SIZE	sizeof(Elf32_Ehdr) + \
 		(NO_OF_PROGRAM_HDRS * sizeof(Elf32_Phdr))
 
+#define PRIMARY_PARTITION	1
+#define SECONDARY_PARTITION	2
+
+extern int qca_scm_part_info(void *cmd_buf, size_t cmd_len);
+
 unsigned long __stack_chk_guard = 0x000a0dff;
 static int debug = 0;
 static char mtdids[256];
@@ -444,6 +449,9 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 	char runcmd[256];
 	int ret;
 	unsigned int request;
+#ifdef CONFIG_VERSION_ROLLBACK_PARTITION_INFO
+	int part = PRIMARY_PARTITION;
+#endif
 #ifdef CONFIG_QCA_MMC
 	block_dev_desc_t *blk_dev;
 	disk_partition_t disk_info;
@@ -485,6 +493,19 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 	request = CONFIG_SYS_LOAD_ADDR;
 	kernel_img_info.kernel_load_addr = request;
 
+#ifdef CONFIG_VERSION_ROLLBACK_PARTITION_INFO
+	if (smem_bootconfig_info() == 0){
+		ret = get_rootfs_active_partition();
+		if (ret){
+			part = SECONDARY_PARTITION;
+		}
+	}
+	ret = qca_scm_part_info(&part, sizeof(part));
+	if (ret) {
+		printf(" Partition info authentication failed \n");
+		BUG();
+	}
+#endif
 	if (ipq_fs_on_nand) {
 #ifdef CONFIG_CMD_UBI
 		/*
@@ -628,7 +649,6 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 
 	ret = qca_scm_auth_kernel(&kernel_img_info,
 			sizeof(kernel_img_info));
-
 	if (ret) {
 		printf("Kernel image authentication failed \n");
 		BUG();
@@ -848,7 +868,9 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 
 	ret = qca_scm_call(SCM_SVC_FUSE, QFPROM_IS_AUTHENTICATE_CMD, &buf, sizeof(char));
 
+#ifdef CONFIG_IPQ9574_EDMA
 	aquantia_phy_reset_init_done();
+#endif
 	/*
 	|| if atf is enable in env ,do_boot_signedimg is skip.
 	|| Note: This features currently support in ipq50XX.
