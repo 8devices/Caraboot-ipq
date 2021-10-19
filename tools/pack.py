@@ -2134,7 +2134,10 @@ class Pack(object):
 
             part_file = SRC_DIR + "/" + ARCH_NAME + "/flash_partition/" + ftype + "-partition.xml"
             part_xml = ET.parse(part_file)
-            partition = part_xml.find(".//partitions/partition[name='0:MIBIB']")
+	    if (part_xml.find(".//partitions/partition[name='0:MIBIB']")):
+		partition = part_xml.find(".//partitions/partition[name='0:MIBIB']")
+	    else:
+		partition = part_xml.find(".//partitions/partition[2]")
             part_fname = partition[8].text
             part_fname = os.path.join(self.images_dname, part_fname)
             pagesize = int(part_info.find(".//page_size").text)
