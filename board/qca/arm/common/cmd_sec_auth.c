@@ -14,6 +14,12 @@
 #include <common.h>
 #include <command.h>
 #include <asm/arch-qca-common/scm.h>
+#include <asm/arch-qca-common/smem.h>
+
+#define PRIMARY_PARTITION	1
+#define SECONDARY_PARTITION	2
+
+extern int qca_scm_part_info(void *cmd_buf, size_t cmd_len);
 
 int is_sec_boot_enabled(void)
 {
@@ -53,6 +59,10 @@ U_BOOT_CMD(is_sec_boot_enabled, 1, 0, do_is_sec_boot_enabled,
 static int do_secure_authenticate(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
 	int ret;
+#ifdef CONFIG_VERSION_ROLLBACK_PARTITION_INFO
+	int part = PRIMARY_PARTITION;
+#endif
+
 	struct cmd_buf {
 		unsigned long type;
 		unsigned long size;
@@ -73,6 +83,20 @@ static int do_secure_authenticate(cmd_tbl_t *cmdtp, int flag, int argc, char *co
 	cmd_buf.type = simple_strtoul(argv[1], NULL, 16);
 	cmd_buf.addr = simple_strtoul(argv[2], NULL, 16);
 	cmd_buf.size = simple_strtoul(argv[3], NULL, 16);
+
+#ifdef CONFIG_VERSION_ROLLBACK_PARTITION_INFO
+	if (smem_bootconfig_info() == 0){
+		ret = get_rootfs_active_partition();
+		if (ret){
+			part = SECONDARY_PARTITION;
+		}
+	}
+	ret = qca_scm_part_info(&part, sizeof(part));
+	if (ret) {
+		printf(" Partition info authentication failed \n");
+		BUG();
+	}
+#endif
 
 	ret = qca_scm_secure_authenticate(&cmd_buf, sizeof(cmd_buf));
 	if (ret) {
