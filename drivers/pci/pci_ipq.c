@@ -406,8 +406,10 @@ DECLARE_GLOBAL_DATA_PTR;
 
 static unsigned int local_buses[] = { 0, 0 };
 struct pci_controller pci_hose[PCI_MAX_DEVICES];
-static int phy_initialised;
 extern int get_soc_version(uint32_t *soc_ver_major, uint32_t *soc_ver_minor);
+
+#ifndef CONFIG_IPQ806X
+static int phy_initialised;
 
 struct phy_regs {
 	u32 reg_offset;
@@ -952,6 +954,7 @@ static const struct phy_regs pcie_phy_v2_init_seq_ipq[] = {
 	{ PCIE_0_PCS_COM_START_CONTROL,				0x03 },
 #endif
 };
+#endif
 
 enum pcie_verion{
 	PCIE_V0,
@@ -1533,6 +1536,7 @@ err:
 	return err;
 }
 
+#ifndef CONFIG_IPQ806X
 void pci_controller_init_v1(struct ipq_pcie *pcie)
 {
 	uint32_t val;
@@ -1726,6 +1730,7 @@ void pcie_phy_v2_init(struct ipq_pcie *pcie)
 	}
 	return;
 }
+#endif
 
 static int pci_ipq_ofdata_to_platdata(int id, struct ipq_pcie *pcie)
 {
@@ -1738,6 +1743,7 @@ static int pci_ipq_ofdata_to_platdata(int id, struct ipq_pcie *pcie)
 		case PCIE_V0:
 			pcie_v0_linkup(pcie, id);
 			break;
+#ifndef CONFIG_IPQ806X
 		case PCIE_V1:
 			pci_controller_init_v1(pcie);
 			pcie_linkup(pcie);
@@ -1750,6 +1756,7 @@ static int pci_ipq_ofdata_to_platdata(int id, struct ipq_pcie *pcie)
 				pcie_phy_init(pcie);
 			pcie_linkup(pcie);
 			break;
+#endif
 		default:
 			break;
 	}
