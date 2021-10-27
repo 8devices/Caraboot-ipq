@@ -251,6 +251,7 @@ struct ipq_serial_platdata {
 #define MSM_BOOT_UART_DM_RX_BREAK            (1 << 6)
 #define MSM_BOOT_UART_DM_HUNT_CHAR           (1 << 7)
 #define MSM_BOOT_UART_DM_RX_BRK_START_LAST   (1 << 8)
+#define MSM_BOOT_UART_DM_RX_STALE_TIMEOUT    (2 << 10)
 
 /* UART Receive FIFO Registers - 4 in numbers */
 #if PERIPH_BLK_BLSP

@@ -113,6 +113,15 @@ msm_boot_uart_dm_read(unsigned int *data, int *count, int wait,
 
 	/* Check for DM_RXSTALE for RX transfer to finish */
 	while (!(status_reg & MSM_BOOT_UART_DM_RXSTALE)) {
+		status_reg = readl(MSM_BOOT_UART_DM_SR(base));
+		if((status_reg & MSM_BOOT_UART_DM_RX_STALE_TIMEOUT) && \
+			(status_reg & MSM_BOOT_UART_DM_SR_RXFULL)) {
+			printf("Console buffer overflow occured!!");
+			msm_boot_uart_dm_init_rx_transfer(base);
+			total_rx_data = rx_data_read = 0;
+			return MSM_BOOT_UART_DM_E_RX_NOT_READY;
+		}
+
 		status_reg = readl(MSM_BOOT_UART_DM_MISR(base));
 		if (!wait)
 			return MSM_BOOT_UART_DM_E_RX_NOT_READY;
