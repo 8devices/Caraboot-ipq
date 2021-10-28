@@ -754,7 +754,12 @@ static void __fixup_usb_device_mode(void *blob)
 static void fdt_fixup_diag_gadget(void *blob)
 {
 	__fixup_usb_device_mode(blob);
-	parse_fdt_fixup("/soc/qcom,gadget_diag@0%status%?ok", blob);
+
+	if (fdt_path_offset(blob, "/soc/qcom,gadget_diag@0") < 0){
+		parse_fdt_fixup("/qti,gadget_diag@0%status%?ok", blob);
+	} else {
+		parse_fdt_fixup("/soc/qcom,gadget_diag@0%status%?ok", blob);
+	}
 }
 
 void ipq_fdt_fixup_usb_device_mode(void *blob)
