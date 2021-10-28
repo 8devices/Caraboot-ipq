@@ -1007,6 +1007,9 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 			} else if (sfp_mode == EPORT_WRAPPER_10GBASE_R) {
 				sgmii_fiber = 0;
 				curr_speed[i] = FAL_SPEED_10000;
+			} else if (sfp_mode == EPORT_WRAPPER_SGMII_PLUS) {
+				sgmii_fiber = 0;
+				curr_speed[i] = FAL_SPEED_2500;
 			} else {
 				printf("Error: Wrong mode specified for SFP Port in DT\n");
 				return sfp_mode;
@@ -1169,6 +1172,15 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 						clk[0] = 0x207;
 						clk[2] = 0x307;
 					}
+				} else if (i == sfp_port[0] || i == sfp_port[1]) {
+					mac_speed = 0x2;
+					if (i == 4) {
+						clk[0] = 0x401;
+						clk[2] = 0x501;
+					} else {
+						clk[0] = 0x201;
+						clk[2] = 0x301;
+					}
 				}
 				if (phy_node >= 0) {
 					if (phy_info[i]->phy_type == QCA8081_PHY_TYPE) {
@@ -1242,19 +1254,25 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 		}
 
 		if (i == sfp_port[0] || i == sfp_port[1]) {
-			if (sgmii_fiber) {
+			if (sgmii_fiber) { /* SGMII Fiber mode */
 				ppe_port_bridge_txmac_set(i + 1, 1);
 				if (i == 4)
 					ppe_uniphy_mode_set(0x1, EPORT_WRAPPER_SGMII_FIBER);
 				else
 					ppe_uniphy_mode_set(0x2, EPORT_WRAPPER_SGMII_FIBER);
 				ppe_port_mux_mac_type_set(i + 1, EPORT_WRAPPER_SGMII_FIBER);
-			} else {
+			} else if (sfp_mode == EPORT_WRAPPER_10GBASE_R) { /* 10GBASE_R mode */
 				if (i == 4)
 					ppe_uniphy_mode_set(0x1, EPORT_WRAPPER_10GBASE_R);
 				else
 					ppe_uniphy_mode_set(0x2, EPORT_WRAPPER_10GBASE_R);
 				ppe_port_mux_mac_type_set(i + 1, EPORT_WRAPPER_10GBASE_R);
+			} else { /* SGMII Plus Mode */
+				ppe_port_bridge_txmac_set(i + 1, 1);
+				if (i == 4)
+					ppe_uniphy_mode_set(0x1, EPORT_WRAPPER_SGMII_PLUS);
+				else if (i == 5)
+					ppe_uniphy_mode_set(0x2, EPORT_WRAPPER_SGMII_PLUS);
 			}
 		}
 
@@ -1264,7 +1282,7 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 
 		if (i == aquantia_port[0] || i == aquantia_port[1])
 			ipq9574_uxsgmii_speed_set(i, mac_speed, duplex, status);
-		else if (i == sfp_port[0] || i == sfp_port[1])
+		else if ((i == sfp_port[0] || i == sfp_port[1]) && sgmii_fiber == 0)
 			ipq9574_10g_r_speed_set(i, status);
 		else
 			ipq9574_pqsgmii_speed_set(i, mac_speed, status);
