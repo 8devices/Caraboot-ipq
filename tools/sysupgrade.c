@@ -730,15 +730,49 @@ int find_mtd_part_size(void)
 }
 
 /**
+ * Helper function to dynamically get volume id
+ */
+int get_kernel_volume_id(void)
+{
+	int i, number_of_ubi_volumes;
+	char ubi_vol_count[] = "/sys/class/ubi/ubi0/volumes_count";
+	char prefix[] = "/sys/class/ubi/ubi0_";
+	char suffix[] = "/name";
+	char ubi_vol[256];
+	char ubi_vol_name[256];
+	char current_ubi_volumes_count[256];
+	FILE *fp;
+
+	fp = fopen(ubi_vol_count, "r");
+	fgets(current_ubi_volumes_count, sizeof(current_ubi_volumes_count), fp);
+	number_of_ubi_volumes = atoi(current_ubi_volumes_count);
+	printf("number of ubi volumes = %d\n", number_of_ubi_volumes);
+
+	for (i = 0; i < number_of_ubi_volumes; i++)
+	{
+		snprintf(ubi_vol, sizeof(ubi_vol), "%s%d%s", prefix, i, suffix);
+		fp = fopen(ubi_vol, "r");
+		fgets(ubi_vol_name, sizeof(ubi_vol_name), fp);
+		if (strstr(ubi_vol_name, "kernel")) {
+			printf("kernel ubi volume id = %d\n", i);
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+/**
  * In case of NAND image, Kernel image is ubinized & version information is
  * part of Kernel image. Hence need to un-ubinize the image.
- * To get the kernel image, Find the volume with volume id 0. Kernel image
- * is fragmented and hence to assemble it to get complete image.
- * In UBI image, first look for UBI#, which is magic number used to identify
+ * To get the kernel image, Find the volume with kernel's volume id. Kernel image
+ * is fragmented and hence we need to assemble it to get complete image.
+ * In UBI image, first look for UBI#, which is the magic number used to identify
  * each eraseble block. Parse the UBI header, which starts with UBI# & get
  * the VID(volume ID) header offset as well as Data offset.
- * Traverse to VID header offset & check the volume ID. If it is ZERO, Kernel
- * image is stored in this volume. Use Data offset to extract the Kernel image.
+ * Traverse to VID header offset & check the volume ID. If it is matching with
+ * kernel Volume id extracted based on ubi sysfs, Kernel image is stored in
+ * this volume. Use Data offset to extract the Kernel image.
  *
  * @bin_file: struct image_section *
  */
@@ -748,6 +782,7 @@ int extract_kernel_binary(struct image_section *section)
 	struct ubi_vid_hdr *ubi_vol;
 	uint8_t *fp;
 	int fd, ofd, magic, data_size, vid_hdr_offset, data_offset;
+	int kernel_vol_id, curr_vol_id;
 	struct stat sb;
 
 	fd = open(section->tmp_file, O_RDONLY);
@@ -783,6 +818,12 @@ int extract_kernel_binary(struct image_section *section)
 		return 0;
 	}
 
+	kernel_vol_id = get_kernel_volume_id();
+	if (kernel_vol_id == -1) {
+		printf("Wrong ubi volume id for kernel\n");
+		return 0;
+	}
+
 	ubi_ec = (struct ubi_ec_hdr *)fp;
 	magic = be32_to_cpu(ubi_ec->magic);
 	while (magic == UBI_EC_HDR_MAGIC) {
@@ -797,16 +838,14 @@ int extract_kernel_binary(struct image_section *section)
 			return 0;
 		}
 
-		if (ubi_vol->vol_id == 0) {
+		curr_vol_id = be32_to_cpu(ubi_vol->vol_id);
+		if (curr_vol_id == kernel_vol_id) {
 			if (write(ofd, (void *)((uint8_t *)ubi_ec + data_offset), data_size) == -1) {
 				printf("Write error\n");
 				close(fd);
 				close(ofd);
 				return 0;
 			}
-		}
-		if ((int)ubi_vol->vol_id > 0) {
-			break;
 		}
 
 		ubi_ec = (struct ubi_ec_hdr *)((uint8_t *)ubi_ec + data_offset + data_size);
