@@ -331,7 +331,14 @@ extern loff_t board_env_size;
 
 #define CONFIG_QCA_KERNEL_CRASHDUMP_ADDRESS	*((unsigned int *)0x08600658)
 #define CONFIG_CPU_CONTEXT_DUMP_SIZE		4096
-#define TLV_BUF_OFFSET						500 * 1024
+/* TZ generally stores the base address allocated by ctx-save driver
+ * in the imem location 0x08600658. In IPQ9574, the first 300K is used
+ * for TMEL ctxt. TZ stores the base address + 300K in the imem.
+ * In the minidump path, TLV_BUF_OFFSET is added to base addr.
+ * So update TLV_BUF_OFFSET to subtract 300K from the base.
+ */
+#define TME_CTXT_SIZE	300 * 1024
+#define TLV_BUF_OFFSET						(500 * 1024) - TME_CTXT_SIZE
 #define CONFIG_TLV_DUMP_SIZE				12 * 1024
 
 /* L1 cache line size is 64 bytes, L2 cache line size is 128 bytes
