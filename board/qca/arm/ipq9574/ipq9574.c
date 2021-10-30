@@ -571,6 +571,15 @@ int set_uuid_bootargs(char *boot_args, char *part_name, int buflen, bool gpt_fla
 	block_dev_desc_t *blk_dev;
 	disk_partition_t disk_info;
 
+	if (mmc_init(mmc_host.mmc)) {
+		/* The HS mode command(cmd6) is getting timed out and mmc is
+		 * not getting initialized properly. So do a reset again.
+		 */
+		if (mmc_init(mmc_host.mmc)) {
+			printf("\n MMC re-init failed, might be cmd6 timeout\n");
+			return -1;
+		}
+	}
 	blk_dev = mmc_get_dev(mmc_host.dev_num);
 	if (!blk_dev) {
 		printf("Invalid block device name\n");
