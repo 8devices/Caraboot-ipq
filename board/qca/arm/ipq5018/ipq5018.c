@@ -60,6 +60,10 @@ extern void ppe_uniphy_refclk_set(void);
 
 unsigned int qpic_frequency = 0, qpic_phase = 0;
 
+#ifdef CONFIG_QPIC_NAND
+extern unsigned int qpic_training_offset;
+#endif
+
 const char *rsvd_node = "/reserved-memory";
 const char *del_node[] = {"uboot",
 			  "sbl",
@@ -1915,6 +1919,14 @@ void fdt_fixup_qpic(void *blob)
 		printf("%s : Unable to set property 'qcom,phase'\n",__func__);
 		return;
 	}
+
+#ifdef CONFIG_QPIC_NAND
+	ret = fdt_setprop_u32(blob, node_off, "qcom,training_offset", qpic_training_offset);
+	if (ret) {
+		printf("%s : Unable to set property 'qcom,training_offset'\n",__func__);
+		return;
+	}
+#endif
 }
 
 void fdt_fixup_bt_debug(void *blob)
