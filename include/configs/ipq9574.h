@@ -207,6 +207,7 @@ extern loff_t board_env_size;
 #endif /* QSPI DEBUG */
 #define CONFIG_PAGE_SCOPE_MULTI_PAGE_READ
 #define CONFIG_QSPI_SERIAL_TRAINING
+#define CONFIG_QSPI_LAYOUT_SWITCH
 #endif
 
 /*
