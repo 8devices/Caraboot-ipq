@@ -1046,8 +1046,15 @@ void fdt_fixup_sdx65_gpio(void *blob)
 	parse_fdt_fixup("/soc/pci@20000000/%x65_attached%1", blob);
 	parse_fdt_fixup("/soc/pci@20000000/pcie0_rp/qcom,mhi@0/%mdm2ap%21", blob);
 	parse_fdt_fixup("/soc/pci@20000000/pcie0_rp/qcom,mhi@0/%ap2mdm%45", blob);
-	parse_fdt_fixup("/soc/pinctrl@1000000/ap2mdm_status/%pins%?gpio45", blob);
-	parse_fdt_fixup("/soc/pinctrl@1000000/mdm2ap_e911_status/%pins%?gpio22", blob);
+
+	if (fdt_path_offset(blob, "/soc/pinctrl@1000000/ap2mdm_status/") >= 0) {
+		parse_fdt_fixup("/soc/pinctrl@1000000/ap2mdm_status/%pins%?gpio45", blob);
+		parse_fdt_fixup("/soc/pinctrl@1000000/mdm2ap_e911_status/%pins%?gpio22", blob);
+	} else if (fdt_path_offset(blob, "/soc/pinctrl@1000000/pcie_sdx_pinmux/") >= 0) {
+		/* On Linux-5.4, sdx status gpio pinmux node has changed */
+		parse_fdt_fixup("/soc/pinctrl@1000000/pcie_sdx_pinmux/ap2mdm_status/%pins%?gpio45", blob);
+		parse_fdt_fixup("/soc/pinctrl@1000000/pcie_sdx_pinmux/mdm2ap_e911_status/%pins%?gpio22", blob);
+	}
 }
 
 #ifdef CONFIG_USB_XHCI_IPQ
