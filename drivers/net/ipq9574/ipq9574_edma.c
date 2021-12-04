@@ -1305,6 +1305,37 @@ static int ipq9574_edma_wr_macaddr(struct eth_device *dev)
 
 static void ipq9574_eth_halt(struct eth_device *dev)
 {
+	pr_debug("\n\n*****GMAC0 info*****\n");
+	pr_debug("GMAC0 RXPAUSE(0x3a001044):%x\n", readl(0x3a001044));
+	pr_debug("GMAC0 TXPAUSE(0x3a0010A4):%x\n", readl(0x3a0010A4));
+	pr_debug("GMAC0 RXGOODBYTE_L(0x3a001084):%x\n", readl(0x3a001084));
+	pr_debug("GMAC0 RXGOODBYTE_H(0x3a001088):%x\n", readl(0x3a001088));
+	pr_debug("GMAC0 RXBADBYTE_L(0x3a00108c):%x\n", readl(0x3a00108c));
+	pr_debug("GMAC0 RXBADBYTE_H(0x3a001090):%x\n", readl(0x3a001090));
+
+	pr_debug("\n\n*****GMAC1 info*****\n");
+	pr_debug("GMAC1 RXPAUSE(0x3a001244):%x\n", readl(0x3a001244));
+	pr_debug("GMAC1 TXPAUSE(0x3a0012A4):%x\n", readl(0x3a0012A4));
+	pr_debug("GMAC1 RXGOODBYTE_L(0x3a001284):%x\n", readl(0x3a001284));
+	pr_debug("GMAC1 RXGOODBYTE_H(0x3a001288):%x\n", readl(0x3a001288));
+	pr_debug("GMAC1 RXBADBYTE_L(0x3a00128c):%x\n", readl(0x3a00128c));
+	pr_debug("GMAC1 RXBADBYTE_H(0x3a001290):%x\n", readl(0x3a001290));
+
+	pr_debug("\n\n*****GMAC2 info*****\n");
+	pr_debug("GMAC2 RXPAUSE(0x3a001444):%x\n", readl(0x3a001444));
+	pr_debug("GMAC2 TXPAUSE(0x3a0014A4):%x\n", readl(0x3a0014A4));
+	pr_debug("GMAC2 RXGOODBYTE_L(0x3a001484):%x\n", readl(0x3a001484));
+	pr_debug("GMAC2 RXGOODBYTE_H(0x3a001488):%x\n", readl(0x3a001488));
+	pr_debug("GMAC2 RXBADBYTE_L(0x3a00148c):%x\n", readl(0x3a00148c));
+	pr_debug("GMAC2 RXBADBYTE_H(0x3a001490):%x\n", readl(0x3a001490));
+
+	pr_debug("\n\n*****GMAC3 info*****\n");
+	pr_debug("GMAC3 RXPAUSE(0x3a001644):%x\n", readl(0x3a001644));
+	pr_debug("GMAC3 TXPAUSE(0x3a0016A4):%x\n", readl(0x3a0016A4));
+	pr_debug("GMAC3 RXGOODBYTE_L(0x3a001684):%x\n", readl(0x3a001684));
+	pr_debug("GMAC3 RXGOODBYTE_H(0x3a001688):%x\n", readl(0x3a001688));
+	pr_debug("GMAC3 RXBADBYTE_L(0x3a00168c):%x\n", readl(0x3a00168c));
+	pr_debug("GMAC3 RXBADBYTE_H(0x3a001690):%x\n", readl(0x3a001690));
 	pr_info("%s: done\n", __func__);
 }
 
