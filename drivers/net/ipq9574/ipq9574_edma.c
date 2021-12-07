@@ -59,8 +59,6 @@ extern int ipq_qca8081_phy_init(struct phy_ops **ops, u32 phy_id);
 extern int ipq_qca_aquantia_phy_init(struct phy_ops **ops, u32 phy_id);
 extern int ipq_board_fw_download(unsigned int phy_addr);
 
-static int tftp_acl_our_port;
-
 /*
  * EDMA hardware instance
  */
@@ -410,11 +408,6 @@ static int ipq9574_eth_snd(struct eth_device *dev, void *packet, int length)
 
 	txdesc_ring = ehw->txdesc_ring;
 
-	if (tftp_acl_our_port != tftp_our_port) {
-		/* Allowing tftp packets */
-		ipq9574_ppe_acl_set(3, 0x4, 0x1, tftp_our_port, 0xffff, 0, 0);
-		tftp_acl_our_port = tftp_our_port;
-	}
 	/*
 	 * Read TXDESC ring producer index
 	 */
