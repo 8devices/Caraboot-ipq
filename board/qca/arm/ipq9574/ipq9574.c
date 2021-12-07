@@ -851,8 +851,16 @@ void set_function_select_as_mdc_mdio(void)
 	}
 }
 
-void nssnoc_init(void)
-{
+void nssnoc_init(void){
+	unsigned int gcc_nssnoc_memnoc_bfdcd_cmd_rcgr_addr = 0x1817004;
+	unsigned int gcc_qdss_at_cmd_rcgr_addr = 0x182D004;
+
+	writel(0x102, gcc_nssnoc_memnoc_bfdcd_cmd_rcgr_addr + 4);
+	writel(0x3, gcc_nssnoc_memnoc_bfdcd_cmd_rcgr_addr);
+
+	writel(0x109, gcc_qdss_at_cmd_rcgr_addr + 4);
+	writel(0x3, gcc_qdss_at_cmd_rcgr_addr);
+
 	/* Enable required NSSNOC clocks */
 	writel(readl(GCC_MEM_NOC_NSSNOC_CLK) | GCC_CBCR_CLK_ENABLE,
 		GCC_MEM_NOC_NSSNOC_CLK);
