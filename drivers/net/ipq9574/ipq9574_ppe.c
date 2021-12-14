@@ -51,6 +51,74 @@ static inline void ipq9574_ppe_reg_write(u32 reg, u32 val)
 	writel(val, (void *)(IPQ9574_PPE_BASE_ADDR + reg));
 }
 
+void ppe_ipo_rule_reg_set(union ipo_rule_reg_u *hw_reg, int rule_id)
+{
+	int i;
+
+	for (i = 0; i < 3; i++) {
+		ipq9574_ppe_reg_write(IPO_CSR_BASE_ADDR + IPO_RULE_REG_ADDRESS +
+			(rule_id * IPO_RULE_REG_INC) + (i * 4), hw_reg->val[i]);
+	}
+}
+
+void ppe_ipo_mask_reg_set(union ipo_mask_reg_u *hw_mask, int rule_id)
+{
+	int i;
+
+	for (i = 0; i < 2; i++) {
+		ipq9574_ppe_reg_write((IPO_CSR_BASE_ADDR + IPO_MASK_REG_ADDRESS +
+			(rule_id * IPO_MASK_REG_INC) + (i * 4)), hw_mask->val[i]);
+	}
+}
+
+void ppe_ipo_action_set(union ipo_action_u *hw_act, int rule_id)
+{
+	int i;
+
+	for (i = 0; i < 5; i++) {
+		ipq9574_ppe_reg_write((IPE_L2_BASE_ADDR + IPO_ACTION_ADDRESS +
+			(rule_id * IPO_ACTION_INC) + (i * 4)), hw_act->val[i]);
+	}
+}
+
+void ipq9574_ppe_acl_set(int rule_id, int rule_type, int pkt_type, int l4_port_no, int l4_port_mask, int permit, int deny)
+{
+	union ipo_rule_reg_u hw_reg = {0};
+	union ipo_mask_reg_u hw_mask = {0};
+	union ipo_action_u hw_act = {0};
+
+	memset(&hw_reg, 0, sizeof(hw_reg));
+	memset(&hw_mask, 0, sizeof(hw_mask));
+	memset(&hw_act, 0, sizeof(hw_act));
+
+	if (rule_id < MAX_RULE) {
+		if (rule_type == ADPT_ACL_HPPE_IPV4_DIP_RULE) {
+			hw_reg.bf.rule_type = ADPT_ACL_HPPE_IPV4_DIP_RULE;
+			hw_reg.bf.rule_field_0 = l4_port_no;
+			hw_reg.bf.rule_field_1 = pkt_type<<17;
+			hw_mask.bf.maskfield_0 = l4_port_mask;
+			hw_mask.bf.maskfield_1 = 7<<17;
+			if (permit == 0x0) {
+				hw_act.bf.dest_info_change_en = 1;
+				hw_act.bf.fwd_cmd = 0;/*forward*/
+				hw_reg.bf.pri = 0x1;
+			}
+
+			if (deny == 0x1) {
+				hw_act.bf.dest_info_change_en = 1;
+				hw_act.bf.fwd_cmd = 1;/*drop*/
+				hw_reg.bf.pri = 0x0;
+
+			}
+			hw_reg.bf.src_0 = 0x0;
+			hw_reg.bf.src_1 = 0x3f;
+			ppe_ipo_rule_reg_set(&hw_reg, rule_id);
+			ppe_ipo_mask_reg_set(&hw_mask, rule_id);
+			ppe_ipo_action_set(&hw_act, rule_id);
+		}
+	}
+}
+
 /*
  * ipq9574_ppe_vp_port_tbl_set()
  */
@@ -900,4 +968,10 @@ void ipq9574_ppe_provision_init(void)
 		ipq9574_gmac_port_enable(i);
 		ppe_port_bridge_txmac_set(i + 1, 1);
 	}
+
+	/* Allowing DHCP packets */
+	ipq9574_ppe_acl_set(0, ADPT_ACL_HPPE_IPV4_DIP_RULE, UDP_PKT, 67, 0xffff, 0, 0);
+	ipq9574_ppe_acl_set(1, ADPT_ACL_HPPE_IPV4_DIP_RULE, UDP_PKT, 68, 0xffff, 0, 0);
+	/* Dropping all the UDP packets */
+	ipq9574_ppe_acl_set(2, ADPT_ACL_HPPE_IPV4_DIP_RULE, UDP_PKT, 0, 0, 0, 1);
 }
