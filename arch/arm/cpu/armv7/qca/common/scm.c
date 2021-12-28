@@ -585,6 +585,8 @@ int qca_scm_secure_authenticate(void *cmd_buf, size_t cmd_len)
 		desc.args[2] = * (((unsigned long *)cmd_buf) + 2);
 
 		ret = scm_call_64(SCM_SVC_BOOT, SCM_CMD_SEC_AUTH, &desc);
+		if(!ret && desc.ret[0])
+			return SCM_ERROR;
 	}
 	else
 	{
