@@ -1383,8 +1383,12 @@ void fdt_fixup_set_qca_cold_reboot_enable(void *blob)
 
 void fdt_fixup_wcss_rproc_for_atf(void *blob)
 {
-	parse_fdt_fixup("/soc/qcom_q6v5_wcss@CD00000%qcom,nosecure%1", blob);
-	parse_fdt_fixup("/soc/qcom_q6v5_wcss@CD00000%qca,wcss-aon-reset-seq%1", blob);
+	if (fdt_path_offset(blob, "/soc/remoteproc@cd00000") >= 0)
+		parse_fdt_fixup("/soc/remoteproc@cd00000%qcom,nosecure%1", blob);
+	else {
+		parse_fdt_fixup("/soc/qcom_q6v5_wcss@CD00000%qcom,nosecure%1", blob);
+		parse_fdt_fixup("/soc/qcom_q6v5_wcss@CD00000%qca,wcss-aon-reset-seq%1", blob);
+	}
 }
 
 int get_soc_hw_version(void)
