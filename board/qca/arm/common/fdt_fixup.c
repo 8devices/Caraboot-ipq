@@ -400,8 +400,11 @@ void ipq_fdt_mem_rsvd_fixup(void *blob)
 	if (nodeoff < 0) {
 		nodeoff = fdt_path_offset(blob, "/qti,scm_restart_reason");
 		if (nodeoff < 0) {
-			debug("fdt-fixup: unable to find compatible node\n");
-			return;
+			nodeoff = fdt_path_offset(blob, "/soc/qti,scm_restart_reason");
+			if (nodeoff < 0) {
+				debug("fdt-fixup: unable to find compatible node\n");
+				return;
+			}
 		}
 	}
 
