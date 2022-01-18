@@ -723,6 +723,9 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 	disk_partition_t disk_info;
 	unsigned int active_part = 0;
 #endif
+#ifdef CONFIG_IPQ_ELF_AUTH
+	image_info img_info;
+#endif
 
 	if (argc == 2 && strncmp(argv[1], "debug", 5) == 0)
 		debug = 1;
@@ -841,6 +844,13 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 			ret = config_select((CONFIG_SYS_LOAD_ADDR
 					     + sizeof(mbn_header_t)),
 					    runcmd, sizeof(runcmd));
+#ifdef CONFIG_IPQ_ELF_AUTH
+		} else if (!parse_elf_image_phdr(&img_info,
+					CONFIG_SYS_LOAD_ADDR)) {
+			ret = config_select((CONFIG_SYS_LOAD_ADDR +
+						img_info.img_offset),
+					    runcmd, sizeof(runcmd));
+#endif
 		} else if (ret == IMAGE_FORMAT_LEGACY) {
 			snprintf(runcmd, sizeof(runcmd),
 				 "bootm 0x%x\n", (CONFIG_SYS_LOAD_ADDR +
