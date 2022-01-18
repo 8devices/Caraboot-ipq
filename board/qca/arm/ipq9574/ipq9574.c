@@ -1482,6 +1482,8 @@ unsigned int get_dts_machid(unsigned int machid)
 	{
 		case MACH_TYPE_IPQ9574_EMULATION:
 			return MACH_TYPE_IPQ9574_EMULATION;
+		case MACH_TYPE_IPQ9574_AP_AL02_C5:
+			return MACH_TYPE_IPQ9574_AP_AL02_C4;
 		default:
 			return machid;
 	}
@@ -1496,6 +1498,9 @@ void ipq_uboot_fdt_fixup(void)
 	{
 		case MACH_TYPE_IPQ9574_EMULATION:
 			config = "config@emulation-fbc";
+			break;
+		case MACH_TYPE_IPQ9574_AP_AL02_C5:
+			config = "config@al02-c5";
 			break;
 	}
 
