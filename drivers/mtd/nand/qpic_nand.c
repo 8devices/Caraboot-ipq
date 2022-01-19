@@ -337,7 +337,7 @@ static struct qpic_serial_nand_params qpic_serial_nand_tbl[] = {
 };
 struct qpic_serial_nand_params *serial_params;
 #define MICRON_DEVICE_ID	0x152c152c
-#define WINBOND_DEVICE_ID	0x0021bcef
+#define WINBOND_MFR_ID		0xef
 #define CMD3_MASK		0xfff0ffff
 /*
  * An array holding the fixed pattern to compare with
@@ -1447,6 +1447,30 @@ int qpic_spi_nand_config(struct mtd_info *mtd)
 	} else
 		qspi_debug("%s : Internal ECC disabled on power on.\n",__func__);
 
+	if (dev->vendor == WINBOND_MFR_ID) {
+		status = qpic_serial_get_feature(mtd, FLASH_SPI_NAND_FR_ADDR);
+		if (status < 0) {
+			printf("%s : Error in getting feature.\n",__func__);
+			return status;
+		}
+
+		if (!((status >> 8) & FLASH_SPI_NAND_FR_BUFF_ENABLE)) {
+			qspi_debug("%s :continous buffer mode disabled\n",
+				__func__);
+			qspi_debug("%s : Issuing set feature command to enable it\n",
+					__func__);
+			status = qpic_serial_set_feature(mtd, FLASH_SPI_NAND_FR_ADDR,
+				(FLASH_SPI_NAND_FR_BUFF_ENABLE | (status >> 8)));
+			if (status < 0) {
+				printf("%s : Error in disabling continous buffer bit.\n",
+						__func__);
+				return status;
+			}
+		} else {
+			qspi_debug("%s : continous buffer mode enabled on power on\n",
+					__func__);
+		}
+	}
 	/* Enable QUAD mode if device supported. Check this condition only
 	 * if dev->quad_mode = true , means device will support Quad mode
 	 * else no need to check for Quad mode.
@@ -1495,31 +1519,6 @@ int qpic_spi_nand_config(struct mtd_info *mtd)
 			}
 		} else {
 			qspi_debug("%s: Quad mode enabled on Opwer on.\n",__func__);
-		}
-	}
-
-	if (dev->id == WINBOND_DEVICE_ID) {
-		status = qpic_serial_get_feature(mtd, FLASH_SPI_NAND_FR_ADDR);
-		if (status < 0) {
-			printf("%s : Error in getting feature.\n",__func__);
-			return status;
-		}
-
-		if (!((status >> 8) & FLASH_SPI_NAND_FR_BUFF_ENABLE)) {
-			qspi_debug("%s :continous buffer mode disabled\n",
-				__func__);
-			qspi_debug("%s : Issuing set feature command to enable it\n",
-					__func__);
-			status = qpic_serial_set_feature(mtd, FLASH_SPI_NAND_FR_ADDR,
-				(FLASH_SPI_NAND_FR_BUFF_ENABLE | (status >> 8)));
-			if (status < 0) {
-				printf("%s : Error in disabling continous buffer bit.\n",
-						__func__);
-				return status;
-			}
-		} else {
-			qspi_debug("%s : continous buffer mode enabled on power on\n",
-					__func__);
 		}
 	}
 
