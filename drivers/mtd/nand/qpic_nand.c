@@ -1421,6 +1421,7 @@ int qpic_spi_nand_config(struct mtd_info *mtd)
 	if ((status  >> 8) & FLASH_SPI_NAND_FR_ECC_ENABLE) {
 		qspi_debug("%s : Internal ECC enabled, disabling internal ECC\n",__func__);
 
+		status >>= 8;
 		status &= ~(FLASH_SPI_NAND_FR_ECC_ENABLE);
 		status = qpic_serial_set_feature(mtd, FLASH_SPI_NAND_FR_ADDR,
 			status);
