@@ -2228,6 +2228,39 @@ int bring_sec_core_up(unsigned int cpuid, unsigned int entry, unsigned int arg)
 }
 #endif
 
+unsigned int get_dts_machid(unsigned int machid)
+{
+	switch (machid)
+	{
+		case MACH_TYPE_IPQ5018_AP_MP05_1:
+			return MACH_TYPE_IPQ5018_AP_MP03_1;
+		default:
+			return machid;
+	}
+}
+
+void ipq_uboot_fdt_fixup(void)
+{
+	int ret, len;
+	const char *config = "config@mp05.1";
+	len = fdt_totalsize(gd->fdt_blob) + strlen(config) + 1;
+	if (gd->bd->bi_arch_number == MACH_TYPE_IPQ5018_AP_MP05_1)
+	{
+		/*
+		* Open in place with a new length.
+		*/
+		ret = fdt_open_into(gd->fdt_blob, (void *)gd->fdt_blob, len);
+		if (ret)
+			printf("uboot-fdt-fixup: Cannot expand FDT: %s\n", fdt_strerror(ret));
+
+		ret = fdt_setprop((void *)gd->fdt_blob, 0, "config_name",
+			config, (strlen(config)+1));
+		if (ret)
+			printf("uboot-fdt-fixup: unable to set config_name(%d)\n", ret);
+	}
+	return;
+}
+
 int get_soc_hw_version(void)
 {
 	return readl(TCSR_SOC_HW_VERSION_REG);
