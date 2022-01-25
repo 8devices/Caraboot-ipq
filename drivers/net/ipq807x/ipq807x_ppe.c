@@ -1118,7 +1118,7 @@ static void ppe_port_mux_set(int port_id, int port_type, int mode)
 	port_mux_ctrl.bf.port4_pcs_sel = PORT4_PCS_SEL_GMII_FROM_PCS0;
 	if (port_id == PORT5) {
 		if (port_type == PORT_GMAC_TYPE) {
-			if (mode == PORT_WRAPPER_SGMII_PLUS)
+			if (mode == PORT_WRAPPER_SGMII_PLUS || mode == PORT_WRAPPER_SGMII0_RGMII4)
 				port_mux_ctrl.bf.port5_pcs_sel = PORT5_PCS_SEL_GMII_FROM_PCS1;
 			else
 				port_mux_ctrl.bf.port5_pcs_sel = PORT5_PCS_SEL_GMII_FROM_PCS0;

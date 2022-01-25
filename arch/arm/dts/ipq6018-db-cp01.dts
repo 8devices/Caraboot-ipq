@@ -179,7 +179,7 @@
 
 	ess-switch {
 		switch_mac_mode = <PORT_WRAPPER_PSGMII>;
-		switch_mac_mode1 = <PORT_WRAPPER_SGMII_PLUS>;
+		switch_mac_mode1 = <PORT_WRAPPER_SGMII>;
 		napa_gpio = <77>;
 		napa_gpio_cnt = <1>;
 		malibu_gpio = <75>;

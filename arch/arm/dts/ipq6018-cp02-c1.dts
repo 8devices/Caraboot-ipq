@@ -25,8 +25,8 @@
 		i2c1 = "/i2c@78ba000";
 	};
 	ess-switch {
-		switch_mac_mode = <PORT_WRAPPER_SGMII_PLUS>;
-		switch_mac_mode1 = <PORT_WRAPPER_SGMII_PLUS>;
+		switch_mac_mode = <PORT_WRAPPER_SGMII>;
+		switch_mac_mode1 = <PORT_WRAPPER_SGMII>;
 		napa_gpio = <77>;
 		napa_gpio_cnt = <1>;
 		mdc_mdio_gpio = <64 65>;
