@@ -550,7 +550,7 @@ int smem_update_bootconfig_to_flash(void)
 	/* Update BOOTCONFIG in flash only if there is an update in SMEM by SBL */
 	if (!ipq_runtime_fs_skip_status_check) {
 		if (ipq_runtime_failsafe_status & IPQ_RUNTIME_FS_BOOTCONFIG_UPDATED) {
-			printf("\nNonHLOS runtime hang detected: Partitions switched.\n");
+			printf("\nRuntime hang detected: Partitions switched by SBL.\n");
 		} else {
 			return 0;
 		}
