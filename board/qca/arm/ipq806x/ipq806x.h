@@ -156,6 +156,7 @@ __weak void aquantia_phy_reset_init_done(void) {}
 __weak void aquantia_phy_reset_init(void) {}
 __weak void qgic_init(void) {}
 __weak void handle_noc_err(void) {}
+__weak void ubi_power_collapse(void) {}
 
 struct smem_ram_ptn {
 	char name[16];

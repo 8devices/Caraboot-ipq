@@ -82,6 +82,15 @@
 #define GCC_PORT6_ARES				0x3
 #define NSS_CC_PORT_SPEED_DIVIDER		0x39B28110
 #define NSS_CC_PPE_FREQUENCY_RCGR		0x39B28204
+#define NSS_CC_CFG_CMD_RCGR			0x39B28104
+#define NSS_CC_CFG_CFG_RCGR			0x39B28108
+#define NSS_CC_NSS_CSR_CBCR			0x39B281D0
+#define NSS_CC_NSSNOC_NSS_CSR_CBCR		0x39B281D4
+#define UBI_C0_GDS_CTRL_REQ			0x39D00020
+#define UBI_C1_GDS_CTRL_REQ			0x39D00024
+#define UBI_C2_GDS_CTRL_REQ			0x39D00028
+#define UBI_C3_GDS_CTRL_REQ			0x39D0002C
+#define UBI32_CORE_GDS_COLLAPSE_EN_SW 		0x1 << 28
 
 #define GPIO_DRV_2_MA				0x0 << 6
 #define GPIO_DRV_4_MA				0x1 << 6
@@ -382,6 +391,7 @@ typedef enum {
 #define MSM_SDC1_BASE           0x7800000
 #define MSM_SDC1_SDHCI_BASE     0x7804000
 
+void ubi_power_collapse(void);
 __weak void qgic_init(void) {}
 __weak void handle_noc_err(void) {}
 extern const char *rsvd_node;

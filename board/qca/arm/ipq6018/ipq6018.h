@@ -390,5 +390,6 @@ __weak void board_pcie_clock_init(int id) {}
 
 __weak void qgic_init(void) {}
 __weak void handle_noc_err(void) {}
+__weak void ubi_power_collapse(void) {}
 
 #endif /* _IPQ6018_CDP_H_ */
