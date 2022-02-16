@@ -1101,11 +1101,11 @@ class Pack(object):
                 if part_info.which_flash == 0:
                     offset = part_info.offset
                     script.erase(offset, part_info.length)
-                    if ARCH_NAME in ["ipq9574", "ipq9574_64"]:
+                    if ARCH_NAME in ["ipq5018", "ipq5018_64", "ipq9574", "ipq9574_64"]:
                         if self.flash_type == "nand-4k" and section_conf == "sbl1":
                                 script.switch_layout_qpic("sbl")
                     script.write(offset, img_size)
-                    if ARCH_NAME in ["ipq9574", "ipq9574_64"]:
+                    if ARCH_NAME in ["ipq5018", "ipq5018_64", "ipq9574", "ipq9574_64"]:
                         if self.flash_type == "nand-4k" and section_conf == "sbl1":
                                 script.switch_layout_qpic("linux")
                 else:
