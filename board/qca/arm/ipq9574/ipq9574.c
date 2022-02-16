@@ -108,15 +108,6 @@ void fdt_fixup_qpic(void *blob)
 	}
 }
 
-
-void qpic_emulation_set_clk(void)
-{
-	writel(QPIC_CBCR_VAL, GCC_QPIC_CBCR_ADDR);
-	writel(CLK_ENABLE, GCC_QPIC_AHB_CBCR_ADDR);
-	writel(CLK_ENABLE, GCC_QPIC_SLEEP_CBCR);
-	writel(CLK_ENABLE, GCC_QPIC_IO_MACRO_CBCR);
-}
-
 void board_nand_init(void)
 {
 #ifdef CONFIG_QPIC_SERIAL
@@ -130,9 +121,6 @@ void board_nand_init(void)
 	if (!fdtdec_get_is_enabled(gd->fdt_blob, node)) {
 		printf("QPIC: disabled, skipping initialization\n");
 	} else {
-#ifdef CONFIG_IPQ9574_RUMI
-		qpic_emulation_set_clk();
-#endif
 		qpic_nand_init(NULL);
 	}
 #endif
