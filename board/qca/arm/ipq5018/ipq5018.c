@@ -2233,7 +2233,7 @@ unsigned int get_dts_machid(unsigned int machid)
 	switch (machid)
 	{
 		case MACH_TYPE_IPQ5018_AP_MP05_1:
-			return MACH_TYPE_IPQ5018_AP_MP03_1;
+			return MACH_TYPE_IPQ5018_AP_MP03_3;
 		default:
 			return machid;
 	}
