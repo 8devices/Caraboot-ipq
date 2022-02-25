@@ -25,7 +25,7 @@
 	ess-switch {
 		switch_mac_mode = <0x0>;
 		switch_mac_mode1 = <0xFF>;
-		switch_mac_mode2 = <0x6>;
+		switch_mac_mode2 = <0x1>;
 		napa_gpio = <44>;
 		napa_gpio_cnt = <1>;
 		port_phyinfo {

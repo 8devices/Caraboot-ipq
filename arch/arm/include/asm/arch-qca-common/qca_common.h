@@ -100,15 +100,15 @@ void dump_func(unsigned int dump_level);
 int do_dumpqca_flash_data(const char *);
 int do_dumpqca_usb_data(unsigned int dump_level);
 int apps_iscrashed(void);
+int is_hlos_crashed(void);
+int ipq_read_tcsr_boot_misc(void);
 int set_uuid_bootargs(char *boot_args, char *part_name, int buflen, bool gpt_flag);
 
 int get_eth_mac_address(uchar *enetaddr, uint no_of_macs);
 void set_ethmac_addr(void);
 
-#ifndef CONFIG_IPQ9574_RUMI
 void aquantia_phy_reset_init_done(void);
 void aquantia_phy_reset_init(void);
-#endif
 
 int bring_sec_core_up(unsigned int cpuid, unsigned int entry, unsigned int arg);
 int is_secondary_core_off(unsigned int cpuid);

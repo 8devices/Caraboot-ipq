@@ -28,7 +28,7 @@
 	ess-switch {
 		switch_mac_mode = <0x0>;
 		switch_mac_mode1 = <0x2>;
-		switch_mac_mode2 = <0x6>;
+		switch_mac_mode2 = <0x1>;
 		aquantia_port = <4>;
 		aquantia_gpio = <44>;
 		uniphy_ext_ref_clk;

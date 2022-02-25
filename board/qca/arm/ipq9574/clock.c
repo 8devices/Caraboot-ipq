@@ -12,28 +12,39 @@
  */
 
 #include <common.h>
+#include <asm/global_data.h>
 #include <asm/io.h>
 #include <asm/arch-ipq9574/clk.h>
 #include <asm/errno.h>
+#include <fdtdec.h>
+
+DECLARE_GLOBAL_DATA_PTR;
 
 #ifdef CONFIG_IPQ9574_I2C
-void i2c_clock_config(void)
+void i2c_clock_config()
 {
-#ifndef CONFIG_IPQ9574_RUMI
-	int cfg;
+	int cfg, i2c_id;
+	int i2c_node;
+	const u32 *i2c_base;
 
-	/* Configure qup1_i2c_apps_clk_src */
-	cfg = (GCC_BLSP1_QUP1_I2C_APPS_CFG_RCGR_SRC_SEL |
-			GCC_BLSP1_QUP1_I2C_APPS_CFG_RCGR_SRC_DIV);
-	writel(cfg, GCC_BLSP1_QUP1_I2C_APPS_CFG_RCGR);
+	i2c_node = fdt_path_offset(gd->fdt_blob, "i2c0");
+	if (i2c_node >= 0) {
+		i2c_base = fdt_getprop(gd->fdt_blob, i2c_node, "reg", NULL);
+		if (i2c_base) {
+			i2c_id = I2C_PORT_ID(fdt32_to_cpu(i2c_base[0]));
+			/* Configure qup1_i2c_apps_clk_src */
+			cfg = (GCC_BLSP1_QUP1_I2C_APPS_CFG_RCGR_SRC_SEL |
+					GCC_BLSP1_QUP1_I2C_APPS_CFG_RCGR_SRC_DIV);
+			writel(cfg, GCC_BLSP1_QUP_I2C_APPS_CFG_RCGR(i2c_id));
 
-	writel(CMD_UPDATE, GCC_BLSP1_QUP1_I2C_APPS_CMD_RCGR);
-	mdelay(100);
-	writel(ROOT_EN, GCC_BLSP1_QUP1_I2C_APPS_CMD_RCGR);
+			writel(CMD_UPDATE, GCC_BLSP1_QUP_I2C_APPS_CMD_RCGR(i2c_id));
+			mdelay(100);
+			writel(ROOT_EN, GCC_BLSP1_QUP_I2C_APPS_CMD_RCGR(i2c_id));
 
-	/* Configure CBCR */
-	writel(CLK_ENABLE, GCC_BLSP1_QUP1_I2C_APPS_CBCR);
-#endif
+			/* Configure CBCR */
+			writel(CLK_ENABLE, GCC_BLSP1_QUP_I2C_APPS_CBCR(i2c_id));
+		}
+	}
 }
 #endif
 
@@ -159,7 +170,6 @@ void qpic_set_clk_rate(unsigned int clk_rate, int blk_type, int req_clk_src_type
 #ifdef CONFIG_PCI_IPQ
 void pcie_v2_clock_init(int pcie_id)
 {
-#ifndef CONFIG_IPQ9574_RUMI
 	int cfg, div;
 
 	/* Configure pcie_aux_clk_src */
@@ -224,12 +234,10 @@ void pcie_v2_clock_init(int pcie_id)
 	writel(ROOT_EN, GCC_PCIE_REG(GCC_PCIE_RCHNG_CMD_RCGR, pcie_id));
 
 	writel(CLK_ENABLE, GCC_PCIE_REG(GCC_PCIE_AUX_CBCR, pcie_id));
-#endif
 }
 
 void pcie_v2_clock_deinit(int pcie_id)
 {
-#ifndef CONFIG_IPQ9574_RUMI
 	writel(0x0, GCC_PCIE_REG(GCC_PCIE_AUX_CMD_RCGR, 0));
 	mdelay(100);
 	writel(0x0, GCC_PCIE_REG(GCC_PCIE_AHB_CBCR, pcie_id));
@@ -255,14 +263,12 @@ void pcie_v2_clock_deinit(int pcie_id)
 		writel(0x0, GCC_ANOC_PCIE3_2LANE_M_CBCR);
 	break;
 	}
-#endif
 }
 #endif
 
 #ifdef CONFIG_USB_XHCI_IPQ
 void usb_clock_init(int id)
 {
-#ifndef CONFIG_IPQ9574_RUMI
 	int cfg;
 	/* Configure usb0_master_clk_src */
 	cfg = (GCC_USB0_MASTER_CFG_RCGR_SRC_SEL |
@@ -305,13 +311,11 @@ void usb_clock_init(int id)
 	writel((CLK_ENABLE | NOC_HANDSHAKE_FSM_EN),
 				GCC_USB0_PHY_CFG_AHB_CBCR);
 	writel(CLK_ENABLE, GCC_USB0_PIPE_CBCR);
-#endif
 }
 
 
 void usb_clock_deinit(void)
 {
-#ifndef CONFIG_IPQ9574_RUMI
 	/* Disable clocks */
 	writel(0x8000, GCC_USB0_PHY_CFG_AHB_CBCR);
 	writel(0xcff0, GCC_USB0_MASTER_CBCR);
@@ -320,14 +324,12 @@ void usb_clock_deinit(void)
 	writel(0, GCC_USB0_AUX_CBCR);
 	writel(0, GCC_ANOC_USB_AXI_CBCR);
 	writel(0, GCC_SNOC_USB_CBCR);
-#endif
 }
 #endif
 
 #ifdef CONFIG_QCA_MMC
 void emmc_clock_init(void)
 {
-#ifndef CONFIG_IPQ9574_RUMI
 	int cfg;
 
 	/* Configure sdcc1_apps_clk_src */
@@ -345,15 +347,12 @@ void emmc_clock_init(void)
 	writel(readl(GCC_SDCC1_APPS_CBCR) | CLK_ENABLE, GCC_SDCC1_APPS_CBCR);
 	udelay(10);
 	writel(readl(GCC_SDCC1_AHB_CBCR) | CLK_ENABLE, GCC_SDCC1_AHB_CBCR);
-#endif
 }
 
 void emmc_clock_reset(void)
 {
-#ifndef CONFIG_IPQ9574_RUMI
 	writel(0x1, GCC_SDCC1_BCR);
 	udelay(10);
 	writel(0x0, GCC_SDCC1_BCR);
-#endif
 }
 #endif

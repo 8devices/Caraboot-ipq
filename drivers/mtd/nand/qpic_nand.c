@@ -222,6 +222,22 @@ static struct qpic_serial_nand_params qpic_serial_nand_tbl[] = {
 		.name = "W25N02JWZEIF",
 	},
 	{
+		.id = { 0xef, 0xba },
+		.page_size = 2048,
+		.erase_blk_size = 0x00020000,
+		.pgs_per_blk = 64,
+		.no_of_blocks = 1024,
+		.spare_size = 64,
+		.density = 0x8000000,
+		.otp_region = 0x2000,
+		.no_of_addr_cycle = 0x3,
+		.num_bits_ecc_correctability = 4,
+		.timing_mode_support = 0,
+		.quad_mode = true,
+		.check_quad_config = false,
+		.name = "W25N01GWZEIG",
+	},
+	{
 		.id = { 0xc2, 0x92 },
 		.page_size = 2048,
 		.erase_blk_size = 0x00020000,
@@ -286,6 +302,22 @@ static struct qpic_serial_nand_params qpic_serial_nand_tbl[] = {
 		.name = "GD5F2GQ5REYIG",
 	},
 	{
+		.id = { 0xc2, 0xa6 },
+		.page_size = 2048,
+		.erase_blk_size = 0x00020000,
+		.pgs_per_blk = 64,
+		.no_of_blocks = 2048,
+		.spare_size = 160,
+		.density = 0x08000000,
+		.otp_region = 0x2000,
+		.no_of_addr_cycle = 0x3,
+		.num_bits_ecc_correctability = 4,
+		.timing_mode_support = 0,
+		.quad_mode = true,
+		.check_quad_config = true,
+		.name = "MX35UF2GE4AD",
+	},
+	{
 		.id = { 0xc2, 0xb7 },
 		.page_size = 4096,
 		.erase_blk_size = 0x00040000,
@@ -305,7 +337,7 @@ static struct qpic_serial_nand_params qpic_serial_nand_tbl[] = {
 };
 struct qpic_serial_nand_params *serial_params;
 #define MICRON_DEVICE_ID	0x152c152c
-#define WINBOND_DEVICE_ID	0x0021bcef
+#define WINBOND_MFR_ID		0xef
 #define CMD3_MASK		0xfff0ffff
 /*
  * An array holding the fixed pattern to compare with
@@ -1389,6 +1421,7 @@ int qpic_spi_nand_config(struct mtd_info *mtd)
 	if ((status  >> 8) & FLASH_SPI_NAND_FR_ECC_ENABLE) {
 		qspi_debug("%s : Internal ECC enabled, disabling internal ECC\n",__func__);
 
+		status >>= 8;
 		status &= ~(FLASH_SPI_NAND_FR_ECC_ENABLE);
 		status = qpic_serial_set_feature(mtd, FLASH_SPI_NAND_FR_ADDR,
 			status);
@@ -1415,6 +1448,30 @@ int qpic_spi_nand_config(struct mtd_info *mtd)
 	} else
 		qspi_debug("%s : Internal ECC disabled on power on.\n",__func__);
 
+	if (dev->vendor == WINBOND_MFR_ID) {
+		status = qpic_serial_get_feature(mtd, FLASH_SPI_NAND_FR_ADDR);
+		if (status < 0) {
+			printf("%s : Error in getting feature.\n",__func__);
+			return status;
+		}
+
+		if (!((status >> 8) & FLASH_SPI_NAND_FR_BUFF_ENABLE)) {
+			qspi_debug("%s :continous buffer mode disabled\n",
+				__func__);
+			qspi_debug("%s : Issuing set feature command to enable it\n",
+					__func__);
+			status = qpic_serial_set_feature(mtd, FLASH_SPI_NAND_FR_ADDR,
+				(FLASH_SPI_NAND_FR_BUFF_ENABLE | (status >> 8)));
+			if (status < 0) {
+				printf("%s : Error in disabling continous buffer bit.\n",
+						__func__);
+				return status;
+			}
+		} else {
+			qspi_debug("%s : continous buffer mode enabled on power on\n",
+					__func__);
+		}
+	}
 	/* Enable QUAD mode if device supported. Check this condition only
 	 * if dev->quad_mode = true , means device will support Quad mode
 	 * else no need to check for Quad mode.
@@ -1463,31 +1520,6 @@ int qpic_spi_nand_config(struct mtd_info *mtd)
 			}
 		} else {
 			qspi_debug("%s: Quad mode enabled on Opwer on.\n",__func__);
-		}
-	}
-
-	if (dev->id == WINBOND_DEVICE_ID) {
-		status = qpic_serial_get_feature(mtd, FLASH_SPI_NAND_FR_ADDR);
-		if (status < 0) {
-			printf("%s : Error in getting feature.\n",__func__);
-			return status;
-		}
-
-		if (!((status >> 8) & FLASH_SPI_NAND_FR_BUFF_ENABLE)) {
-			qspi_debug("%s :continous buffer mode disabled\n",
-				__func__);
-			qspi_debug("%s : Issuing set feature command to enable it\n",
-					__func__);
-			status = qpic_serial_set_feature(mtd, FLASH_SPI_NAND_FR_ADDR,
-				(FLASH_SPI_NAND_FR_BUFF_ENABLE | (status >> 8)));
-			if (status < 0) {
-				printf("%s : Error in disabling continous buffer bit.\n",
-						__func__);
-				return status;
-			}
-		} else {
-			qspi_debug("%s : continous buffer mode enabled on power on\n",
-					__func__);
 		}
 	}
 
