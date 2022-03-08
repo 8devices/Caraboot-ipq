@@ -408,6 +408,8 @@ int board_late_init(void)
 #ifdef CONFIG_FLASH_PROTECT
 	board_flash_protect();
 #endif
+	ubi_power_collapse();
+
 	set_ethmac_addr();
 
 	/*

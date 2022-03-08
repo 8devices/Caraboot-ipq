@@ -1216,6 +1216,26 @@ int board_eth_init(bd_t *bis)
 }
 #endif
 
+void ubi_power_collapse(void)
+{
+	/* Enable NSS CSR clocks to access the UBI Power collapse registers */
+	writel(0x20f, NSS_CC_CFG_CFG_RCGR);
+	writel(0x1, NSS_CC_CFG_CMD_RCGR);
+	writel(GCC_CBCR_CLK_ENABLE, NSS_CC_NSS_CSR_CBCR);
+	writel(GCC_CBCR_CLK_ENABLE, NSS_CC_NSSNOC_NSS_CSR_CBCR);
+
+	/* Power collapsing the 4 UBI32 Cores as it is not used in IPQ9574 */
+	writel(readl(UBI_C0_GDS_CTRL_REQ) | UBI32_CORE_GDS_COLLAPSE_EN_SW,
+				UBI_C0_GDS_CTRL_REQ);
+	writel(readl(UBI_C1_GDS_CTRL_REQ) | UBI32_CORE_GDS_COLLAPSE_EN_SW,
+				UBI_C1_GDS_CTRL_REQ);
+	writel(readl(UBI_C2_GDS_CTRL_REQ) | UBI32_CORE_GDS_COLLAPSE_EN_SW,
+				UBI_C2_GDS_CTRL_REQ);
+	writel(readl(UBI_C3_GDS_CTRL_REQ) | UBI32_CORE_GDS_COLLAPSE_EN_SW,
+				UBI_C3_GDS_CTRL_REQ);
+
+}
+
 unsigned long timer_read_counter(void)
 {
 	return 0;

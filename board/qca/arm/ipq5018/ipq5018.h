@@ -553,6 +553,7 @@ __weak void aquantia_phy_reset_init(void) {}
 __weak void qgic_init(void) {}
 __weak void handle_noc_err(void) {}
 __weak void board_pcie_clock_init(int id) {}
+__weak void ubi_power_collapse(void) {}
 
 struct smem_ram_ptable {
 	#define _SMEM_RAM_PTABLE_MAGIC_1	0x9DA5E0A8

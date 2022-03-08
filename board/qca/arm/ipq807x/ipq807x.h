@@ -315,6 +315,7 @@ void qgic_init(void);
 void handle_noc_err(void);
 void ipq_fdt_fixup_socinfo(void *blob);
 int ipq_board_usb_init(void);
+__weak void ubi_power_collapse(void) {}
 unsigned smem_read_alloc_entry(smem_mem_type_t type, void *buf, int len);
 __weak int ipq_get_tz_version(char *version_name, int buf_size)
 {
