@@ -30,3 +30,6 @@ config QCA8081_PHY
 
 config QCA8075_PHY
 	bool "Enable QCA8075 PHY support for ipq807x"
+
+config RTL8221_PHY
+	bool "Enable RTL8221 PHY support for ipq807x"

@@ -42,6 +42,7 @@ extern int ipq5018_mdio_write(int mii_id, int regnum, u16 value);
 extern int ipq5018_mdio_read(int mii_id, int regnum, ushort *data);
 extern int ipq_qca8033_phy_init(struct phy_ops **ops, u32 phy_id);
 extern int ipq_qca8081_phy_init(struct phy_ops **ops, u32 phy_id);
+extern int ipq_rtl8221_phy_init(struct phy_ops **ops, u32 phy_id);
 extern int ipq_gephy_phy_init(struct phy_ops **ops, u32 phy_id);
 extern int ipq_sw_mdio_init(const char *);
 extern int ipq5018_sw_mdio_init(const char *);
@@ -90,7 +91,7 @@ static void ipq_eth_mac_cfg(struct eth_device *dev)
 	ipq_mac_framefilter = PROMISCUOUS_MODE_ON;
 
 	if (priv->mac_unit) {
-		if (priv->phy_type == QCA8081_1_1_PHY || priv->phy_type == QCA8033_PHY)
+		if (priv->phy_type == QCA8081_1_1_PHY || priv->phy_type == QCA8033_PHY || priv->phy_type == RTL8221_PHY)
 			speed = priv->speed;
 
 		ipq_mac_cfg |= (FRAME_BURST_ENABLE | JUMBO_FRAME_ENABLE | JABBER_DISABLE |
@@ -791,6 +792,8 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 				sizeof(ipq_gmac_macs[i]->phy_name), "IPQ MDIO%d", i);
 
 		if (gmac_cfg->unit){
+			/* wait for PHY to get ready */
+			mdelay(250);
 			phy_chip_id1 = ipq_mdio_read(
 					ipq_gmac_macs[i]->phy_address,
 					QCA_PHY_ID1,
@@ -846,8 +849,16 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 						QCA8337_switch_init(gmac_cfg);
 				}
 				break;
+
+			case RTL8221_PHY:
+				ipq_gmac_macs[i]->phy_type = RTL8221_PHY;
+				ipq_rtl8221_phy_init(
+					&ipq_gmac_macs[i]->ops,
+					ipq_gmac_macs[i]->phy_address);
+				break;
+
 			default:
-				printf("GMAC%d:Invalid PHY ID \n", i);
+				printf("GMAC%d:Invalid PHY ID (%x)\n", i, phy_chip_id);
 				break;
 		}
 		/* Initialize 8337 switch */
