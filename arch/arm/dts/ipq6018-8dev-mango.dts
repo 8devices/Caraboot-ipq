@@ -37,7 +37,7 @@
 		malibu2port_phy = <1>;
 		sfp_port = <4>;
 		sfp_combo = <1>;
-		sfp_mux_gpio = <49>;
+		sfp_mux_gpio = <68>;
 		port_phyinfo {
 			port@0 {
 				phy_address = <0>;
