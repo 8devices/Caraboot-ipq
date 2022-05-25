@@ -370,7 +370,7 @@ extern loff_t board_env_size;
 #define CONFIG_IPQ_FDT_FIXUP
 #define CONFIG_QCOM_WATCHDOG
 
-#define CONFIG_CARABOOT_RELEASE "v5.0"
+#define CONFIG_CARABOOT_RELEASE "v5.1"
 
 #define CONFIG_EXTRA_ENV_SETTINGS								\
 	"bootcmd=run bootlinux\0"								\
