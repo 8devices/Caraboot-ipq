@@ -431,6 +431,8 @@ extern loff_t board_env_size;
 
 /*#define CONFIG_IPQ_BT_SUPPORT*/
 
+#define CONFIG_QCOM_WATCHDOG
+
 #define CONFIG_CARABOOT_RELEASE "v6.0"
 
 #define CONFIG_EXTRA_ENV_SETTINGS							\
