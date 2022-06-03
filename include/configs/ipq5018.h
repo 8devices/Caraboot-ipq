@@ -236,9 +236,9 @@ extern loff_t board_env_size;
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_DHCP
 #define CONFIG_MII
-#define CONFIG_IPADDR				192.168.10.10
+#define CONFIG_IPADDR				192.168.2.100
 #define CONFIG_NETMASK				255.255.255.0
-#define CONFIG_SERVERIP				192.168.10.19
+#define CONFIG_SERVERIP				192.168.2.254
 #define CONFIG_CMD_TFTPPUT
 #define CONFIG_IPQ_MDIO				1
 #define CONFIG_IPQ_ETH_INIT_DEFER
@@ -323,7 +323,7 @@ extern loff_t board_env_size;
 #define CONFIG_BOOTARGS				"console=ttyMSM0,115200n8"
 #define QCA_ROOT_FS_PART_NAME			"rootfs"
 
-#define CONFIG_BOOTDELAY			5
+#define CONFIG_BOOTDELAY			1
 
 #define NUM_ALT_PARTITION			16
 
