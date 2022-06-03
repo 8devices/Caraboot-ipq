@@ -431,4 +431,19 @@ extern loff_t board_env_size;
 
 /*#define CONFIG_IPQ_BT_SUPPORT*/
 
+#define CONFIG_EXTRA_ENV_SETTINGS							\
+	"bootcmd=run bootlinux\0"							\
+	"bootlinux=run boot1 boot2 boot3 || reset\0"					\
+	"do_recovery=run rec1 rec2 rec3 rec4; reset\0"					\
+	"boot1=nand device 1 && setenv mtdids nand1=nand1\0"				\
+	"boot2=setenv mtdparts mtdparts=nand1:0x1ce0000@0x320000(firmware)\0"		\
+	"boot3=nboot firmware && bootm\0"						\
+	"rec1=echo Doing firmware recovery!\0"						\
+	"rec2=tftpboot ${tftp_loadaddr} ${recovery_file}\0"				\
+	"rec3=sf probe && sf erase 0x320000 0x1ce0000\0"				\
+	"rec4=sf write ${fileaddr} 0x320000 ${filesize}\0"				\
+	"tftp_loadaddr=0x41000000\0"							\
+	"recovery_file=fwupdate.bin\0"
+
+
 #endif /* _IPQ5018_H */
