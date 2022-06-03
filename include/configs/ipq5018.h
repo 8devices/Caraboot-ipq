@@ -431,6 +431,8 @@ extern loff_t board_env_size;
 
 /*#define CONFIG_IPQ_BT_SUPPORT*/
 
+#define CONFIG_CARABOOT_RELEASE "v6.0"
+
 #define CONFIG_EXTRA_ENV_SETTINGS							\
 	"bootcmd=run bootlinux\0"							\
 	"bootlinux=run boot1 boot2 boot3 || reset\0"					\
