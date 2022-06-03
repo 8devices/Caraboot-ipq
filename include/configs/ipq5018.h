@@ -376,7 +376,7 @@ extern loff_t board_env_size;
 /*
 * CRASH DUMP ENABLE
 */
-#define CONFIG_QCA_APPSBL_DLOAD
+/* #define CONFIG_QCA_APPSBL_DLOAD */
 #define CONFIG_IPQ5018_DMAGIC_ADDR		0x193D100
 #ifdef CONFIG_QCA_APPSBL_DLOAD
 
