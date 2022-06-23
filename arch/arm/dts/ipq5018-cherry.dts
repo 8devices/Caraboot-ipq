@@ -108,11 +108,11 @@
 
 	pci0: pci@a0000000 {
 		status = "ok";
-		perst_gpio = <15>;
+		perst_gpio = <40>;
 		mode = "fixed";
 		pci_gpio {
 			pci_rst {
-				gpio = <15>;
+				gpio = <40>;
 				func = <0>;
 				pull = <GPIO_NO_PULL>;
 				oe = <GPIO_OD_ENABLE>;
