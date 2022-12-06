@@ -22,7 +22,7 @@
 	aliases {
 		console = "/serial@78AF000";
 		usb0 = "/xhci@8a00000";
-		pci0 = "/pci@a0000000";
+		/* pci0 = "/pci@a0000000"; */
 		nand = "/nand-controller@79B0000";
 	};
 
@@ -105,7 +105,7 @@
 			};
 		};
 	};
-
+/*
 	pci0: pci@a0000000 {
 		status = "ok";
 		perst_gpio = <40>;
@@ -121,6 +121,7 @@
 			};
 		};
 	};
+*/
 
 	usb0: xhci@8a00000 {
 		ssphy = <1>;
