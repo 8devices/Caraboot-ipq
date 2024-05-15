@@ -11,7 +11,7 @@
  * GNU General Public License for more details.
  */
 
-/dts-v1/;
+///dts-v1/;
 #include "ipq9574-db-al02-c1.dts"
 / {
 	machid = <0x1050201>;
