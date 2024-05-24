@@ -25,7 +25,7 @@ rv = mbn_tools.pboot_gen_elf([],
                 hash,
                 elf_out_file_name = pboot_elf,
                 secure_type = 'non_secure',
-                header_version = 3)
+                header_version = 6)
 if rv:
     raise(RuntimeError, "Failed to run pboot_gen_elf")
 
@@ -36,7 +36,7 @@ rv = mbn_tools.image_header([],
                 hash_header,
                 secure_type = 'non_secure',
                 elf_file_name = pboot_elf,
-                header_version = 3)
+                header_version = 6)
 if rv:
     raise(RuntimeError, "Failed to create image header for hash segment")
 
