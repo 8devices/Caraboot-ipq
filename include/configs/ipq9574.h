@@ -409,4 +409,9 @@ extern loff_t board_env_size;
 #define CONFIG_BITBANGMII_MULTI
 #endif
 
+#define CONFIG_SYS_LONGHELP
+#define CONFIG_AUTO_COMPLETE	1
+#define CONFIG_CMDLINE_EDITING
+#define CONFIG_COMMAND_HISTORY
+
 #endif /* _IPQ9574_H */
