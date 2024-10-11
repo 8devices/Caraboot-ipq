@@ -116,6 +116,11 @@ config IPQ_QCA_AQUANTIA_PHY
 	help
 	  Enable Aquantia PHY support.
 
+config QCA_GPY211_PHY
+	bool "MxL GPY211 PHY support"
+	help
+	  Enable MxL GPY211 PHY support
+
 config ATHRS17C_SWITCH
 	bool "QTI S17C switch support"
 	help

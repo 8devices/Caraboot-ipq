@@ -62,6 +62,7 @@
 #define AQUANTIA_PHY_113C_A1			0x31c31C11
 #define AQUANTIA_PHY_113C_B0			0x31c31C12
 #define AQUANTIA_PHY_113C_B1			0x31c31C13
+#define GPY211_PHY				0x67c9de10
 #define AQU_PHY_ADDR				0x7
 #define QCA_PHY_ID1				0x2
 #define QCA_PHY_ID2				0x3
@@ -170,5 +171,7 @@ struct phy_ops {
 				fal_port_duplex_t * duplex);
 	u32 (*phy_get_speed) (u32 dev_id, u32 phy_id,
 				fal_port_speed_t * speed);
+	u32 (*phy_set_interface_mode) (u32 dev_id, u32 phy_id,
+				enum port_wrapper_cfg);
 };
 #endif /* _IPQ_EDMA_H */

@@ -60,6 +60,7 @@ extern void ipq9574_qca8075_phy_interface_set_mode(uint32_t phy_id, uint32_t mod
 extern int ipq_qca8033_phy_init(struct phy_ops **ops, u32 phy_id);
 extern int ipq_qca8081_phy_init(struct phy_ops **ops, u32 phy_id);
 extern int ipq_qca_aquantia_phy_init(struct phy_ops **ops, u32 phy_id);
+extern int ipq_gpy211_phy_init(struct phy_ops **ops, u32 phy_id);
 extern int ipq_board_fw_download(unsigned int phy_addr);
 extern void ipq_set_mdio_mode(const int mode, const int bus);
 
@@ -875,7 +876,7 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 	u8 status = 0;
 	int mac_speed = 0x0;
 	struct ipq9574_eth_dev *priv = eth_dev->priv;
-	struct phy_ops *phy_get_ops;
+	struct phy_ops *phy_get_ops = NULL;
 	static fal_port_speed_t old_speed[IPQ9574_PHY_MAX] = {[0 ... IPQ9574_PHY_MAX-1] = FAL_SPEED_BUTT};
 	static fal_port_speed_t curr_speed[IPQ9574_PHY_MAX];
 	static int current_active_port = -1, previous_active_port = -1;
@@ -1273,11 +1274,17 @@ static int ipq9574_eth_init(struct eth_device *eth_dev, bd_t *this)
 					else if (i == 5)
 						ppe_uniphy_mode_set(0x2, EPORT_WRAPPER_SGMII0_RGMII4);
 
+					if (phy_get_ops && phy_get_ops->phy_set_interface_mode)
+						phy_get_ops->phy_set_interface_mode(priv->mac_unit, phy_addr, PORT_WRAPPER_SGMII0_RGMII4);
+
 				} else if (sgmii_mode == 0) { /* SGMII Plus Mode */
 					if (i == 4)
 						ppe_uniphy_mode_set(0x1, EPORT_WRAPPER_SGMII_PLUS);
 					else if (i == 5)
 						ppe_uniphy_mode_set(0x2, EPORT_WRAPPER_SGMII_PLUS);
+
+					if (phy_get_ops && phy_get_ops->phy_set_interface_mode)
+						phy_get_ops->phy_set_interface_mode(priv->mac_unit, phy_addr, PORT_WRAPPER_SGMII_PLUS);
 				}
 			}
 		}
@@ -2193,6 +2200,11 @@ int ipq9574_edma_init(void *edma_board_cfg)
 					ipq_board_fw_download(phy_addr);
 					mdelay(100);
 					ipq_qca_aquantia_phy_init(&ipq9574_edma_dev[i]->ops[phy_id], phy_addr);
+					break;
+#endif
+#ifdef CONFIG_QCA_GPY211_PHY
+				case GPY211_PHY:
+					ipq_gpy211_phy_init(&ipq9574_edma_dev[i]->ops[phy_id], phy_addr);
 					break;
 #endif
 				default:
