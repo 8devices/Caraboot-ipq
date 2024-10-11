@@ -63,6 +63,7 @@
 #define AQUANTIA_PHY_113C_B0			0x31c31C12
 #define AQUANTIA_PHY_113C_B1			0x31c31C13
 #define GPY211_PHY				0x67c9de10
+#define RTL8261_PHY				0x001ccaf3
 #define AQU_PHY_ADDR				0x7
 #define QCA_PHY_ID1				0x2
 #define QCA_PHY_ID2				0x3

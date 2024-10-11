@@ -116,3 +116,4 @@ obj-$(CONFIG_QCA_AQUANTIA_PHY) += ipq807x/ipq807x_aquantia_phy.o
 obj-$(CONFIG_IPQ6018_QCA_AQUANTIA_PHY) += ipq6018/ipq6018_aquantia_phy.o
 obj-$(CONFIG_IPQ9574_QCA_AQUANTIA_PHY) += ipq9574/ipq9574_aquantia_phy.o
 obj-$(CONFIG_QCA_GPY211_PHY) += ipq_common/ipq_gpy211.o
+obj-$(CONFIG_QCA_RTL8261_PHY) += ipq_common/ipq_rtl8261.o ipq_common/phy_rtl826xb_patch.o

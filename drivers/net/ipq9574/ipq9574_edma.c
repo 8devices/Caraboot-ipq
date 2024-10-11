@@ -61,6 +61,7 @@ extern int ipq_qca8033_phy_init(struct phy_ops **ops, u32 phy_id);
 extern int ipq_qca8081_phy_init(struct phy_ops **ops, u32 phy_id);
 extern int ipq_qca_aquantia_phy_init(struct phy_ops **ops, u32 phy_id);
 extern int ipq_gpy211_phy_init(struct phy_ops **ops, u32 phy_id);
+extern int ipq_rtl8261_phy_init(struct phy_ops **ops, u32 phy_id);
 extern int ipq_board_fw_download(unsigned int phy_addr);
 extern void ipq_set_mdio_mode(const int mode, const int bus);
 
@@ -2205,6 +2206,11 @@ int ipq9574_edma_init(void *edma_board_cfg)
 #ifdef CONFIG_QCA_GPY211_PHY
 				case GPY211_PHY:
 					ipq_gpy211_phy_init(&ipq9574_edma_dev[i]->ops[phy_id], phy_addr);
+					break;
+#endif
+#ifdef CONFIG_QCA_RTL8261_PHY
+				case RTL8261_PHY:
+					ipq_rtl8261_phy_init(&ipq9574_edma_dev[i]->ops[phy_id], phy_addr);
 					break;
 #endif
 				default:

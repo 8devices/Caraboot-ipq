@@ -121,6 +121,11 @@ config QCA_GPY211_PHY
 	help
 	  Enable MxL GPY211 PHY support
 
+config QCA_RTL8261_PHY
+	bool "Realtek RTL8261 PHY support"
+	help
+	  Enable Realtek RTL8261 PHY support
+
 config ATHRS17C_SWITCH
 	bool "QTI S17C switch support"
 	help
