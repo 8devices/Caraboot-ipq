@@ -414,4 +414,18 @@ extern loff_t board_env_size;
 #define CONFIG_CMDLINE_EDITING
 #define CONFIG_COMMAND_HISTORY
 
+#define CONFIG_EXTRA_ENV_SETTINGS							\
+	"rec1=echo Doing firmware recovery!\0"						\
+	"rec2=tftpboot ${tftp_loadaddr} ${recovery_file}\0"				\
+	"rec3=fdt addr ${tftp_loadaddr}\0"						\
+	"rec4=fdt get addr recovery_hlos_addr /images/hlos/ data\0"			\
+	"rec5=fdt get size recovery_hlos_size /images/hlos/ data\0"			\
+	"rec6=fdt get addr recovery_rootfs_addr /images/rootfs/ data\0"			\
+	"rec7=fdt get size recovery_rootfs_size /images/rootfs/ data\0"			\
+	"rec8=flash 0:HLOS ${recovery_hlos_addr} ${recovery_hlos_size}\0"		\
+	"rec9=flash rootfs ${recovery_rootfs_addr} ${recovery_rootfs_size}\0"		\
+	"do_recovery=run rec1 rec2 rec3 rec4 rec5 rec6 rec7 rec8 rec9; reset\0"		\
+	"tftp_loadaddr=0x41000000\0"							\
+	"recovery_file=fwupdate.bin\0"							\
+
 #endif /* _IPQ9574_H */
