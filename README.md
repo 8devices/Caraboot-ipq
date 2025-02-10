@@ -68,5 +68,5 @@ Use these commands to upgrade from u-boot shell:
 Kiwi:
 ```
 tftpboot 44000000 u-boot-kiwi.mbn
-mmc erase 0x00004a22 600; mmc write 44000000 0x00004a22 600
+flash 0:APPSBL ${fileaddr} ${filesize}
 ```
