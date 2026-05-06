@@ -134,7 +134,8 @@ dtb-$(CONFIG_ARCH_IPQ9574) += ipq9574-al01-c1.dtb \
 			ipq9574-db-al02-c3.dtb \
 			ipq9574-8dev-kiwi.dtb \
 			ipq9574-8dev-kiwi-dvk-noni.dtb \
-			ipq9574-8dev-kiwi-dvk-pine.dtb
+			ipq9574-8dev-kiwi-dvk-pine.dtb \
+			ipq9574-8dev-kiwi_2g.dtb \
 
 
 dtb-$(CONFIG_ARCH_ROCKCHIP) += \

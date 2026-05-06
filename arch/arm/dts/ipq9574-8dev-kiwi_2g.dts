@@ -1,0 +1,7 @@
+/dts-v1/;
+#include "ipq9574-8dev-kiwi.dtsi"
+
+/ {
+	machid = <0x9050100>;
+	config_name = "config@8dev-kiwi", "config-8dev-kiwi";
+};
